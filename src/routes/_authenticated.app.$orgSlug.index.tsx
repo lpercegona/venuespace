@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { getOrganizationBySlug, listTables, createTable, listMembers, addMemberByEmail } from "@/lib/orgs.functions";
+import { getOrganizationBySlug, listTables, createTable, updateTable, listMembers, addMemberByEmail } from "@/lib/orgs.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table as TableIcon, Plus, Loader2, UserPlus, Users } from "lucide-react";
+import { Table as TableIcon, Plus, Loader2, UserPlus, Users, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 
