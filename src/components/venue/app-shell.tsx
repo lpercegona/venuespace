@@ -114,10 +114,10 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                 {orgSlug ? (
                   <>
                     <DropdownMenuItem onSelect={() => navigate({ to: "/app/$orgSlug/calendar", params: { orgSlug } })}>
-                      <CalendarDays className="h-4 w-4" />Calendário
+                      <CalendarDays className="h-4 w-4" />{t("bookings", "Reservas")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => navigate({ to: "/app/$orgSlug/members", params: { orgSlug } })}>
-                      <Users className="h-4 w-4" />Membros
+                      <Users className="h-4 w-4" />{t("memberships", "Membros")}
                     </DropdownMenuItem>
                   </>
                 ) : null}
