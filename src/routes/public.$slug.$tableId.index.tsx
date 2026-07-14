@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2, MessageCircle, type LucideIcon } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,13 +10,24 @@ import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader } from "@/components/venue/public-header";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
+type LayoutItem = { id: string; field_source: string; field_ref: string; icon: string | null; label_override: string | null; order_index: number };
+
 type Payload = {
-  organization: { id: string; slug: string; name: string; description: string | null };
+  organization: { id: string; slug: string; name: string; description: string | null; category_id: string | null };
   table: { id: string; name: string; description: string | null };
   fields: Array<{ id: string; key: string; label: string; type: string; position: number }>;
   records: Array<{ id: string; data: Record<string, any>; deal_status: string; created_at: string }>;
   public_form_view: { id: string; auto_relation_field_id: string | null } | null;
+  category_layout: LayoutItem[];
 };
+
+function IconByName({ name, className }: { name: string | null; className?: string }) {
+  if (!name) return null;
+  const Cmp = (LucideIcons as any)[name] as LucideIcon | undefined;
+  if (!Cmp) return null;
+  return <Cmp className={className ?? "h-4 w-4"} />;
+}
+
 
 async function fetchPublic(slug: string, tableId: string): Promise<Payload> {
   const res = await fetch(`/api/public/${encodeURIComponent(slug)}/${encodeURIComponent(tableId)}`);
@@ -51,8 +63,22 @@ function PublicListPage() {
     );
   }
 
-  const { organization, table, fields, records, public_form_view } = q.data;
-  const displayFields = fields.filter((f) => f.type !== "computed" && f.type !== "relation").slice(0, 4);
+  const { organization, table, fields, records, public_form_view, category_layout } = q.data;
+  const fieldByKey = new Map(fields.map((f) => [f.key, f]));
+
+  // Category layout overrides the default heuristic when defined.
+  const useLayout = (category_layout ?? []).length > 0;
+  const fallbackFields = fields.filter((f) => f.type !== "computed" && f.type !== "relation").slice(0, 4);
+
+  function getRecordValue(r: Payload["records"][number], item: LayoutItem): { label: string; value: string } | null {
+    // Only "record_data_field" reads from record.data; other sources render
+    // read-only system fields at the record/table/org level once implemented.
+    if (item.field_source !== "record_data_field") return null;
+    const f = fieldByKey.get(item.field_ref);
+    const v = r.data?.[item.field_ref];
+    if (v == null || v === "") return null;
+    return { label: item.label_override ?? f?.label ?? item.field_ref, value: String(v) };
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,8 +96,10 @@ function PublicListPage() {
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {records.map((r) => {
-              const titleField = displayFields[0]?.key;
-              const title = titleField ? String(r.data?.[titleField] ?? "Sem título") : "Sem título";
+              const titleKey = useLayout
+                ? (category_layout.find((i) => i.field_source === "record_data_field")?.field_ref ?? fallbackFields[0]?.key)
+                : fallbackFields[0]?.key;
+              const title = titleKey ? String(r.data?.[titleKey] ?? "Sem título") : "Sem título";
               return (
                 <li key={r.id}>
                   <Card className="h-full">
@@ -91,16 +119,32 @@ function PublicListPage() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <dl className="space-y-1 text-sm">
-                        {displayFields.slice(1).map((f) => {
-                          const v = r.data?.[f.key];
-                          if (v == null || v === "") return null;
-                          return (
-                            <div key={f.key} className="flex justify-between gap-2">
-                              <dt className="text-muted-foreground">{f.label}</dt>
-                              <dd className="truncate text-right text-foreground">{String(v)}</dd>
-                            </div>
-                          );
-                        })}
+                        {useLayout
+                          ? category_layout
+                              .filter((it, i) => !(i === 0 && it.field_ref === titleKey))
+                              .map((it) => {
+                                const row = getRecordValue(r, it);
+                                if (!row) return null;
+                                return (
+                                  <div key={it.id} className="flex items-center justify-between gap-2">
+                                    <dt className="flex items-center gap-1.5 text-muted-foreground">
+                                      <IconByName name={it.icon} className="h-3.5 w-3.5" />
+                                      {row.label}
+                                    </dt>
+                                    <dd className="truncate text-right text-foreground">{row.value}</dd>
+                                  </div>
+                                );
+                              })
+                          : fallbackFields.slice(1).map((f) => {
+                              const v = r.data?.[f.key];
+                              if (v == null || v === "") return null;
+                              return (
+                                <div key={f.key} className="flex justify-between gap-2">
+                                  <dt className="text-muted-foreground">{f.label}</dt>
+                                  <dd className="truncate text-right text-foreground">{String(v)}</dd>
+                                </div>
+                              );
+                            })}
                       </dl>
                       <div className="flex flex-col gap-2">
                         <Link to="/public/$slug/$tableId/$recordId" params={{ slug, tableId, recordId: r.id }}>

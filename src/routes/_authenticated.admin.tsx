@@ -26,10 +26,16 @@ import {
 } from "@/lib/instance-settings.functions";
 import {
   listPlatformLabelsPublic,
-  listSystemFormFieldsPublic,
   upsertPlatformLabel,
-  upsertSystemFormField,
 } from "@/lib/platform-labels.functions";
+import {
+  listCategoryPublicLayoutPublic,
+  upsertCategoryPublicLayoutItem,
+  deleteCategoryPublicLayoutItem,
+  seedCategoryDefaultsRetroactive,
+  type PublicLayoutItem,
+  type FieldSourceKind,
+} from "@/lib/category-layouts.functions";
 import {
   countOrganizationsByCategory,
   createOrganizationCategory,
@@ -85,11 +91,13 @@ function AdminPage() {
           <TabsTrigger value="labels">Rótulos</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
+          <TabsTrigger value="layout">Layout público</TabsTrigger>
         </TabsList>
         <TabsContent value="general"><GeneralSection /></TabsContent>
         <TabsContent value="labels"><LabelsSection /></TabsContent>
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
+        <TabsContent value="layout"><PublicLayoutSection /></TabsContent>
       </Tabs>
     </AppShell>
   );
@@ -203,7 +211,7 @@ function GeneralSection() {
 function LabelsSection() {
   const qc = useQueryClient();
   const labels = useQuery({ queryKey: ["admin-platform-labels"], queryFn: () => listPlatformLabelsPublic() });
-  const sff = useQuery({ queryKey: ["admin-sff"], queryFn: () => listSystemFormFieldsPublic() });
+  
 
   const [drafts, setDrafts] = useState<Record<string, { label: string; icon: string }>>({});
   useEffect(() => {
@@ -226,74 +234,35 @@ function LabelsSection() {
     } catch (err) { toast.error((err as Error).message); }
   }
 
-  const [sffDrafts, setSffDrafts] = useState<Record<string, { label: string; icon: string; order_index: number }>>({});
-  useEffect(() => {
-    if (!sff.data) return;
-    const d: typeof sffDrafts = {};
-    for (const f of sff.data) d[f.id] = { label: f.label, icon: f.icon ?? "", order_index: f.order_index };
-    setSffDrafts(d);
-  }, [sff.data]);
 
-  async function saveSff(row: { id: string; form_key: any; field_key: string }) {
-    const d = sffDrafts[row.id];
-    if (!d) return;
-    try {
-      await upsertSystemFormField({ data: { id: row.id, form_key: row.form_key, field_key: row.field_key, label: d.label, icon: d.icon || null, order_index: d.order_index } });
-      toast.success("Campo salvo");
-      await qc.invalidateQueries({ queryKey: ["admin-sff"] });
-    } catch (err) { toast.error((err as Error).message); }
-  }
+
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader><CardTitle className="font-display">Termos-núcleo</CardTitle></CardHeader>
-        <CardContent>
-          {labels.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader><TableRow><TableHead>Chave</TableHead><TableHead>Rótulo</TableHead><TableHead>Ícone (lucide)</TableHead><TableHead className="w-24"></TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {(labels.data ?? []).map((l) => (
-                    <TableRow key={l.key}>
-                      <TableCell className="font-mono text-xs">{l.key}</TableCell>
-                      <TableCell><Input value={drafts[l.key]?.label ?? ""} onChange={(e) => setDrafts((s) => ({ ...s, [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), label: e.target.value } }))} /></TableCell>
-                      <TableCell><Input value={drafts[l.key]?.icon ?? ""} onChange={(e) => setDrafts((s) => ({ ...s, [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), icon: e.target.value } }))} placeholder="Building2" /></TableCell>
-                      <TableCell><Button size="sm" variant="outline" onClick={() => saveLabel(l.key)}><Save className="h-4 w-4" /></Button></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="font-display">Campos dos formulários internos</CardTitle></CardHeader>
-        <CardContent>
-          {sff.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader><TableRow><TableHead>Formulário</TableHead><TableHead>Campo</TableHead><TableHead>Rótulo</TableHead><TableHead>Ícone</TableHead><TableHead>Ordem</TableHead><TableHead className="w-24"></TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {(sff.data ?? []).map((f) => (
-                    <TableRow key={f.id}>
-                      <TableCell className="font-mono text-xs">{f.form_key}</TableCell>
-                      <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
-                      <TableCell><Input value={sffDrafts[f.id]?.label ?? ""} onChange={(e) => setSffDrafts((s) => ({ ...s, [f.id]: { ...(s[f.id] ?? { label: "", icon: "", order_index: 0 }), label: e.target.value } }))} /></TableCell>
-                      <TableCell><Input value={sffDrafts[f.id]?.icon ?? ""} onChange={(e) => setSffDrafts((s) => ({ ...s, [f.id]: { ...(s[f.id] ?? { label: "", icon: "", order_index: 0 }), icon: e.target.value } }))} /></TableCell>
-                      <TableCell className="w-20"><Input type="number" value={sffDrafts[f.id]?.order_index ?? 0} onChange={(e) => setSffDrafts((s) => ({ ...s, [f.id]: { ...(s[f.id] ?? { label: "", icon: "", order_index: 0 }), order_index: Number(e.target.value) } }))} /></TableCell>
-                      <TableCell><Button size="sm" variant="outline" onClick={() => saveSff(f)}><Save className="h-4 w-4" /></Button></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-display">Termos-núcleo</CardTitle>
+        <p className="text-sm text-muted-foreground">Aplicados em toda a plataforma. Alterações refletem após atualização de cache (≤ 5 min).</p>
+      </CardHeader>
+      <CardContent>
+        {labels.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader><TableRow><TableHead>Chave</TableHead><TableHead>Rótulo</TableHead><TableHead>Ícone (lucide)</TableHead><TableHead className="w-24"></TableHead></TableRow></TableHeader>
+              <TableBody>
+                {(labels.data ?? []).map((l) => (
+                  <TableRow key={l.key}>
+                    <TableCell className="font-mono text-xs">{l.key}</TableCell>
+                    <TableCell><Input value={drafts[l.key]?.label ?? ""} onChange={(e) => setDrafts((s) => ({ ...s, [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), label: e.target.value } }))} /></TableCell>
+                    <TableCell><Input value={drafts[l.key]?.icon ?? ""} onChange={(e) => setDrafts((s) => ({ ...s, [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), icon: e.target.value } }))} placeholder="Building2" /></TableCell>
+                    <TableCell><Button size="sm" variant="outline" onClick={() => saveLabel(l.key)}><Save className="h-4 w-4" /></Button></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -529,6 +498,158 @@ function DefaultFieldsSection() {
                         <div className="flex gap-1">
                           <Button size="sm" variant="outline" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></Button>
                           <Button size="sm" variant="outline" onClick={() => remove(f.id)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )
+        }
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------- Public layout per category ----------
+
+const FIELD_SOURCES: Array<{ value: FieldSourceKind; label: string; hint: string }> = [
+  { value: "record_data_field", label: "Campo da tabela (data)", hint: "Chave do field da tabela publicada (ex.: titulo, preco)" },
+  { value: "record_field", label: "Campo de sistema do registro", hint: "Chave definida em Campos de sistema (registro)" },
+  { value: "table_field", label: "Campo de sistema da tabela", hint: "Chave definida em Campos de sistema (tabela)" },
+  { value: "org_field", label: "Campo de sistema da organização", hint: "Chave definida em Campos de sistema (organização)" },
+];
+
+function PublicLayoutSection() {
+  const qc = useQueryClient();
+  const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
+  const [selected, setSelected] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selected && cats.data && cats.data.length > 0) setSelected(cats.data[0].id);
+  }, [cats.data, selected]);
+
+  const items = useQuery({
+    queryKey: ["admin-cat-layout", selected],
+    queryFn: () => listCategoryPublicLayoutPublic({ data: { category_id: selected! } }),
+    enabled: !!selected,
+  });
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<PublicLayoutItem | null>(null);
+  const [src, setSrc] = useState<FieldSourceKind>("record_data_field");
+  const [ref, setRef] = useState("");
+  const [icon, setIcon] = useState("");
+  const [labelOv, setLabelOv] = useState("");
+  const [ord, setOrd] = useState(0);
+  const [saving, setSaving] = useState(false);
+
+  function openNew() {
+    setEditing(null); setSrc("record_data_field"); setRef(""); setIcon(""); setLabelOv("");
+    setOrd((items.data ?? []).length); setOpen(true);
+  }
+  function openEdit(it: PublicLayoutItem) {
+    setEditing(it); setSrc(it.field_source); setRef(it.field_ref); setIcon(it.icon ?? "");
+    setLabelOv(it.label_override ?? ""); setOrd(it.order_index); setOpen(true);
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selected) return;
+    setSaving(true);
+    try {
+      await upsertCategoryPublicLayoutItem({ data: {
+        id: editing?.id, category_id: selected, field_source: src, field_ref: ref,
+        icon: icon || null, label_override: labelOv || null, order_index: ord,
+      } });
+      toast.success("Item salvo");
+      setOpen(false);
+      await qc.invalidateQueries({ queryKey: ["admin-cat-layout", selected] });
+    } catch (err) { toast.error((err as Error).message); } finally { setSaving(false); }
+  }
+
+  async function remove(id: string) {
+    try {
+      await deleteCategoryPublicLayoutItem({ data: { id } });
+      toast.success("Item removido");
+      await qc.invalidateQueries({ queryKey: ["admin-cat-layout", selected] });
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  async function retroactive() {
+    if (!selected) return;
+    try {
+      const r = await seedCategoryDefaultsRetroactive({ data: { category_id: selected } });
+      toast.success(`${r.fields_created} campo(s) criado(s) em ${r.tables_touched} tabela(s)`);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle className="font-display">Layout público por categoria</CardTitle>
+          <p className="text-sm text-muted-foreground">Define quais campos e ícones aparecem nos cards públicos das tabelas desta categoria.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={selected ?? ""} onValueChange={setSelected}>
+            <SelectTrigger className="w-56"><SelectValue placeholder="Selecione categoria" /></SelectTrigger>
+            <SelectContent>
+              {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="outline" onClick={retroactive} disabled={!selected}>Aplicar campos padrão retroativamente</Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button size="sm" onClick={openNew} disabled={!selected}><Plus className="h-4 w-4" />Novo item</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle className="font-display">{editing ? "Editar item" : "Novo item de layout"}</DialogTitle></DialogHeader>
+              <form onSubmit={save} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Origem do campo</Label>
+                  <Select value={src} onValueChange={(v) => setSrc(v as FieldSourceKind)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {FIELD_SOURCES.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">{FIELD_SOURCES.find((f) => f.value === src)?.hint}</p>
+                </div>
+                <div className="space-y-2"><Label htmlFor="l-ref">Chave do campo</Label><Input id="l-ref" required value={ref} onChange={(e) => setRef(e.target.value)} placeholder="titulo" /></div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2"><Label htmlFor="l-icon">Ícone lucide</Label><Input id="l-icon" value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="MapPin" /></div>
+                  <div className="space-y-2"><Label htmlFor="l-ord">Ordem</Label><Input id="l-ord" type="number" value={ord} onChange={(e) => setOrd(Number(e.target.value))} /></div>
+                </div>
+                <div className="space-y-2"><Label htmlFor="l-lab">Rótulo (override)</Label><Input id="l-lab" value={labelOv} onChange={(e) => setLabelOv(e.target.value)} placeholder="Opcional" /></div>
+                <DialogFooter>
+                  <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {!selected ? <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p> :
+          items.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> :
+          (items.data ?? []).length === 0 ? (
+            <EmptyState icon={<Plus className="h-5 w-5" />} title="Sem itens de layout" description="Adicione os campos que devem aparecer nos cards públicos das tabelas desta categoria." />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow><TableHead>Ordem</TableHead><TableHead>Origem</TableHead><TableHead>Chave</TableHead><TableHead>Rótulo</TableHead><TableHead>Ícone</TableHead><TableHead className="w-32"></TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {(items.data ?? []).map((it) => (
+                    <TableRow key={it.id}>
+                      <TableCell className="w-16">{it.order_index}</TableCell>
+                      <TableCell><Badge variant="secondary">{it.field_source}</Badge></TableCell>
+                      <TableCell className="font-mono text-xs">{it.field_ref}</TableCell>
+                      <TableCell>{it.label_override ?? "—"}</TableCell>
+                      <TableCell className="font-mono text-xs">{it.icon ?? "—"}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="outline" onClick={() => openEdit(it)}><Pencil className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="outline" onClick={() => remove(it.id)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>

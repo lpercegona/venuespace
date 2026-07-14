@@ -354,6 +354,86 @@ export type Database = {
           },
         ]
       }
+      organization_category_public_layouts: {
+        Row: {
+          category_id: string
+          created_at: string
+          field_ref: string
+          field_source: Database["public"]["Enums"]["field_source_kind"]
+          icon: string
+          id: string
+          label_override: string | null
+          order_index: number
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          field_ref: string
+          field_source: Database["public"]["Enums"]["field_source_kind"]
+          icon: string
+          id?: string
+          label_override?: string | null
+          order_index?: number
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          field_ref?: string
+          field_source?: Database["public"]["Enums"]["field_source_kind"]
+          icon?: string
+          id?: string
+          label_override?: string | null
+          order_index?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_category_public_layouts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_fields: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          key: string
+          label: string
+          position: number
+          required: boolean
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          position?: number
+          required?: boolean
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          position?: number
+          required?: boolean
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           category_id: string | null
@@ -366,6 +446,7 @@ export type Database = {
           logo_url: string | null
           name: string
           slug: string
+          system_data: Json
           timezone: string | null
           updated_at: string
         }
@@ -380,6 +461,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           slug: string
+          system_data?: Json
           timezone?: string | null
           updated_at?: string
         }
@@ -394,6 +476,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           slug?: string
+          system_data?: Json
           timezone?: string | null
           updated_at?: string
         }
@@ -497,6 +580,42 @@ export type Database = {
         }
         Relationships: []
       }
+      record_fields: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          key: string
+          label: string
+          position: number
+          required: boolean
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          position?: number
+          required?: boolean
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          position?: number
+          required?: boolean
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       records: {
         Row: {
           agreed_value: number | null
@@ -511,6 +630,7 @@ export type Database = {
           id: string
           organization_id: string
           status: Database["public"]["Enums"]["record_status"]
+          system_data: Json
           table_id: string
           updated_at: string
         }
@@ -527,6 +647,7 @@ export type Database = {
           id?: string
           organization_id: string
           status?: Database["public"]["Enums"]["record_status"]
+          system_data?: Json
           table_id: string
           updated_at?: string
         }
@@ -543,6 +664,7 @@ export type Database = {
           id?: string
           organization_id?: string
           status?: Database["public"]["Enums"]["record_status"]
+          system_data?: Json
           table_id?: string
           updated_at?: string
         }
@@ -581,32 +703,38 @@ export type Database = {
         }
         Relationships: []
       }
-      system_form_fields: {
+      table_fields: {
         Row: {
-          field_key: string
-          form_key: string
-          icon: string | null
+          config: Json
+          created_at: string
           id: string
+          key: string
           label: string
-          order_index: number
+          position: number
+          required: boolean
+          type: string
           updated_at: string
         }
         Insert: {
-          field_key: string
-          form_key: string
-          icon?: string | null
+          config?: Json
+          created_at?: string
           id?: string
+          key: string
           label: string
-          order_index?: number
+          position?: number
+          required?: boolean
+          type: string
           updated_at?: string
         }
         Update: {
-          field_key?: string
-          form_key?: string
-          icon?: string | null
+          config?: Json
+          created_at?: string
           id?: string
+          key?: string
           label?: string
-          order_index?: number
+          position?: number
+          required?: boolean
+          type?: string
           updated_at?: string
         }
         Relationships: []
@@ -622,6 +750,7 @@ export type Database = {
           name: string
           organization_id: string
           slug: string
+          system_data: Json
           updated_at: string
         }
         Insert: {
@@ -634,6 +763,7 @@ export type Database = {
           name: string
           organization_id: string
           slug: string
+          system_data?: Json
           updated_at?: string
         }
         Update: {
@@ -646,6 +776,7 @@ export type Database = {
           name?: string
           organization_id?: string
           slug?: string
+          system_data?: Json
           updated_at?: string
         }
         Relationships: [
@@ -755,6 +886,11 @@ export type Database = {
       app_role: "owner" | "editor" | "viewer"
       contribution_status: "none" | "pledged" | "confirmed" | "refunded"
       deal_status: "none" | "negotiating" | "accepted" | "declined" | "closed"
+      field_source_kind:
+        | "org_field"
+        | "table_field"
+        | "record_field"
+        | "record_data_field"
       field_type:
         | "text"
         | "long_text"
@@ -904,6 +1040,12 @@ export const Constants = {
       app_role: ["owner", "editor", "viewer"],
       contribution_status: ["none", "pledged", "confirmed", "refunded"],
       deal_status: ["none", "negotiating", "accepted", "declined", "closed"],
+      field_source_kind: [
+        "org_field",
+        "table_field",
+        "record_field",
+        "record_data_field",
+      ],
       field_type: [
         "text",
         "long_text",

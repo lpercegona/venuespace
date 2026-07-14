@@ -1,4 +1,16 @@
-## 2026-07-14 21:28 — Iteração 9 (parte 2): refactor transversal para contexto de instância/organização
+## 2026-07-14 22:15 — Iteração 10 (parcial): layout público por categoria + retroatividade
+
+- Migration prévia: novas tabelas `organization_category_public_layouts`, `organization_fields`, `table_fields`, `record_fields`; coluna `system_data jsonb` em `organizations`, `tables`, `records`; enum `field_source_kind`; `system_form_fields` removida.
+- `src/lib/field-schema.ts` (novo): extrai `zodForField` / `buildSchemaFromFields` e a lista `FIELD_TYPES` compartilhada (base para os campos de sistema de org/tabela/registro).
+- `src/lib/platform-labels.functions.ts`: remove tipos/fn de `system_form_fields` (tabela dropada).
+- `src/lib/category-layouts.functions.ts` (novo): `listCategoryPublicLayoutPublic`, `upsertCategoryPublicLayoutItem`, `deleteCategoryPublicLayoutItem`, `seedCategoryDefaultsRetroactive` (semeia campos padrão em tabelas existentes da categoria — não sobrescreve chaves já presentes).
+- `src/routes/_authenticated.admin.tsx`: aba "Rótulos" simplificada (remove SFF); nova aba "Layout público" com CRUD por categoria (origem, chave, ícone lucide, rótulo override, ordem) + botão "Aplicar campos padrão retroativamente" que dispara `seedCategoryDefaultsRetroactive`.
+- `src/lib/public.server.ts` / `PublicTablePayload`: expõe `organization.category_id` e `category_layout`.
+- `src/routes/public.$slug.$tableId.index.tsx`: quando a categoria da org define layout público, os cards passam a renderizar campos, rótulos e ícones definidos pelo super admin, com fallback para heurística anterior quando não há layout.
+
+---
+
+
 
 - `src/components/venue/conversation-thread.tsx` agora recebe `formatCtx` obrigatório; substitui `toLocaleString`/`Intl.NumberFormat` fixos por `formatDateTime`/`formatCurrency`.
 - `src/components/venue/chat-widget.tsx`: aceita `org` como prop, deriva `formatCtx` via `useFormatContext(org)`, propaga para `ConversationThread` e ao badge de valor acordado; datas do inbox usam `formatDateTime`.
