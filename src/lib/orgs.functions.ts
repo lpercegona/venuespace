@@ -57,6 +57,66 @@ export const getOrganizationBySlug = createServerFn({ method: "GET" })
     return { ...org, myRole: me?.role ?? null };
   });
 
+const orgUpdate = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(2).max(80).optional(),
+  description: z.string().max(500).nullable().optional(),
+  logo_url: z.string().url().max(2000).nullable().optional(),
+});
+
+export const updateOrganization = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => orgUpdate.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: isOwner, error: rErr } = await context.supabase
+      .rpc("has_role", { _user_id: context.userId, _org_id: data.id, _role: "owner" });
+    if (rErr) throw new Error(rErr.message);
+    if (!isOwner) throw new Error("Sem permissão para editar esta organização.");
+    const patch: Record<string, any> = {};
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.description !== undefined) patch.description = data.description;
+    if (data.logo_url !== undefined) patch.logo_url = data.logo_url;
+    const { error } = await context.supabase.from("organizations").update(patch as any).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteOrganization = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), confirm_slug: z.string().min(1) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: org, error: gErr } = await context.supabase
+      .from("organizations").select("id, slug").eq("id", data.id).maybeSingle();
+    if (gErr) throw new Error(gErr.message);
+    if (!org) throw new Error("Organização não encontrada");
+    if (org.slug !== data.confirm_slug) throw new Error("Confirmação não confere.");
+    const { data: isOwner, error: rErr } = await context.supabase
+      .rpc("has_role", { _user_id: context.userId, _org_id: data.id, _role: "owner" });
+    if (rErr) throw new Error(rErr.message);
+    if (!isOwner) throw new Error("Sem permissão para excluir esta organização.");
+    const { error } = await context.supabase.from("organizations").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteTable = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), confirm_name: z.string().min(1) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: table, error: gErr } = await context.supabase
+      .from("tables").select("id, name, organization_id").eq("id", data.id).maybeSingle();
+    if (gErr) throw new Error(gErr.message);
+    if (!table) throw new Error("Tabela não encontrada");
+    if (table.name !== data.confirm_name) throw new Error("Confirmação não confere.");
+    const { data: isOwner, error: rErr } = await context.supabase
+      .rpc("has_role", { _user_id: context.userId, _org_id: table.organization_id, _role: "owner" });
+    if (rErr) throw new Error(rErr.message);
+    if (!isOwner) throw new Error("Apenas owners podem excluir tabelas.");
+    const { error } = await context.supabase.from("tables").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // Tables
 
 const tableCreate = z.object({
