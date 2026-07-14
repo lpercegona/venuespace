@@ -1,3 +1,9 @@
+## 2026-07-14 19:53 (America/Sao_Paulo) — Layout da tela de login
+
+- `src/routes/auth.tsx`: remove o botão de voltar ao início do header da tela de login, mantendo apenas marca e Explorar.
+- `src/routes/auth.tsx`: reorganiza a tela em duas colunas no desktop, com área esquerda em degradê preparada para futura imagem e formulário de login à direita; preserva layout responsivo em coluna única no mobile.
+- Nenhuma alteração de backend, RLS, rotas públicas ou tokens de design.
+
 ## 2026-07-14 19:42 (America/Sao_Paulo) — Restrição do atalho Administração no menu do perfil
 
 - `src/components/venue/app-shell.tsx`: corrige a condição do item "Administração" no dropdown do perfil para renderizar somente quando `amISuperAdmin()` retornar `is_super_admin: true`.
