@@ -1,10 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, MessageCircle, ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
+import { PublicHeader } from "@/components/venue/public-header";
+import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
 type Payload = {
   organization: { id: string; slug: string; name: string; description: string | null };
@@ -57,6 +60,8 @@ function formatValue(field: Payload["fields"][number], raw: any, relations: Payl
 function PublicRecordDetail() {
   const { slug, tableId, recordId } = Route.useParams();
   const q = useQuery({ queryKey: ["public-record", slug, tableId, recordId], queryFn: () => fetchDetail(slug, tableId, recordId) });
+  const [interestOpen, setInterestOpen] = useState(false);
+
 
   if (q.isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
