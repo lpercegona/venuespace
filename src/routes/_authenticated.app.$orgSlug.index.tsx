@@ -176,22 +176,16 @@ function OrgDashboard() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {tables.data.map((t: any) => (
-              <Link key={t.id} to="/app/$orgSlug/tables/$tableId" params={{ orgSlug, tableId: t.id }}>
-                <Card className="h-full transition-shadow hover:shadow-elegant">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="font-display text-base">{t.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">{t.description || "Sem descrição."}</p>
-                    <div className="mt-3 flex items-center gap-2">
-                      <Badge variant="secondary" className="font-mono">/{t.slug}</Badge>
-                      {t.bookable ? <Badge>reservas</Badge> : null}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+              <TableCard
+                key={t.id}
+                t={t}
+                orgSlug={orgSlug}
+                canEdit={canEdit}
+                onSaved={() => tables.refetch()}
+              />
             ))}
           </div>
+
         )}
       </section>
 
