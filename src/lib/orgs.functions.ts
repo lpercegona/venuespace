@@ -29,7 +29,7 @@ export const listMyOrganizations = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("memberships")
-      .select("role, organization:organizations(id, slug, name, description, logo_url, category_id, timezone, currency, currency_display, created_at)")
+      .select("role, organization:organizations(id, slug, name, description, logo_url, category_id, timezone, currency, currency_display, system_data, created_at)")
       .eq("user_id", context.userId)
       .order("created_at", { referencedTable: "organizations", ascending: false });
     if (error) throw new Error(error.message);
@@ -54,6 +54,7 @@ export const createOrganization = createServerFn({ method: "POST" })
     if (data.timezone !== undefined) patch.timezone = data.timezone;
     if (data.currency !== undefined) patch.currency = data.currency;
     if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
+    if (data.system_data !== undefined) patch.system_data = data.system_data;
     if (Object.keys(patch).length > 0) {
       const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
       if (uErr) throw new Error(uErr.message);
@@ -67,7 +68,7 @@ export const getOrganizationBySlug = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: org, error } = await context.supabase
       .from("organizations")
-      .select("id, slug, name, description, logo_url, category_id, timezone, currency, currency_display, created_at")
+      .select("id, slug, name, description, logo_url, category_id, timezone, currency, currency_display, system_data, created_at")
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -92,6 +93,7 @@ const orgUpdate = z.object({
   timezone: z.string().max(64).nullable().optional(),
   currency: z.string().max(8).nullable().optional(),
   currency_display: currencyDisplaySchema,
+  system_data: z.record(z.string(), z.any()).optional(),
 });
 
 export const updateOrganization = createServerFn({ method: "POST" })
