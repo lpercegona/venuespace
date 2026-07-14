@@ -20,10 +20,8 @@ export function PublicHeader({ back, showAuthActions = true, showExplore = true 
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {back ? (
             <Link
-              // @ts-expect-error - back.to/params are validated at call sites
-              to={back.to}
-              // @ts-expect-error - see above
-              params={back.params}
+              to={back.to as any}
+              params={back.params as any}
               className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label={back.label ?? "Voltar"}
             >
