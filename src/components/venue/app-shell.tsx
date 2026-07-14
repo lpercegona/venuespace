@@ -12,6 +12,7 @@ import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building
 import { getOrganizationBySlug, listMyOrganizations } from "@/lib/orgs.functions";
 import { getMyProfile } from "@/lib/profile.functions";
 import { amISuperAdmin } from "@/lib/instance-settings.functions";
+import { useLabels } from "@/hooks/use-instance-context";
 import { NotificationsBell } from "./notifications-bell";
 import { ChatWidget } from "./chat-widget";
 import { SettingsModal } from "./settings-modal";
@@ -27,6 +28,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
   const navigate = useNavigate();
   const params = useParams({ strict: false }) as { orgSlug?: string };
   const orgSlug = params.orgSlug;
+  const { t } = useLabels();
   const org = useQuery({
     queryKey: ["org", orgSlug],
     queryFn: () => getOrganizationBySlug({ data: { slug: orgSlug! } }),
@@ -56,13 +58,13 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                 <Button variant="outline" size="sm" className="max-w-[200px] gap-1.5">
                   <Building2 className="h-4 w-4 shrink-0" />
                   <span className="truncate">
-                    {org.data?.name ?? (orgSlug ? orgSlug : "Selecionar organização")}
+                    {org.data?.name ?? (orgSlug ? orgSlug : `Selecionar ${t("organization", "organização").toLowerCase()}`)}
                   </span>
                   <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>Organizações</DropdownMenuLabel>
+                <DropdownMenuLabel>{t("organizations", "Organizações")}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {(myOrgs.data ?? []).map((o: any) => (
                   <DropdownMenuItem
@@ -74,11 +76,11 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                   </DropdownMenuItem>
                 ))}
                 {(myOrgs.data ?? []).length === 0 ? (
-                  <DropdownMenuItem disabled>Nenhuma organização</DropdownMenuItem>
+                  <DropdownMenuItem disabled>Nenhuma {t("organization", "organização").toLowerCase()}</DropdownMenuItem>
                 ) : null}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => navigate({ to: "/app" })}>
-                  <List className="h-4 w-4" />Ver todas as organizações
+                  <List className="h-4 w-4" />Ver todas as {t("organizations", "organizações").toLowerCase()}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -112,10 +114,10 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                 {orgSlug ? (
                   <>
                     <DropdownMenuItem onSelect={() => navigate({ to: "/app/$orgSlug/calendar", params: { orgSlug } })}>
-                      <CalendarDays className="h-4 w-4" />Calendário
+                      <CalendarDays className="h-4 w-4" />{t("bookings", "Reservas")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => navigate({ to: "/app/$orgSlug/members", params: { orgSlug } })}>
-                      <Users className="h-4 w-4" />Membros
+                      <Users className="h-4 w-4" />{t("memberships", "Membros")}
                     </DropdownMenuItem>
                   </>
                 ) : null}

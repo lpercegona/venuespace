@@ -48,6 +48,13 @@ import {
   type CategoryDefaultField,
   type OrganizationCategory,
 } from "@/lib/organization-categories.functions";
+import {
+  listSystemFieldsPublic,
+  upsertSystemField,
+  deleteSystemField,
+  type SystemFieldRow,
+  type SystemFieldScope,
+} from "@/lib/system-fields.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Venuespace" }, { name: "robots", content: "noindex" }] }),
@@ -86,18 +93,20 @@ function AdminPage() {
       }
     >
       <Tabs defaultValue="general">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="general">Geral</TabsTrigger>
           <TabsTrigger value="labels">Rótulos</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
           <TabsTrigger value="layout">Layout público</TabsTrigger>
+          <TabsTrigger value="system">Campos de sistema</TabsTrigger>
         </TabsList>
         <TabsContent value="general"><GeneralSection /></TabsContent>
         <TabsContent value="labels"><LabelsSection /></TabsContent>
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
         <TabsContent value="layout"><PublicLayoutSection /></TabsContent>
+        <TabsContent value="system"><SystemFieldsSection /></TabsContent>
       </Tabs>
     </AppShell>
   );
@@ -650,6 +659,148 @@ function PublicLayoutSection() {
                         <div className="flex gap-1">
                           <Button size="sm" variant="outline" onClick={() => openEdit(it)}><Pencil className="h-4 w-4" /></Button>
                           <Button size="sm" variant="outline" onClick={() => remove(it.id)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )
+        }
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------- System fields (instance-level, per scope) ----------
+
+const SCOPES: Array<{ value: SystemFieldScope; label: string }> = [
+  { value: "organization", label: "Organização" },
+  { value: "table", label: "Tabela" },
+  { value: "record", label: "Registro" },
+];
+
+function SystemFieldsSection() {
+  const qc = useQueryClient();
+  const [scope, setScope] = useState<SystemFieldScope>("organization");
+  const fields = useQuery({
+    queryKey: ["admin-system-fields", scope],
+    queryFn: () => listSystemFieldsPublic({ data: { scope } }),
+  });
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<SystemFieldRow | null>(null);
+  const [key, setKey] = useState("");
+  const [flabel, setFlabel] = useState("");
+  const [ftype, setFtype] = useState("text");
+  const [freq, setFreq] = useState(false);
+  const [forder, setForder] = useState(0);
+  const [saving, setSaving] = useState(false);
+
+  function openNew() {
+    setEditing(null); setKey(""); setFlabel(""); setFtype("text"); setFreq(false);
+    setForder((fields.data ?? []).length); setOpen(true);
+  }
+  function openEdit(f: SystemFieldRow) {
+    setEditing(f); setKey(f.key); setFlabel(f.label); setFtype(f.type);
+    setFreq(f.required); setForder(f.position); setOpen(true);
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await upsertSystemField({ data: {
+        id: editing?.id, scope, key, label: flabel, type: ftype as any,
+        required: freq, position: forder,
+      } });
+      toast.success("Campo salvo");
+      setOpen(false);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["admin-system-fields", scope] }),
+        qc.invalidateQueries({ queryKey: ["system-fields"] }),
+      ]);
+    } catch (err) { toast.error((err as Error).message); } finally { setSaving(false); }
+  }
+
+  async function remove(id: string) {
+    try {
+      await deleteSystemField({ data: { scope, id } });
+      toast.success("Campo removido");
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["admin-system-fields", scope] }),
+        qc.invalidateQueries({ queryKey: ["system-fields"] }),
+      ]);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle className="font-display">Campos de sistema</CardTitle>
+          <p className="text-sm text-muted-foreground">Definidos globalmente pelo super admin. Aparecem em toda organização/tabela/registro conforme o escopo.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={scope} onValueChange={(v) => setScope(v as SystemFieldScope)}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {SCOPES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button size="sm" onClick={openNew}><Plus className="h-4 w-4" />Novo campo</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo de sistema"}</DialogTitle></DialogHeader>
+              <form onSubmit={save} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2"><Label htmlFor="sf-key">Chave (snake_case)</Label><Input id="sf-key" required value={key} onChange={(e) => setKey(e.target.value)} placeholder="segmento" /></div>
+                  <div className="space-y-2"><Label htmlFor="sf-label">Rótulo</Label><Input id="sf-label" required value={flabel} onChange={(e) => setFlabel(e.target.value)} /></div>
+                  <div className="space-y-2">
+                    <Label>Tipo</Label>
+                    <Select value={ftype} onValueChange={setFtype}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {FIELD_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2"><Label htmlFor="sf-ord">Ordem</Label><Input id="sf-ord" type="number" value={forder} onChange={(e) => setForder(Number(e.target.value))} /></div>
+                  <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
+                    <span className="text-sm">Obrigatório</span>
+                    <Switch checked={freq} onCheckedChange={setFreq} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {fields.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> :
+          (fields.data ?? []).length === 0 ? (
+            <EmptyState icon={<Plus className="h-5 w-5" />} title="Sem campos de sistema" description="Adicione campos que aparecerão em toda nova/edição neste escopo." />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow><TableHead>Ordem</TableHead><TableHead>Chave</TableHead><TableHead>Rótulo</TableHead><TableHead>Tipo</TableHead><TableHead>Obrigatório</TableHead><TableHead className="w-32"></TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {(fields.data ?? []).map((f) => (
+                    <TableRow key={f.id}>
+                      <TableCell className="w-16">{f.position}</TableCell>
+                      <TableCell className="font-mono text-xs">{f.key}</TableCell>
+                      <TableCell>{f.label}</TableCell>
+                      <TableCell><Badge variant="secondary">{f.type}</Badge></TableCell>
+                      <TableCell>{f.required ? "sim" : "—"}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="outline" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="outline" onClick={() => remove(f.id)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>

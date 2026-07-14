@@ -18,6 +18,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as PublicSlugTableIdRouteImport } from './routes/public.$slug.$tableId'
 import { Route as ApiPublicTablesRouteImport } from './routes/api/public/tables'
+import { Route as ApiPublicSystemFieldsRouteImport } from './routes/api/public/system-fields'
 import { Route as ApiPublicPlatformLabelsRouteImport } from './routes/api/public/platform-labels'
 import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/api/public/organization-categories'
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
@@ -82,6 +83,11 @@ const PublicSlugTableIdRoute = PublicSlugTableIdRouteImport.update({
 const ApiPublicTablesRoute = ApiPublicTablesRouteImport.update({
   id: '/api/public/tables',
   path: '/api/public/tables',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSystemFieldsRoute = ApiPublicSystemFieldsRouteImport.update({
+  id: '/api/public/system-fields',
+  path: '/api/public/system-fields',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPlatformLabelsRoute = ApiPublicPlatformLabelsRouteImport.update({
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
+  '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
+  '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/$orgSlug/calendar': typeof AuthenticatedAppOrgSlugCalendarRoute
@@ -279,6 +287,7 @@ export interface FileRoutesById {
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
+  '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/platform-labels'
+    | '/api/public/system-fields'
     | '/api/public/tables'
     | '/public/$slug/$tableId'
     | '/app/'
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/platform-labels'
+    | '/api/public/system-fields'
     | '/api/public/tables'
     | '/app'
     | '/app/$orgSlug/calendar'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/platform-labels'
+    | '/api/public/system-fields'
     | '/api/public/tables'
     | '/public/$slug/$tableId'
     | '/_authenticated/app/'
@@ -405,6 +417,7 @@ export interface RootRouteChildren {
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
   ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
   ApiPublicPlatformLabelsRoute: typeof ApiPublicPlatformLabelsRoute
+  ApiPublicSystemFieldsRoute: typeof ApiPublicSystemFieldsRoute
   ApiPublicTablesRoute: typeof ApiPublicTablesRoute
   PublicSlugTableIdRoute: typeof PublicSlugTableIdRouteWithChildren
   ApiPublicSlugTableIdRoute: typeof ApiPublicSlugTableIdRouteWithChildren
@@ -477,6 +490,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/tables'
       fullPath: '/api/public/tables'
       preLoaderRoute: typeof ApiPublicTablesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/system-fields': {
+      id: '/api/public/system-fields'
+      path: '/api/public/system-fields'
+      fullPath: '/api/public/system-fields'
+      preLoaderRoute: typeof ApiPublicSystemFieldsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/platform-labels': {
@@ -712,6 +732,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
   ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,
   ApiPublicPlatformLabelsRoute: ApiPublicPlatformLabelsRoute,
+  ApiPublicSystemFieldsRoute: ApiPublicSystemFieldsRoute,
   ApiPublicTablesRoute: ApiPublicTablesRoute,
   PublicSlugTableIdRoute: PublicSlugTableIdRouteWithChildren,
   ApiPublicSlugTableIdRoute: ApiPublicSlugTableIdRouteWithChildren,
