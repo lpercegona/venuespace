@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PublicHeader } from "@/components/venue/public-header";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
