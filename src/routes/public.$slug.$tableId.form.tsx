@@ -129,7 +129,10 @@ function PublicFormPage() {
                 fields={schema.data.fields as any}
                 onSubmit={handleSubmit}
                 submitLabel={submitting ? "Enviando..." : "Enviar"}
+                disableUploads
+                disableOptionEditing
               />
+
             </div>
           </CardContent>
         </Card>
