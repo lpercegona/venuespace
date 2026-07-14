@@ -27,13 +27,12 @@ export const createOrganization = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const slug = data.slug ?? slugify(data.name);
     if (!slug) throw new Error("Slug inválido");
-    const { data: org, error } = await context.supabase
-      .from("organizations")
-      .insert({ name: data.name, slug, description: data.description ?? null, created_by: context.userId })
-      .select("id, slug, name")
-      .single();
+    const { data: rows, error } = await context.supabase
+      .rpc("create_organization", { _name: data.name, _slug: slug, _description: data.description ?? null });
     if (error) throw new Error(error.message);
-    return org;
+    const org = Array.isArray(rows) ? rows[0] : rows;
+    if (!org) throw new Error("Falha ao criar organização");
+    return org as { id: string; slug: string; name: string };
   });
 
 export const getOrganizationBySlug = createServerFn({ method: "GET" })
