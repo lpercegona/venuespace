@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useLabels } from "@/hooks/use-instance-context";
 
 import {
   amISuperAdmin,
@@ -62,6 +63,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 function AdminPage() {
+  const { t } = useLabels();
+  const organizationsLabel = t("organizations", "organizações").toLowerCase();
   const navigate = useNavigate();
   const gate = useQuery({ queryKey: ["is-super-admin"], queryFn: () => amISuperAdmin() });
 
@@ -85,7 +88,7 @@ function AdminPage() {
   return (
     <AppShell
       title="Configurações da instância"
-      subtitle="Ajustes globais que valem para todas as organizações."
+      subtitle={`Ajustes globais que valem para todas as ${organizationsLabel}.`}
       actions={
         <Button variant="outline" size="sm" asChild>
           <Link to="/app"><ArrowLeft className="h-4 w-4" />Voltar</Link>
@@ -115,6 +118,7 @@ function AdminPage() {
 // ---------- General ----------
 
 function GeneralSection() {
+  const { t } = useLabels();
   const qc = useQueryClient();
   const s = useQuery({ queryKey: ["instance-settings-admin"], queryFn: () => getInstanceSettingsPublic() });
   const [tz, setTz] = useState("America/Sao_Paulo");
@@ -200,7 +204,7 @@ function GeneralSection() {
           <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-4">
             <div>
               <p className="font-medium">Permitir gestão de campos por usuários</p>
-              <p className="text-sm text-muted-foreground">Quando desligado, apenas o super admin pode criar/editar/apagar campos em tabelas.</p>
+              <p className="text-sm text-muted-foreground">Quando desligado, apenas o super admin pode criar/editar/apagar {t("fields", "campos").toLowerCase()} em {t("tables", "tabelas").toLowerCase()}.</p>
             </div>
             <Switch checked={allow} onCheckedChange={setAllow} />
           </div>
@@ -278,6 +282,10 @@ function LabelsSection() {
 // ---------- Categories ----------
 
 function CategoriesSection() {
+  const { t } = useLabels();
+  const organizationLabel = t("organization", "organização").toLowerCase();
+  const organizationsLabel = t("organizations", "organizações").toLowerCase();
+  const fieldsLabel = t("fields", "campos").toLowerCase();
   const qc = useQueryClient();
   const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
   const counts = useQuery({ queryKey: ["admin-org-cat-counts"], queryFn: () => countOrganizationsByCategory() });
@@ -326,7 +334,7 @@ function CategoriesSection() {
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="font-display">Categorias de organização</CardTitle>
+        <CardTitle className="font-display">Categorias de {organizationLabel}</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm" onClick={openNew}><Plus className="h-4 w-4" />Nova</Button></DialogTrigger>
           <DialogContent>
@@ -345,11 +353,11 @@ function CategoriesSection() {
       </CardHeader>
       <CardContent>
         {cats.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : (cats.data ?? []).length === 0 ? (
-          <EmptyState icon={<Shield className="h-5 w-5" />} title="Nenhuma categoria criada" description="Crie a primeira categoria para começar a classificar organizações." />
+          <EmptyState icon={<Shield className="h-5 w-5" />} title="Nenhuma categoria criada" description={`Crie a primeira categoria para começar a classificar ${organizationsLabel}.`} />
         ) : (
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Ícone</TableHead><TableHead>Descrição</TableHead><TableHead>Organizações</TableHead><TableHead className="w-32"></TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Ícone</TableHead><TableHead>Descrição</TableHead><TableHead>{t("organizations", "Organizações")}</TableHead><TableHead className="w-32"></TableHead></TableRow></TableHeader>
               <TableBody>
                 {(cats.data ?? []).map((c) => (
                   <TableRow key={c.id}>
@@ -367,7 +375,7 @@ function CategoriesSection() {
                               <AlertDialogTitle>Excluir categoria?</AlertDialogTitle>
                               <AlertDialogDescription>
                                 {(counts.data?.[c.id] ?? 0) > 0
-                                  ? `${counts.data?.[c.id]} organização(ões) ficarão sem categoria. Campos padrão desta categoria serão perdidos.`
+                                  ? `${counts.data?.[c.id]} ${organizationLabel}(ões) ficarão sem categoria. ${t("fields", "Campos")} padrão desta categoria serão perdidos.`
                                   : "Esta ação é permanente."}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
@@ -397,6 +405,10 @@ const FIELD_TYPES = [
 ];
 
 function DefaultFieldsSection() {
+  const { t } = useLabels();
+  const organizationLabel = t("organization", "organização").toLowerCase();
+  const tableLabel = t("table", "tabela").toLowerCase();
+  const fieldsLabel = t("fields", "campos").toLowerCase();
   const qc = useQueryClient();
   const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
   const [selected, setSelected] = useState<string | null>(null);
@@ -490,7 +502,7 @@ function DefaultFieldsSection() {
         {!selected ? <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p> :
           fields.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> :
           (fields.data ?? []).length === 0 ? (
-            <EmptyState icon={<Plus className="h-5 w-5" />} title="Sem campos padrão" description="Adicione campos que serão semeados em toda tabela nova de organizações desta categoria." />
+            <EmptyState icon={<Plus className="h-5 w-5" />} title={`Sem ${fieldsLabel} padrão`} description={`Adicione ${fieldsLabel} que serão semeados em toda ${tableLabel} nova de ${organizationLabel} desta categoria.`} />
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -531,6 +543,9 @@ const FIELD_SOURCES: Array<{ value: FieldSourceKind; label: string; hint: string
 ];
 
 function PublicLayoutSection() {
+  const { t } = useLabels();
+  const tablesLabel = t("tables", "tabelas").toLowerCase();
+  const fieldsLabel = t("fields", "campos").toLowerCase();
   const qc = useQueryClient();
   const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
   const [selected, setSelected] = useState<string | null>(null);
@@ -589,7 +604,7 @@ function PublicLayoutSection() {
     if (!selected) return;
     try {
       const r = await seedCategoryDefaultsRetroactive({ data: { category_id: selected } });
-      toast.success(`${r.fields_created} campo(s) criado(s) em ${r.tables_touched} tabela(s)`);
+      toast.success(`${r.fields_created} ${fieldsLabel} criado(s) em ${r.tables_touched} ${tablesLabel}`);
     } catch (err) { toast.error((err as Error).message); }
   }
 
@@ -598,7 +613,7 @@ function PublicLayoutSection() {
       <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle className="font-display">Layout público por categoria</CardTitle>
-          <p className="text-sm text-muted-foreground">Define quais campos e ícones aparecem nos cards públicos das tabelas desta categoria.</p>
+          <p className="text-sm text-muted-foreground">Define quais {fieldsLabel} e ícones aparecem nos cards públicos das {tablesLabel} desta categoria.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={selected ?? ""} onValueChange={setSelected}>
@@ -642,7 +657,7 @@ function PublicLayoutSection() {
         {!selected ? <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p> :
           items.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> :
           (items.data ?? []).length === 0 ? (
-            <EmptyState icon={<Plus className="h-5 w-5" />} title="Sem itens de layout" description="Adicione os campos que devem aparecer nos cards públicos das tabelas desta categoria." />
+            <EmptyState icon={<Plus className="h-5 w-5" />} title="Sem itens de layout" description={`Adicione os ${fieldsLabel} que devem aparecer nos cards públicos das ${tablesLabel} desta categoria.`} />
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -682,6 +697,10 @@ const SCOPES: Array<{ value: SystemFieldScope; label: string }> = [
 ];
 
 function SystemFieldsSection() {
+  const { t } = useLabels();
+  const organizationLabel = t("organization", "organização").toLowerCase();
+  const tableLabel = t("table", "tabela").toLowerCase();
+  const recordLabel = t("record", "registro").toLowerCase();
   const qc = useQueryClient();
   const [scope, setScope] = useState<SystemFieldScope>("organization");
   const fields = useQuery({
@@ -773,7 +792,7 @@ function SystemFieldsSection() {
       <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle className="font-display">Campos de sistema</CardTitle>
-          <p className="text-sm text-muted-foreground">Definidos globalmente pelo super admin. Aparecem em toda organização/tabela/registro conforme o escopo.</p>
+          <p className="text-sm text-muted-foreground">Definidos globalmente pelo super admin. Aparecem em toda {organizationLabel}/{tableLabel}/{recordLabel} conforme o escopo.</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={scope} onValueChange={(v) => setScope(v as SystemFieldScope)}>

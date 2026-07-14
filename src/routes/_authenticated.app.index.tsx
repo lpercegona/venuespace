@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Building2, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
+import { useLabels } from "@/hooks/use-instance-context";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
@@ -28,6 +29,11 @@ export const Route = createFileRoute("/_authenticated/app/")({
 });
 
 function OrgsPage() {
+  const { t } = useLabels();
+  const organizationLabel = t("organization", "organização").toLowerCase();
+  const organizationsLabel = t("organizations", "organizações").toLowerCase();
+  const tableLabel = t("table", "tabela").toLowerCase();
+  const tablesLabel = t("tables", "tabelas").toLowerCase();
   const fetchOrgs = (listMyOrganizations);
   const createOrg = (createOrganization);
   const router = useRouter();
@@ -75,16 +81,16 @@ function OrgsPage() {
 
   return (
     <AppShell
-      title="Minhas organizações"
-      subtitle="Cada organização é um espaço isolado com suas próprias tabelas, membros e páginas públicas."
+      title={`Minhas ${organizationsLabel}`}
+      subtitle={`Cada ${organizationLabel} é um espaço isolado com suas próprias ${tablesLabel}, membros e páginas públicas.`}
       actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4" />Nova organização</Button>
+            <Button><Plus className="h-4 w-4" />Nova {organizationLabel}</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="font-display">Nova organização</DialogTitle>
+              <DialogTitle className="font-display">Nova {organizationLabel}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
@@ -126,9 +132,9 @@ function OrgsPage() {
       ) : !data || data.length === 0 ? (
         <EmptyState
           icon={<Building2 className="h-5 w-5" />}
-          title="Você ainda não faz parte de nenhuma organização"
-          description="Crie a primeira para começar a modelar suas tabelas e páginas."
-          action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" />Nova organização</Button>}
+          title={`Você ainda não faz parte de nenhuma ${organizationLabel}`}
+          description={`Crie a primeira para começar a modelar suas ${tablesLabel} e páginas.`}
+          action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" />Nova {organizationLabel}</Button>}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

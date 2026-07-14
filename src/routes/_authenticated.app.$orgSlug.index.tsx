@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table as TableIcon, Plus, Loader2, UserPlus, Users, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
+import { useLabels } from "@/hooks/use-instance-context";
 
 export const Route = createFileRoute("/_authenticated/app/$orgSlug/")({
   head: ({ params }) => ({
@@ -32,6 +33,9 @@ export const Route = createFileRoute("/_authenticated/app/$orgSlug/")({
 
 function OrgDashboard() {
   const { orgSlug } = Route.useParams();
+  const { t } = useLabels();
+  const organizationLabel = t("organization", "organização").toLowerCase();
+  const tableLabel = t("table", "tabela").toLowerCase();
   const navigate = useNavigate();
   const fetchOrg = (getOrganizationBySlug);
   const fetchTables = (listTables);
@@ -74,7 +78,7 @@ function OrgDashboard() {
           bookable: tBookable,
         },
       });
-      toast.success("Tabela criada");
+      toast.success(`${t("table", "Tabela")} criada`);
       setOpenTable(false);
       setTName(""); setTDesc(""); setTBookable(false);
       await tables.refetch();
@@ -114,7 +118,7 @@ function OrgDashboard() {
     );
   }
   if (!org.data) {
-    return <AppShell title="Organização não encontrada" />;
+    return <AppShell title={`${t("organization", "Organização")} não encontrada`} />;
   }
 
   return (
@@ -125,16 +129,16 @@ function OrgDashboard() {
         <div className="flex flex-wrap items-center gap-2">
           {isOwner ? (
             <Button variant="outline" size="sm" onClick={() => setOpenEditOrg(true)}>
-              <Pencil className="h-4 w-4" />Editar organização
+              <Pencil className="h-4 w-4" />Editar {organizationLabel}
             </Button>
           ) : null}
           {canEdit ? (
             <Dialog open={openTable} onOpenChange={setOpenTable}>
               <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4" />Nova tabela</Button>
+                <Button><Plus className="h-4 w-4" />Nova {tableLabel}</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle className="font-display">Nova tabela</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle className="font-display">Nova {tableLabel}</DialogTitle></DialogHeader>
                 <form onSubmit={handleCreateTable} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="t-name">Nome</Label>
@@ -147,7 +151,7 @@ function OrgDashboard() {
                   </div>
                   <div className="flex items-center justify-between rounded-md border border-border p-3">
                     <div>
-                      <Label htmlFor="t-book" className="text-sm">Tabela com reservas</Label>
+                      <Label htmlFor="t-book" className="text-sm">{t("table", "Tabela")} com reservas</Label>
                       <p className="text-xs text-muted-foreground">Ative para recursos com data de início e fim.</p>
                     </div>
                     <Switch id="t-book" checked={tBookable} onCheckedChange={setTBookable} />
@@ -166,16 +170,16 @@ function OrgDashboard() {
       <section className="mb-10">
         <div className="mb-3 flex items-center gap-2">
           <TableIcon className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-display text-lg font-semibold">Tabelas</h2>
+          <h2 className="font-display text-lg font-semibold">{t("tables", "Tabelas")}</h2>
         </div>
         {tables.isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : !tables.data || tables.data.length === 0 ? (
           <EmptyState
             icon={<TableIcon className="h-5 w-5" />}
-            title="Nenhuma tabela ainda"
-            description="Crie sua primeira tabela para começar a modelar seus dados."
-            action={canEdit ? <Button onClick={() => setOpenTable(true)}><Plus className="h-4 w-4" />Nova tabela</Button> : undefined}
+            title={`Nenhuma ${tableLabel} ainda`}
+            description={`Crie sua primeira ${tableLabel} para começar a modelar seus dados.`}
+            action={canEdit ? <Button onClick={() => setOpenTable(true)}><Plus className="h-4 w-4" />Nova {tableLabel}</Button> : undefined}
           />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -272,6 +276,9 @@ function OrgDashboard() {
 function TableCard({
   t, orgSlug, canEdit, isOwner, onSaved,
 }: { t: any; orgSlug: string; canEdit: boolean; isOwner: boolean; onSaved: () => void }) {
+  const { t: label } = useLabels();
+  const tableLabel = label("table", "tabela").toLowerCase();
+  const recordsLabel = label("records", "registros").toLowerCase();
   const [editing, setEditing] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [delConfirmName, setDelConfirmName] = useState("");
@@ -286,7 +293,7 @@ function TableCard({
     setSaving(true);
     try {
       await updateTable({ data: { id: t.id, name, description: desc || null, bookable } });
-      toast.success("Tabela atualizada");
+      toast.success(`${label("table", "Tabela")} atualizada`);
       setEditing(false);
       onSaved();
     } catch (err) { toast.error((err as Error).message); }
@@ -314,20 +321,20 @@ function TableCard({
           <div className="absolute right-2 top-2 flex gap-1">
             <Button
               type="button" variant="ghost" size="icon" className="h-8 w-8"
-              aria-label="Editar tabela"
+              aria-label={`Editar ${tableLabel}`}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); }}
             ><Pencil className="h-4 w-4" /></Button>
             {isOwner ? (
               <Button
                 type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
-                aria-label="Excluir tabela"
+                aria-label={`Excluir ${tableLabel}`}
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDel(true); }}
               ><Trash2 className="h-4 w-4" /></Button>
             ) : null}
           </div>
           <Dialog open={editing} onOpenChange={setEditing}>
             <DialogContent>
-              <DialogHeader><DialogTitle className="font-display">Editar tabela</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="font-display">Editar {tableLabel}</DialogTitle></DialogHeader>
               <form onSubmit={handleSave} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor={`e-n-${t.id}`}>Nome</Label>
@@ -338,7 +345,7 @@ function TableCard({
                   <Textarea id={`e-d-${t.id}`} rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} />
                 </div>
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
-                  <Label htmlFor={`e-b-${t.id}`} className="text-sm">Tabela com reservas</Label>
+                  <Label htmlFor={`e-b-${t.id}`} className="text-sm">{label("table", "Tabela")} com reservas</Label>
                   <Switch id={`e-b-${t.id}`} checked={bookable} onCheckedChange={setBookable} />
                 </div>
                 <DialogFooter>
@@ -352,9 +359,9 @@ function TableCard({
             <AlertDialog open={confirmDel} onOpenChange={setConfirmDel}>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir tabela?</AlertDialogTitle>
+                  <AlertDialogTitle>{`Excluir ${tableLabel}?`}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Isso remove permanentemente a tabela, seus campos e registros. Digite o nome
+                    Isso remove permanentemente a {tableLabel}, seus campos e {recordsLabel}. Digite o nome
                     <span className="font-mono"> {t.name} </span> para confirmar.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -368,7 +375,7 @@ function TableCard({
                       setDeleting(true);
                       try {
                         await deleteTable({ data: { id: t.id, confirm_name: delConfirmName } });
-                        toast.success("Tabela excluída");
+                        toast.success(`${label("table", "Tabela")} excluída`);
                         setConfirmDel(false);
                         setDelConfirmName("");
                         onSaved();

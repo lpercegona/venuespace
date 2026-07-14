@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { addFieldOption } from "@/lib/orgs.functions";
 import type { FieldRow } from "@/lib/records.functions";
+import { useLabels } from "@/hooks/use-instance-context";
 
 type Props = {
   fields: FieldRow[];
@@ -122,6 +123,8 @@ export function DynamicForm({
   fields, initial = {}, submitLabel = "Salvar", onCancel, onSubmit,
   disableUploads, disableOptionEditing, onFieldsChanged,
 }: Props) {
+  const { t } = useLabels();
+  const recordLabel = t("record", "registro").toLowerCase();
   const [values, setValues] = useState<Record<string, any>>(initial);
   const [saving, setSaving] = useState(false);
   const [localOptions, setLocalOptions] = useState<Record<string, string[]>>({});
@@ -258,7 +261,7 @@ export function DynamicForm({
             <div key={f.id} className="space-y-2">
               {labelEl}
               <Input id={id} type={inputType} required={f.required} value={v ?? ""}
-                placeholder={f.type === "relation" ? "UUID do registro relacionado" : undefined}
+                placeholder={f.type === "relation" ? `UUID do ${recordLabel} relacionado` : undefined}
                 onChange={(e) => set(f.key, e.target.value)} />
             </div>
           );

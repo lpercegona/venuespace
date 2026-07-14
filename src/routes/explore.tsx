@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Search, Table as TableIcon } from "lucide-react";
 import type { PublicTableSummary } from "@/lib/public.server";
 import { PublicHeader } from "@/components/venue/public-header";
+import { useLabels } from "@/hooks/use-instance-context";
 
 export const Route = createFileRoute("/explore")({
   head: () => ({
@@ -34,6 +35,10 @@ async function fetchTables(q: string, offset: number): Promise<{ items: PublicTa
 }
 
 function ExplorePage() {
+  const { t } = useLabels();
+  const organizationLabel = t("organization", "organização").toLowerCase();
+  const tableLabel = t("table", "tabela").toLowerCase();
+  const tablesLabel = t("tables", "tabelas").toLowerCase();
   const [term, setTerm] = useState("");
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
@@ -52,7 +57,7 @@ function ExplorePage() {
 
 
       <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Explorar tabelas públicas</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Explorar {tablesLabel} públicas</h1>
         <p className="mt-2 text-sm text-muted-foreground">Navegue por catálogos, campanhas e listagens publicadas.</p>
 
         <form
@@ -61,7 +66,7 @@ function ExplorePage() {
         >
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Buscar por tabela ou organização" value={term} onChange={(e) => setTerm(e.target.value)} />
+            <Input className="pl-9" placeholder={`Buscar por ${tableLabel} ou ${organizationLabel}`} value={term} onChange={(e) => setTerm(e.target.value)} />
           </div>
           <Button type="submit">Buscar</Button>
         </form>
@@ -70,7 +75,7 @@ function ExplorePage() {
           {query.isLoading ? (
             <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : items.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">Nenhuma tabela encontrada.</p>
+            <p className="py-16 text-center text-sm text-muted-foreground">Nenhuma {tableLabel} encontrada.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((it) => (
