@@ -259,10 +259,10 @@ function RecordsPage() {
             {subFields.length > 0 ? (
               <div className="space-y-2">
                 <Label>Campo relação para o registro de origem (opcional)</Label>
-                <Select value={autoRel} onValueChange={setAutoRel}>
+                <Select value={autoRel || "__none__"} onValueChange={(v) => setAutoRel(v === "__none__" ? "" : v)}>
                   <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
                     {subFields.filter((f) => f.type === "relation").map((f) => (
                       <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
                     ))}
