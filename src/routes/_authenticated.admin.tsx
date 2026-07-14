@@ -788,8 +788,8 @@ function SystemFieldsSection() {
               <DialogHeader><DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo de sistema"}</DialogTitle></DialogHeader>
               <form onSubmit={save} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2"><Label htmlFor="sf-key">Chave (snake_case)</Label><Input id="sf-key" required value={key} onChange={(e) => setKey(e.target.value)} placeholder="segmento" /></div>
-                  <div className="space-y-2"><Label htmlFor="sf-label">Rótulo</Label><Input id="sf-label" required value={flabel} onChange={(e) => setFlabel(e.target.value)} /></div>
+                  <div className="space-y-2"><Label htmlFor="sf-key">Chave</Label><Input id="sf-key" required value={key} onChange={(e) => onKeyChange(e.target.value)} placeholder="segmento" readOnly={!!editing} disabled={!!editing} /></div>
+                  <div className="space-y-2"><Label htmlFor="sf-label">Rótulo</Label><Input id="sf-label" required value={flabel} onChange={(e) => onLabelChange(e.target.value)} /></div>
                   <div className="space-y-2">
                     <Label>Tipo</Label>
                     <Select value={ftype} onValueChange={setFtype}>
