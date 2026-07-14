@@ -11,7 +11,19 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 
 ---
 
+## 2026-07-14 17:20 — Correção: bloqueio na criação de organização
+
+- Verificado que as chaves de assinatura JWT do projeto já estão em ES256 (`in_use`); HS256 permanece apenas como `previously_used`.
+- Confirmado `.env` com chaves `sb_publishable_…` (novo formato) em `SUPABASE_PUBLISHABLE_KEY` e `VITE_SUPABASE_PUBLISHABLE_KEY`; dev server reiniciado para recarregar `process.env`.
+- `createOrganization` mantida como RPC `public.create_organization` (SECURITY DEFINER) — validação de `auth.uid()` e inserção acontecem no banco, contornando erro de RLS/policy no INSERT direto.
+- `src/hooks/use-auth.ts`: revalidação da sessão via `supabase.auth.getUser()`; token inválido/stale (ex.: emitido antes da rotação de chaves) dispara `signOut({ scope: "local" })` e o guard `_authenticated` redireciona para `/auth`.
+- Varredura de regressão executada sobre Iterações 1–8: server fns em `orgs.functions.ts`, `records.functions.ts`, `messages.functions.ts`, `applications.functions.ts` e rotas `src/routes/api/public/*` continuam usando o padrão correto (`.functions.ts` para app-internal com `requireSupabaseAuth`; `public.server.ts` publishable-key para rotas anônimas).
+
+---
+
 ## 2026-07-14 18:30 — Iterações 5, 6, 7, 8
+
+
 
 **Iteração 5 — Candidatura autenticada + /me/applications:**
 - Migração RLS: `records: applicants can read own` (aplicant_user_id = auth.uid()); índices `messages(read_at)` e `records(applicant_user_id)`.
