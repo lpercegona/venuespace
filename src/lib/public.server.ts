@@ -5,7 +5,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type PublicTablePayload = {
-  organization: { id: string; slug: string; name: string; description: string | null; logo_url: string | null };
+  organization: { id: string; slug: string; name: string; description: string | null; logo_url: string | null; category_id: string | null };
   table: { id: string; slug: string; name: string; description: string | null; icon: string | null; bookable: boolean };
   fields: Array<{ id: string; key: string; label: string; type: string; position: number; config: Record<string, any> | null }>;
   records: Array<{ id: string; data: Record<string, any>; deal_status: string; created_at: string }>;
@@ -15,6 +15,7 @@ export type PublicTablePayload = {
     auto_relation_field_id: string | null;
     form_field_ids: string[] | null;
   } | null;
+  category_layout: Array<{ id: string; field_source: string; field_ref: string; icon: string | null; label_override: string | null; order_index: number }>;
 };
 
 export type PublicTableSummary = {
@@ -82,7 +83,7 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
 
   const { data: org, error: orgErr } = await sb
     .from("organizations")
-    .select("id, slug, name, description, logo_url")
+    .select("id, slug, name, description, logo_url, category_id")
     .eq("slug", slug)
     .maybeSingle();
   if (orgErr) throw new Error(orgErr.message);
@@ -127,10 +128,21 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
       }
     : null;
 
+  let category_layout: PublicTablePayload["category_layout"] = [];
+  if ((org as any).category_id) {
+    const { data: layout } = await sb
+      .from("organization_category_public_layouts")
+      .select("id, field_source, field_ref, icon, label_override, order_index")
+      .eq("category_id", (org as any).category_id)
+      .order("order_index", { ascending: true });
+    category_layout = (layout ?? []) as any;
+  }
+
   return {
     organization: {
       id: org.id, slug: org.slug, name: org.name,
       description: org.description ?? null, logo_url: org.logo_url ?? null,
+      category_id: (org as any).category_id ?? null,
     },
     table: {
       id: table.id, slug: table.slug, name: table.name, description: table.description ?? null,
@@ -139,6 +151,7 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
     fields: (fields ?? []) as any,
     records: (records ?? []) as any,
     public_form_view,
+    category_layout,
   };
 }
 

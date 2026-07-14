@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2, MessageCircle, type LucideIcon } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,13 +10,24 @@ import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader } from "@/components/venue/public-header";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
+type LayoutItem = { id: string; field_source: string; field_ref: string; icon: string | null; label_override: string | null; order_index: number };
+
 type Payload = {
-  organization: { id: string; slug: string; name: string; description: string | null };
+  organization: { id: string; slug: string; name: string; description: string | null; category_id: string | null };
   table: { id: string; name: string; description: string | null };
   fields: Array<{ id: string; key: string; label: string; type: string; position: number }>;
   records: Array<{ id: string; data: Record<string, any>; deal_status: string; created_at: string }>;
   public_form_view: { id: string; auto_relation_field_id: string | null } | null;
+  category_layout: LayoutItem[];
 };
+
+function IconByName({ name, className }: { name: string | null; className?: string }) {
+  if (!name) return null;
+  const Cmp = (LucideIcons as any)[name] as LucideIcon | undefined;
+  if (!Cmp) return null;
+  return <Cmp className={className ?? "h-4 w-4"} />;
+}
+
 
 async function fetchPublic(slug: string, tableId: string): Promise<Payload> {
   const res = await fetch(`/api/public/${encodeURIComponent(slug)}/${encodeURIComponent(tableId)}`);

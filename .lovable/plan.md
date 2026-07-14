@@ -1,123 +1,111 @@
-## Iteração 9 — Configurações Gerais da Instância (Super Admin)
+# Iteração 10 — Configurações estruturais do super admin
 
-Escopo fechado. Governada pela Diretriz §0. Sem White Label. Registro obrigatório em `CHANGELOG.md`.
+Escopo fechado. Governada pela Diretriz §0. Registro obrigatório em `CHANGELOG.md`.
 
-### Decisões (respostas do usuário)
-1. **Fuso/moeda**: padrão da instância + override por organização.
-2. **Permissão de campos**: toggle **global** em `instance_settings` (não por categoria). Descarta `organization_category_policies`.
-3. **Campos padrão da categoria**: aplicados a **toda tabela nova** de organização daquela categoria.
-4. **Retroatividade**: tudo retroativo. Rótulos refletem em toda UI. Política global de campos vale para orgs existentes. Categoria atribuída a org já existente altera comportamento a partir dali. Campos padrão **não** são retroinjetados em tabelas existentes — só em novas (evita corromper dados).
-5. **Confirmação adicional**: super admin tem CRUD explícito de `organization_categories` (adicionar, editar, remover) no painel — item de primeira classe da iteração.
+## Decisões consolidadas (respostas do usuário)
 
-### Modelo de dados
+1. **Layout público**: global por categoria de organização. Toda tabela publicada de uma categoria herda o layout público definido pelo super admin.
+2. **Campos compartilhados**: 3 tabelas independentes (`organization_fields`, `table_fields`, `record_fields`) com o **mesmo motor de tipos** dos `fields` de tabela. Gerenciadas pelo super admin no `/admin`.
+3. **Retroatividade — corrigir tudo**: (a) rótulos e formatação em telas ainda com strings fixas, (b) retroinjetar campos padrão da categoria em tabelas antigas (merge, sem apagar), (c) verificar seed quando categoria é atribuída a org existente.
+4. **Ícones**: escolhidos ao definir o layout público (não do field, não fixo por tipo).
 
-Migration única (com GRANTs, RLS e políticas):
+---
 
-```
-instance_settings              -- singleton (id smallint PK check id=1)
-  default_timezone text NOT NULL DEFAULT 'America/Sao_Paulo'
-  default_currency text NOT NULL DEFAULT 'BRL'
-  currency_display jsonb NOT NULL DEFAULT
-    '{"symbol":"R$","position":"before","decimal":",","thousand":"."}'
-  allow_user_field_management boolean NOT NULL DEFAULT true
-  updated_at timestamptz
+## 1. Modelo de dados (migration única)
 
-platform_labels (key text PK, label text, icon text, updated_at)
-  -- seed: organization, table, record, view, field, membership,
-  --       conversation, message, campaign, contribution, booking
+```sql
+-- Layout público por categoria
+organization_category_public_layouts (
+  id, category_id fk, field_source enum('org_field'|'table_field'|'record_field'),
+  field_ref text,      -- key do campo referenciado
+  icon text,           -- lucide icon name (obrigatório)
+  order_index int,
+  label_override text NULL,
+  created_at, updated_at
+)
 
-system_form_fields (id, form_key, field_key, label, icon, order_index)
-  -- form_key ∈ {create_organization, create_table, create_record}
-  -- seed com os campos atuais dos formulários internos
+-- Campos de sistema (3 tabelas, mesmo schema, mesmo motor de tipos que public.fields)
+organization_fields (id, key, label, type, required, position, config jsonb)
+table_fields        (id, key, label, type, required, position, config jsonb)
+record_fields       (id, key, label, type, required, position, config jsonb)
+-- config jsonb aceita: options, target_table_id, icon, computed spec, etc.
+-- type enum já existente em fields é reutilizado.
 
-organization_categories (id, name, icon, description, created_at, updated_at)
-
-organizations
-  + category_id uuid NULL REFERENCES organization_categories(id) ON DELETE SET NULL
-  + timezone text NULL              -- override; NULL = usa instance_settings
-  + currency text NULL              -- override
-  + currency_display jsonb NULL     -- override
-
-organization_category_default_fields
-  (id, category_id, field_name, field_type, config jsonb, order_index, created_at)
+-- Armazenamento dos valores desses campos de sistema
+organizations.system_data jsonb NOT NULL DEFAULT '{}'
+tables.system_data        jsonb NOT NULL DEFAULT '{}'
+records.system_data       jsonb NOT NULL DEFAULT '{}'
 ```
 
-**Descartado desta iteração:** `organization_category_policies` (resposta 2 tornou o toggle global).
+Descartada a tabela `system_form_fields` legada (só carregava label/ícone). Migration remove após copiar entries para `organization_fields`/`table_fields`/`record_fields` como campos `type='text'` iniciais quando fizer sentido; caso contrário, apaga.
 
-### RLS / permissões
-- `instance_settings`, `platform_labels`: `SELECT` para `anon` + `authenticated` (necessário em telas públicas para formatação/rotulagem). `INSERT/UPDATE/DELETE` restrito a `is_super_admin(auth.uid())`.
-- `system_form_fields`, `organization_category_default_fields`: `SELECT` a `authenticated`; escrita: super admin apenas.
-- `organization_categories`: `SELECT` a `anon` + `authenticated` (usado em filtro público `/explore` e seletor de categoria na criação/edição de org); `INSERT/UPDATE/DELETE` restrito a `is_super_admin(auth.uid())`. `ON DELETE SET NULL` em `organizations.category_id` protege orgs de "sumir" quando categoria é removida.
-- `organizations.category_id`/overrides: editável por `owner` da org (categoria e overrides próprios) e por super admin.
-- Verificação global `allow_user_field_management` aplicada nos server fns de criação/edição/remoção de fields — super admin sempre passa.
+RLS: SELECT anon+authenticated nas 4 novas tabelas (leitura em telas públicas); INSERT/UPDATE/DELETE somente `is_super_admin`. GRANTs correspondentes.
 
-### Backend (server fns)
+## 2. Backend
 
-Novos módulos, com `requireSupabaseAuth` + verificação `is_super_admin` onde aplicável:
+`src/lib/system-fields.functions.ts` (novo):
 
-- `src/lib/instance-settings.functions.ts`: `getInstanceSettings` (leitura pública via `/api/public/instance-settings`), `updateInstanceSettings` (super admin).
-- `src/lib/platform-labels.functions.ts`: `listPlatformLabels` (pública via `/api/public/platform-labels`), `upsertPlatformLabel`, `listSystemFormFields`, `upsertSystemFormField`.
-- `src/lib/organization-categories.functions.ts`:
-  - `listOrganizationCategories` (pública via `/api/public/organization-categories`).
-  - `createOrganizationCategory` (super admin) — nome, ícone lucide, descrição.
-  - `updateOrganizationCategory` (super admin).
-  - `deleteOrganizationCategory` (super admin) — `ON DELETE SET NULL` já protege orgs vinculadas; UI confirma "N organizações ficarão sem categoria".
-  - `listCategoryDefaultFields`, `upsertCategoryDefaultField`, `deleteCategoryDefaultField`, `reorderCategoryDefaultFields` (super admin).
-- `src/lib/orgs.functions.ts` (extensão): aceitar `category_id`, `timezone`, `currency`, `currency_display` em `createOrganization`/`updateOrganization`.
-- `src/lib/records.functions.ts` (ajuste): ao criar tabela, se org tiver `category_id`, semear `fields` a partir de `organization_category_default_fields` (não retroativo em tabelas existentes). Nas fns de mutação de `fields`, bloquear quando `allow_user_field_management=false` e caller não for super admin.
+- `listSystemFields(scope: 'organization'|'table'|'record')`
+- `createSystemField`, `updateSystemField`, `deleteSystemField`, `reorderSystemFields` — todos super admin.
+
+`src/lib/category-layouts.functions.ts` (novo):
+
+- `listCategoryPublicLayout(category_id)` — retorna itens ordenados com ícone e label efetivo.
+- `upsertCategoryPublicLayoutItem`, `deleteCategoryPublicLayoutItem`, `reorderCategoryPublicLayout`.
+
+`src/lib/orgs.functions.ts` / `records.functions.ts`:
+
+- `createOrganization`/`updateOrganization`, `createTable`, `createRecord`/`updateRecord` passam a validar `system_data` contra o schema de `*_fields` (mesmo `zodForField` reutilizado).
+- **Retroinjeção**: `updateOrganization` quando `category_id` muda → server fn dispara `mergeCategoryDefaultsIntoExistingTables(orgId)` que, para cada tabela sem o campo, insere o field da categoria (sem tocar em campos com mesma `key`).
+- Nova server fn `backfillCategoryDefaults({ organization_id })` (super admin ou owner) — executa o merge sob demanda; botão no painel da org.
 
 Endpoints públicos:
-- `GET /api/public/instance-settings`
-- `GET /api/public/platform-labels`
-- `GET /api/public/organization-categories`
-- `/api/public/tables` passa a aceitar `?category=` para filtro em `/explore`.
 
-### Formatação central (utilitário)
+- `GET /api/public/category-layout/:category_id` — usado em `/public/$slug/$tableId` e `/explore`.
+- `GET /api/public/system-fields` — retorna os 3 conjuntos (usado em telas públicas que exibem dados de org/tabela/registro).
 
-`src/lib/formatting.ts`:
-- `resolveTimezone(orgOverride?)`, `resolveCurrency(orgOverride?)`, `resolveCurrencyDisplay(orgOverride?)` — merge override da org com instance_settings.
-- `formatDateTime(iso, ctx)`, `formatDate(iso, ctx)`, `formatCurrency(number, ctx)`.
-- `ctx` recebe overrides da org quando disponível (contexto autenticado sabe qual org), ou só instance para telas públicas cross-tenant.
+`src/lib/public.server.ts`:
 
-Hooks `useLabels()` e `useInstanceContext()` (React Query, `staleTime: 5min`) — consumidos em `AppShell`, `PublicHeader`, formulários dinâmicos, chat (timestamps), campanhas (moeda), propostas (moeda), calendário (fuso).
+- `loadPublicTable` e `loadPublicRecord` passam a incluir `category_layout` da categoria da org, resolvendo cada item para o valor real (percorre `org.system_data`, `table.system_data`, `record.data` + `record.system_data`).
 
-### Frontend
+## 3. Frontend
 
-**Painel Super Admin** — nova rota `/_authenticated/admin` (gated por `is_super_admin`, redireciona se não for):
-- Aba **Geral**: fuso, moeda, `currency_display` (símbolo, posição antes/depois, separador decimal/milhar), toggle `allow_user_field_management`.
-- Aba **Rótulos**: tabela editável de `platform_labels` (label + ícone lucide) e `system_form_fields`, com preview lateral do formulário afetado.
-- Aba **Categorias** (item explícito da iteração):
-  - Listagem de todas as `organization_categories` (nome, ícone, descrição, contagem de orgs vinculadas).
-  - **Adicionar** categoria via modal (nome, ícone lucide via seletor, descrição).
-  - **Editar** categoria (mesmo modal, pré-preenchido).
-  - **Remover** categoria com `AlertDialog` de confirmação, informando quantas organizações ficarão sem categoria (não bloqueia — `SET NULL`).
-- Aba **Campos padrão**: seletor de categoria → sub-editor de `organization_category_default_fields` (adicionar/editar/reordenar/remover; nome, tipo, config, ordem).
-- Entrada: link no `SettingsModal` (visível só quando `is_super_admin`) e no dropdown do avatar em `AppShell`.
+### Painel `/admin`
 
-**Refactor transversal (obrigatório para fechar a iteração):**
-- Substituir strings fixas ("Organização", "Tabela", "Registro", "View", "Campo", "Membro", "Conversa", "Mensagem", "Campanha", "Contribuição", "Reserva") em toda a UI (autenticada e pública) por `useLabels()`. Levantamento: `AppShell`, `PublicHeader`, `EmptyState`, `DynamicGrid`, `DynamicForm`, telas `/app/*`, `/public/*`, `/explore`, `/me/applications`, `EditOrgDialog`, formulários de criação.
-- Substituir toda formatação local de data (`toLocaleString`, `format`, etc.) e valor (`R$ ${n}`, `Intl.NumberFormat` inline) por `formatDateTime`/`formatCurrency` do utilitário central. Pontos conhecidos: chat, propostas, campanhas, calendário, listagens com `computed` monetário, `/me/applications`.
-- `EditOrgDialog` ganha: seleção de categoria + overrides opcionais de fuso/moeda/display.
-- Criação de org: campo opcional de categoria (dropdown das categorias existentes).
-- `/explore` e `PublicTablesCarousel`: filtro por categoria (chips ou select).
+- **Nova aba "Layout público"**: seletor de categoria → editor drag-and-drop dos itens do layout (fonte do campo, ícone lucide via `IconPicker`, ordem, label override). Preview lateral renderizando um card de exemplo.
+- **Nova aba "Campos de sistema"**: sub-abas Organização / Tabela / Registro. Cada sub-aba: lista de campos com CRUD completo (mesmo editor que o schema de tabela já usa em `/tables/$tableId/schema`), reordenação por drag.
+- Aba **Campos padrão** existente mantida (campos padrão por categoria aplicados a novas tabelas).
+- Botão "Aplicar retroativamente" em cada categoria da aba **Categorias** que chama `backfillCategoryDefaults` para todas as orgs vinculadas.
 
-### Aceite
+### Formulários de criação/edição
 
-1. Super admin altera moeda para USD e todo valor monetário da instância (autenticado + público) reflete após revalidação de cache.
-2. Org override de fuso: timestamps de mensagens/registros da org X exibem no fuso Y sem afetar org Z.
-3. Super admin renomeia "Registro" → "Item"; todas as telas (grid, form, empty states, public) refletem.
-4. Super admin desliga `allow_user_field_management`: owner de org não-super-admin recebe erro ao tentar criar/editar/apagar `field`; super admin continua passando.
-5. Super admin **adiciona** categoria "Locação de espaços", **edita** seu ícone, e depois **remove** — orgs vinculadas ficam com `category_id=NULL` sem quebrar.
-6. Categoria com 3 campos padrão: nova tabela criada em org dessa categoria nasce com esses 3 campos; tabela pré-existente permanece intacta.
-7. `/explore` filtra por categoria.
-8. Registro no `CHANGELOG.md` cobrindo migration, endpoints, componentes tocados e refactor de strings/formatação.
+- `EditOrgDialog` e "Nova organização": renderizam `DynamicForm` a partir de `organization_fields` (além dos campos base: nome, slug, categoria, overrides). Valores em `system_data`.
+- `/app/$orgSlug/tables/$tableId/schema` (criar/editar tabela): renderiza `DynamicForm` de `table_fields` para metadados extras da tabela. Valores em `tables.system_data`.
+- `DynamicForm` de registro (uso atual): já reflete os `fields` da tabela; adicionar seção "Campos de sistema" ao topo lendo `record_fields`, salvando em `records.system_data`.
 
-### Fora de escopo (reafirmado)
+### Listagem pública
 
-- White Label (domínio próprio, logo/cores por org).
-- i18n multi-idioma.
-- Retroinjeção de campos padrão em tabelas existentes.
-- Políticas de campo por categoria (substituído por toggle global).
+- `public.$slug.$tableId.index.tsx`: substituir `fields.slice(0,4)` por `category_layout` resolvido. Cada item exibido como par `<ícone lucide> <label>: <valor>`. Fallback quando categoria da org não tem layout: comportamento atual.
+- `PublicTablesCarousel` e `/explore`: usar layout da categoria para o preview de cards.
 
-### Nota documental
-Ao aprovar, atualizar a seção "Fora de escopo" do documento de estado atual: `organization_categories` resolve a taxonomia cross-tenant que faltava para `/explore` e `GET /api/public/tables`, eliminando a tensão com "sem marketplace cross-tenant".
+### Refactor de rótulos (bloqueante para fechar a iteração)
+
+Auditar e trocar strings fixas por `useLabels().t(key)` nos arquivos identificados:
+`_authenticated.admin.tsx`, `lead.$token.tsx`, `conversations.$conversationId.tsx`, `public.$slug.campaigns.$recordId.tsx`, `routes/index.tsx`, `api/public/lead/$token.ts` e `campaigns/$recordId.ts` (para textos server-rendered, resolver via `listPlatformLabels`), `_authenticated.app.$orgSlug.members.tsx`, `_authenticated.app.index.tsx`, `_authenticated.app.$orgSlug.tables.$tableId.schema.tsx`, `_authenticated.app.$orgSlug.tables.$tableId.index.tsx`, `_authenticated.app.$orgSlug.calendar.tsx`, `conversation-thread.tsx`, `notifications-bell.tsx`, `_authenticated.app.$orgSlug.index.tsx`, `app-shell.tsx`, `edit-org-dialog.tsx`, `conversations.tsx`, `chat-widget.tsx`, `interest-form-modal.tsx`, `public-tables-carousel.tsx`, `public-header.tsx`. Cada arquivo revisado remove ocorrências de "Organização", "Registro", "Tabela", "Campo", "Membro", "Conversa", "Campanha", "Contribuição", "Reserva" (e plurais) — mantidos apenas em constantes de fallback de `useLabels`.
+
+## 4. Aceite
+
+1. Super admin cria layout público para categoria "Locação de espaços" com 3 campos + ícones lucide → toda tabela publicada de org dessa categoria renderiza os cards no formato definido.
+2. Super admin adiciona campo `type='select'` em `record_fields` chamado "Prioridade" → formulário de criar/editar registro em qualquer tabela mostra o campo; valor persiste em `records.system_data`; layout público pode referenciá-lo.
+3. Super admin renomeia "Registro" para "Item" → todas as rotas listadas acima refletem sem strings fixas remanescentes.
+4. Owner atribui categoria "X" a org existente → tabelas antigas recebem os campos padrão faltantes por merge, sem sobrescrever campos existentes; log/toast confirmando N campos adicionados em M tabelas.
+5. Botão "Aplicar retroativamente" em `/admin` → itera todas as orgs da categoria e faz o merge.
+6. Typecheck limpo, build passa, 360/768/1280 em light+dark, sem regressão nas iterações 1-9, RLS+GRANTs revisados.
+7. `CHANGELOG.md` com entrada datada cobrindo migration, endpoints, componentes, refactor de rótulos e backfill.
+
+## 5. Detalhes técnicos (não usuário-facing)
+
+- Reuso de `zodForField` de `records.functions.ts` — extrair para `src/lib/field-schema.ts` e importar nos 3 novos módulos + records para evitar duplicação.
+- `IconPicker`: novo componente compartilhado em `src/components/venue/icon-picker.tsx` usando `lucide-react/dynamic` com busca; usado no layout público, `platform_labels` e categorias.
+- Backfill idempotente: chave = `key` do field; nunca sobrescreve `config` de campo existente.
+- Migration inclui trigger `updated_at` nas 4 novas tabelas.
