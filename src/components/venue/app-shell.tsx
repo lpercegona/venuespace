@@ -46,6 +46,37 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
             </span>
           </Link>
           <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="max-w-[200px] gap-1.5">
+                  <Building2 className="h-4 w-4 shrink-0" />
+                  <span className="truncate">
+                    {org.data?.name ?? (orgSlug ? orgSlug : "Selecionar organização")}
+                  </span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Organizações</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {(myOrgs.data ?? []).map((o: any) => (
+                  <DropdownMenuItem
+                    key={o.id}
+                    onSelect={() => navigate({ to: "/app/$orgSlug", params: { orgSlug: o.slug } })}
+                  >
+                    <span className="truncate">{o.name}</span>
+                    {o.slug === orgSlug ? <Check className="ml-auto h-4 w-4" /> : null}
+                  </DropdownMenuItem>
+                ))}
+                {(myOrgs.data ?? []).length === 0 ? (
+                  <DropdownMenuItem disabled>Nenhuma organização</DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => navigate({ to: "/app" })}>
+                  <List className="h-4 w-4" />Ver todas as organizações
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {orgSlug && org.data ? (
               <NotificationsBell organizationId={org.data.id} orgSlug={orgSlug} />
             ) : null}
