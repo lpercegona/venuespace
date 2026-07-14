@@ -162,20 +162,48 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
     ? { id: v.id, auto_relation_field_id: (v.config ?? {}).auto_relation_field_id ?? null }
     : null;
 
-  // Pre-sign image/file URLs so anonymous viewers can render them.
+  // Pre-sign image/file URLs (batched) and resolve relation labels in parallel.
+  const paths: Array<{ key: string; path: string }> = [];
   const signed: Record<string, string> = {};
   for (const f of (fields ?? []) as any[]) {
     if (f.type !== "image" && f.type !== "file") continue;
     const path = (record.data as any)?.[f.key];
     if (typeof path !== "string" || !path) continue;
-    // Path is either a full URL (legacy) or a storage object path.
     if (path.startsWith("http://") || path.startsWith("https://")) {
       signed[f.key] = path;
       continue;
     }
-    const { data: s } = await sb.storage.from("venue-uploads").createSignedUrl(path, 60 * 60);
-    if (s?.signedUrl) signed[f.key] = s.signedUrl;
+    paths.push({ key: f.key, path });
   }
+  if (paths.length > 0) {
+    const { data: signedList } = await sb.storage
+      .from("venue-uploads")
+      .createSignedUrls(paths.map((p) => p.path), 60 * 60);
+    (signedList ?? []).forEach((s, i) => {
+      if (s?.signedUrl) signed[paths[i].key] = s.signedUrl;
+    });
+  }
+
+  // Resolve relation labels so the detail page shows names instead of UUIDs.
+  const relations: Record<string, Record<string, { id: string; label: string }>> = {};
+  const relFields = ((fields ?? []) as any[]).filter((f) => f.type === "relation");
+  await Promise.all(relFields.map(async (f) => {
+    const raw = (record.data as any)?.[f.key];
+    const ids = Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : typeof raw === "string" ? [raw] : [];
+    if (ids.length === 0) return;
+    const target = (f.config ?? {}).target_table_id as string | undefined;
+    if (!target) return;
+    const [{ data: tFields }, { data: targets }] = await Promise.all([
+      sb.from("fields").select("key, type, position").eq("table_id", target).order("position", { ascending: true }),
+      sb.from("records").select("id, data").eq("table_id", target).in("id", ids),
+    ]);
+    const labelKey = ((tFields ?? []) as any[]).find((x) => x.type === "text")?.key ?? "id";
+    const map: Record<string, { id: string; label: string }> = {};
+    for (const t of (targets ?? []) as any[]) {
+      map[t.id] = { id: t.id, label: String(t.data?.[labelKey] ?? t.id).slice(0, 80) };
+    }
+    relations[f.id] = map;
+  }));
 
   return {
     organization: { id: org.id, slug: org.slug, name: org.name, description: org.description ?? null, logo_url: org.logo_url ?? null },
@@ -183,7 +211,9 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
     fields: (fields ?? []) as any[],
     record: record as { id: string; data: Record<string, any>; deal_status: string; created_at: string },
     signed_urls: signed,
+    relations,
     public_form_view,
   };
 }
+
 
