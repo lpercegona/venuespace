@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { PublicHeader } from "@/components/venue/public-header";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -73,12 +74,11 @@ function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <div className="w-full max-w-md">
-        <Link to="/" className="mb-6 flex items-center justify-center gap-2">
-          <div className="h-7 w-7 rounded-md bg-primary" aria-hidden />
-          <span className="font-display text-lg font-semibold">Venuespace</span>
-        </Link>
+    <div className="min-h-screen bg-background">
+      <PublicHeader showAuthActions={false} back={{ to: "/", label: "Início" }} />
+      <div className="flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md">
+
 
         <Card>
           <CardHeader>
