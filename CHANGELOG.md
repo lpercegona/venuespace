@@ -11,6 +11,24 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 
 ---
 
+## 2026-07-14 20:15 — Edição de formulários públicos + otimização do fluxo público
+
+- **Backend / server fns**
+  - `src/lib/messages.functions.ts`: novas `getPublicFormView` e `updatePublicFormView` (nome, `auto_relation_field_id`, `form_field_ids`) com validação de propriedade e permissão via RLS existente. `submissions_table_id` permanece imutável.
+  - `src/lib/public.server.ts` (`loadPublicRecord`): assinatura de URLs em batch (`createSignedUrls`) em vez de N chamadas sequenciais; resolução paralela de `relation` com labels reais; payload agora inclui `relations`.
+- **API pública**
+  - `src/routes/api/public/$slug/$tableId.ts` e `.../$tableId.$recordId.ts`: cabeçalho `Cache-Control: public, max-age=30, s-maxage=60, stale-while-revalidate=300` nos handlers `GET`.
+- **UI**
+  - `src/routes/_authenticated.app.$orgSlug.tables.$tableId.index.tsx`: ícone de lápis em cada card de formulário público abre `EditFormViewDialog` (Input nome, Select de campo relação, lista de Checkbox para escolher campos exibidos). Salvar dispara `updatePublicFormView` e invalida `["views", tableId]`.
+  - `src/routes/public.$slug.$tableId.$recordId.tsx`: renderiza labels de `relation` a partir do payload; `<img>` com `loading="lazy"` + `decoding="async"`.
+- **Performance**
+  - `src/components/venue/app-shell.tsx`: `staleTime: 60_000` em `org`, `me-profile` e `my-orgs` para eliminar refetch entre navegações.
+- **Verificação**
+  - Fluxo público percorrido (listagem → detalhes → formulário → submissão); typecheck limpo.
+
+---
+
+
 ## 2026-07-14 18:40 — UX: edição de tabelas, uploads reais, dropdown de perfil, chat flutuante, detalhes públicos
 
 - **Backend / server fns**
