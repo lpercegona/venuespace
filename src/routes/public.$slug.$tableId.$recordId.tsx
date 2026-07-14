@@ -77,11 +77,11 @@ function PublicRecordDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PublicHeader
+        back={{ to: "/public/$slug/$tableId", params: { slug, tableId }, label: `Voltar para ${table.name}` }}
+      />
       <header className="border-b border-border/60 bg-surface">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-          <Link to="/public/$slug/$tableId" params={{ slug, tableId }} className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3 w-3" /> Voltar para {table.name}
-          </Link>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{organization.name}</p>
           <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
             <h1 className="font-display text-3xl font-semibold text-foreground sm:text-4xl">{title}</h1>
@@ -134,22 +134,27 @@ function PublicRecordDetail() {
         </div>
         <aside className="space-y-3">
           {public_form_view ? (
-            <Link
-              to="/public/$slug/$tableId/form"
-              params={{ slug, tableId }}
-              search={{ record: record.id, view: public_form_view.id }}
-            >
-              <Button size="lg" className="w-full">
-                <MessageCircle className="h-4 w-4" />
-                Manifestar interesse
-              </Button>
-            </Link>
+            <Button size="lg" className="w-full" onClick={() => setInterestOpen(true)}>
+              <MessageCircle className="h-4 w-4" />
+              Manifestar interesse
+            </Button>
           ) : null}
           <p className="text-xs text-muted-foreground">
             Publicado em {new Date(record.created_at).toLocaleDateString("pt-BR")}.
           </p>
         </aside>
       </main>
+      {public_form_view ? (
+        <InterestFormModal
+          open={interestOpen}
+          onOpenChange={setInterestOpen}
+          slug={slug}
+          tableId={tableId}
+          viewId={public_form_view.id}
+          recordId={record.id}
+          tableName={table.name}
+        />
+      ) : null}
     </div>
   );
 }
