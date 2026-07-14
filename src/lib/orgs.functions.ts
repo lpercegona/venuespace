@@ -103,6 +103,29 @@ export const createTable = createServerFn({ method: "POST" })
     return row;
   });
 
+const tableUpdate = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(80).optional(),
+  description: z.string().max(500).nullable().optional(),
+  icon: z.string().max(40).nullable().optional(),
+  bookable: z.boolean().optional(),
+});
+
+export const updateTable = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => tableUpdate.parse(d))
+  .handler(async ({ data, context }) => {
+    const { id, ...rest } = data;
+    const patch: Record<string, any> = {};
+    if (rest.name !== undefined) patch.name = rest.name;
+    if (rest.description !== undefined) patch.description = rest.description;
+    if (rest.icon !== undefined) patch.icon = rest.icon;
+    if (rest.bookable !== undefined) patch.bookable = rest.bookable;
+    const { error } = await context.supabase.from("tables").update(patch).eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const getTable = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
