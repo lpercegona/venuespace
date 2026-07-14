@@ -55,6 +55,7 @@ function OrgDashboard() {
   const isOwner = org.data?.myRole === "owner";
 
   const [openTable, setOpenTable] = useState(false);
+  const [openEditOrg, setOpenEditOrg] = useState(false);
   const [tName, setTName] = useState("");
   const [tDesc, setTDesc] = useState("");
   const [tBookable, setTBookable] = useState(false);
@@ -122,9 +123,11 @@ function OrgDashboard() {
       subtitle={org.data.description || `/${org.data.slug}`}
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <Link to="/app/$orgSlug/conversations" params={{ orgSlug }}>
-            <Button variant="outline" size="sm">Conversas</Button>
-          </Link>
+          {isOwner ? (
+            <Button variant="outline" size="sm" onClick={() => setOpenEditOrg(true)}>
+              <Pencil className="h-4 w-4" />Editar organização
+            </Button>
+          ) : null}
           {canEdit ? (
             <Dialog open={openTable} onOpenChange={setOpenTable}>
               <DialogTrigger asChild>
