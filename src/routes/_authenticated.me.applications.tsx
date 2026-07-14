@@ -7,6 +7,8 @@ import { EmptyState } from "@/components/venue/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useFormatContext } from "@/hooks/use-instance-context";
+import { formatCurrency, formatDateTime } from "@/lib/formatting";
 
 export const Route = createFileRoute("/_authenticated/me/applications")({
   head: () => ({ meta: [{ title: "Minhas candidaturas — Venuespace" }, { name: "robots", content: "noindex" }] }),
@@ -15,6 +17,8 @@ export const Route = createFileRoute("/_authenticated/me/applications")({
 
 function MyApplicationsPage() {
   const q = useQuery({ queryKey: ["my-applications"], queryFn: () => getMyApplications() });
+  const formatCtx = useFormatContext(null);
+
 
   return (
     <AppShell title="Minhas candidaturas" subtitle="Tudo o que você enviou por formulários públicos.">
@@ -36,10 +40,10 @@ function MyApplicationsPage() {
                 <CardContent className="space-y-3">
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary">{r.deal_status}</Badge>
-                    {r.agreed_value ? <Badge>R$ {Number(r.agreed_value).toFixed(2)}</Badge> : null}
+                    {r.agreed_value ? <Badge>{formatCurrency(Number(r.agreed_value), formatCtx)}</Badge> : null}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Enviado em {new Date(r.created_at).toLocaleString()}
+                    Enviado em {formatDateTime(r.created_at, formatCtx)}
                   </p>
                   {r.conversation_id ? (
                     <Link to="/lead/$token" params={{ token: `applicant-${r.conversation_id}` }} className="pointer-events-none">

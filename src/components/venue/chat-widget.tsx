@@ -12,13 +12,18 @@ import {
   listConversations, getConversation, listMessages, sendMessage,
   setProposalStatus, setDealStatus,
 } from "@/lib/messages.functions";
+import { useFormatContext } from "@/hooks/use-instance-context";
+import { formatCurrency, formatDateTime } from "@/lib/formatting";
+import type { CurrencyDisplay } from "@/lib/instance-settings.functions";
 
-type Props = { organizationId: string };
+type OrgOverrides = { timezone?: string | null; currency?: string | null; currency_display?: CurrencyDisplay | null } | null;
+type Props = { organizationId: string; org?: OrgOverrides };
 
-export function ChatWidget({ organizationId }: Props) {
+export function ChatWidget({ organizationId, org }: Props) {
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const qc = useQueryClient();
+  const formatCtx = useFormatContext(org ?? null);
 
   const list = useQuery({
     queryKey: ["conversations", organizationId],
@@ -73,7 +78,7 @@ export function ChatWidget({ organizationId }: Props) {
                       >
                         <p className="truncate text-sm font-medium">{c.title}</p>
                         <p className="truncate text-xs text-muted-foreground">
-                          {c.lead_email ?? "—"} · {new Date(c.updated_at).toLocaleString("pt-BR")}
+                          {c.lead_email ?? "—"} · {formatDateTime(c.updated_at, formatCtx)}
                         </p>
                       </button>
                     </li>
@@ -85,6 +90,7 @@ export function ChatWidget({ organizationId }: Props) {
             <ChatPane
               organizationId={organizationId}
               conversationId={activeId}
+              formatCtx={formatCtx}
               onChange={() => qc.invalidateQueries({ queryKey: ["conversations", organizationId] })}
             />
           )}
@@ -95,8 +101,8 @@ export function ChatWidget({ organizationId }: Props) {
 }
 
 function ChatPane({
-  organizationId, conversationId, onChange,
-}: { organizationId: string; conversationId: string; onChange: () => void }) {
+  organizationId, conversationId, onChange, formatCtx,
+}: { organizationId: string; conversationId: string; onChange: () => void; formatCtx: import("@/lib/formatting").FormatContext }) {
   const qc = useQueryClient();
   const conv = useQuery({
     queryKey: ["conversation", conversationId],
@@ -159,7 +165,7 @@ function ChatPane({
             <Badge variant="outline">{record.deal_status}</Badge>
             {record.agreed_value != null ? (
               <Badge variant="secondary">
-                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(record.agreed_value)}
+                {formatCurrency(record.agreed_value, formatCtx)}
               </Badge>
             ) : null}
           </div>
@@ -174,6 +180,7 @@ function ChatPane({
             currentRole="member"
             onAcceptProposal={accept}
             onDeclineProposal={decline}
+            formatCtx={formatCtx}
           />
         )}
       </div>

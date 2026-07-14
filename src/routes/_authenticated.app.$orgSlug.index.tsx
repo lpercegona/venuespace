@@ -260,6 +260,9 @@ function OrgDashboard() {
         <EditOrgDialog open={openEditOrg} onOpenChange={setOpenEditOrg} org={{
           id: org.data.id, slug: org.data.slug, name: org.data.name,
           description: org.data.description ?? null, logo_url: (org.data as any).logo_url ?? null,
+          category_id: (org.data as any).category_id ?? null,
+          timezone: (org.data as any).timezone ?? null,
+          currency: (org.data as any).currency ?? null,
         }} />
       ) : null}
     </AppShell>

@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatDateTime, type FormatContext } from "@/lib/formatting";
 
 export type ThreadMessage = {
   id: string;
@@ -17,11 +18,13 @@ export function ConversationThread({
   currentRole,
   onAcceptProposal,
   onDeclineProposal,
+  formatCtx,
 }: {
   messages: ThreadMessage[];
   currentRole: "member" | "lead";
   onAcceptProposal?: (id: string) => void;
   onDeclineProposal?: (id: string) => void;
+  formatCtx: FormatContext;
 }) {
   if (messages.length === 0) {
     return (
@@ -51,7 +54,7 @@ export function ConversationThread({
                   {m.sender_role === "lead" ? (m.sender_email ?? "Interessado") : "Organização"}
                 </span>
                 <span>·</span>
-                <time dateTime={m.created_at}>{new Date(m.created_at).toLocaleString("pt-BR")}</time>
+                <time dateTime={m.created_at}>{formatDateTime(m.created_at, formatCtx)}</time>
                 {m.type === "proposal" ? (
                   <Badge variant="secondary" className="ml-1">Proposta</Badge>
                 ) : null}
@@ -63,9 +66,7 @@ export function ConversationThread({
                   <div className="rounded-md border border-border/60 bg-background/60 px-3 py-2 text-sm">
                     <span className="text-muted-foreground">Valor proposto: </span>
                     <span className="font-display text-lg font-semibold">
-                      {m.proposed_value != null
-                        ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(m.proposed_value)
-                        : "—"}
+                      {m.proposed_value != null ? formatCurrency(m.proposed_value, formatCtx) : "—"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">

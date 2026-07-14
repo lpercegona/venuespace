@@ -20,6 +20,7 @@ export type PublicTablePayload = {
 export type PublicTableSummary = {
   org_slug: string;
   org_name: string;
+  org_category_id: string | null;
   table_id: string;
   table_slug: string;
   table_name: string;
@@ -28,16 +29,17 @@ export type PublicTableSummary = {
   latest_published_at: string;
 };
 
-export async function listPublicTables(opts: { limit?: number; offset?: number; q?: string } = {}): Promise<{ items: PublicTableSummary[]; total: number }> {
+export async function listPublicTables(opts: { limit?: number; offset?: number; q?: string; category_id?: string } = {}): Promise<{ items: PublicTableSummary[]; total: number }> {
   const sb = supabaseAdmin;
   const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
   const offset = Math.max(opts.offset ?? 0, 0);
   const q = (opts.q ?? "").trim().toLowerCase();
+  const categoryId = opts.category_id?.trim() || undefined;
 
   // Fetch published records with joined table + org; aggregate in code.
-  let query = sb
+  const query = sb
     .from("records")
-    .select("table_id, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(id, slug, name))")
+    .select("table_id, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(id, slug, name, category_id))")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(1000);
@@ -57,6 +59,7 @@ export async function listPublicTables(opts: { limit?: number; offset?: number; 
       map.set(key, {
         org_slug: t.organization.slug,
         org_name: t.organization.name,
+        org_category_id: t.organization.category_id ?? null,
         table_id: t.id,
         table_slug: t.slug,
         table_name: t.name,
@@ -68,6 +71,7 @@ export async function listPublicTables(opts: { limit?: number; offset?: number; 
   }
   let items = Array.from(map.values());
   if (q) items = items.filter((i) => i.table_name.toLowerCase().includes(q) || i.org_name.toLowerCase().includes(q));
+  if (categoryId) items = items.filter((i) => i.org_category_id === categoryId);
   items.sort((a, b) => (a.latest_published_at < b.latest_published_at ? 1 : -1));
   const total = items.length;
   return { items: items.slice(offset, offset + limit), total };

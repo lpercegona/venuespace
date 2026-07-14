@@ -1,64 +1,123 @@
-## Documento: Estado atual do Venuespace
+## Iteração 9 — Configurações Gerais da Instância (Super Admin)
 
-Vou gerar um `.docx` em `/mnt/documents/venuespace-estado-atual.docx` cobrindo tudo o que foi construído até agora, para servir como handoff / referência do projeto.
+Escopo fechado. Governada pela Diretriz §0. Sem White Label. Registro obrigatório em `CHANGELOG.md`.
 
-### Estrutura do documento
+### Decisões (respostas do usuário)
+1. **Fuso/moeda**: padrão da instância + override por organização.
+2. **Permissão de campos**: toggle **global** em `instance_settings` (não por categoria). Descarta `organization_category_policies`.
+3. **Campos padrão da categoria**: aplicados a **toda tabela nova** de organização daquela categoria.
+4. **Retroatividade**: tudo retroativo. Rótulos refletem em toda UI. Política global de campos vale para orgs existentes. Categoria atribuída a org já existente altera comportamento a partir dali. Campos padrão **não** são retroinjetados em tabelas existentes — só em novas (evita corromper dados).
+5. **Confirmação adicional**: super admin tem CRUD explícito de `organization_categories` (adicionar, editar, remover) no painel — item de primeira classe da iteração.
 
-1. **Capa e resumo executivo**
-   - Nome, categoria da solução, objetivo da v1, status atual.
+### Modelo de dados
 
-2. **Skill do projeto (`/skill:venuespace`)**
-   - Diretriz de Desenvolvimento §0 (soberana): regras de escopo, ambiguidade = parada, validação obrigatória, registro em `CHANGELOG.md`.
-   - Design System vinculante: shadcn/ui + Tailwind v4, tokens oklch em `src/styles.css`, tipografia Space Grotesk, dark mode obrigatório, mobile-first 360px, acessibilidade AA.
-   - Governança e checklist de fechamento de iteração.
+Migration única (com GRANTs, RLS e políticas):
 
-3. **Arquitetura**
-   - Stack: TanStack Start v1, React 19, Vite 7, Tailwind v4, shadcn/ui, TanStack Query.
-   - Backend: Lovable Cloud (Supabase) — RLS + `createServerFn` + `/api/public/*`.
-   - Modelo de dados: `organizations`, `memberships`, `tables`, `fields`, `records`, `views`, `permissions`, `conversations`, `messages`, `lead_access_tokens`, `super_admins`.
-   - Segurança: `has_role`, `is_org_member`, `is_super_admin`, políticas RLS + GRANTs, `SECURITY DEFINER` `create_organization`.
-   - Convenções: `public_form` grava em tabela separada; motor de reserva rejeita datas sobrepostas.
+```
+instance_settings              -- singleton (id smallint PK check id=1)
+  default_timezone text NOT NULL DEFAULT 'America/Sao_Paulo'
+  default_currency text NOT NULL DEFAULT 'BRL'
+  currency_display jsonb NOT NULL DEFAULT
+    '{"symbol":"R$","position":"before","decimal":",","thousand":"."}'
+  allow_user_field_management boolean NOT NULL DEFAULT true
+  updated_at timestamptz
 
-4. **O que foi programado — por iteração**
-   - **1 Fundação**: Auth (e-mail + Google), schema base, RLS, tokens de design, layout `_authenticated/`, painel `/app` e `/app/$orgSlug`.
-   - **2 Records + Grid Dinâmico**: CRUD com validação Zod dinâmica, `computed` fields, `DynamicGrid` e `DynamicForm`.
-   - **3 Publicação pública + public_form**: `/api/public/$slug/$tableId`, submissões geram `lead_access_tokens` e conversas.
-   - **4 Chat + propostas + `deal_status`**: mensagens, propostas com valor, transições `negotiating → accepted/declined → closed`, inbox.
-   - **5 Candidaturas autenticadas**: `/me/applications`.
-   - **6 Campanhas**: soma apenas contribuições confirmadas, chave PIX, confirmação manual.
-   - **7 Motor de reserva**: `booking_role`, verificação de conflito, calendário de ocupação.
-   - **8 Membros + polimento**: convites, notificações in-app, SEO/OG por rota, landing.
-   - **Super admin universal**: `lpercegona@gmail.com` promovido via trigger.
-   - **Melhorias UX pós-v1**: edição de tabelas, uploads reais (imagem/arquivo com `venue-uploads`), opções inline em select/multiselect, chat flutuante, detalhes públicos de registro com URLs assinadas, dropdown de perfil, selecionador de organização, `SettingsModal`, edição de formulários públicos, otimizações de performance (staleTime, batching de signed URLs, cache-control), fonte Space Grotesk, edição/exclusão de organização e tabela, carrossel de publicações recentes na landing, página `/explore`, `PublicHeader` unificado + botão voltar, formulário de interesse como modal.
+platform_labels (key text PK, label text, icon text, updated_at)
+  -- seed: organization, table, record, view, field, membership,
+  --       conversation, message, campaign, contribution, booking
 
-5. **Fluxo completo de navegação**
-   - **Público**:
-     - `/` (landing + carrossel recentes) → `/explore` (busca/paginação).
-     - `/public/$slug/$tableId` (listagem) → `/public/$slug/$tableId/$recordId` (detalhe com PublicHeader + Voltar).
-     - Modal `InterestFormModal` (aberto pela listagem, pelo detalhe ou pela rota fallback `/public/$slug/$tableId/form`).
-     - `/public/$slug/campaigns/$recordId` (campanha + PIX + contribuir).
-     - `/lead/$token` (acompanhamento pós-submissão).
-     - `/auth` (login/cadastro, Google).
-   - **Autenticado (`_authenticated/`)**:
-     - `/app` (lista de organizações) → `/app/$orgSlug` (painel).
-     - `/app/$orgSlug/tables/$tableId` (grid + views) → `/tables/$tableId/schema` (fields).
-     - `/app/$orgSlug/conversations` (inbox).
-     - `/app/$orgSlug/members`, `/app/$orgSlug/calendar`.
-     - `/me/applications`.
-     - Chat flutuante (`ChatWidget`) e sino de notificações no `AppShell`.
-     - `SettingsModal` acionado pelo dropdown do avatar (Perfil / Notificações / Segurança).
-     - Selecionador de organização + "Ver todas as organizações".
+system_form_fields (id, form_key, field_key, label, icon, order_index)
+  -- form_key ∈ {create_organization, create_table, create_record}
+  -- seed com os campos atuais dos formulários internos
 
-6. **Fora de escopo (confirmado)**
-   - Pagamento automático, NF, estoque, marketplace, white label, realtime websocket, e-mail transacional.
+organization_categories (id, name, icon, description, created_at, updated_at)
 
-7. **Governança operacional**
-   - `CHANGELOG.md` na raiz com todas as entradas datadas (América/São_Paulo).
-   - Checklist obrigatório antes de fechar iteração.
+organizations
+  + category_id uuid NULL REFERENCES organization_categories(id) ON DELETE SET NULL
+  + timezone text NULL              -- override; NULL = usa instance_settings
+  + currency text NULL              -- override
+  + currency_display jsonb NULL     -- override
 
-### Formato
+organization_category_default_fields
+  (id, category_id, field_name, field_type, config jsonb, order_index, created_at)
+```
 
-- `.docx` gerado com `docx-js`, US Letter, Space Grotesk indisponível em Word → fallback Arial no documento (a fonte do produto continua Space Grotesk).
-- Cabeçalhos hierárquicos (H1/H2/H3), listas com `LevelFormat.BULLET`, sem tabelas decorativas.
-- Validação pós-geração (unpack + repack) e QA visual página a página antes de entregar.
-- Arquivo salvo em `/mnt/documents/venuespace-estado-atual.docx` e apresentado via `<presentation-artifact>`.
+**Descartado desta iteração:** `organization_category_policies` (resposta 2 tornou o toggle global).
+
+### RLS / permissões
+- `instance_settings`, `platform_labels`: `SELECT` para `anon` + `authenticated` (necessário em telas públicas para formatação/rotulagem). `INSERT/UPDATE/DELETE` restrito a `is_super_admin(auth.uid())`.
+- `system_form_fields`, `organization_category_default_fields`: `SELECT` a `authenticated`; escrita: super admin apenas.
+- `organization_categories`: `SELECT` a `anon` + `authenticated` (usado em filtro público `/explore` e seletor de categoria na criação/edição de org); `INSERT/UPDATE/DELETE` restrito a `is_super_admin(auth.uid())`. `ON DELETE SET NULL` em `organizations.category_id` protege orgs de "sumir" quando categoria é removida.
+- `organizations.category_id`/overrides: editável por `owner` da org (categoria e overrides próprios) e por super admin.
+- Verificação global `allow_user_field_management` aplicada nos server fns de criação/edição/remoção de fields — super admin sempre passa.
+
+### Backend (server fns)
+
+Novos módulos, com `requireSupabaseAuth` + verificação `is_super_admin` onde aplicável:
+
+- `src/lib/instance-settings.functions.ts`: `getInstanceSettings` (leitura pública via `/api/public/instance-settings`), `updateInstanceSettings` (super admin).
+- `src/lib/platform-labels.functions.ts`: `listPlatformLabels` (pública via `/api/public/platform-labels`), `upsertPlatformLabel`, `listSystemFormFields`, `upsertSystemFormField`.
+- `src/lib/organization-categories.functions.ts`:
+  - `listOrganizationCategories` (pública via `/api/public/organization-categories`).
+  - `createOrganizationCategory` (super admin) — nome, ícone lucide, descrição.
+  - `updateOrganizationCategory` (super admin).
+  - `deleteOrganizationCategory` (super admin) — `ON DELETE SET NULL` já protege orgs vinculadas; UI confirma "N organizações ficarão sem categoria".
+  - `listCategoryDefaultFields`, `upsertCategoryDefaultField`, `deleteCategoryDefaultField`, `reorderCategoryDefaultFields` (super admin).
+- `src/lib/orgs.functions.ts` (extensão): aceitar `category_id`, `timezone`, `currency`, `currency_display` em `createOrganization`/`updateOrganization`.
+- `src/lib/records.functions.ts` (ajuste): ao criar tabela, se org tiver `category_id`, semear `fields` a partir de `organization_category_default_fields` (não retroativo em tabelas existentes). Nas fns de mutação de `fields`, bloquear quando `allow_user_field_management=false` e caller não for super admin.
+
+Endpoints públicos:
+- `GET /api/public/instance-settings`
+- `GET /api/public/platform-labels`
+- `GET /api/public/organization-categories`
+- `/api/public/tables` passa a aceitar `?category=` para filtro em `/explore`.
+
+### Formatação central (utilitário)
+
+`src/lib/formatting.ts`:
+- `resolveTimezone(orgOverride?)`, `resolveCurrency(orgOverride?)`, `resolveCurrencyDisplay(orgOverride?)` — merge override da org com instance_settings.
+- `formatDateTime(iso, ctx)`, `formatDate(iso, ctx)`, `formatCurrency(number, ctx)`.
+- `ctx` recebe overrides da org quando disponível (contexto autenticado sabe qual org), ou só instance para telas públicas cross-tenant.
+
+Hooks `useLabels()` e `useInstanceContext()` (React Query, `staleTime: 5min`) — consumidos em `AppShell`, `PublicHeader`, formulários dinâmicos, chat (timestamps), campanhas (moeda), propostas (moeda), calendário (fuso).
+
+### Frontend
+
+**Painel Super Admin** — nova rota `/_authenticated/admin` (gated por `is_super_admin`, redireciona se não for):
+- Aba **Geral**: fuso, moeda, `currency_display` (símbolo, posição antes/depois, separador decimal/milhar), toggle `allow_user_field_management`.
+- Aba **Rótulos**: tabela editável de `platform_labels` (label + ícone lucide) e `system_form_fields`, com preview lateral do formulário afetado.
+- Aba **Categorias** (item explícito da iteração):
+  - Listagem de todas as `organization_categories` (nome, ícone, descrição, contagem de orgs vinculadas).
+  - **Adicionar** categoria via modal (nome, ícone lucide via seletor, descrição).
+  - **Editar** categoria (mesmo modal, pré-preenchido).
+  - **Remover** categoria com `AlertDialog` de confirmação, informando quantas organizações ficarão sem categoria (não bloqueia — `SET NULL`).
+- Aba **Campos padrão**: seletor de categoria → sub-editor de `organization_category_default_fields` (adicionar/editar/reordenar/remover; nome, tipo, config, ordem).
+- Entrada: link no `SettingsModal` (visível só quando `is_super_admin`) e no dropdown do avatar em `AppShell`.
+
+**Refactor transversal (obrigatório para fechar a iteração):**
+- Substituir strings fixas ("Organização", "Tabela", "Registro", "View", "Campo", "Membro", "Conversa", "Mensagem", "Campanha", "Contribuição", "Reserva") em toda a UI (autenticada e pública) por `useLabels()`. Levantamento: `AppShell`, `PublicHeader`, `EmptyState`, `DynamicGrid`, `DynamicForm`, telas `/app/*`, `/public/*`, `/explore`, `/me/applications`, `EditOrgDialog`, formulários de criação.
+- Substituir toda formatação local de data (`toLocaleString`, `format`, etc.) e valor (`R$ ${n}`, `Intl.NumberFormat` inline) por `formatDateTime`/`formatCurrency` do utilitário central. Pontos conhecidos: chat, propostas, campanhas, calendário, listagens com `computed` monetário, `/me/applications`.
+- `EditOrgDialog` ganha: seleção de categoria + overrides opcionais de fuso/moeda/display.
+- Criação de org: campo opcional de categoria (dropdown das categorias existentes).
+- `/explore` e `PublicTablesCarousel`: filtro por categoria (chips ou select).
+
+### Aceite
+
+1. Super admin altera moeda para USD e todo valor monetário da instância (autenticado + público) reflete após revalidação de cache.
+2. Org override de fuso: timestamps de mensagens/registros da org X exibem no fuso Y sem afetar org Z.
+3. Super admin renomeia "Registro" → "Item"; todas as telas (grid, form, empty states, public) refletem.
+4. Super admin desliga `allow_user_field_management`: owner de org não-super-admin recebe erro ao tentar criar/editar/apagar `field`; super admin continua passando.
+5. Super admin **adiciona** categoria "Locação de espaços", **edita** seu ícone, e depois **remove** — orgs vinculadas ficam com `category_id=NULL` sem quebrar.
+6. Categoria com 3 campos padrão: nova tabela criada em org dessa categoria nasce com esses 3 campos; tabela pré-existente permanece intacta.
+7. `/explore` filtra por categoria.
+8. Registro no `CHANGELOG.md` cobrindo migration, endpoints, componentes tocados e refactor de strings/formatação.
+
+### Fora de escopo (reafirmado)
+
+- White Label (domínio próprio, logo/cores por org).
+- i18n multi-idioma.
+- Retroinjeção de campos padrão em tabelas existentes.
+- Políticas de campo por categoria (substituído por toggle global).
+
+### Nota documental
+Ao aprovar, atualizar a seção "Fora de escopo" do documento de estado atual: `organization_categories` resolve a taxonomia cross-tenant que faltava para `/explore` e `GET /api/public/tables`, eliminando a tensão com "sem marketplace cross-tenant".

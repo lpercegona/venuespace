@@ -12,6 +12,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader } from "@/components/venue/public-header";
+import { useFormatContext } from "@/hooks/use-instance-context";
+import { formatCurrency } from "@/lib/formatting";
 
 type Payload = {
   organization: { id: string; slug: string; name: string };
@@ -45,6 +47,7 @@ function CampaignPage() {
   const { recordId } = Route.useParams();
   const navigate = useNavigate();
   const q = useQuery({ queryKey: ["campaign", recordId], queryFn: () => fetchCampaign(recordId) });
+  const formatCtx = useFormatContext(null);
 
   const [amount, setAmount] = useState("");
   const [email, setEmail] = useState("");
@@ -107,8 +110,8 @@ function CampaignPage() {
           <CardContent className="space-y-3">
             <Progress value={pct} />
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <span className="font-medium text-foreground">R$ {confirmed.toFixed(2)} confirmados</span>
-              {goal > 0 ? <span className="text-muted-foreground">Meta: R$ {goal.toFixed(2)}</span> : null}
+              <span className="font-medium text-foreground">{formatCurrency(confirmed, formatCtx)} confirmados</span>
+              {goal > 0 ? <span className="text-muted-foreground">Meta: {formatCurrency(goal, formatCtx)}</span> : null}
             </div>
             <Badge variant="secondary">{q.data.progress.count} contribuições confirmadas</Badge>
             {pixKey ? (

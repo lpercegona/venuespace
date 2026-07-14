@@ -109,6 +109,33 @@ export type Database = {
           },
         ]
       }
+      instance_settings: {
+        Row: {
+          allow_user_field_management: boolean
+          currency_display: Json
+          default_currency: string
+          default_timezone: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          allow_user_field_management?: boolean
+          currency_display?: Json
+          default_currency?: string
+          default_timezone?: string
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          allow_user_field_management?: boolean
+          currency_display?: Json
+          default_currency?: string
+          default_timezone?: string
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lead_access_tokens: {
         Row: {
           conversation_id: string
@@ -256,38 +283,129 @@ export type Database = {
           },
         ]
       }
-      organizations: {
+      organization_categories: {
         Row: {
           created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organization_category_default_fields: {
+        Row: {
+          category_id: string
+          config: Json
+          created_at: string
+          field_key: string
+          field_type: string
+          id: string
+          label: string
+          order_index: number
+          required: boolean
+        }
+        Insert: {
+          category_id: string
+          config?: Json
+          created_at?: string
+          field_key: string
+          field_type: string
+          id?: string
+          label: string
+          order_index?: number
+          required?: boolean
+        }
+        Update: {
+          category_id?: string
+          config?: Json
+          created_at?: string
+          field_key?: string
+          field_type?: string
+          id?: string
+          label?: string
+          order_index?: number
+          required?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_category_default_fields_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          category_id: string | null
+          created_at: string
           created_by: string
+          currency: string | null
+          currency_display: Json | null
           description: string | null
           id: string
           logo_url: string | null
           name: string
           slug: string
+          timezone: string | null
           updated_at: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           created_by: string
+          currency?: string | null
+          currency_display?: Json | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name: string
           slug: string
+          timezone?: string | null
           updated_at?: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           created_by?: string
+          currency?: string | null
+          currency_display?: Json | null
           description?: string | null
           id?: string
           logo_url?: string | null
           name?: string
           slug?: string
+          timezone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "organizations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       permissions: {
         Row: {
@@ -330,6 +448,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_labels: {
+        Row: {
+          icon: string | null
+          key: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          icon?: string | null
+          key: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          icon?: string | null
+          key?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -439,6 +578,36 @@ export type Database = {
           created_at?: string
           email?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_form_fields: {
+        Row: {
+          field_key: string
+          form_key: string
+          icon: string | null
+          id: string
+          label: string
+          order_index: number
+          updated_at: string
+        }
+        Insert: {
+          field_key: string
+          form_key: string
+          icon?: string | null
+          id?: string
+          label: string
+          order_index?: number
+          updated_at?: string
+        }
+        Update: {
+          field_key?: string
+          form_key?: string
+          icon?: string | null
+          id?: string
+          label?: string
+          order_index?: number
+          updated_at?: string
         }
         Relationships: []
       }
