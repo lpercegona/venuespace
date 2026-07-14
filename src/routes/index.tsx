@@ -52,6 +52,15 @@ function Landing() {
           </div>
         </div>
 
+        <div className="mt-16">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">Publicações recentes</h2>
+            <Link to="/explore" className="text-sm text-primary hover:underline">Ver todas</Link>
+          </div>
+          <PublicTablesCarousel />
+        </div>
+
+
         <div className="mt-16 grid gap-4 sm:grid-cols-3">
           {[
             { icon: Database, title: "Tabelas dinâmicas", body: "Modele qualquer domínio: imóveis, vagas, campanhas, catálogos." },
