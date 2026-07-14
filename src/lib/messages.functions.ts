@@ -129,6 +129,17 @@ export const setDealStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const update: Record<string, any> = { deal_status: data.status };
 
+    // Booking conflict guard on transition to accepted (or closed).
+    if (data.status === "accepted" || data.status === "closed") {
+      const { runBookingCheck } = await import("./applications.functions");
+      const check = await runBookingCheck(context.supabase, data.record_id);
+      if (check.conflict) {
+        throw new Error(
+          `Conflito de reserva: já existe uma negociação aceita entre ${check.conflict.start} e ${check.conflict.end}.`,
+        );
+      }
+    }
+
     if (data.status === "closed") {
       // Find last accepted proposal on any conversation tied to this record
       const { data: convs } = await context.supabase
