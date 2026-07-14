@@ -1,73 +1,94 @@
-Escopo confirmado; nada fora dele. Diretriz §0 aplicada — sem refactors implícitos, sem regressão nas iterações 1–8, RLS e endpoints públicos preservados. `CHANGELOG.md` recebe entrada datada ao final.
+## Escopo (fechado)
 
-## 1. Editar tabelas existentes
+Três frentes: (1) verificar o fluxo público (listagem, detalhes, formulário); (2) adicionar edição de formulários públicos; (3) auditar e otimizar performance de carregamento em todo o app.
 
-- Adicionar server fn `updateTable` em `src/lib/orgs.functions.ts` (patch de `name`, `description`, `bookable`, `icon`; slug preservado). Requer owner/editor via RLS existente.
-- Na dashboard da org (`_authenticated.app.$orgSlug.index.tsx`), cada `Card` de tabela ganha botão-ícone `Pencil` (canto superior direito, `stopPropagation` para não navegar) que abre o mesmo `Dialog` de criação em modo "editar".
-- Refatorar o `Dialog` para aceitar `mode: "create" | "edit"` + `initial`; título muda para "Editar tabela"; ao salvar chama `updateTable` e faz `refetch`.
+---
 
-## 2. Campos com comportamento real por tipo
+### 1. Verificação do fluxo público
 
-- Criar bucket público **`venue-uploads`** via `storage_create_bucket`, com policies em `storage.objects`: INSERT `authenticated`, SELECT `anon` (bucket público).
-- `src/components/venue/dynamic-form.tsx`:
-  - `type=image`: `<input type="file" accept="image/*">` → upload em `venue-uploads/records/{uuid}-{filename}`, grava `publicUrl` no valor; preview `<img>` quando houver.
-  - `type=file`: `<input type="file">` idem; exibe nome do arquivo + link "abrir".
-  - `type=currency`: `Input type=number` com adorno visual "R$".
-  - `type=email/phone/url` mantêm inputs nativos correspondentes.
-  - `type=relation` continua UUID (fora do pedido).
-- `DynamicGrid`: renderizar `image` como thumbnail e `file` como link.
+Percorrer com Playwright:
+- `/public/:slug/:tableId` (listagem)
+- `/public/:slug/:tableId/:recordId` (detalhes)
+- `/public/:slug/:tableId/form?view=…&record=…` (submissão)
 
-## 3. Editor de opções de `select` e `multiselect` (novo)
+Checklist:
+- Registros aparecem apenas com `status='published'`.
+- Detalhes exibem todos os tipos de campo preenchidos (texto, número, data, boolean, currency, computed, select/multiselect, relation, imagem, arquivo) com URLs assinadas em `venue-uploads`.
+- Relations mostram o rótulo do registro relacionado, não UUID cru.
+- Botão "Manifestar interesse" cria record em `submissions_table_id` + `conversation` + `lead_access_tokens` (anônimo) e redireciona para `/lead/:token`.
+- `EmptyState` cobre 404 (sem tela branca).
 
-- **Schema (`src/routes/_authenticated.app.$orgSlug.tables.$tableId.schema.tsx`)**:
-  - Quando `fType ∈ {select, multiselect}` no dialog de criação/edição de campo, exibir gerenciador de opções: `Input` + botão `Adicionar`, `Badge` com `x` para remover, `drag`-less (ordem por inserção). Persiste em `fields.config.options: string[]` via `createField`/`updateField` (schema Zod já aceita `config`).
-  - Cada linha de campo na listagem ganha botão-ícone `Pencil` que reabre o mesmo dialog em modo "editar campo" (label/tipo/required/opções). Ao trocar o tipo para/entre select/multiselect, options são preservadas; ao sair de select/multiselect, options são descartadas com confirmação.
-- **DynamicForm**:
-  - `select`: `Select` shadcn já existente, alimentado por `f.config.options`; adicionar item final "➕ Adicionar opção" que abre inline `Input` — ao confirmar chama nova server fn `addFieldOption({ field_id, option })` (owner/editor) que faz append idempotente em `config.options` e retorna a lista atualizada; a UI invalida `["fields", tableId]` e seleciona a nova opção.
-  - `multiselect`: grupo de `Checkbox` sobre `config.options`, valor `string[]`; abaixo, mesmo input inline "Adicionar opção" com a mesma server fn.
-  - No formulário público (`public.$slug.$tableId.form.tsx`) o "Adicionar opção" **não** aparece — apenas usuários autenticados com permissão de edição sobre a tabela podem estender opções. Detecção via prop `canEditSchema` passada pelo caller; público sempre `false`.
-- Server fn `addFieldOption` em `src/lib/orgs.functions.ts`:
-  - `requireSupabaseAuth` + Zod (`field_id: uuid`, `option: string 1..80`).
-  - Verifica papel do usuário na org do campo (join `fields → tables → organization_id` + `has_role owner|editor`).
-  - `SELECT ... FOR UPDATE` em `fields.config`; append único (case-insensitive) e `UPDATE`. Retorna `options` atualizado.
+Correções aplicadas apenas nos pontos onde o teste falhar. Sem alterar RLS, schema, campanhas ou reserva.
 
-## 4. Cabeçalho: dropdown de perfil (remove "Minhas candidaturas" solto)
+---
 
-- Em `src/components/venue/app-shell.tsx`:
-  - Remover botão "Minhas candidaturas" e links soltos "Membros"/"Calendário" do topo.
-  - `DropdownMenu` disparado por `Avatar` (usa `profiles.avatar_url`/`display_name`; fallback iniciais):
-    - **Configurações** → `/me/settings` (nova rota).
-    - **Minhas candidaturas** → `/me/applications`.
-    - **Calendário** → `/app/$orgSlug/calendar` (só quando `orgSlug` presente).
-    - **Membros** → `/app/$orgSlug/members` (só quando `orgSlug` presente).
-    - Separator + **Sair**.
-  - `NotificationsBell` permanece.
-- Nova rota `src/routes/_authenticated.me.settings.tsx`: form com `display_name` e upload de `avatar_url` (mesmo bucket). Nova server fn `updateMyProfile` em `src/lib/profile.functions.ts` (update em `public.profiles` do próprio usuário).
+### 2. Edição de formulários públicos
 
-## 5. Chat flutuante
+**Backend** (`src/lib/messages.functions.ts`):
+- `getPublicFormView({ id })` — retorna `{ view, submission_fields }` (campos da tabela de destino).
+- `updatePublicFormView({ id, name?, auto_relation_field_id?, form_field_ids? }`) — valida propriedade via `organization_id` e atualiza `views.name` + `views.config`. `submissions_table_id` permanece imutável.
 
-- Novo `src/components/venue/chat-widget.tsx`: botão `MessageCircle` fixo em `fixed bottom-4 right-4 z-50`. Ao abrir, `Sheet` (mobile) / `Dialog` (desktop, via `useIsMobile`) com duas views:
-  1. Lista de conversas do usuário no escopo da org atual (reaproveita queries de `_authenticated.app.$orgSlug.conversations.tsx`).
-  2. Ao selecionar, embute `ConversationThread` existente com polling.
-- Montado no `AppShell` apenas quando há `orgSlug`.
-- Rotas atuais `/app/$orgSlug/conversations*` permanecem intactas (deep-link). Remove-se o botão "Conversas" da dashboard da org.
+**Frontend** (`src/routes/_authenticated.app.$orgSlug.tables.$tableId.index.tsx`):
+- Ícone de lápis em cada card de "Formulários públicos" abre `<Dialog>` de edição.
+- Modal com: `Input` de nome, `Select` de campo `relation` para auto-relação, lista de `Checkbox` com os campos da tabela de submissões (default: todos exceto auto-relation e `computed`).
+- Salvar → invalida `["views", tableId]` + `toast.success`.
 
-## 6. Detalhe público de registro
+UI: apenas shadcn + tokens semânticos. Mobile-first.
 
-- Nova rota `src/routes/public.$slug.$tableId.$recordId.tsx`:
-  - `head()` com `title`/`description` derivados do registro.
-  - Busca via novo `GET /api/public/$slug/$tableId/$recordId` (arquivo em `src/routes/api/public/$slug/$tableId.$recordId.ts`) + helper novo em `public.server.ts` validando `status='published'` do record e da tabela/view pública; usa `supabaseAdmin` como as outras públicas; projeta somente campos da view pública (sem PII).
-  - UI mostra **todos** os campos projetados (image como `<img>`, file como link, computed renderizado). Botão "Manifestar interesse" reaproveita `/public/$slug/$tableId/form?record=...&view=...` quando `public_form_view` existir.
-- Em `public.$slug.$tableId.tsx`: cada `Card` da lista vira `Link` para a rota de detalhe; botão "Manifestar interesse" continua como ação secundária.
+---
 
-## Detalhes técnicos
+### 3. Auditoria e otimização de performance
 
-- Migração Supabase: bucket + policies em `storage.objects`; nenhuma alteração nas tabelas de domínio (opções vivem em `fields.config.options`).
-- Server fns novos usam `requireSupabaseAuth` + Zod; `/api/public/*` continua com `supabaseAdmin` + filtros de `status='published'`.
-- Design System: apenas primitives shadcn já presentes (`DropdownMenu`, `Avatar`, `Sheet`, `Dialog`, `Checkbox`, `Badge`, `Select`).
-- Responsivo validado em 360/768/1280, light+dark, estados loading/empty/error.
-- `CHANGELOG.md` recebe entrada datada cobrindo todos os itens.
+**3.1 Medição (baseline obrigatória antes de qualquer otimização)**
 
-## Fora do escopo
+Rodar Playwright + Lighthouse (via CLI headless) e Chrome DevTools performance trace em:
+- `/` (landing)
+- `/public/:slug/:tableId` (listagem pública)
+- `/public/:slug/:tableId/:recordId` (detalhes)
+- `/app/:orgSlug` (painel autenticado)
+- `/app/:orgSlug/tables/:tableId` (grid dinâmica)
 
-Reordenar opções por drag, remover opção já usada por registros, editor visual de `relation`, exclusão de tabelas, permissões finas no widget de chat (usa RLS existente).
+Coletar: LCP, FCP, TBT, CLS, TTFB, tamanho de bundle por rota, requests em waterfall, tempo de cada `createServerFn`/rota `/api/public/*`. Registrar números iniciais em `.lovable/perf-baseline.md`.
+
+**3.2 Otimizações de front-end**
+
+- **Code splitting**: garantir que nenhum route file exporta o `component` (regra do TanStack) e que rotas pesadas (`calendar`, `conversations`, `campaigns`) ficam em chunks separados. Auditar `routeTree.gen.ts` para chunks acima de 100 kB.
+- **Loader canonical shape**: migrar rotas que hoje usam `useQuery` + `isLoading` no mount para o padrão `ensureQueryData` no loader + `useSuspenseQuery` na página pública (`public.$slug.$tableId.tsx`, `public.$slug.$tableId.$recordId.tsx`, `public.$slug.campaigns.$recordId.tsx`). Evita loading flash e permite pré-render SSR real.
+- **Preload LCP**: em rotas de detalhes com imagem hero, adicionar `head().links` com `rel="preload" as="image" fetchpriority="high"` apontando para a URL assinada da capa.
+- **Lazy media**: aplicar `loading="lazy"` + `decoding="async"` em todo `<img>` fora do LCP; adicionar `width`/`height` para evitar CLS.
+- **Bundle**: remover imports não usados detectados no baseline; verificar se `lucide-react` está em tree-shaking correto (imports nomeados).
+- **Preconnect**: `<link rel="preconnect">` para o domínio do Supabase Storage no `__root.tsx`.
+- **React Query**: definir `staleTime` maior (30–60 s) em queries de metadata pouco voláteis (`listTables`, `listMyOrganizations`, `listViews`) para eliminar refetch em navegação.
+- **Corrigir hydration mismatch** já visível no console (`__root.tsx` — atributos `data-tsd-source` diferindo entre SSR e client), removendo o gatilho quando identificado.
+
+**3.3 Otimizações de back-end (Lovable Cloud)**
+
+- Rodar `supabase--slow_queries` e `supabase--linter`. Registrar top 10 queries por tempo total.
+- Adicionar índices ausentes via migration para os offenders identificados. Candidatos prováveis (só criar quando o EXPLAIN confirmar):
+  - `records(table_id, status, created_at desc)` para a listagem pública.
+  - `messages(conversation_id, created_at)` para o chat.
+  - `conversations(organization_id, updated_at desc)` para o inbox.
+  - `memberships(user_id)` para `listMyOrganizations`.
+- Reduzir round-trips em `loadPublicRecord`: coletar todos os storage paths e emitir um único `createSignedUrls` em vez de N chamadas sequenciais.
+- Em `loadPublicTable`, projetar apenas as colunas realmente usadas na listagem (evitar `data` inteiro quando só 4 campos são exibidos) — retornar `data` filtrado para as chaves visíveis.
+- Adicionar `Cache-Control: public, max-age=30, s-maxage=60, stale-while-revalidate=300` nos handlers `/api/public/*` estáveis (listagem e detalhes) e `no-store` no `submit`.
+
+**3.4 Gate de fechamento perf**
+
+- Rerodar Lighthouse nas mesmas rotas e comparar com baseline. Meta mínima (mobile emulado):
+  - LCP ≤ 2.5 s nas páginas públicas
+  - TBT ≤ 200 ms
+  - CLS ≤ 0.1
+  - Nenhuma request `/api/public/*` acima de 400 ms no p95 medido
+- Números finais registrados em `.lovable/perf-baseline.md` (seção "após").
+
+---
+
+### Gate geral (Diretriz §0 e §7)
+
+1. Build passa; typecheck limpo.
+2. Playwright verifica listagem → detalhes → formulário → submissão OK, e edição de formulário reflete no `/form`.
+3. Baseline e resultado de perf registrados.
+4. Zero regressão nas iterações 1–8; RLS e GRANTs intactos; nenhum PII em `/api/public/*`.
+5. Responsividade validada em 360 / 768 / 1280, light + dark.
+6. `CHANGELOG.md` atualizado com entrada datada (America/Sao_Paulo) descrevendo verificação pública, `updatePublicFormView`/UI de edição e otimizações de performance aplicadas.

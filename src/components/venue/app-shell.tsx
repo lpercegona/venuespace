@@ -30,9 +30,10 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
     queryKey: ["org", orgSlug],
     queryFn: () => getOrganizationBySlug({ data: { slug: orgSlug! } }),
     enabled: !!orgSlug,
+    staleTime: 60_000,
   });
-  const me = useQuery({ queryKey: ["me-profile"], queryFn: () => getMyProfile() });
-  const myOrgs = useQuery({ queryKey: ["my-orgs"], queryFn: () => listMyOrganizations() });
+  const me = useQuery({ queryKey: ["me-profile"], queryFn: () => getMyProfile(), staleTime: 60_000 });
+  const myOrgs = useQuery({ queryKey: ["my-orgs"], queryFn: () => listMyOrganizations(), staleTime: 60_000 });
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const initial = (me.data?.display_name ?? me.data?.email ?? "?").slice(0, 1).toUpperCase();

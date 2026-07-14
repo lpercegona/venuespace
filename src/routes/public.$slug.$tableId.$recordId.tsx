@@ -12,6 +12,7 @@ type Payload = {
   fields: Array<{ id: string; key: string; label: string; type: string; position: number; config: any }>;
   record: { id: string; data: Record<string, any>; deal_status: string; created_at: string };
   signed_urls: Record<string, string>;
+  relations: Record<string, Record<string, { id: string; label: string }>>;
   public_form_view: { id: string; auto_relation_field_id: string | null } | null;
 };
 
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/public/$slug/$tableId/$recordId")({
   component: PublicRecordDetail,
 });
 
-function formatValue(field: Payload["fields"][number], raw: any): string {
+function formatValue(field: Payload["fields"][number], raw: any, relations: Payload["relations"]): string {
   if (raw == null || raw === "") return "—";
   if (field.type === "boolean") return raw ? "Sim" : "Não";
   if (field.type === "currency" || field.type === "computed") {
@@ -45,6 +46,11 @@ function formatValue(field: Payload["fields"][number], raw: any): string {
   if (field.type === "date") return new Date(raw).toLocaleDateString("pt-BR");
   if (field.type === "datetime") return new Date(raw).toLocaleString("pt-BR");
   if (field.type === "multiselect" && Array.isArray(raw)) return raw.join(", ");
+  if (field.type === "relation") {
+    const map = relations[field.id] ?? {};
+    if (Array.isArray(raw)) return raw.map((id) => map[id]?.label ?? id).join(", ");
+    return map[raw]?.label ?? String(raw);
+  }
   return String(raw);
 }
 
@@ -59,7 +65,7 @@ function PublicRecordDetail() {
     return <div className="mx-auto max-w-2xl px-4 py-16"><EmptyState title="Não encontrado" description={(q.error as Error | undefined)?.message ?? "Recurso indisponível"} /></div>;
   }
 
-  const { organization, table, fields, record, signed_urls, public_form_view } = q.data;
+  const { organization, table, fields, record, signed_urls, relations, public_form_view } = q.data;
   const visible = fields.filter((f) => f.key && !f.key.startsWith("__"));
   const titleField = visible.find((f) => f.type === "text" || f.type === "long_text") ?? visible[0];
   const title = titleField ? String(record.data?.[titleField.key] ?? "Detalhes") : "Detalhes";
@@ -88,7 +94,7 @@ function PublicRecordDetail() {
             return (
               <Card key={f.id}>
                 <CardContent className="p-0">
-                  <img src={url} alt={f.label} className="w-full rounded-lg object-cover" loading="lazy" />
+                  <img src={url} alt={f.label} className="w-full rounded-lg object-cover" loading="lazy" decoding="async" />
                 </CardContent>
               </Card>
             );
@@ -103,7 +109,7 @@ function PublicRecordDetail() {
                   return (
                     <div key={f.id} className="min-w-0 space-y-1">
                       <dt className="text-xs uppercase tracking-wide text-muted-foreground">{f.label}</dt>
-                      <dd className="whitespace-pre-wrap break-words text-sm text-foreground">{formatValue(f, raw)}</dd>
+                      <dd className="whitespace-pre-wrap break-words text-sm text-foreground">{formatValue(f, raw, relations)}</dd>
                     </div>
                   );
                 })}
