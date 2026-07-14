@@ -8,7 +8,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building2, Check, List } from "lucide-react";
+import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building2, Check, List, Compass } from "lucide-react";
 import { getOrganizationBySlug, listMyOrganizations } from "@/lib/orgs.functions";
 import { getMyProfile } from "@/lib/profile.functions";
 import { NotificationsBell } from "./notifications-bell";
