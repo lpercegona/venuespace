@@ -8,7 +8,7 @@ type Props = {
   title?: string;
   subtitle?: string;
   actions?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
 };
 
 export function AppShell({ title, subtitle, actions, children }: Props) {

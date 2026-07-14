@@ -162,7 +162,7 @@ export const createField = createServerFn({ method: "POST" })
         type: data.type,
         required: data.required ?? false,
         position: data.position ?? 0,
-        config: data.config ?? {},
+        config: (data.config ?? {}) as any,
       })
       .select("id")
       .single();
@@ -175,7 +175,7 @@ export const updateField = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => fieldUpdate.parse(d))
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data;
-    const { error } = await context.supabase.from("fields").update(rest).eq("id", id);
+    const { error } = await context.supabase.from("fields").update(rest as any).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
