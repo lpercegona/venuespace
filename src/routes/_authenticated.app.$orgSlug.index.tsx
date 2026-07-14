@@ -256,14 +256,23 @@ function OrgDashboard() {
           )}
         </div>
       </section>
+      {isOwner ? (
+        <EditOrgDialog open={openEditOrg} onOpenChange={setOpenEditOrg} org={{
+          id: org.data.id, slug: org.data.slug, name: org.data.name,
+          description: org.data.description ?? null, logo_url: (org.data as any).logo_url ?? null,
+        }} />
+      ) : null}
     </AppShell>
   );
 }
 
 function TableCard({
-  t, orgSlug, canEdit, onSaved,
-}: { t: any; orgSlug: string; canEdit: boolean; onSaved: () => void }) {
+  t, orgSlug, canEdit, isOwner, onSaved,
+}: { t: any; orgSlug: string; canEdit: boolean; isOwner: boolean; onSaved: () => void }) {
   const [editing, setEditing] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [delConfirmName, setDelConfirmName] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [name, setName] = useState(t.name);
   const [desc, setDesc] = useState(t.description ?? "");
   const [bookable, setBookable] = useState(!!t.bookable);
