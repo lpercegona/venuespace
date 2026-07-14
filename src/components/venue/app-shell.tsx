@@ -3,9 +3,16 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, FileHeart } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LogOut, Settings, FileHeart, CalendarDays, Users } from "lucide-react";
 import { getOrganizationBySlug } from "@/lib/orgs.functions";
+import { getMyProfile } from "@/lib/profile.functions";
 import { NotificationsBell } from "./notifications-bell";
+import { ChatWidget } from "./chat-widget";
 
 type Props = {
   title?: string;
@@ -23,6 +30,9 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
     queryFn: () => getOrganizationBySlug({ data: { slug: orgSlug! } }),
     enabled: !!orgSlug,
   });
+  const me = useQuery({ queryKey: ["me-profile"], queryFn: () => getMyProfile() });
+
+  const initial = (me.data?.display_name ?? me.data?.email ?? "?").slice(0, 1).toUpperCase();
 
   return (
     <div className="min-h-screen bg-background">
@@ -36,29 +46,53 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
           </Link>
           <div className="flex items-center gap-2">
             {orgSlug && org.data ? (
-              <>
-                <Link to="/app/$orgSlug/members" params={{ orgSlug }} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Membros</Link>
-                <Link to="/app/$orgSlug/calendar" params={{ orgSlug }} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Calendário</Link>
-                <NotificationsBell organizationId={org.data.id} orgSlug={orgSlug} />
-              </>
+              <NotificationsBell organizationId={org.data.id} orgSlug={orgSlug} />
             ) : null}
-            <Link to="/me/applications">
-              <Button variant="ghost" size="sm">
-                <FileHeart className="h-4 w-4" />
-                <span className="hidden sm:inline">Minhas candidaturas</span>
-              </Button>
-            </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/auth" });
-              }}
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sair</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Menu do perfil"
+                  className="rounded-full outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  <Avatar className="h-9 w-9">
+                    {me.data?.avatar_url ? <AvatarImage src={me.data.avatar_url} alt="" /> : null}
+                    <AvatarFallback>{initial}</AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="truncate">
+                  {me.data?.display_name ?? me.data?.email ?? "Perfil"}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => navigate({ to: "/me/settings" })}>
+                  <Settings className="h-4 w-4" />Configurações
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => navigate({ to: "/me/applications" })}>
+                  <FileHeart className="h-4 w-4" />Minhas candidaturas
+                </DropdownMenuItem>
+                {orgSlug ? (
+                  <>
+                    <DropdownMenuItem onSelect={() => navigate({ to: "/app/$orgSlug/calendar", params: { orgSlug } })}>
+                      <CalendarDays className="h-4 w-4" />Calendário
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => navigate({ to: "/app/$orgSlug/members", params: { orgSlug } })}>
+                      <Users className="h-4 w-4" />Membros
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={async () => {
+                    await supabase.auth.signOut();
+                    navigate({ to: "/auth" });
+                  }}
+                >
+                  <LogOut className="h-4 w-4" />Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -80,6 +114,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
         )}
         {children}
       </main>
+      {orgSlug && org.data ? <ChatWidget organizationId={org.data.id} /> : null}
     </div>
   );
 }
