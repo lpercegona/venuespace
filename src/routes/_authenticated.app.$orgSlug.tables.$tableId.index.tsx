@@ -249,8 +249,8 @@ function RecordsPage() {
               <Select value={subTableId} onValueChange={loadSubFields}>
                 <SelectTrigger><SelectValue placeholder="Escolha uma tabela para receber envios" /></SelectTrigger>
                 <SelectContent>
-                  {(orgTables.data ?? []).filter((t: any) => t.id !== tableId).map((t: any) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  {(orgTables.data ?? []).map((t: any) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}{t.id === tableId ? " (esta tabela)" : ""}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
