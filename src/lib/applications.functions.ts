@@ -36,7 +36,7 @@ export const setContributionStatus = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
-      status: z.enum(["pledged", "confirmed", "cancelled"]),
+      status: z.enum(["pledged", "confirmed", "refunded", "none"]),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
