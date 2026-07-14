@@ -14,16 +14,237 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      fields: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          key: string
+          label: string
+          position: number
+          required: boolean
+          table_id: string
+          type: Database["public"]["Enums"]["field_type"]
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          position?: number
+          required?: boolean
+          table_id: string
+          type: Database["public"]["Enums"]["field_type"]
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          position?: number
+          required?: boolean
+          table_id?: string
+          type?: Database["public"]["Enums"]["field_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fields_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memberships: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tables: {
+        Row: {
+          bookable: boolean
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_system: boolean
+          name: string
+          organization_id: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          bookable?: boolean
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          organization_id: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          bookable?: boolean
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          organization_id?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tables_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_edit_org: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _org_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner" | "editor" | "viewer"
+      contribution_status: "none" | "pledged" | "confirmed" | "refunded"
+      deal_status: "none" | "negotiating" | "accepted" | "declined" | "closed"
+      field_type:
+        | "text"
+        | "long_text"
+        | "number"
+        | "currency"
+        | "boolean"
+        | "date"
+        | "datetime"
+        | "select"
+        | "multiselect"
+        | "email"
+        | "phone"
+        | "url"
+        | "image"
+        | "file"
+        | "relation"
+        | "computed"
+      record_status: "draft" | "published" | "archived"
+      view_type: "grid" | "public_list" | "public_detail" | "public_form"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +371,30 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner", "editor", "viewer"],
+      contribution_status: ["none", "pledged", "confirmed", "refunded"],
+      deal_status: ["none", "negotiating", "accepted", "declined", "closed"],
+      field_type: [
+        "text",
+        "long_text",
+        "number",
+        "currency",
+        "boolean",
+        "date",
+        "datetime",
+        "select",
+        "multiselect",
+        "email",
+        "phone",
+        "url",
+        "image",
+        "file",
+        "relation",
+        "computed",
+      ],
+      record_status: ["draft", "published", "archived"],
+      view_type: ["grid", "public_list", "public_detail", "public_form"],
+    },
   },
 } as const
