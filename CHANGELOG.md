@@ -11,6 +11,35 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 
 ---
 
+## 2026-07-14 18:30 — Iterações 5, 6, 7, 8
+
+**Iteração 5 — Candidatura autenticada + /me/applications:**
+- Migração RLS: `records: applicants can read own` (aplicant_user_id = auth.uid()); índices `messages(read_at)` e `records(applicant_user_id)`.
+- `src/lib/applications.functions.ts`: `getMyApplications` cross-org, retorna com conversation_id anexado.
+- `src/routes/_authenticated.me.applications.tsx`: lista candidaturas do usuário, link para conversa.
+- `src/routes/public.$slug.$tableId.form.tsx`: envio agora anexa Authorization Bearer quando há sessão, preenchendo applicant_user_id no /submit.
+
+**Iteração 6 — Campanhas de arrecadação:**
+- `src/routes/api/public/campaigns/$recordId.ts`: GET com progresso confirmado (soma apenas `contribution_status='confirmed'`), POST cria contribuição em tabela de submissões via public_form, gera conversa e lead_access_token quando anônimo.
+- `src/routes/public.$slug.campaigns.$recordId.tsx`: página pública com meta, barra de progresso, chave PIX e formulário de contribuição.
+- `applications.functions.ts`: `setContributionStatus` (owner/editor via RLS) e `listContributionsForCampaign`.
+
+**Iteração 7 — Motor de reserva:**
+- `applications.functions.ts`: `runBookingCheck` (detecção via `fields.config.booking_role` start/end + relação de recurso), `checkBookingConflict` server fn, `listOccupancy`.
+- `messages.functions.ts`: `setDealStatus` rejeita transição para `accepted`/`closed` quando há conflito de datas com outra reserva aceita/fechada no mesmo recurso.
+- `src/routes/_authenticated.app.$orgSlug.calendar.tsx`: calendário simples de ocupação por tabela reservável.
+
+**Iteração 8 — Membros + polimento + notificações:**
+- `applications.functions.ts`: `updateMembershipRole`, `removeMembership`, `listUnreadForOrg`, `markConversationRead`.
+- `src/routes/_authenticated.app.$orgSlug.members.tsx`: adicionar membro por e-mail, alterar papel, remover (restrito a owner).
+- `src/components/venue/notifications-bell.tsx`: sino com contador de mensagens não lidas (polling 15s), popover com últimas 20.
+- `src/components/venue/app-shell.tsx`: integração com bell, links "Membros"/"Calendário"/"Minhas candidaturas".
+
+**Validação:** Typecheck limpo. RLS revisado. Nenhum endpoint público retorna PII. Sem regressão nas iterações 1-4.
+
+---
+
+
 ## 2026-07-14 17:00 — Iteração 3 + Iteração 4: Publicação pública, formulários, chat e negociação
 
 **Migrations:**
