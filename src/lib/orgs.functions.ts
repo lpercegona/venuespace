@@ -28,7 +28,7 @@ export const createOrganization = createServerFn({ method: "POST" })
     const slug = data.slug ?? slugify(data.name);
     if (!slug) throw new Error("Slug inválido");
     const { data: rows, error } = await context.supabase
-      .rpc("create_organization", { _name: data.name, _slug: slug, _description: data.description ?? null });
+      .rpc("create_organization", { _name: data.name, _slug: slug, _description: data.description ?? undefined });
     if (error) throw new Error(error.message);
     const org = Array.isArray(rows) ? rows[0] : rows;
     if (!org) throw new Error("Falha ao criar organização");
