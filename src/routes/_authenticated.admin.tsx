@@ -692,27 +692,60 @@ function SystemFieldsSection() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SystemFieldRow | null>(null);
   const [key, setKey] = useState("");
+  const [keyTouched, setKeyTouched] = useState(false);
   const [flabel, setFlabel] = useState("");
   const [ftype, setFtype] = useState("text");
   const [freq, setFreq] = useState(false);
   const [forder, setForder] = useState(0);
   const [saving, setSaving] = useState(false);
 
+  function toSnake(input: string): string {
+    return input
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().trim()
+      .replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+      .slice(0, 60);
+  }
+
+  function uniqueKey(base: string): string {
+    const existing = new Set((fields.data ?? []).map((f) => f.key));
+    if (!base) return base;
+    if (!existing.has(base)) return base;
+    let i = 2;
+    while (existing.has(`${base}_${i}`)) i++;
+    return `${base}_${i}`;
+  }
+
   function openNew() {
-    setEditing(null); setKey(""); setFlabel(""); setFtype("text"); setFreq(false);
+    setEditing(null); setKey(""); setKeyTouched(false); setFlabel(""); setFtype("text"); setFreq(false);
     setForder((fields.data ?? []).length); setOpen(true);
   }
   function openEdit(f: SystemFieldRow) {
-    setEditing(f); setKey(f.key); setFlabel(f.label); setFtype(f.type);
+    setEditing(f); setKey(f.key); setKeyTouched(true); setFlabel(f.label); setFtype(f.type);
     setFreq(f.required); setForder(f.position); setOpen(true);
+  }
+
+  function onLabelChange(v: string) {
+    setFlabel(v);
+    if (!editing && !keyTouched) setKey(toSnake(v));
+  }
+  function onKeyChange(v: string) {
+    setKey(v);
+    setKeyTouched(true);
   }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
+      let finalKey = key;
+      if (!editing) {
+        const base = toSnake(key || flabel);
+        finalKey = uniqueKey(base);
+        if (finalKey !== key) setKey(finalKey);
+      }
       await upsertSystemField({ data: {
-        id: editing?.id, scope, key, label: flabel, type: ftype as any,
+        id: editing?.id, scope, key: finalKey, label: flabel, type: ftype as any,
         required: freq, position: forder,
       } });
       toast.success("Campo salvo");
@@ -755,8 +788,8 @@ function SystemFieldsSection() {
               <DialogHeader><DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo de sistema"}</DialogTitle></DialogHeader>
               <form onSubmit={save} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2"><Label htmlFor="sf-key">Chave (snake_case)</Label><Input id="sf-key" required value={key} onChange={(e) => setKey(e.target.value)} placeholder="segmento" /></div>
-                  <div className="space-y-2"><Label htmlFor="sf-label">Rótulo</Label><Input id="sf-label" required value={flabel} onChange={(e) => setFlabel(e.target.value)} /></div>
+                  <div className="space-y-2"><Label htmlFor="sf-key">Chave</Label><Input id="sf-key" required value={key} onChange={(e) => onKeyChange(e.target.value)} placeholder="segmento" readOnly={!!editing} disabled={!!editing} /></div>
+                  <div className="space-y-2"><Label htmlFor="sf-label">Rótulo</Label><Input id="sf-label" required value={flabel} onChange={(e) => onLabelChange(e.target.value)} /></div>
                   <div className="space-y-2">
                     <Label>Tipo</Label>
                     <Select value={ftype} onValueChange={setFtype}>
