@@ -16,6 +16,7 @@ import { Route as LeadTokenRouteImport } from './routes/lead.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as PublicSlugTableIdRouteImport } from './routes/public.$slug.$tableId'
 import { Route as AuthenticatedMeApplicationsRouteImport } from './routes/_authenticated.me.applications'
+import { Route as PublicSlugTableIdIndexRouteImport } from './routes/public.$slug.$tableId.index'
 import { Route as AuthenticatedAppOrgSlugIndexRouteImport } from './routes/_authenticated.app.$orgSlug.index'
 import { Route as PublicSlugCampaignsRecordIdRouteImport } from './routes/public.$slug.campaigns.$recordId'
 import { Route as PublicSlugTableIdFormRouteImport } from './routes/public.$slug.$tableId.form'
@@ -68,6 +69,11 @@ const AuthenticatedMeApplicationsRoute =
     path: '/me/applications',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const PublicSlugTableIdIndexRoute = PublicSlugTableIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PublicSlugTableIdRoute,
+} as any)
 const AuthenticatedAppOrgSlugIndexRoute =
   AuthenticatedAppOrgSlugIndexRouteImport.update({
     id: '/app/$orgSlug/',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
   '/app/$orgSlug/': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/public/$slug/$tableId/': typeof PublicSlugTableIdIndexRoute
   '/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
   '/api/public/$slug/$tableId/$recordId': typeof ApiPublicSlugTableIdRecordIdRoute
   '/api/public/$slug/$tableId/submit': typeof ApiPublicSlugTableIdSubmitRoute
@@ -191,7 +198,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/lead/$token': typeof LeadTokenRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
-  '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/$orgSlug/calendar': typeof AuthenticatedAppOrgSlugCalendarRoute
   '/app/$orgSlug/conversations': typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
@@ -204,6 +210,7 @@ export interface FileRoutesByTo {
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
   '/app/$orgSlug': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/public/$slug/$tableId': typeof PublicSlugTableIdIndexRoute
   '/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
   '/api/public/$slug/$tableId/$recordId': typeof ApiPublicSlugTableIdRecordIdRoute
   '/api/public/$slug/$tableId/submit': typeof ApiPublicSlugTableIdSubmitRoute
@@ -230,6 +237,7 @@ export interface FileRoutesById {
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
   '/_authenticated/app/$orgSlug/': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/public/$slug/$tableId/': typeof PublicSlugTableIdIndexRoute
   '/_authenticated/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
   '/api/public/$slug/$tableId/$recordId': typeof ApiPublicSlugTableIdRecordIdRoute
   '/api/public/$slug/$tableId/submit': typeof ApiPublicSlugTableIdSubmitRoute
@@ -256,6 +264,7 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
     | '/app/$orgSlug/'
+    | '/public/$slug/$tableId/'
     | '/app/$orgSlug/conversations/$conversationId'
     | '/api/public/$slug/$tableId/$recordId'
     | '/api/public/$slug/$tableId/submit'
@@ -267,7 +276,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/lead/$token'
     | '/me/applications'
-    | '/public/$slug/$tableId'
     | '/app'
     | '/app/$orgSlug/calendar'
     | '/app/$orgSlug/conversations'
@@ -280,6 +288,7 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
     | '/app/$orgSlug'
+    | '/public/$slug/$tableId'
     | '/app/$orgSlug/conversations/$conversationId'
     | '/api/public/$slug/$tableId/$recordId'
     | '/api/public/$slug/$tableId/submit'
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
     | '/_authenticated/app/$orgSlug/'
+    | '/public/$slug/$tableId/'
     | '/_authenticated/app/$orgSlug/conversations/$conversationId'
     | '/api/public/$slug/$tableId/$recordId'
     | '/api/public/$slug/$tableId/submit'
@@ -375,6 +385,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/me/applications'
       preLoaderRoute: typeof AuthenticatedMeApplicationsRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/public/$slug/$tableId/': {
+      id: '/public/$slug/$tableId/'
+      path: '/'
+      fullPath: '/public/$slug/$tableId/'
+      preLoaderRoute: typeof PublicSlugTableIdIndexRouteImport
+      parentRoute: typeof PublicSlugTableIdRoute
     }
     '/_authenticated/app/$orgSlug/': {
       id: '/_authenticated/app/$orgSlug/'
@@ -538,11 +555,13 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 interface PublicSlugTableIdRouteChildren {
   PublicSlugTableIdRecordIdRoute: typeof PublicSlugTableIdRecordIdRoute
   PublicSlugTableIdFormRoute: typeof PublicSlugTableIdFormRoute
+  PublicSlugTableIdIndexRoute: typeof PublicSlugTableIdIndexRoute
 }
 
 const PublicSlugTableIdRouteChildren: PublicSlugTableIdRouteChildren = {
   PublicSlugTableIdRecordIdRoute: PublicSlugTableIdRecordIdRoute,
   PublicSlugTableIdFormRoute: PublicSlugTableIdFormRoute,
+  PublicSlugTableIdIndexRoute: PublicSlugTableIdIndexRoute,
 }
 
 const PublicSlugTableIdRouteWithChildren =
@@ -576,13 +595,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -11,6 +11,15 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 
 ---
 
+## 2026-07-14 21:00 — Fix: rota pública de detalhes e formulário não abriam
+
+- `src/routes/public.$slug.$tableId.tsx`: convertida em layout puro (`() => <Outlet />`); antes renderizava a listagem sem `<Outlet />`, o que impedia o render das rotas filhas (`$recordId`, `form`) apesar da URL casar.
+- `src/routes/public.$slug.$tableId.index.tsx`: nova rota índice contendo `PublicListPage` (mesma listagem, mesmo `head`), respondendo em `/public/:slug/:tableId`.
+- Endpoints `/api/public/...` inalterados (200 OK verificado).
+
+---
+
+
 ## 2026-07-14 20:15 — Edição de formulários públicos + otimização do fluxo público
 
 - **Backend / server fns**
