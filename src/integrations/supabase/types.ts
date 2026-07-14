@@ -573,6 +573,7 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin_email: { Args: { _email: string }; Returns: boolean }
+      whoami: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "owner" | "editor" | "viewer"
