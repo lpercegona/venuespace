@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
+import { PublicHeader } from "@/components/venue/public-header";
+import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
 type Payload = {
   organization: { id: string; slug: string; name: string; description: string | null };
@@ -33,6 +36,9 @@ export const Route = createFileRoute("/public/$slug/$tableId/")({
 function PublicListPage() {
   const { slug, tableId } = Route.useParams();
   const q = useQuery({ queryKey: ["public", slug, tableId], queryFn: () => fetchPublic(slug, tableId) });
+  const [interestFor, setInterestFor] = useState<string | null>(null);
+
+
 
   if (q.isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
