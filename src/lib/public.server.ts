@@ -83,7 +83,7 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
 }
 
 export async function loadPublicFormSchema(viewId: string) {
-  const sb = createPublicClient();
+  const sb = supabaseAdmin;
   const { data: view, error } = await sb
     .from("views")
     .select("id, type, config, submissions_table_id, table_id, organization_id")
