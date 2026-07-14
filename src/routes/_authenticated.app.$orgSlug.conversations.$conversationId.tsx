@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ConversationThread, type ThreadMessage } from "@/components/venue/conversation-thread";
+import { useFormatContext } from "@/hooks/use-instance-context";
 import { getOrganizationBySlug } from "@/lib/orgs.functions";
 import {
   getConversation, listMessages, sendMessage, setProposalStatus, setDealStatus,
@@ -25,6 +26,7 @@ function ConversationDetailPage() {
   const qc = useQueryClient();
 
   const org = useQuery({ queryKey: ["org", orgSlug], queryFn: () => getOrganizationBySlug({ data: { slug: orgSlug } }) });
+  const formatCtx = useFormatContext(org.data as any);
   const conv = useQuery({
     queryKey: ["conversation", conversationId],
     queryFn: () => getConversation({ data: { id: conversationId } }),
@@ -136,6 +138,7 @@ function ConversationDetailPage() {
           currentRole="member"
           onAcceptProposal={canEdit ? accept : undefined}
           onDeclineProposal={canEdit ? decline : undefined}
+          formatCtx={formatCtx}
         />
       )}
 

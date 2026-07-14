@@ -3,10 +3,24 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { slugify } from "./slug";
 
+const currencyDisplaySchema = z
+  .object({
+    symbol: z.string().max(6),
+    position: z.enum(["before", "after"]),
+    decimal: z.string().max(2),
+    thousand: z.string().max(2),
+  })
+  .nullable()
+  .optional();
+
 const orgCreate = z.object({
   name: z.string().min(2).max(80),
   slug: z.string().min(2).max(60).regex(/^[a-z0-9-]+$/).optional(),
   description: z.string().max(500).optional(),
+  category_id: z.string().uuid().nullable().optional(),
+  timezone: z.string().max(64).nullable().optional(),
+  currency: z.string().max(8).nullable().optional(),
+  currency_display: currencyDisplaySchema,
 });
 
 export const listMyOrganizations = createServerFn({ method: "GET" })
@@ -14,7 +28,7 @@ export const listMyOrganizations = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("memberships")
-      .select("role, organization:organizations(id, slug, name, description, logo_url, created_at)")
+      .select("role, organization:organizations(id, slug, name, description, logo_url, category_id, timezone, currency, currency_display, created_at)")
       .eq("user_id", context.userId)
       .order("created_at", { referencedTable: "organizations", ascending: false });
     if (error) throw new Error(error.message);
@@ -27,11 +41,22 @@ export const createOrganization = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const slug = data.slug ?? slugify(data.name);
     if (!slug) throw new Error("Slug inválido");
+    // Create via SECURITY DEFINER RPC (bypasses org SELECT during insert-and-return).
     const { data: rows, error } = await context.supabase
       .rpc("create_organization", { _name: data.name, _slug: slug, _description: data.description ?? undefined });
     if (error) throw new Error(error.message);
     const org = Array.isArray(rows) ? rows[0] : rows;
     if (!org) throw new Error("Falha ao criar organização");
+    // Apply category + overrides via update (owner policy, caller is owner).
+    const patch: Record<string, any> = {};
+    if (data.category_id !== undefined) patch.category_id = data.category_id;
+    if (data.timezone !== undefined) patch.timezone = data.timezone;
+    if (data.currency !== undefined) patch.currency = data.currency;
+    if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
+    if (Object.keys(patch).length > 0) {
+      const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
+      if (uErr) throw new Error(uErr.message);
+    }
     return org as { id: string; slug: string; name: string };
   });
 
@@ -41,7 +66,7 @@ export const getOrganizationBySlug = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: org, error } = await context.supabase
       .from("organizations")
-      .select("id, slug, name, description, logo_url, created_at")
+      .select("id, slug, name, description, logo_url, category_id, timezone, currency, currency_display, created_at")
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -62,6 +87,10 @@ const orgUpdate = z.object({
   name: z.string().min(2).max(80).optional(),
   description: z.string().max(500).nullable().optional(),
   logo_url: z.string().url().max(2000).nullable().optional(),
+  category_id: z.string().uuid().nullable().optional(),
+  timezone: z.string().max(64).nullable().optional(),
+  currency: z.string().max(8).nullable().optional(),
+  currency_display: currencyDisplaySchema,
 });
 
 export const updateOrganization = createServerFn({ method: "POST" })
@@ -76,6 +105,10 @@ export const updateOrganization = createServerFn({ method: "POST" })
     if (data.name !== undefined) patch.name = data.name;
     if (data.description !== undefined) patch.description = data.description;
     if (data.logo_url !== undefined) patch.logo_url = data.logo_url;
+    if (data.category_id !== undefined) patch.category_id = data.category_id;
+    if (data.timezone !== undefined) patch.timezone = data.timezone;
+    if (data.currency !== undefined) patch.currency = data.currency;
+    if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
     const { error } = await context.supabase.from("organizations").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -160,6 +193,39 @@ export const createTable = createServerFn({ method: "POST" })
       .select("id, slug, name")
       .single();
     if (error) throw new Error(error.message);
+
+    // Seed default fields from org's category, if any.
+    try {
+      const { data: org } = await context.supabase
+        .from("organizations")
+        .select("category_id")
+        .eq("id", data.organization_id)
+        .maybeSingle();
+      const catId = (org as any)?.category_id as string | undefined;
+      if (catId) {
+        const { data: defs } = await context.supabase
+          .from("organization_category_default_fields")
+          .select("field_key, label, field_type, required, config, order_index")
+          .eq("category_id", catId)
+          .order("order_index", { ascending: true });
+        const list = (defs ?? []) as any[];
+        if (list.length > 0) {
+          const rows = list.map((f, idx) => ({
+            table_id: (row as any).id,
+            key: f.field_key,
+            label: f.label,
+            type: f.field_type,
+            required: !!f.required,
+            position: f.order_index ?? idx,
+            config: (f.config ?? {}) as any,
+          }));
+          await context.supabase.from("fields").insert(rows as any);
+        }
+      }
+    } catch {
+      // Seeding failure must not block table creation.
+    }
+
     return row;
   });
 
@@ -218,6 +284,19 @@ const fieldCreate = z.object({
 
 const fieldUpdate = fieldCreate.partial().extend({ id: z.string().uuid() });
 
+/** Blocks non-super-admin mutation when the instance-wide toggle is off. */
+async function checkFieldManagementAllowed(supabase: any, userId: string) {
+  const [{ data: setting }, { data: isSA }] = await Promise.all([
+    supabase.from("instance_settings").select("allow_user_field_management").eq("id", 1).maybeSingle(),
+    supabase.rpc("is_super_admin", { _user_id: userId }),
+  ]);
+  if (isSA) return;
+  const allowed = (setting as any)?.allow_user_field_management ?? true;
+  if (!allowed) {
+    throw new Error("Gestão de campos por usuários está desativada nas configurações da instância.");
+  }
+}
+
 export const listFields = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ table_id: z.string().uuid() }).parse(d))
@@ -235,6 +314,7 @@ export const createField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => fieldCreate.parse(d))
   .handler(async ({ data, context }) => {
+    await checkFieldManagementAllowed(context.supabase, context.userId);
     const { data: row, error } = await context.supabase
       .from("fields")
       .insert({
@@ -256,6 +336,7 @@ export const updateField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => fieldUpdate.parse(d))
   .handler(async ({ data, context }) => {
+    await checkFieldManagementAllowed(context.supabase, context.userId);
     const { id, ...rest } = data;
     const { error } = await context.supabase.from("fields").update(rest as any).eq("id", id);
     if (error) throw new Error(error.message);
@@ -266,6 +347,7 @@ export const deleteField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    await checkFieldManagementAllowed(context.supabase, context.userId);
     const { error } = await context.supabase.from("fields").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -307,14 +389,11 @@ export const addMemberByEmail = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    // Verify caller can manage members of this org (must be owner).
     const { data: canManage, error: chkErr } = await context.supabase
       .rpc("has_role", { _user_id: context.userId, _org_id: data.organization_id, _role: "owner" });
     if (chkErr) throw new Error(chkErr.message);
     if (!canManage) throw new Error("Sem permissão para adicionar membros.");
 
-    // Look up target profile with the admin client (restricted profile RLS
-    // would hide users who aren't yet co-members of this org).
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: profile, error: pErr } = await supabaseAdmin
       .from("profiles")
@@ -377,4 +456,3 @@ export const addFieldOption = createServerFn({ method: "POST" })
     }
     return { options: next };
   });
-

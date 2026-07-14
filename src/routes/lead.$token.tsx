@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { ConversationThread, type ThreadMessage } from "@/components/venue/conversation-thread";
 import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader } from "@/components/venue/public-header";
+import { useFormatContext } from "@/hooks/use-instance-context";
+import { formatCurrency } from "@/lib/formatting";
 
 type Payload = {
   conversation: { id: string; title: string; lead_email: string };
@@ -38,6 +40,8 @@ function LeadPage() {
     queryFn: () => fetchLead(token),
     refetchInterval: 5000,
   });
+  const formatCtx = useFormatContext(null);
+
 
   const [body, setBody] = useState("");
   const [type, setType] = useState<"text" | "proposal">("text");
@@ -94,7 +98,7 @@ function LeadPage() {
               <Badge variant="outline">Status: {record.deal_status}</Badge>
               {record.agreed_value != null ? (
                 <Badge variant="secondary">
-                  Valor acordado: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(record.agreed_value)}
+                  Valor acordado: {formatCurrency(record.agreed_value, formatCtx)}
                 </Badge>
               ) : null}
             </div>
@@ -102,7 +106,7 @@ function LeadPage() {
         </div>
       </header>
       <main className="mx-auto max-w-3xl space-y-4 px-4 py-6 sm:px-6">
-        <ConversationThread messages={messages} currentRole="lead" />
+        <ConversationThread messages={messages} currentRole="lead" formatCtx={formatCtx} />
 
         <Card>
           <CardHeader><CardTitle className="font-display text-base">Nova mensagem</CardTitle></CardHeader>

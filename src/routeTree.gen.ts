@@ -14,9 +14,13 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeadTokenRouteImport } from './routes/lead.$token'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as PublicSlugTableIdRouteImport } from './routes/public.$slug.$tableId'
 import { Route as ApiPublicTablesRouteImport } from './routes/api/public/tables'
+import { Route as ApiPublicPlatformLabelsRouteImport } from './routes/api/public/platform-labels'
+import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/api/public/organization-categories'
+import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
 import { Route as AuthenticatedMeApplicationsRouteImport } from './routes/_authenticated.me.applications'
 import { Route as PublicSlugTableIdIndexRouteImport } from './routes/public.$slug.$tableId.index'
 import { Route as AuthenticatedAppOrgSlugIndexRouteImport } from './routes/_authenticated.app.$orgSlug.index'
@@ -60,6 +64,11 @@ const LeadTokenRoute = LeadTokenRouteImport.update({
   path: '/lead/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
@@ -75,6 +84,23 @@ const ApiPublicTablesRoute = ApiPublicTablesRouteImport.update({
   path: '/api/public/tables',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPlatformLabelsRoute = ApiPublicPlatformLabelsRouteImport.update({
+  id: '/api/public/platform-labels',
+  path: '/api/public/platform-labels',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicOrganizationCategoriesRoute =
+  ApiPublicOrganizationCategoriesRouteImport.update({
+    id: '/api/public/organization-categories',
+    path: '/api/public/organization-categories',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicInstanceSettingsRoute =
+  ApiPublicInstanceSettingsRouteImport.update({
+    id: '/api/public/instance-settings',
+    path: '/api/public/instance-settings',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedMeApplicationsRoute =
   AuthenticatedMeApplicationsRouteImport.update({
     id: '/me/applications',
@@ -184,8 +210,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/explore': typeof ExploreRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/lead/$token': typeof LeadTokenRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
+  '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
+  '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
+  '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -211,8 +241,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/explore': typeof ExploreRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/lead/$token': typeof LeadTokenRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
+  '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
+  '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
+  '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/$orgSlug/calendar': typeof AuthenticatedAppOrgSlugCalendarRoute
@@ -239,8 +273,12 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
   '/explore': typeof ExploreRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/lead/$token': typeof LeadTokenRoute
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
+  '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
+  '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
+  '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -268,8 +306,12 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/explore'
+    | '/admin'
     | '/lead/$token'
     | '/me/applications'
+    | '/api/public/instance-settings'
+    | '/api/public/organization-categories'
+    | '/api/public/platform-labels'
     | '/api/public/tables'
     | '/public/$slug/$tableId'
     | '/app/'
@@ -295,8 +337,12 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/explore'
+    | '/admin'
     | '/lead/$token'
     | '/me/applications'
+    | '/api/public/instance-settings'
+    | '/api/public/organization-categories'
+    | '/api/public/platform-labels'
     | '/api/public/tables'
     | '/app'
     | '/app/$orgSlug/calendar'
@@ -322,8 +368,12 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/explore'
+    | '/_authenticated/admin'
     | '/lead/$token'
     | '/_authenticated/me/applications'
+    | '/api/public/instance-settings'
+    | '/api/public/organization-categories'
+    | '/api/public/platform-labels'
     | '/api/public/tables'
     | '/public/$slug/$tableId'
     | '/_authenticated/app/'
@@ -352,6 +402,9 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ExploreRoute: typeof ExploreRoute
   LeadTokenRoute: typeof LeadTokenRoute
+  ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
+  ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
+  ApiPublicPlatformLabelsRoute: typeof ApiPublicPlatformLabelsRoute
   ApiPublicTablesRoute: typeof ApiPublicTablesRoute
   PublicSlugTableIdRoute: typeof PublicSlugTableIdRouteWithChildren
   ApiPublicSlugTableIdRoute: typeof ApiPublicSlugTableIdRouteWithChildren
@@ -398,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeadTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
       path: '/app'
@@ -417,6 +477,27 @@ declare module '@tanstack/react-router' {
       path: '/api/public/tables'
       fullPath: '/api/public/tables'
       preLoaderRoute: typeof ApiPublicTablesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/platform-labels': {
+      id: '/api/public/platform-labels'
+      path: '/api/public/platform-labels'
+      fullPath: '/api/public/platform-labels'
+      preLoaderRoute: typeof ApiPublicPlatformLabelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/organization-categories': {
+      id: '/api/public/organization-categories'
+      path: '/api/public/organization-categories'
+      fullPath: '/api/public/organization-categories'
+      preLoaderRoute: typeof ApiPublicOrganizationCategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/instance-settings': {
+      id: '/api/public/instance-settings'
+      path: '/api/public/instance-settings'
+      fullPath: '/api/public/instance-settings'
+      preLoaderRoute: typeof ApiPublicInstanceSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/me/applications': {
@@ -564,6 +645,7 @@ const AuthenticatedAppOrgSlugConversationsRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedMeApplicationsRoute: typeof AuthenticatedMeApplicationsRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppOrgSlugCalendarRoute: typeof AuthenticatedAppOrgSlugCalendarRoute
@@ -575,6 +657,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedMeApplicationsRoute: AuthenticatedMeApplicationsRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppOrgSlugCalendarRoute: AuthenticatedAppOrgSlugCalendarRoute,
@@ -626,6 +709,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ExploreRoute: ExploreRoute,
   LeadTokenRoute: LeadTokenRoute,
+  ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
+  ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,
+  ApiPublicPlatformLabelsRoute: ApiPublicPlatformLabelsRoute,
   ApiPublicTablesRoute: ApiPublicTablesRoute,
   PublicSlugTableIdRoute: PublicSlugTableIdRouteWithChildren,
   ApiPublicSlugTableIdRoute: ApiPublicSlugTableIdRouteWithChildren,
