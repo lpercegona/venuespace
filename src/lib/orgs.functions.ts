@@ -121,7 +121,7 @@ export const updateTable = createServerFn({ method: "POST" })
     if (rest.description !== undefined) patch.description = rest.description;
     if (rest.icon !== undefined) patch.icon = rest.icon;
     if (rest.bookable !== undefined) patch.bookable = rest.bookable;
-    const { error } = await context.supabase.from("tables").update(patch).eq("id", id);
+    const { error } = await context.supabase.from("tables").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
