@@ -48,8 +48,12 @@ type Props = {
   onTogglePublish: (r: RecordRow) => void;
 };
 
-function formatValue(field: FieldRow, value: any, relations: RelationMap): string {
+function formatValue(field: FieldRow, value: any, relations: RelationMap): any {
   if (value === null || value === undefined || value === "") return "—";
+  if (field.type === "image") return typeof value === "string" && value ? <SignedThumb path={value} /> : "—";
+  if (field.type === "file") return typeof value === "string" && value
+    ? <span className="inline-flex items-center gap-1 text-primary"><FileText className="h-3 w-3" />arquivo</span>
+    : "—";
   if (field.type === "currency" || (field.type === "computed" && ((field.config ?? {}).kind !== "count"))) {
     const n = Number(value);
     if (Number.isNaN(n)) return String(value);
@@ -71,6 +75,7 @@ function formatValue(field: FieldRow, value: any, relations: RelationMap): strin
   }
   return String(value);
 }
+
 
 function RowActions({
   r, canEdit, onEdit, onDelete, onTogglePublish,
