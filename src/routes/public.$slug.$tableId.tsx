@@ -70,7 +70,13 @@ function PublicListPage() {
                   <Card className="h-full">
                     <CardHeader>
                       <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="line-clamp-2 font-display text-lg">{title}</CardTitle>
+                        <Link
+                          to="/public/$slug/$tableId/$recordId"
+                          params={{ slug, tableId, recordId: r.id }}
+                          className="min-w-0 flex-1 hover:underline"
+                        >
+                          <CardTitle className="line-clamp-2 font-display text-lg">{title}</CardTitle>
+                        </Link>
                         {r.deal_status && r.deal_status !== "negotiating" ? (
                           <Badge variant="secondary">{r.deal_status}</Badge>
                         ) : null}
@@ -89,21 +95,27 @@ function PublicListPage() {
                           );
                         })}
                       </dl>
-                      {public_form_view ? (
-                        <Link
-                          to="/public/$slug/$tableId/form"
-                          params={{ slug, tableId }}
-                          search={{ record: r.id, view: public_form_view.id }}
-                        >
-                          <Button size="sm" className="w-full">
-                            <MessageCircle className="h-4 w-4" />
-                            Manifestar interesse
-                          </Button>
+                      <div className="flex flex-col gap-2">
+                        <Link to="/public/$slug/$tableId/$recordId" params={{ slug, tableId, recordId: r.id }}>
+                          <Button variant="outline" size="sm" className="w-full">Ver detalhes</Button>
                         </Link>
-                      ) : null}
+                        {public_form_view ? (
+                          <Link
+                            to="/public/$slug/$tableId/form"
+                            params={{ slug, tableId }}
+                            search={{ record: r.id, view: public_form_view.id }}
+                          >
+                            <Button size="sm" className="w-full">
+                              <MessageCircle className="h-4 w-4" />
+                              Manifestar interesse
+                            </Button>
+                          </Link>
+                        ) : null}
+                      </div>
                     </CardContent>
                   </Card>
                 </li>
+
               );
             })}
           </ul>

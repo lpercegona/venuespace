@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -5,8 +6,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Eye, EyeOff, FileText } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import type { FieldRow } from "@/lib/records.functions";
+
+function SignedThumb({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (path.startsWith("http")) { setUrl(path); return; }
+    supabase.storage.from("venue-uploads").createSignedUrl(path, 60 * 60).then((r) => {
+      if (alive) setUrl(r.data?.signedUrl ?? null);
+    });
+    return () => { alive = false; };
+  }, [path]);
+  if (!url) return <span className="text-xs text-muted-foreground">—</span>;
+  return <img src={url} alt="" className="h-10 w-10 rounded object-cover" loading="lazy" />;
+}
+
 
 export type RecordRow = {
   id: string;
@@ -31,8 +48,12 @@ type Props = {
   onTogglePublish: (r: RecordRow) => void;
 };
 
-function formatValue(field: FieldRow, value: any, relations: RelationMap): string {
+function formatValue(field: FieldRow, value: any, relations: RelationMap): any {
   if (value === null || value === undefined || value === "") return "—";
+  if (field.type === "image") return typeof value === "string" && value ? <SignedThumb path={value} /> : "—";
+  if (field.type === "file") return typeof value === "string" && value
+    ? <span className="inline-flex items-center gap-1 text-primary"><FileText className="h-3 w-3" />arquivo</span>
+    : "—";
   if (field.type === "currency" || (field.type === "computed" && ((field.config ?? {}).kind !== "count"))) {
     const n = Number(value);
     if (Number.isNaN(n)) return String(value);
@@ -54,6 +75,7 @@ function formatValue(field: FieldRow, value: any, relations: RelationMap): strin
   }
   return String(value);
 }
+
 
 function RowActions({
   r, canEdit, onEdit, onDelete, onTogglePublish,

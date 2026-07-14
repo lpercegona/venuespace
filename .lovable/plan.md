@@ -1,78 +1,73 @@
+Escopo confirmado; nada fora dele. Diretriz §0 aplicada — sem refactors implícitos, sem regressão nas iterações 1–8, RLS e endpoints públicos preservados. `CHANGELOG.md` recebe entrada datada ao final.
 
-# Revisão e correção — bloqueio na criação de organização
+## 1. Editar tabelas existentes
 
-## Diagnóstico
+- Adicionar server fn `updateTable` em `src/lib/orgs.functions.ts` (patch de `name`, `description`, `bookable`, `icon`; slug preservado). Requer owner/editor via RLS existente.
+- Na dashboard da org (`_authenticated.app.$orgSlug.index.tsx`), cada `Card` de tabela ganha botão-ícone `Pencil` (canto superior direito, `stopPropagation` para não navegar) que abre o mesmo `Dialog` de criação em modo "editar".
+- Refatorar o `Dialog` para aceitar `mode: "create" | "edit"` + `initial`; título muda para "Editar tabela"; ao salvar chama `updateTable` e faz `refetch`.
 
-O erro atual **não** é mais `row-level security` — mudou para:
+## 2. Campos com comportamento real por tipo
 
-```
-Error: Legacy API keys are disabled
-  at src/lib/orgs.functions.ts:32 (context.supabase.rpc("create_organization", ...))
-```
+- Criar bucket público **`venue-uploads`** via `storage_create_bucket`, com policies em `storage.objects`: INSERT `authenticated`, SELECT `anon` (bucket público).
+- `src/components/venue/dynamic-form.tsx`:
+  - `type=image`: `<input type="file" accept="image/*">` → upload em `venue-uploads/records/{uuid}-{filename}`, grava `publicUrl` no valor; preview `<img>` quando houver.
+  - `type=file`: `<input type="file">` idem; exibe nome do arquivo + link "abrir".
+  - `type=currency`: `Input type=number` com adorno visual "R$".
+  - `type=email/phone/url` mantêm inputs nativos correspondentes.
+  - `type=relation` continua UUID (fora do pedido).
+- `DynamicGrid`: renderizar `image` como thumbnail e `file` como link.
 
-Isto é resposta do PostgREST/GoTrue rejeitando a chamada porque **algum token em uso ainda tem formato de chave JWT legada** (após a rotação de chaves feita no turno anterior, o projeto passou a rejeitar chaves antigas). A causa é uma das três abaixo — o plano ataca as três em ordem:
+## 3. Editor de opções de `select` e `multiselect` (novo)
 
-1. **Sessão do navegador emitida antes da rotação/migração de assinatura.** O `access_token` guardado em `localStorage` continua sendo enviado como `Authorization: Bearer …` e é interpretado como chave legada por PostgREST quando cai no `apikey` header em alguma rota.
-2. **Assinatura JWT do projeto ainda em HS256** (não migrada para ES256), então tokens novos também batem no bloqueio quando o gateway espera JWKS.
-3. **`.env` correto (`sb_publishable_…`) mas processo Node do dev-server ainda com o valor antigo em `process.env`** (restart pendente).
+- **Schema (`src/routes/_authenticated.app.$orgSlug.tables.$tableId.schema.tsx`)**:
+  - Quando `fType ∈ {select, multiselect}` no dialog de criação/edição de campo, exibir gerenciador de opções: `Input` + botão `Adicionar`, `Badge` com `x` para remover, `drag`-less (ordem por inserção). Persiste em `fields.config.options: string[]` via `createField`/`updateField` (schema Zod já aceita `config`).
+  - Cada linha de campo na listagem ganha botão-ícone `Pencil` que reabre o mesmo dialog em modo "editar campo" (label/tipo/required/opções). Ao trocar o tipo para/entre select/multiselect, options são preservadas; ao sair de select/multiselect, options são descartadas com confirmação.
+- **DynamicForm**:
+  - `select`: `Select` shadcn já existente, alimentado por `f.config.options`; adicionar item final "➕ Adicionar opção" que abre inline `Input` — ao confirmar chama nova server fn `addFieldOption({ field_id, option })` (owner/editor) que faz append idempotente em `config.options` e retorna a lista atualizada; a UI invalida `["fields", tableId]` e seleciona a nova opção.
+  - `multiselect`: grupo de `Checkbox` sobre `config.options`, valor `string[]`; abaixo, mesmo input inline "Adicionar opção" com a mesma server fn.
+  - No formulário público (`public.$slug.$tableId.form.tsx`) o "Adicionar opção" **não** aparece — apenas usuários autenticados com permissão de edição sobre a tabela podem estender opções. Detecção via prop `canEditSchema` passada pelo caller; público sempre `false`.
+- Server fn `addFieldOption` em `src/lib/orgs.functions.ts`:
+  - `requireSupabaseAuth` + Zod (`field_id: uuid`, `option: string 1..80`).
+  - Verifica papel do usuário na org do campo (join `fields → tables → organization_id` + `has_role owner|editor`).
+  - `SELECT ... FOR UPDATE` em `fields.config`; append único (case-insensitive) e `UPDATE`. Retorna `options` atualizado.
 
-## Escopo da correção
+## 4. Cabeçalho: dropdown de perfil (remove "Minhas candidaturas" solto)
 
-### 1. Ambiente e chaves
-- Garantir que `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` estão em `sb_publishable_…` (já confirmado no `.env`).
-- Migrar chaves de assinatura JWT para ES256 (`supabase--migrate_signing_keys`) — pré-requisito para as novas `sb_publishable_` funcionarem sem tocar em keys legadas.
-- Reiniciar o dev server para recarregar `process.env`.
+- Em `src/components/venue/app-shell.tsx`:
+  - Remover botão "Minhas candidaturas" e links soltos "Membros"/"Calendário" do topo.
+  - `DropdownMenu` disparado por `Avatar` (usa `profiles.avatar_url`/`display_name`; fallback iniciais):
+    - **Configurações** → `/me/settings` (nova rota).
+    - **Minhas candidaturas** → `/me/applications`.
+    - **Calendário** → `/app/$orgSlug/calendar` (só quando `orgSlug` presente).
+    - **Membros** → `/app/$orgSlug/members` (só quando `orgSlug` presente).
+    - Separator + **Sair**.
+  - `NotificationsBell` permanece.
+- Nova rota `src/routes/_authenticated.me.settings.tsx`: form com `display_name` e upload de `avatar_url` (mesmo bucket). Nova server fn `updateMyProfile` em `src/lib/profile.functions.ts` (update em `public.profiles` do próprio usuário).
 
-### 2. Sessão do usuário
-- Adicionar uma limpeza defensiva no fluxo de login: se `supabase.auth.getUser()` falhar com erro de token/legacy, invocar `supabase.auth.signOut({ scope: "local" })` e redirecionar para `/auth`. Isto elimina o problema de sessões antigas sem forçar o usuário a limpar storage manualmente.
-- Documentar no `AGENTS.md`/`CHANGELOG.md` a necessidade de logout uma vez após rotação.
+## 5. Chat flutuante
 
-### 3. `createOrganization`
-- Manter a RPC `create_organization` (SECURITY DEFINER) já criada — ela é o caminho correto e permanece.
-- Nenhuma outra alteração de contrato.
+- Novo `src/components/venue/chat-widget.tsx`: botão `MessageCircle` fixo em `fixed bottom-4 right-4 z-50`. Ao abrir, `Sheet` (mobile) / `Dialog` (desktop, via `useIsMobile`) com duas views:
+  1. Lista de conversas do usuário no escopo da org atual (reaproveita queries de `_authenticated.app.$orgSlug.conversations.tsx`).
+  2. Ao selecionar, embute `ConversationThread` existente com polling.
+- Montado no `AppShell` apenas quando há `orgSlug`.
+- Rotas atuais `/app/$orgSlug/conversations*` permanecem intactas (deep-link). Remove-se o botão "Conversas" da dashboard da org.
 
-### 4. Varredura de regressão (Iterações 1–8)
-Revisar cada superfície para confirmar que nenhuma outra chamada quebrou com a rotação de chaves ou está usando padrões proibidos pelo `/skill:venuespace`:
+## 6. Detalhe público de registro
 
-- **Iteração 1** — `orgs.functions.ts`, `tables.functions.ts`, `fields.functions.ts`, rotas `/app`, `/app/$orgSlug`, `/auth`; verificar tokens (`--brand`, status, `--shadow-elegant`) presentes em `src/styles.css` light + dark + `@theme inline`; fontes carregadas em `__root.tsx` via `<link>`.
-- **Iteração 2** — `records.functions.ts` (Zod dinâmico, resolver de computed qty×valor / soma / contagem), `DynamicGrid` (cards em mobile, tabela dentro de `ScrollArea` no desktop), `DynamicForm`, CRUD de `views` e `permissions`, publicar/despublicar.
-- **Iteração 3** — `GET /api/public/$slug/$tableId` e `POST …/submit` usando o publishable server client (não `supabaseAdmin`), gravação em `submissions_table_id` com `auto_relation_field_id`, geração de `lead_access_tokens` para anônimos, criação da `conversation` vinculada.
-- **Iteração 4** — `messages.functions.ts`: proposta (`type='proposal'`, `proposed_value`), transições de `deal_status` copiando `agreed_value`, rota `/lead/$token`, inbox de conversas, polling 5s; acesso por membership / token / autenticado.
-- **Iteração 5** — `applications.functions.ts` (`getMyApplications` cross-org), rota `/_authenticated/me/applications`; submissão autenticada preenche `applicant_user_id` **sem** criar membership.
-- **Iteração 6** — Página `/public/$slug/campaigns/$recordId` (progresso, PIX, formulário `public_form`), computed somando apenas `contribution_status='confirmed'`, `PATCH …/contribution_status` restrito a owner/editor.
-- **Iteração 7** — `runBookingCheck`: sobreposição via `fields.config.booking_role` + `resource_relation_field_id` em tabela `bookable`, rejeição na transição para `accepted`, calendário em `/_authenticated/app/$orgSlug/calendar`.
-- **Iteração 8** — `/app/$orgSlug/members` (convite, alterar role, remover), sino de notificações via `messages.read_at`, meta tags por rota pública (og:image só em leaf routes), landing `/`.
-
-Para cada uma:
-- verificar que server fns protegidos só são chamados de componente/`_authenticated` loader (nunca loader público);
-- verificar RLS/GRANTs das tabelas tocadas continuam corretos;
-- verificar responsividade em 360/768/1280 e dark mode;
-- verificar que nenhum endpoint `/api/public/*` retorna PII.
-
-### 5. Registro
-- Atualizar `CHANGELOG.md` com uma entrada datada (America/Sao_Paulo) descrevendo:
-  - migração de chaves de assinatura (ES256),
-  - defesa contra sessão legada no cliente,
-  - varredura de regressão realizada (com o que foi verificado e o que foi corrigido, se houver).
+- Nova rota `src/routes/public.$slug.$tableId.$recordId.tsx`:
+  - `head()` com `title`/`description` derivados do registro.
+  - Busca via novo `GET /api/public/$slug/$tableId/$recordId` (arquivo em `src/routes/api/public/$slug/$tableId.$recordId.ts`) + helper novo em `public.server.ts` validando `status='published'` do record e da tabela/view pública; usa `supabaseAdmin` como as outras públicas; projeta somente campos da view pública (sem PII).
+  - UI mostra **todos** os campos projetados (image como `<img>`, file como link, computed renderizado). Botão "Manifestar interesse" reaproveita `/public/$slug/$tableId/form?record=...&view=...` quando `public_form_view` existir.
+- Em `public.$slug.$tableId.tsx`: cada `Card` da lista vira `Link` para a rota de detalhe; botão "Manifestar interesse" continua como ação secundária.
 
 ## Detalhes técnicos
 
-```text
-Fluxo de erro atual
-  Browser  ──[Bearer token legado]──►  serverFn createOrganization
-     serverFn  ──[apikey=sb_publishable_…, Authorization=Bearer <token>]──►  PostgREST
-        PostgREST  ─►  gateway detecta assinatura JWT legada  ─►  "Legacy API keys are disabled"
-```
+- Migração Supabase: bucket + policies em `storage.objects`; nenhuma alteração nas tabelas de domínio (opções vivem em `fields.config.options`).
+- Server fns novos usam `requireSupabaseAuth` + Zod; `/api/public/*` continua com `supabaseAdmin` + filtros de `status='published'`.
+- Design System: apenas primitives shadcn já presentes (`DropdownMenu`, `Avatar`, `Sheet`, `Dialog`, `Checkbox`, `Badge`, `Select`).
+- Responsivo validado em 360/768/1280, light+dark, estados loading/empty/error.
+- `CHANGELOG.md` recebe entrada datada cobrindo todos os itens.
 
-Ordem de execução ao aprovar o plano:
-1. `supabase--migrate_signing_keys` (idempotente).
-2. Restart dev server.
-3. Patch no `useAuth`/guard `_authenticated` para signOut defensivo em token inválido.
-4. Varredura arquivo-a-arquivo das Iterações 1–8, aplicando correções pontuais só onde houver falha real (sem refactors fora de escopo — Diretriz §0).
-5. Atualização do `CHANGELOG.md`.
+## Fora do escopo
 
-## Fora deste plano
-
-- Qualquer nova funcionalidade além das 8 iterações já entregues.
-- Alterações de design system fora das correções necessárias.
-- Refactors amplos.
+Reordenar opções por drag, remover opção já usada por registros, editor visual de `relation`, exclusão de tabelas, permissões finas no widget de chat (usa RLS existente).

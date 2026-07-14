@@ -162,39 +162,44 @@ function SchemaPage() {
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
               {fields.data.map((f: any) => (
-                <li key={f.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:flex sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{f.label}</p>
-                    <p className="truncate font-mono text-xs text-muted-foreground">{f.key}</p>
+                <li key={f.id} className="px-4 py-3">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{f.label}</p>
+                      <p className="truncate font-mono text-xs text-muted-foreground">{f.key}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge variant="secondary">{f.type}</Badge>
+                      {canEdit ? (
+                        <>
+                          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Switch checked={f.required} onCheckedChange={(v) => handleToggleRequired(f.id, v)} />
+                            <span className="hidden sm:inline">obrigatório</span>
+                          </label>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" aria-label="Remover"><Trash2 className="h-4 w-4" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remover campo?</AlertDialogTitle>
+                                <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(f.id)}>Remover</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      ) : (
+                        f.required ? <Badge variant="outline">obrigatório</Badge> : null
+                      )}
+                    </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Badge variant="secondary">{f.type}</Badge>
-                    {canEdit ? (
-                      <>
-                        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Switch checked={f.required} onCheckedChange={(v) => handleToggleRequired(f.id, v)} />
-                          <span className="hidden sm:inline">obrigatório</span>
-                        </label>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" aria-label="Remover"><Trash2 className="h-4 w-4" /></Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remover campo?</AlertDialogTitle>
-                              <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(f.id)}>Remover</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </>
-                    ) : (
-                      f.required ? <Badge variant="outline">obrigatório</Badge> : null
-                    )}
-                  </div>
+                  {canEdit && (f.type === "select" || f.type === "multiselect") ? (
+                    <OptionsManager field={f} onChanged={() => fields.refetch()} />
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -204,3 +209,38 @@ function SchemaPage() {
     </AppShell>
   );
 }
+
+function OptionsManager({ field, onChanged }: { field: any; onChanged: () => void }) {
+  const [val, setVal] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [opts, setOpts] = useState<string[]>(((field.config ?? {}).options as string[]) ?? []);
+
+  async function add() {
+    if (!val.trim()) return;
+    setBusy(true);
+    try {
+      const { addFieldOption } = await import("@/lib/orgs.functions");
+      const res = await addFieldOption({ data: { field_id: field.id, option: val.trim() } });
+      setOpts(res.options); setVal(""); onChanged();
+      toast.success("Opção adicionada");
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-border/60 bg-muted/30 p-3">
+      <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Opções</p>
+      <div className="mb-2 flex flex-wrap gap-1">
+        {opts.length === 0 ? <span className="text-xs text-muted-foreground">Sem opções.</span>
+          : opts.map((o) => <Badge key={o} variant="outline">{o}</Badge>)}
+      </div>
+      <div className="flex items-center gap-2">
+        <Input value={val} onChange={(e) => setVal(e.target.value)} placeholder="Nova opção" className="h-8 max-w-xs" />
+        <Button type="button" size="sm" disabled={busy || !val.trim()} onClick={add}>
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" />Adicionar</>}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
