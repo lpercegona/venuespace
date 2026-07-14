@@ -93,18 +93,20 @@ function AdminPage() {
       }
     >
       <Tabs defaultValue="general">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="general">Geral</TabsTrigger>
           <TabsTrigger value="labels">Rótulos</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
           <TabsTrigger value="layout">Layout público</TabsTrigger>
+          <TabsTrigger value="system">Campos de sistema</TabsTrigger>
         </TabsList>
         <TabsContent value="general"><GeneralSection /></TabsContent>
         <TabsContent value="labels"><LabelsSection /></TabsContent>
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
         <TabsContent value="layout"><PublicLayoutSection /></TabsContent>
+        <TabsContent value="system"><SystemFieldsSection /></TabsContent>
       </Tabs>
     </AppShell>
   );
