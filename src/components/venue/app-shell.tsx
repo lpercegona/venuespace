@@ -49,7 +49,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
           <Link to="/app" className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-md bg-primary" aria-hidden />
             <span className="font-display text-lg font-semibold tracking-tight text-foreground">
-              Venuespace
+              VENUESPACE
             </span>
           </Link>
           <div className="flex items-center gap-2">
