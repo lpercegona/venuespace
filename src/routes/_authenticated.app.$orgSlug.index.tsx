@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useNavigate, useServerFn } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getOrganizationBySlug, listTables, createTable, listMembers, addMemberByEmail } from "@/lib/orgs.functions";
@@ -31,11 +32,11 @@ export const Route = createFileRoute("/_authenticated/app/$orgSlug/")({
 function OrgDashboard() {
   const { orgSlug } = Route.useParams();
   const navigate = useNavigate();
-  const fetchOrg = useServerFn(getOrganizationBySlug);
-  const fetchTables = useServerFn(listTables);
-  const doCreateTable = useServerFn(createTable);
-  const fetchMembers = useServerFn(listMembers);
-  const doAddMember = useServerFn(addMemberByEmail);
+  const fetchOrg = (getOrganizationBySlug);
+  const fetchTables = (listTables);
+  const doCreateTable = (createTable);
+  const fetchMembers = (listMembers);
+  const doAddMember = (addMemberByEmail);
 
   const org = useQuery({ queryKey: ["org", orgSlug], queryFn: () => fetchOrg({ data: { slug: orgSlug } }) });
   const tables = useQuery({

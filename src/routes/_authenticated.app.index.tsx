@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useNavigate, useRouter, useServerFn } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listMyOrganizations, createOrganization } from "@/lib/orgs.functions";
@@ -26,8 +27,8 @@ export const Route = createFileRoute("/_authenticated/app/")({
 });
 
 function OrgsPage() {
-  const fetchOrgs = useServerFn(listMyOrganizations);
-  const createOrg = useServerFn(createOrganization);
+  const fetchOrgs = (listMyOrganizations);
+  const createOrg = (createOrganization);
   const router = useRouter();
   const navigate = useNavigate();
   const { data, isLoading, refetch } = useQuery({

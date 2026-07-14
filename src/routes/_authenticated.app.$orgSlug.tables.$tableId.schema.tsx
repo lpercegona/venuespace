@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useServerFn } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getTable, listFields, createField, updateField, deleteField, getOrganizationBySlug } from "@/lib/orgs.functions";
@@ -27,12 +28,12 @@ export const Route = createFileRoute("/_authenticated/app/$orgSlug/tables/$table
 
 function SchemaPage() {
   const { orgSlug, tableId } = Route.useParams();
-  const fetchOrg = useServerFn(getOrganizationBySlug);
-  const fetchTable = useServerFn(getTable);
-  const fetchFields = useServerFn(listFields);
-  const doCreate = useServerFn(createField);
-  const doUpdate = useServerFn(updateField);
-  const doDelete = useServerFn(deleteField);
+  const fetchOrg = (getOrganizationBySlug);
+  const fetchTable = (getTable);
+  const fetchFields = (listFields);
+  const doCreate = (createField);
+  const doUpdate = (updateField);
+  const doDelete = (deleteField);
 
   const org = useQuery({ queryKey: ["org", orgSlug], queryFn: () => fetchOrg({ data: { slug: orgSlug } }) });
   const table = useQuery({ queryKey: ["table", tableId], queryFn: () => fetchTable({ data: { id: tableId } }) });
