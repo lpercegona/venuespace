@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
@@ -35,6 +36,11 @@ import { Route as AuthenticatedAppOrgSlugConversationsConversationIdRouteImport 
 import { Route as AuthenticatedAppOrgSlugTablesTableIdIndexRouteImport } from './routes/_authenticated.app.$orgSlug.tables.$tableId.index'
 import { Route as AuthenticatedAppOrgSlugTablesTableIdSchemaRouteImport } from './routes/_authenticated.app.$orgSlug.tables.$tableId.schema'
 
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -177,6 +183,7 @@ const AuthenticatedAppOrgSlugTablesTableIdSchemaRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/explore': typeof ExploreRoute
   '/lead/$token': typeof LeadTokenRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/explore': typeof ExploreRoute
   '/lead/$token': typeof LeadTokenRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
+  '/explore': typeof ExploreRoute
   '/lead/$token': typeof LeadTokenRoute
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/explore'
     | '/lead/$token'
     | '/me/applications'
     | '/api/public/tables'
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/explore'
     | '/lead/$token'
     | '/me/applications'
     | '/api/public/tables'
@@ -310,6 +321,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/explore'
     | '/lead/$token'
     | '/_authenticated/me/applications'
     | '/api/public/tables'
@@ -338,6 +350,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ExploreRoute: typeof ExploreRoute
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicTablesRoute: typeof ApiPublicTablesRoute
   PublicSlugTableIdRoute: typeof PublicSlugTableIdRouteWithChildren
@@ -350,6 +363,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -604,6 +624,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
+  ExploreRoute: ExploreRoute,
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicTablesRoute: ApiPublicTablesRoute,
   PublicSlugTableIdRoute: PublicSlugTableIdRouteWithChildren,
