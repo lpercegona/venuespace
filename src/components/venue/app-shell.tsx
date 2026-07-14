@@ -13,6 +13,7 @@ import { getOrganizationBySlug, listMyOrganizations } from "@/lib/orgs.functions
 import { getMyProfile } from "@/lib/profile.functions";
 import { NotificationsBell } from "./notifications-bell";
 import { ChatWidget } from "./chat-widget";
+import { SettingsModal } from "./settings-modal";
 
 type Props = {
   title?: string;
