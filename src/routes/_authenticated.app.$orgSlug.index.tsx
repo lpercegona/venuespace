@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { getOrganizationBySlug, listTables, createTable, updateTable, listMembers, addMemberByEmail } from "@/lib/orgs.functions";
+import { getOrganizationBySlug, listTables, createTable, updateTable, deleteTable, listMembers, addMemberByEmail } from "@/lib/orgs.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
+import { EditOrgDialog } from "@/components/venue/edit-org-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +14,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table as TableIcon, Plus, Loader2, UserPlus, Users, Pencil } from "lucide-react";
+import { Table as TableIcon, Plus, Loader2, UserPlus, Users, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 
@@ -54,6 +55,7 @@ function OrgDashboard() {
   const isOwner = org.data?.myRole === "owner";
 
   const [openTable, setOpenTable] = useState(false);
+  const [openEditOrg, setOpenEditOrg] = useState(false);
   const [tName, setTName] = useState("");
   const [tDesc, setTDesc] = useState("");
   const [tBookable, setTBookable] = useState(false);
@@ -121,9 +123,11 @@ function OrgDashboard() {
       subtitle={org.data.description || `/${org.data.slug}`}
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <Link to="/app/$orgSlug/conversations" params={{ orgSlug }}>
-            <Button variant="outline" size="sm">Conversas</Button>
-          </Link>
+          {isOwner ? (
+            <Button variant="outline" size="sm" onClick={() => setOpenEditOrg(true)}>
+              <Pencil className="h-4 w-4" />Editar organização
+            </Button>
+          ) : null}
           {canEdit ? (
             <Dialog open={openTable} onOpenChange={setOpenTable}>
               <DialogTrigger asChild>
@@ -181,6 +185,7 @@ function OrgDashboard() {
                 t={t}
                 orgSlug={orgSlug}
                 canEdit={canEdit}
+                isOwner={isOwner}
                 onSaved={() => tables.refetch()}
               />
             ))}
@@ -251,14 +256,23 @@ function OrgDashboard() {
           )}
         </div>
       </section>
+      {isOwner ? (
+        <EditOrgDialog open={openEditOrg} onOpenChange={setOpenEditOrg} org={{
+          id: org.data.id, slug: org.data.slug, name: org.data.name,
+          description: org.data.description ?? null, logo_url: (org.data as any).logo_url ?? null,
+        }} />
+      ) : null}
     </AppShell>
   );
 }
 
 function TableCard({
-  t, orgSlug, canEdit, onSaved,
-}: { t: any; orgSlug: string; canEdit: boolean; onSaved: () => void }) {
+  t, orgSlug, canEdit, isOwner, onSaved,
+}: { t: any; orgSlug: string; canEdit: boolean; isOwner: boolean; onSaved: () => void }) {
   const [editing, setEditing] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [delConfirmName, setDelConfirmName] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [name, setName] = useState(t.name);
   const [desc, setDesc] = useState(t.description ?? "");
   const [bookable, setBookable] = useState(!!t.bookable);
@@ -294,12 +308,20 @@ function TableCard({
       </Link>
       {canEdit ? (
         <>
-          <Button
-            type="button" variant="ghost" size="icon"
-            className="absolute right-2 top-2 h-8 w-8"
-            aria-label="Editar tabela"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); }}
-          ><Pencil className="h-4 w-4" /></Button>
+          <div className="absolute right-2 top-2 flex gap-1">
+            <Button
+              type="button" variant="ghost" size="icon" className="h-8 w-8"
+              aria-label="Editar tabela"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); }}
+            ><Pencil className="h-4 w-4" /></Button>
+            {isOwner ? (
+              <Button
+                type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                aria-label="Excluir tabela"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDel(true); }}
+              ><Trash2 className="h-4 w-4" /></Button>
+            ) : null}
+          </div>
           <Dialog open={editing} onOpenChange={setEditing}>
             <DialogContent>
               <DialogHeader><DialogTitle className="font-display">Editar tabela</DialogTitle></DialogHeader>
@@ -323,6 +345,40 @@ function TableCard({
               </form>
             </DialogContent>
           </Dialog>
+          {isOwner ? (
+            <AlertDialog open={confirmDel} onOpenChange={setConfirmDel}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir tabela?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso remove permanentemente a tabela, seus campos e registros. Digite o nome
+                    <span className="font-mono"> {t.name} </span> para confirmar.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input value={delConfirmName} onChange={(e) => setDelConfirmName(e.target.value)} placeholder={t.name} />
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={delConfirmName !== t.name || deleting}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      setDeleting(true);
+                      try {
+                        await deleteTable({ data: { id: t.id, confirm_name: delConfirmName } });
+                        toast.success("Tabela excluída");
+                        setConfirmDel(false);
+                        setDelConfirmName("");
+                        onSaved();
+                      } catch (err) { toast.error((err as Error).message); }
+                      finally { setDeleting(false); }
+                    }}
+                  >
+                    {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Excluir"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : null}
         </>
       ) : null}
     </div>

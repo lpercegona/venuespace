@@ -17,6 +17,62 @@ export type PublicTablePayload = {
   } | null;
 };
 
+export type PublicTableSummary = {
+  org_slug: string;
+  org_name: string;
+  table_id: string;
+  table_slug: string;
+  table_name: string;
+  table_icon: string | null;
+  published_count: number;
+  latest_published_at: string;
+};
+
+export async function listPublicTables(opts: { limit?: number; offset?: number; q?: string } = {}): Promise<{ items: PublicTableSummary[]; total: number }> {
+  const sb = supabaseAdmin;
+  const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
+  const offset = Math.max(opts.offset ?? 0, 0);
+  const q = (opts.q ?? "").trim().toLowerCase();
+
+  // Fetch published records with joined table + org; aggregate in code.
+  let query = sb
+    .from("records")
+    .select("table_id, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(id, slug, name))")
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(1000);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  const map = new Map<string, PublicTableSummary>();
+  for (const r of (data ?? []) as any[]) {
+    const t = r.table;
+    if (!t?.organization) continue;
+    const key = t.id;
+    const existing = map.get(key);
+    if (existing) {
+      existing.published_count += 1;
+      if (r.created_at > existing.latest_published_at) existing.latest_published_at = r.created_at;
+    } else {
+      map.set(key, {
+        org_slug: t.organization.slug,
+        org_name: t.organization.name,
+        table_id: t.id,
+        table_slug: t.slug,
+        table_name: t.name,
+        table_icon: t.icon ?? null,
+        published_count: 1,
+        latest_published_at: r.created_at,
+      });
+    }
+  }
+  let items = Array.from(map.values());
+  if (q) items = items.filter((i) => i.table_name.toLowerCase().includes(q) || i.org_name.toLowerCase().includes(q));
+  items.sort((a, b) => (a.latest_published_at < b.latest_published_at ? 1 : -1));
+  const total = items.length;
+  return { items: items.slice(offset, offset + limit), total };
+}
+
 export async function loadPublicTable(slug: string, tableId: string): Promise<PublicTablePayload> {
   const sb = supabaseAdmin;
 
