@@ -46,6 +46,11 @@ function formatValue(field: Payload["fields"][number], raw: any, relations: Payl
   if (field.type === "date") return new Date(raw).toLocaleDateString("pt-BR");
   if (field.type === "datetime") return new Date(raw).toLocaleString("pt-BR");
   if (field.type === "multiselect" && Array.isArray(raw)) return raw.join(", ");
+  if (field.type === "relation") {
+    const map = relations[field.id] ?? {};
+    if (Array.isArray(raw)) return raw.map((id) => map[id]?.label ?? id).join(", ");
+    return map[raw]?.label ?? String(raw);
+  }
   return String(raw);
 }
 
