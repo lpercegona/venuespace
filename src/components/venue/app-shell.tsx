@@ -149,6 +149,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
         {children}
       </main>
       {orgSlug && org.data ? <ChatWidget organizationId={org.data.id} /> : null}
+      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }
