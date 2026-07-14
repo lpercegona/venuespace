@@ -1,43 +1,63 @@
-## Objetivo
+# Iterações do Venuespace
 
-Instituir um registro obrigatório e cronológico de todas as implementações do Venuespace, e tornar isso norma soberana do projeto via skill.
+Conforme o plano soberano definido em `skill/venuespace`. Escopo fechado por iteração (§0). Status atual: **Iterações 1 e 2 concluídas**; restam 6.
 
-## Entregas
+## Concluídas
 
-### 1. Novo arquivo `CHANGELOG.md` (raiz do projeto)
+### Iteração 1 — Fundação [CONCLUÍDA]
+Lovable Cloud, migrations base (enums, `organizations`, `memberships`, `tables`, `fields`, RLS, GRANTs, `has_role`), auth email+Google, trigger `profiles`, layout `_authenticated`, painéis `/app`, `/app/$orgSlug`, schema builder. Tokens Venuespace (light+dark, marca, estados, status) em `src/styles.css`. Par tipográfico Fraunces + Inter Tight via `<link>` em `__root.tsx`. Metas globais.
+**Aceite:** criar org, tabela "Imóveis", convidar editor.
 
-Arquivo dedicado exclusivamente ao registro histórico das implementações. Estrutura:
+### Iteração 2 — Records + Grid Dinâmico [CONCLUÍDA]
+Migrations de `records`, `views`, `permissions` (+ `views.submissions_table_id`, `tables.bookable`). Server fns com validação Zod dinâmica de `data` jsonb, resolver de `computed` (soma, contagem, soma qty×valor) e `relation` na leitura. `DynamicGrid` e `DynamicForm`. CRUD `views` (grid interna) e `permissions`. Publicar/despublicar. `EmptyState`.
+**Aceite (A + D):** catálogos + orçamento com computed qty×valor.
 
-- Cabeçalho curto explicando propósito e formato.
-- Entradas em ordem cronológica **decrescente** (mais recente no topo).
-- Cada entrada com: **data e hora** (`YYYY-MM-DD HH:MM` America/Sao_Paulo), **iteração/escopo**, e **descrição objetiva** em bullets do que foi feito (migrations, rotas, componentes, tokens).
-- Sem chain-of-thought, sem justificativas subjetivas — apenas o que foi implementado.
+## Pendentes
 
-Popular retroativamente com as entradas já executadas:
+### Iteração 3 — Publicação pública + public_form
+- `GET /api/public/$slug/$tableId` (server publishable client, política `TO anon` restrita a `status='published'`, projeção via `views.config`).
+- `POST /api/public/$slug/$tableId/submit` — grava em `submissions_table_id`, preenche `auto_relation_field_id`, rate-limit best-effort por IP.
+- Submissão anônima (gera `lead_access_tokens`, exige `contact_email`) e autenticada (`applicant_user_id`).
+- `conversation` criada vinculada ao record de submissão.
+- Rotas `/public/$slug/$tableId` e `/public/$slug/$tableId/form`.
+**Aceite (B):** dois interessados → dois records + duas conversas.
 
-- **Iteração 1 — Fundação**: tokens oklch light+dark, tipografia Fraunces+Inter Tight, migrations (`profiles`, `organizations`, `memberships`, `tables`, `fields`, enums, `has_role`/`is_org_member`/`can_edit_org`, triggers), auth email+Google, layout `_authenticated`, rotas `/app`, `/app/$orgSlug`, schema builder de tabelas, `AppShell`, `EmptyState`.
-- **Iteração 2 — Records + Grid Dinâmico**: migrations `records`/`views`/`permissions` com RLS, `records.functions.ts` (list/create/update/delete + resolver de `computed` soma/contagem/qty×valor e expansão de `relation`), `DynamicForm`, `DynamicGrid` (tabela desktop / cards mobile via `useIsMobile`, `ScrollArea`), rota `/app/$orgSlug/tables/$tableId`, ajuste do dashboard.
+### Iteração 4 — Chat + propostas + deal_status
+- CRUD `messages` (acesso por membership, token ou sessão).
+- UI com `type='proposal'` + `proposed_value`.
+- `PATCH /records/$id/deal_status` (`negotiating → accepted/declined → closed`; ao fechar copia `agreed_value` da última proposta aceita).
+- Rota `/lead/$token`, inbox `/app/$orgSlug/conversations`, polling 5s.
+**Aceite (C).**
 
-Datas retroativas: marcadas com a data corrente e nota `(registro retroativo)`.
+### Iteração 5 — Candidatura autenticada + `/me/applications`
+- Submissão preenche `applicant_user_id` sem tornar o usuário membro.
+- Server fn `getMyApplications` cross-org.
+- Rota `/me/applications` sob `_authenticated/`.
+**Aceite (E).**
 
-### 2. Atualização da skill `venuespace` (`.agents/skills/venuespace/SKILL.md`)
+### Iteração 6 — Campanhas de arrecadação
+- Convenção "Campanhas" + "Contribuições" (relacionadas).
+- `computed` na campanha soma apenas `contribution_status='confirmed'`.
+- Página pública `/public/$slug/campaigns/$recordId` (meta, barra de progresso, chave PIX, formulário via `public_form`).
+- `PATCH /records/$id/contribution_status` restrito a owner/editor.
+- Painel do organizador para confirmar recebimentos.
+**Aceite (F).**
 
-Adicionar cláusula na **Diretriz de Desenvolvimento §0** (soberana):
+### Iteração 7 — Motor de reserva
+- Detecção via `fields.config.booking_role` + `resource_relation_field_id` em tabela `bookable`.
+- Query de conflito, rejeição também na transição para `accepted`.
+- Calendário simples de ocupação.
+**Aceite extra:** locação entre datas rejeita segunda reserva sobreposta.
 
-> **Registro obrigatório de implementações**: toda entrega técnica — iteração completa, correção, migração, nova rota, novo componente compartilhado, novo token — é registrada no arquivo `CHANGELOG.md` na raiz do projeto, na mesma edição em que é implementada. Formato: data e hora (`YYYY-MM-DD HH:MM` America/Sao_Paulo), escopo, bullets objetivos do que foi feito. Ordem cronológica decrescente. Nenhuma iteração fecha sem entrada correspondente. Sem registro = entrega incompleta (§7).
+### Iteração 8 — Membros + polimento
+- `/app/$orgSlug/members` (convite por e-mail, alterar role, remover).
+- Notificações in-app (sino) via `messages.read_at`.
+- SEO/OG por rota pública (title/description/og por org + record; og:image apenas em leaf routes com imagem real).
+- Landing `/` explicando Venuespace, meta tags globais confirmadas.
 
-Adicionar item correspondente ao **Checklist §7 (gate de fechamento)**:
+## Governança (aplica a todas as pendentes)
+- Diretriz §0 soberana: escopo fechado, ambiguidade = parada, sem melhorias implícitas.
+- Checklist §7 antes de fechar cada iteração (build, 360/768/1280 em light+dark, estados, sem regressão, RLS + GRANTs, sem PII em `/api/public/*`, `CHANGELOG.md` atualizado).
 
-> 8. `CHANGELOG.md` atualizado com entrada datada cobrindo tudo que a iteração implementou.
-
-Após editar o draft, aplicar via `skills--apply_draft`.
-
-## Arquivos afetados
-
-- `CHANGELOG.md` (novo, raiz)
-- `.agents/skills/venuespace/SKILL.md` (edição §0 + §7)
-
-## Fora de escopo
-
-- Nenhuma mudança de código de aplicação, migration, rota, componente ou token.
-- Nenhuma automação de geração de changelog (git hook, script) — registro é manual e disciplinado pela skill.
+## Próximo passo sugerido
+Aprovar execução da **Iteração 3 — Publicação pública + public_form**.
