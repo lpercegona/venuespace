@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/venue/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useFormatContext, useLabels } from "@/hooks/use-instance-context";
+import { useFormatContext } from "@/hooks/use-instance-context";
 import { formatCurrency, formatDateTime } from "@/lib/formatting";
 
 export const Route = createFileRoute("/_authenticated/me/applications")({
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/me/applications")({
 function MyApplicationsPage() {
   const q = useQuery({ queryKey: ["my-applications"], queryFn: () => getMyApplications() });
   const formatCtx = useFormatContext(null);
-  const { t } = useLabels();
+
 
   return (
     <AppShell title="Minhas candidaturas" subtitle="Tudo o que você enviou por formulários públicos.">
