@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Database, MessageSquare, Sparkles } from "lucide-react";
+import { ArrowRight, Database, MessageSquare, Sparkles, Compass } from "lucide-react";
+import { PublicTablesCarousel } from "@/components/venue/public-tables-carousel";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -16,6 +17,9 @@ function Landing() {
             <span className="font-display text-lg font-semibold tracking-tight">Venuespace</span>
           </div>
           <div className="flex items-center gap-2">
+            <Link to="/explore">
+              <Button variant="ghost" size="sm"><Compass className="h-4 w-4" />Explorar</Button>
+            </Link>
             <Link to="/auth">
               <Button variant="ghost" size="sm">Entrar</Button>
             </Link>
