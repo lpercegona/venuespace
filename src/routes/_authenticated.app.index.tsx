@@ -95,7 +95,7 @@ function OrgsPage() {
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="org-name">Nome</Label>
-                <Input id="org-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Imobiliária Alfa" />
+                <Input id="org-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder={`Nome da ${organizationLabel}`} />
                 {name ? (
                   <p className="text-xs text-muted-foreground">URL pública: /public/<span className="font-mono">{slugify(name)}</span></p>
                 ) : null}
