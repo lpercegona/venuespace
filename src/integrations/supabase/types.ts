@@ -126,6 +126,48 @@ export type Database = {
         }
         Relationships: []
       }
+      permissions: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          table_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          table_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          table_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permissions_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -152,6 +194,72 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      records: {
+        Row: {
+          agreed_value: number | null
+          applicant_user_id: string | null
+          contribution_status:
+            | Database["public"]["Enums"]["contribution_status"]
+            | null
+          created_at: string
+          created_by: string | null
+          data: Json
+          deal_status: Database["public"]["Enums"]["deal_status"]
+          id: string
+          organization_id: string
+          status: Database["public"]["Enums"]["record_status"]
+          table_id: string
+          updated_at: string
+        }
+        Insert: {
+          agreed_value?: number | null
+          applicant_user_id?: string | null
+          contribution_status?:
+            | Database["public"]["Enums"]["contribution_status"]
+            | null
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          deal_status?: Database["public"]["Enums"]["deal_status"]
+          id?: string
+          organization_id: string
+          status?: Database["public"]["Enums"]["record_status"]
+          table_id: string
+          updated_at?: string
+        }
+        Update: {
+          agreed_value?: number | null
+          applicant_user_id?: string | null
+          contribution_status?:
+            | Database["public"]["Enums"]["contribution_status"]
+            | null
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          deal_status?: Database["public"]["Enums"]["deal_status"]
+          id?: string
+          organization_id?: string
+          status?: Database["public"]["Enums"]["record_status"]
+          table_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "records_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "records_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tables: {
         Row: {
@@ -196,6 +304,67 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      views: {
+        Row: {
+          config: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          organization_id: string
+          submissions_table_id: string | null
+          table_id: string
+          type: Database["public"]["Enums"]["view_type"]
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          submissions_table_id?: string | null
+          table_id: string
+          type?: Database["public"]["Enums"]["view_type"]
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          submissions_table_id?: string | null
+          table_id?: string
+          type?: Database["public"]["Enums"]["view_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "views_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "views_submissions_table_id_fkey"
+            columns: ["submissions_table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "views_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
             referencedColumns: ["id"]
           },
         ]
