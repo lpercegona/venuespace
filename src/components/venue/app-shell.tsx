@@ -8,8 +8,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, FileHeart, CalendarDays, Users } from "lucide-react";
-import { getOrganizationBySlug } from "@/lib/orgs.functions";
+import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building2, Check, List } from "lucide-react";
+import { getOrganizationBySlug, listMyOrganizations } from "@/lib/orgs.functions";
 import { getMyProfile } from "@/lib/profile.functions";
 import { NotificationsBell } from "./notifications-bell";
 import { ChatWidget } from "./chat-widget";
@@ -31,6 +31,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
     enabled: !!orgSlug,
   });
   const me = useQuery({ queryKey: ["me-profile"], queryFn: () => getMyProfile() });
+  const myOrgs = useQuery({ queryKey: ["my-orgs"], queryFn: () => listMyOrganizations() });
 
   const initial = (me.data?.display_name ?? me.data?.email ?? "?").slice(0, 1).toUpperCase();
 
@@ -45,6 +46,37 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
             </span>
           </Link>
           <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="max-w-[200px] gap-1.5">
+                  <Building2 className="h-4 w-4 shrink-0" />
+                  <span className="truncate">
+                    {org.data?.name ?? (orgSlug ? orgSlug : "Selecionar organização")}
+                  </span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Organizações</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {(myOrgs.data ?? []).map((o: any) => (
+                  <DropdownMenuItem
+                    key={o.id}
+                    onSelect={() => navigate({ to: "/app/$orgSlug", params: { orgSlug: o.slug } })}
+                  >
+                    <span className="truncate">{o.name}</span>
+                    {o.slug === orgSlug ? <Check className="ml-auto h-4 w-4" /> : null}
+                  </DropdownMenuItem>
+                ))}
+                {(myOrgs.data ?? []).length === 0 ? (
+                  <DropdownMenuItem disabled>Nenhuma organização</DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => navigate({ to: "/app" })}>
+                  <List className="h-4 w-4" />Ver todas as organizações
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {orgSlug && org.data ? (
               <NotificationsBell organizationId={org.data.id} orgSlug={orgSlug} />
             ) : null}
