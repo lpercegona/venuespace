@@ -1,3 +1,30 @@
+## 2026-07-14 — Iteração 10 (continuação): Campos de sistema editáveis + sweep de rótulos
+
+### Backend
+- **Nova função** `src/lib/system-fields.functions.ts`: `listSystemFieldsPublic({ scope })`, `listAllSystemFieldsPublic()`, `upsertSystemField`, `deleteSystemField` — escopos `organization | table | record`, gravam nas tabelas `organization_fields`, `table_fields`, `record_fields` (super admin only).
+- **Nova rota pública** `src/routes/api/public/system-fields.ts` retornando os três escopos com cache 60s.
+- **Novo hook** `src/hooks/use-system-fields.ts` (`useSystemFields(scope)`) — dicionário cacheado (5 min).
+- `src/lib/orgs.functions.ts`: `createOrganization` / `updateOrganization` / `getOrganizationBySlug` / `listMyOrganizations` agora aceitam e retornam `system_data` (JSONB).
+- `src/lib/records.functions.ts`: `createRecord` / `updateRecord` aceitam `system_data`; `listRecords` passa a expor o campo.
+
+### Admin UI
+- **Nova aba "Campos de sistema"** em `/admin` com seletor de escopo (Organização / Tabela / Registro), CRUD completo (chave snake_case, rótulo, tipo, obrigatório, ordem) reutilizando `FIELD_TYPES` do motor unificado (`field-schema.ts`).
+- Invalidação recíproca com a query `system-fields` para refletir mudanças imediatamente no cliente.
+
+### Integração transversal
+- `EditOrgDialog` agora renderiza dinamicamente os campos de sistema da organização (texto, textarea/long_text, number/currency, date/datetime, email/url/phone, select, boolean) e persiste em `organizations.system_data`. Rótulos como "Excluir organização" e "Categoria" passaram a usar `useLabels()`.
+
+### Sweep de rótulos (Frente 2)
+- `AppShell` migrou strings hardcoded → `useLabels()`: seletor de organização, dropdown "Organizações", "Nenhuma organização", "Ver todas as organizações", "Reservas" (bookings), "Membros" (memberships).
+- Comportamento de fallback preservado via `FALLBACK_LABELS` do hook.
+
+### Pendências identificadas
+- UI de tabelas (schema builder) e registros (formulário na `_authenticated.app.$orgSlug.tables.$tableId.index.tsx`) ainda não renderizam campos de sistema, embora o backend já aceite `system_data`. Próxima entrega.
+- `PublicHeader` mantém "Explorar" hardcoded — sem chave semântica associada; deixado como cópia de UI, sem impacto de termos-núcleo.
+
+### Governança
+- Sem cor hardcoded; sem quebra de tokens.
+- `tsgo --noEmit`: ✅ limpo.
 ## 2026-07-14 22:15 — Iteração 10 (parcial): layout público por categoria + retroatividade
 
 - Migration prévia: novas tabelas `organization_category_public_layouts`, `organization_fields`, `table_fields`, `record_fields`; coluna `system_data jsonb` em `organizations`, `tables`, `records`; enum `field_source_kind`; `system_form_fields` removida.
