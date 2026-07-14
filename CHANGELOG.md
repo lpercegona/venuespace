@@ -1,4 +1,4 @@
-##  — Iteração 9 (parte 2): refactor transversal para contexto de instância/organização
+## 2026-07-14 21:28 — Iteração 9 (parte 2): refactor transversal para contexto de instância/organização
 
 - `src/components/venue/conversation-thread.tsx` agora recebe `formatCtx` obrigatório; substitui `toLocaleString`/`Intl.NumberFormat` fixos por `formatDateTime`/`formatCurrency`.
 - `src/components/venue/chat-widget.tsx`: aceita `org` como prop, deriva `formatCtx` via `useFormatContext(org)`, propaga para `ConversationThread` e ao badge de valor acordado; datas do inbox usam `formatDateTime`.
