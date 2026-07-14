@@ -213,7 +213,16 @@ export const addMemberByEmail = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: profile, error: pErr } = await context.supabase
+    // Verify caller can manage members of this org (must be owner).
+    const { data: canManage, error: chkErr } = await context.supabase
+      .rpc("has_role", { _user_id: context.userId, _org_id: data.organization_id, _role: "owner" });
+    if (chkErr) throw new Error(chkErr.message);
+    if (!canManage) throw new Error("Sem permissão para adicionar membros.");
+
+    // Look up target profile with the admin client (restricted profile RLS
+    // would hide users who aren't yet co-members of this org).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile, error: pErr } = await supabaseAdmin
       .from("profiles")
       .select("id")
       .eq("email", data.email)
