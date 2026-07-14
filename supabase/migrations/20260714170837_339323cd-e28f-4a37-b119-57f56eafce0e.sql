@@ -1,0 +1,2 @@
+CREATE OR REPLACE FUNCTION public.whoami() RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$ SELECT jsonb_build_object('uid', auth.uid(), 'role', current_setting('role', true), 'jwt_role', current_setting('request.jwt.claim.role', true), 'jwt_sub', current_setting('request.jwt.claim.sub', true)); $$;
+GRANT EXECUTE ON FUNCTION public.whoami() TO anon, authenticated;
