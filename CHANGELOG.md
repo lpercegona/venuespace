@@ -11,6 +11,35 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 
 ---
 
+## 2026-07-14 18:40 — UX: edição de tabelas, uploads reais, dropdown de perfil, chat flutuante, detalhes públicos
+
+- **Backend / server fns**
+  - `src/lib/orgs.functions.ts`: novos `updateTable` (patch de nome/descrição/ícone/bookable, com permissão owner/editor) e `addFieldOption` (append em `fields.config.options`, valida tipo `select`/`multiselect` e evita duplicatas case-insensitive).
+  - `src/lib/profile.functions.ts` (novo): `getMyProfile`, `updateMyProfile` e `getSignedUploadUrl` (assina objetos privados de `venue-uploads` via `supabaseAdmin`).
+  - `src/lib/public.server.ts`: `loadPublicRecord` retorna um único registro publicado, campos, `signed_urls` pré-assinadas para `image`/`file` e referência ao `public_form_view`.
+- **API pública**
+  - `src/routes/api/public/$slug/$tableId.$recordId.ts` (novo): `GET` retorna detalhe público com URLs assinadas.
+- **Rotas**
+  - `src/routes/public.$slug.$tableId.$recordId.tsx` (novo): página pública de detalhe do registro (título, imagens, campos formatados, arquivos assinados, CTA para o formulário público).
+  - `src/routes/public.$slug.$tableId.tsx`: cards agora linkam para `/public/:slug/:tableId/:recordId` e ganham botão explícito "Ver detalhes".
+  - `src/routes/_authenticated.me.settings.tsx` (novo): configurações do perfil (nome de exibição + upload de avatar em `venue-uploads/<uid>/avatar-*`).
+- **Componentes**
+  - `src/components/venue/app-shell.tsx`: removidos links soltos do topo; adicionado dropdown de perfil (avatar) com Configurações, Minhas candidaturas, Calendário, Membros e Sair; renderiza `ChatWidget` quando há org ativa; mantém `NotificationsBell` no header.
+  - `src/components/venue/chat-widget.tsx` (novo): botão flutuante bottom-right; abre `Sheet` com listagem de conversas da org e painel de conversa inline (thread + envio de texto/proposta + aceitar/recusar). Polling de 5 s reaproveitado.
+  - `src/components/venue/dynamic-form.tsx`: reescrito com `UploadField` real (upload direto para `venue-uploads` via cliente autenticado, com preview via signed URL) para `image` e `file`; `multiselect` renderizado como chips; `select`/`multiselect` recebem inline "Adicionar opção" (usa `addFieldOption`); props `disableUploads`/`disableOptionEditing` para uso em formulários públicos anônimos.
+  - `src/components/venue/dynamic-grid.tsx`: `image` renderiza thumbnail via signed URL; `file` sinaliza presença; demais tipos mantidos.
+- **Painel da organização**
+  - `src/routes/_authenticated.app.$orgSlug.index.tsx`: cada card de tabela ganha ícone lápis (visível para owner/editor) que abre `Dialog` de edição usando `updateTable`; link do card para o detalhe da tabela preservado.
+- **Esquema da tabela**
+  - `src/routes/_authenticated.app.$orgSlug.tables.$tableId.schema.tsx`: para campos `select`/`multiselect`, exibe `OptionsManager` com lista atual e input para adicionar novas opções (usa `addFieldOption`).
+- **Formulário público**
+  - `src/routes/public.$slug.$tableId.form.tsx`: `DynamicForm` invocado com `disableUploads` e `disableOptionEditing` — anônimos veem URL de texto no lugar do upload (bucket privado exige sessão) e não editam opções.
+- **Diretriz §0 / §7**
+  - Nenhuma iteração anterior alterada; RLS de `venue-uploads` continua restrito a owners (uploads via cliente autenticado sob `<uid>/…`).
+
+---
+
+
 ## 2026-07-14 17:20 — Correção: bloqueio na criação de organização
 
 - Verificado que as chaves de assinatura JWT do projeto já estão em ES256 (`in_use`); HS256 permanece apenas como `previously_used`.
