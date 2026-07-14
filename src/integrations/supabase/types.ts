@@ -559,6 +559,14 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      create_organization: {
+        Args: { _description?: string; _name: string; _slug: string }
+        Returns: {
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
       has_role: {
         Args: {
           _org_id: string
@@ -573,7 +581,6 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin_email: { Args: { _email: string }; Returns: boolean }
-      whoami: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "owner" | "editor" | "viewer"
