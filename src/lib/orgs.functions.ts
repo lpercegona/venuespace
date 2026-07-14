@@ -21,6 +21,7 @@ const orgCreate = z.object({
   timezone: z.string().max(64).nullable().optional(),
   currency: z.string().max(8).nullable().optional(),
   currency_display: currencyDisplaySchema,
+  system_data: z.record(z.string(), z.any()).optional(),
 });
 
 export const listMyOrganizations = createServerFn({ method: "GET" })
