@@ -48,6 +48,13 @@ import {
   type CategoryDefaultField,
   type OrganizationCategory,
 } from "@/lib/organization-categories.functions";
+import {
+  listSystemFieldsPublic,
+  upsertSystemField,
+  deleteSystemField,
+  type SystemFieldRow,
+  type SystemFieldScope,
+} from "@/lib/system-fields.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Venuespace" }, { name: "robots", content: "noindex" }] }),
