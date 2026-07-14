@@ -118,3 +118,72 @@ export async function loadPublicFormSchema(viewId: string) {
     fields: effective,
   };
 }
+
+export async function loadPublicRecord(slug: string, tableId: string, recordId: string) {
+  const sb = supabaseAdmin;
+
+  const { data: org } = await sb
+    .from("organizations")
+    .select("id, slug, name, description, logo_url")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!org) throw new Error("Organização não encontrada");
+
+  const { data: table } = await sb
+    .from("tables")
+    .select("id, slug, name, description, icon, bookable, organization_id")
+    .eq("id", tableId)
+    .maybeSingle();
+  if (!table || table.organization_id !== org.id) throw new Error("Tabela não encontrada");
+
+  const { data: record } = await sb
+    .from("records")
+    .select("id, data, deal_status, created_at")
+    .eq("id", recordId)
+    .eq("table_id", tableId)
+    .eq("status", "published")
+    .maybeSingle();
+  if (!record) throw new Error("Registro não encontrado");
+
+  const { data: fields } = await sb
+    .from("fields")
+    .select("id, key, label, type, position, config")
+    .eq("table_id", tableId)
+    .order("position", { ascending: true });
+
+  const { data: views } = await sb
+    .from("views")
+    .select("id, type, config, submissions_table_id")
+    .eq("table_id", tableId)
+    .eq("type", "public_form")
+    .limit(1);
+  const v = views?.[0] as any;
+  const public_form_view = v
+    ? { id: v.id, auto_relation_field_id: (v.config ?? {}).auto_relation_field_id ?? null }
+    : null;
+
+  // Pre-sign image/file URLs so anonymous viewers can render them.
+  const signed: Record<string, string> = {};
+  for (const f of (fields ?? []) as any[]) {
+    if (f.type !== "image" && f.type !== "file") continue;
+    const path = (record.data as any)?.[f.key];
+    if (typeof path !== "string" || !path) continue;
+    // Path is either a full URL (legacy) or a storage object path.
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      signed[f.key] = path;
+      continue;
+    }
+    const { data: s } = await sb.storage.from("venue-uploads").createSignedUrl(path, 60 * 60);
+    if (s?.signedUrl) signed[f.key] = s.signedUrl;
+  }
+
+  return {
+    organization: { id: org.id, slug: org.slug, name: org.name, description: org.description ?? null, logo_url: org.logo_url ?? null },
+    table: { id: table.id, slug: table.slug, name: table.name, description: table.description ?? null, icon: table.icon ?? null, bookable: !!table.bookable },
+    fields: (fields ?? []) as any[],
+    record: record as { id: string; data: Record<string, any>; deal_status: string; created_at: string },
+    signed_urls: signed,
+    public_form_view,
+  };
+}
+
