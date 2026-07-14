@@ -12,9 +12,20 @@ export function useAuth() {
       setSession(s);
       setUser(s?.user ?? null);
     });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
+    // Revalidate session against Auth server; if the stored token is stale
+    // (legacy signing key after rotation, revoked, expired), sign out locally
+    // so the app returns to /auth instead of looping with 401s.
+    supabase.auth.getUser().then(async ({ data, error }) => {
+      if (error || !data?.user) {
+        try { await supabase.auth.signOut({ scope: "local" }); } catch { /* ignore */ }
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      const { data: s } = await supabase.auth.getSession();
+      setSession(s.session);
+      setUser(s.session?.user ?? null);
       setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
