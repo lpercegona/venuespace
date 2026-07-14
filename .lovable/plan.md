@@ -1,63 +1,78 @@
-# Iterações do Venuespace
 
-Conforme o plano soberano definido em `skill/venuespace`. Escopo fechado por iteração (§0). Status atual: **Iterações 1 e 2 concluídas**; restam 6.
+# Revisão e correção — bloqueio na criação de organização
 
-## Concluídas
+## Diagnóstico
 
-### Iteração 1 — Fundação [CONCLUÍDA]
-Lovable Cloud, migrations base (enums, `organizations`, `memberships`, `tables`, `fields`, RLS, GRANTs, `has_role`), auth email+Google, trigger `profiles`, layout `_authenticated`, painéis `/app`, `/app/$orgSlug`, schema builder. Tokens Venuespace (light+dark, marca, estados, status) em `src/styles.css`. Par tipográfico Fraunces + Inter Tight via `<link>` em `__root.tsx`. Metas globais.
-**Aceite:** criar org, tabela "Imóveis", convidar editor.
+O erro atual **não** é mais `row-level security` — mudou para:
 
-### Iteração 2 — Records + Grid Dinâmico [CONCLUÍDA]
-Migrations de `records`, `views`, `permissions` (+ `views.submissions_table_id`, `tables.bookable`). Server fns com validação Zod dinâmica de `data` jsonb, resolver de `computed` (soma, contagem, soma qty×valor) e `relation` na leitura. `DynamicGrid` e `DynamicForm`. CRUD `views` (grid interna) e `permissions`. Publicar/despublicar. `EmptyState`.
-**Aceite (A + D):** catálogos + orçamento com computed qty×valor.
+```
+Error: Legacy API keys are disabled
+  at src/lib/orgs.functions.ts:32 (context.supabase.rpc("create_organization", ...))
+```
 
-## Pendentes
+Isto é resposta do PostgREST/GoTrue rejeitando a chamada porque **algum token em uso ainda tem formato de chave JWT legada** (após a rotação de chaves feita no turno anterior, o projeto passou a rejeitar chaves antigas). A causa é uma das três abaixo — o plano ataca as três em ordem:
 
-### Iteração 3 — Publicação pública + public_form
-- `GET /api/public/$slug/$tableId` (server publishable client, política `TO anon` restrita a `status='published'`, projeção via `views.config`).
-- `POST /api/public/$slug/$tableId/submit` — grava em `submissions_table_id`, preenche `auto_relation_field_id`, rate-limit best-effort por IP.
-- Submissão anônima (gera `lead_access_tokens`, exige `contact_email`) e autenticada (`applicant_user_id`).
-- `conversation` criada vinculada ao record de submissão.
-- Rotas `/public/$slug/$tableId` e `/public/$slug/$tableId/form`.
-**Aceite (B):** dois interessados → dois records + duas conversas.
+1. **Sessão do navegador emitida antes da rotação/migração de assinatura.** O `access_token` guardado em `localStorage` continua sendo enviado como `Authorization: Bearer …` e é interpretado como chave legada por PostgREST quando cai no `apikey` header em alguma rota.
+2. **Assinatura JWT do projeto ainda em HS256** (não migrada para ES256), então tokens novos também batem no bloqueio quando o gateway espera JWKS.
+3. **`.env` correto (`sb_publishable_…`) mas processo Node do dev-server ainda com o valor antigo em `process.env`** (restart pendente).
 
-### Iteração 4 — Chat + propostas + deal_status
-- CRUD `messages` (acesso por membership, token ou sessão).
-- UI com `type='proposal'` + `proposed_value`.
-- `PATCH /records/$id/deal_status` (`negotiating → accepted/declined → closed`; ao fechar copia `agreed_value` da última proposta aceita).
-- Rota `/lead/$token`, inbox `/app/$orgSlug/conversations`, polling 5s.
-**Aceite (C).**
+## Escopo da correção
 
-### Iteração 5 — Candidatura autenticada + `/me/applications`
-- Submissão preenche `applicant_user_id` sem tornar o usuário membro.
-- Server fn `getMyApplications` cross-org.
-- Rota `/me/applications` sob `_authenticated/`.
-**Aceite (E).**
+### 1. Ambiente e chaves
+- Garantir que `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` estão em `sb_publishable_…` (já confirmado no `.env`).
+- Migrar chaves de assinatura JWT para ES256 (`supabase--migrate_signing_keys`) — pré-requisito para as novas `sb_publishable_` funcionarem sem tocar em keys legadas.
+- Reiniciar o dev server para recarregar `process.env`.
 
-### Iteração 6 — Campanhas de arrecadação
-- Convenção "Campanhas" + "Contribuições" (relacionadas).
-- `computed` na campanha soma apenas `contribution_status='confirmed'`.
-- Página pública `/public/$slug/campaigns/$recordId` (meta, barra de progresso, chave PIX, formulário via `public_form`).
-- `PATCH /records/$id/contribution_status` restrito a owner/editor.
-- Painel do organizador para confirmar recebimentos.
-**Aceite (F).**
+### 2. Sessão do usuário
+- Adicionar uma limpeza defensiva no fluxo de login: se `supabase.auth.getUser()` falhar com erro de token/legacy, invocar `supabase.auth.signOut({ scope: "local" })` e redirecionar para `/auth`. Isto elimina o problema de sessões antigas sem forçar o usuário a limpar storage manualmente.
+- Documentar no `AGENTS.md`/`CHANGELOG.md` a necessidade de logout uma vez após rotação.
 
-### Iteração 7 — Motor de reserva
-- Detecção via `fields.config.booking_role` + `resource_relation_field_id` em tabela `bookable`.
-- Query de conflito, rejeição também na transição para `accepted`.
-- Calendário simples de ocupação.
-**Aceite extra:** locação entre datas rejeita segunda reserva sobreposta.
+### 3. `createOrganization`
+- Manter a RPC `create_organization` (SECURITY DEFINER) já criada — ela é o caminho correto e permanece.
+- Nenhuma outra alteração de contrato.
 
-### Iteração 8 — Membros + polimento
-- `/app/$orgSlug/members` (convite por e-mail, alterar role, remover).
-- Notificações in-app (sino) via `messages.read_at`.
-- SEO/OG por rota pública (title/description/og por org + record; og:image apenas em leaf routes com imagem real).
-- Landing `/` explicando Venuespace, meta tags globais confirmadas.
+### 4. Varredura de regressão (Iterações 1–8)
+Revisar cada superfície para confirmar que nenhuma outra chamada quebrou com a rotação de chaves ou está usando padrões proibidos pelo `/skill:venuespace`:
 
-## Governança (aplica a todas as pendentes)
-- Diretriz §0 soberana: escopo fechado, ambiguidade = parada, sem melhorias implícitas.
-- Checklist §7 antes de fechar cada iteração (build, 360/768/1280 em light+dark, estados, sem regressão, RLS + GRANTs, sem PII em `/api/public/*`, `CHANGELOG.md` atualizado).
+- **Iteração 1** — `orgs.functions.ts`, `tables.functions.ts`, `fields.functions.ts`, rotas `/app`, `/app/$orgSlug`, `/auth`; verificar tokens (`--brand`, status, `--shadow-elegant`) presentes em `src/styles.css` light + dark + `@theme inline`; fontes carregadas em `__root.tsx` via `<link>`.
+- **Iteração 2** — `records.functions.ts` (Zod dinâmico, resolver de computed qty×valor / soma / contagem), `DynamicGrid` (cards em mobile, tabela dentro de `ScrollArea` no desktop), `DynamicForm`, CRUD de `views` e `permissions`, publicar/despublicar.
+- **Iteração 3** — `GET /api/public/$slug/$tableId` e `POST …/submit` usando o publishable server client (não `supabaseAdmin`), gravação em `submissions_table_id` com `auto_relation_field_id`, geração de `lead_access_tokens` para anônimos, criação da `conversation` vinculada.
+- **Iteração 4** — `messages.functions.ts`: proposta (`type='proposal'`, `proposed_value`), transições de `deal_status` copiando `agreed_value`, rota `/lead/$token`, inbox de conversas, polling 5s; acesso por membership / token / autenticado.
+- **Iteração 5** — `applications.functions.ts` (`getMyApplications` cross-org), rota `/_authenticated/me/applications`; submissão autenticada preenche `applicant_user_id` **sem** criar membership.
+- **Iteração 6** — Página `/public/$slug/campaigns/$recordId` (progresso, PIX, formulário `public_form`), computed somando apenas `contribution_status='confirmed'`, `PATCH …/contribution_status` restrito a owner/editor.
+- **Iteração 7** — `runBookingCheck`: sobreposição via `fields.config.booking_role` + `resource_relation_field_id` em tabela `bookable`, rejeição na transição para `accepted`, calendário em `/_authenticated/app/$orgSlug/calendar`.
+- **Iteração 8** — `/app/$orgSlug/members` (convite, alterar role, remover), sino de notificações via `messages.read_at`, meta tags por rota pública (og:image só em leaf routes), landing `/`.
 
-## Próximo passo sugerido
-Aprovar execução da **Iteração 3 — Publicação pública + public_form**.
+Para cada uma:
+- verificar que server fns protegidos só são chamados de componente/`_authenticated` loader (nunca loader público);
+- verificar RLS/GRANTs das tabelas tocadas continuam corretos;
+- verificar responsividade em 360/768/1280 e dark mode;
+- verificar que nenhum endpoint `/api/public/*` retorna PII.
+
+### 5. Registro
+- Atualizar `CHANGELOG.md` com uma entrada datada (America/Sao_Paulo) descrevendo:
+  - migração de chaves de assinatura (ES256),
+  - defesa contra sessão legada no cliente,
+  - varredura de regressão realizada (com o que foi verificado e o que foi corrigido, se houver).
+
+## Detalhes técnicos
+
+```text
+Fluxo de erro atual
+  Browser  ──[Bearer token legado]──►  serverFn createOrganization
+     serverFn  ──[apikey=sb_publishable_…, Authorization=Bearer <token>]──►  PostgREST
+        PostgREST  ─►  gateway detecta assinatura JWT legada  ─►  "Legacy API keys are disabled"
+```
+
+Ordem de execução ao aprovar o plano:
+1. `supabase--migrate_signing_keys` (idempotente).
+2. Restart dev server.
+3. Patch no `useAuth`/guard `_authenticated` para signOut defensivo em token inválido.
+4. Varredura arquivo-a-arquivo das Iterações 1–8, aplicando correções pontuais só onde houver falha real (sem refactors fora de escopo — Diretriz §0).
+5. Atualização do `CHANGELOG.md`.
+
+## Fora deste plano
+
+- Qualquer nova funcionalidade além das 8 iterações já entregues.
+- Alterações de design system fora das correções necessárias.
+- Refactors amplos.
