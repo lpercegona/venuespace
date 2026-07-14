@@ -314,6 +314,128 @@ function RecordsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditFormViewDialog
+        viewId={editingViewId}
+        onClose={() => setEditingViewId(null)}
+        onSaved={() => { setEditingViewId(null); qc.invalidateQueries({ queryKey: ["views", tableId] }); }}
+      />
     </AppShell>
   );
 }
+
+function EditFormViewDialog({ viewId, onClose, onSaved }: { viewId: string | null; onClose: () => void; onSaved: () => void }) {
+  const q = useQuery({
+    queryKey: ["public-form-view", viewId],
+    queryFn: () => getPublicFormView({ data: { id: viewId as string } }),
+    enabled: !!viewId,
+  });
+  const [name, setName] = useState("");
+  const [autoRel, setAutoRel] = useState<string>("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [saving, setSaving] = useState(false);
+
+  const view = q.data?.view as any;
+  const fields = (q.data?.submission_fields ?? []) as any[];
+  const relationFields = fields.filter((f) => f.type === "relation");
+  const selectableFields = fields.filter((f) => f.type !== "computed");
+
+  const cfg = (view?.config ?? {}) as any;
+  const initializedRef = useState<string | null>(null);
+  if (view && initializedRef[0] !== view.id) {
+    initializedRef[1](view.id);
+    setName(view.name ?? "");
+    setAutoRel(cfg.auto_relation_field_id ?? "");
+    const included: string[] | null = cfg.form_field_ids ?? null;
+    if (included) setSelectedIds(new Set(included));
+    else setSelectedIds(new Set(selectableFields.filter((f) => f.id !== (cfg.auto_relation_field_id ?? "")).map((f) => f.id)));
+  }
+
+  async function handleSave() {
+    if (!viewId) return;
+    setSaving(true);
+    try {
+      const ids = Array.from(selectedIds).filter((id) => id !== autoRel);
+      await updatePublicFormView({
+        data: {
+          id: viewId,
+          name: name.trim() || "Formulário público",
+          auto_relation_field_id: autoRel || null,
+          form_field_ids: ids.length === selectableFields.length ? null : ids,
+        },
+      });
+      toast.success("Formulário atualizado");
+      onSaved();
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setSaving(false); }
+  }
+
+  function toggle(id: string, on: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id); else next.delete(id);
+      return next;
+    });
+  }
+
+  return (
+    <Dialog open={!!viewId} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogHeader><DialogTitle className="font-display">Editar formulário público</DialogTitle></DialogHeader>
+        {q.isLoading || !view ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="form-name">Nome</Label>
+              <Input id="form-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Formulário público" />
+            </div>
+            <div className="space-y-2">
+              <Label>Campo relação para o registro de origem</Label>
+              <Select value={autoRel || "__none__"} onValueChange={(v) => setAutoRel(v === "__none__" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nenhum</SelectItem>
+                  {relationFields.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Preenchido automaticamente com o registro de origem; ocultado do formulário.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Campos exibidos no formulário</Label>
+              <ul className="space-y-2 rounded-md border border-border/60 p-3">
+                {selectableFields.length === 0 ? (
+                  <li className="text-xs text-muted-foreground">A tabela de destino não tem campos elegíveis.</li>
+                ) : selectableFields.map((f) => {
+                  const isAuto = f.id === autoRel;
+                  return (
+                    <li key={f.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`ff-${f.id}`}
+                        checked={selectedIds.has(f.id)}
+                        disabled={isAuto}
+                        onCheckedChange={(v) => toggle(f.id, !!v)}
+                      />
+                      <Label htmlFor={`ff-${f.id}`} className="flex-1 cursor-pointer text-sm font-normal">
+                        {f.label} <span className="text-xs text-muted-foreground">({f.type}){isAuto ? " · auto" : ""}</span>
+                      </Label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button onClick={handleSave} disabled={saving || !view}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
