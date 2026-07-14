@@ -341,15 +341,15 @@ function EditFormViewDialog({ viewId, onClose, onSaved }: { viewId: string | nul
   const selectableFields = fields.filter((f) => f.type !== "computed");
 
   const cfg = (view?.config ?? {}) as any;
-  const initializedRef = useState<string | null>(null);
-  if (view && initializedRef[0] !== view.id) {
-    initializedRef[1](view.id);
+  useEffect(() => {
+    if (!view) return;
     setName(view.name ?? "");
     setAutoRel(cfg.auto_relation_field_id ?? "");
     const included: string[] | null = cfg.form_field_ids ?? null;
     if (included) setSelectedIds(new Set(included));
     else setSelectedIds(new Set(selectableFields.filter((f) => f.id !== (cfg.auto_relation_field_id ?? "")).map((f) => f.id)));
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view?.id]);
 
   async function handleSave() {
     if (!viewId) return;
