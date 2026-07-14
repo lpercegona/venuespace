@@ -11,6 +11,23 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 
 ---
 
+## 2026-07-14 23:15 — Header público unificado, voltar em detalhes, formulário como modal
+
+- `src/components/venue/public-header.tsx`: novo componente sticky compartilhado (marca + Explorar + Entrar/Começar), prop `back` para botão de voltar tipado, `showAuthActions` e `showExplore` para variantes; mobile-first (labels colapsam em `<sm`).
+- `src/components/venue/interest-form-modal.tsx`: novo Dialog shadcn que encapsula o formulário público (contato + `DynamicForm` do view), reaproveitando `/api/public/form-schema/:viewId` e `/api/public/:slug/:tableId/submit`; navega para `/lead/$token` no sucesso; loading/erro tratados dentro do modal.
+- `src/routes/index.tsx`: header inline substituído por `<PublicHeader />`.
+- `src/routes/explore.tsx`: header inline substituído por `<PublicHeader back={{to:"/"}} />`.
+- `src/routes/public.$slug.$tableId.index.tsx`: `PublicHeader` no topo; botão "Manifestar interesse" de cada card abre `InterestFormModal` com o `recordId` respectivo em vez de navegar para a rota `/form`.
+- `src/routes/public.$slug.$tableId.$recordId.tsx`: `PublicHeader` com `back` para a listagem da tabela (rótulo "Voltar para <tabela>"); CTA "Manifestar interesse" agora abre o modal.
+- `src/routes/public.$slug.campaigns.$recordId.tsx`: `PublicHeader` com `back` para `/explore` (fluxo de contribuição inalterado).
+- `src/routes/lead.$token.tsx`: `PublicHeader` sem botões de auth (destino final do lead).
+- `src/routes/auth.tsx`: `PublicHeader` com `back` para `/` e sem ações de auth (evita duplicar Entrar/Começar).
+- `src/routes/public.$slug.$tableId.form.tsx`: reescrita como fallback compatível — mantém a URL/`search` param antigos, renderiza `PublicHeader` + shell mínimo e abre o `InterestFormModal`; ao fechar volta para a listagem da tabela.
+- Nenhuma alteração de esquema, endpoints, RLS ou tokens de cor. Typecheck limpo.
+
+---
+
+
 ## 2026-07-14 22:30 — Edição/exclusão de organização e tabela + Explorar público
 
 - `src/lib/orgs.functions.ts`: `updateOrganization` (owner-only, patch de name/description/logo_url), `deleteOrganization` (owner-only, confirma slug), `deleteTable` (owner-only, confirma nome).
