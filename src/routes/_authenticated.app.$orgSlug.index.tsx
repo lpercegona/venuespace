@@ -185,6 +185,7 @@ function OrgDashboard() {
                 t={t}
                 orgSlug={orgSlug}
                 canEdit={canEdit}
+                isOwner={isOwner}
                 onSaved={() => tables.refetch()}
               />
             ))}
