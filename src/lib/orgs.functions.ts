@@ -258,4 +258,50 @@ export const addMemberByEmail = createServerFn({ method: "POST" })
       .insert({ organization_id: data.organization_id, user_id: profile.id, role: data.role });
     if (error) throw new Error(error.message);
     return { ok: true };
+
+// Field options (select/multiselect): append a new option to fields.config.options
+// Owner/editor of the org that owns the field only.
+
+export const addFieldOption = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      field_id: z.string().uuid(),
+      option: z.string().min(1).max(80),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: field, error: fErr } = await context.supabase
+      .from("fields")
+      .select("id, type, config, table:tables(organization_id)")
+      .eq("id", data.field_id)
+      .maybeSingle();
+    if (fErr) throw new Error(fErr.message);
+    if (!field) throw new Error("Campo não encontrado");
+    if (field.type !== "select" && field.type !== "multiselect") {
+      throw new Error("Campo não aceita opções");
+    }
+    const orgId = (field as any).table?.organization_id as string | undefined;
+    if (!orgId) throw new Error("Organização não encontrada");
+
+    const { data: canOwner } = await context.supabase
+      .rpc("has_role", { _user_id: context.userId, _org_id: orgId, _role: "owner" });
+    const { data: canEditor } = await context.supabase
+      .rpc("has_role", { _user_id: context.userId, _org_id: orgId, _role: "editor" });
+    if (!canOwner && !canEditor) throw new Error("Sem permissão");
+
+    const cfg = ((field as any).config ?? {}) as Record<string, any>;
+    const current: string[] = Array.isArray(cfg.options) ? cfg.options : [];
+    const trimmed = data.option.trim();
+    const existsCi = current.some((o) => o.toLowerCase() === trimmed.toLowerCase());
+    const next = existsCi ? current : [...current, trimmed];
+    if (!existsCi) {
+      const { error } = await context.supabase
+        .from("fields")
+        .update({ config: { ...cfg, options: next } as any })
+        .eq("id", data.field_id);
+      if (error) throw new Error(error.message);
+    }
+    return { options: next };
   });
+
