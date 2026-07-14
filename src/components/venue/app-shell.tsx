@@ -31,6 +31,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
     enabled: !!orgSlug,
   });
   const me = useQuery({ queryKey: ["me-profile"], queryFn: () => getMyProfile() });
+  const myOrgs = useQuery({ queryKey: ["my-orgs"], queryFn: () => listMyOrganizations() });
 
   const initial = (me.data?.display_name ?? me.data?.email ?? "?").slice(0, 1).toUpperCase();
 
