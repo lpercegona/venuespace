@@ -206,3 +206,64 @@ export const createPublicFormView = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return row;
   });
+
+// ============ Public form view: read + update (editor only) ============
+
+export const getPublicFormView = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: view, error } = await context.supabase
+      .from("views")
+      .select("id, name, type, config, table_id, submissions_table_id, organization_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!view || view.type !== "public_form" || !view.submissions_table_id) {
+      throw new Error("Formulário não encontrado");
+    }
+    const { data: fields, error: fErr } = await context.supabase
+      .from("fields")
+      .select("id, key, label, type, required, position, config")
+      .eq("table_id", view.submissions_table_id)
+      .order("position", { ascending: true });
+    if (fErr) throw new Error(fErr.message);
+    return { view, submission_fields: fields ?? [] };
+  });
+
+export const updatePublicFormView = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      name: z.string().min(1).max(80).optional(),
+      auto_relation_field_id: z.string().uuid().nullable().optional(),
+      form_field_ids: z.array(z.string().uuid()).nullable().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: current, error: cErr } = await context.supabase
+      .from("views")
+      .select("id, type, config")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (cErr) throw new Error(cErr.message);
+    if (!current || current.type !== "public_form") throw new Error("Formulário não encontrado");
+
+    const nextConfig: Record<string, any> = { ...((current.config as any) ?? {}) };
+    if (data.auto_relation_field_id !== undefined) {
+      if (data.auto_relation_field_id) nextConfig.auto_relation_field_id = data.auto_relation_field_id;
+      else delete nextConfig.auto_relation_field_id;
+    }
+    if (data.form_field_ids !== undefined) {
+      if (data.form_field_ids && data.form_field_ids.length > 0) nextConfig.form_field_ids = data.form_field_ids;
+      else delete nextConfig.form_field_ids;
+    }
+
+    const patch: Record<string, any> = { config: nextConfig };
+    if (data.name !== undefined) patch.name = data.name;
+
+    const { error } = await context.supabase.from("views").update(patch as any).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
