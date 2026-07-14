@@ -12,6 +12,7 @@ type Payload = {
   fields: Array<{ id: string; key: string; label: string; type: string; position: number; config: any }>;
   record: { id: string; data: Record<string, any>; deal_status: string; created_at: string };
   signed_urls: Record<string, string>;
+  relations: Record<string, Record<string, { id: string; label: string }>>;
   public_form_view: { id: string; auto_relation_field_id: string | null } | null;
 };
 
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/public/$slug/$tableId/$recordId")({
   component: PublicRecordDetail,
 });
 
-function formatValue(field: Payload["fields"][number], raw: any): string {
+function formatValue(field: Payload["fields"][number], raw: any, relations: Payload["relations"]): string {
   if (raw == null || raw === "") return "—";
   if (field.type === "boolean") return raw ? "Sim" : "Não";
   if (field.type === "currency" || field.type === "computed") {
