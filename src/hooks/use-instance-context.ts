@@ -11,7 +11,7 @@ async function fetchInstanceSettings(): Promise<InstanceSettings | null> {
 }
 
 async function fetchPlatformLabels(): Promise<PlatformLabel[]> {
-  const res = await fetch("/api/public/platform-labels");
+  const res = await fetch("/api/public/platform-labels", { cache: "no-store" });
   if (!res.ok) return [];
   return res.json();
 }
@@ -25,12 +25,15 @@ export function useInstanceSettings() {
   });
 }
 
-/** Platform labels dictionary, cached 5min. */
+/** Platform labels dictionary. Runtime-administered labels refetch when observers mount, focus, or reconnect. */
 export function usePlatformLabels() {
   return useQuery({
     queryKey: ["platform-labels"],
     queryFn: fetchPlatformLabels,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: "always",
   });
 }
 
