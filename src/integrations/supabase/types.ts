@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversations: {
+        Row: {
+          applicant_user_id: string | null
+          created_at: string
+          id: string
+          lead_email: string | null
+          organization_id: string
+          record_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          applicant_user_id?: string | null
+          created_at?: string
+          id?: string
+          lead_email?: string | null
+          organization_id: string
+          record_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          applicant_user_id?: string | null
+          created_at?: string
+          id?: string
+          lead_email?: string | null
+          organization_id?: string
+          record_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fields: {
         Row: {
           config: Json
@@ -61,6 +109,61 @@ export type Database = {
           },
         ]
       }
+      lead_access_tokens: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          organization_id: string
+          record_id: string | null
+          token: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          organization_id: string
+          record_id?: string | null
+          token: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          organization_id?: string
+          record_id?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_access_tokens_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_access_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_access_tokens_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           created_at: string
@@ -86,6 +189,66 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "memberships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          proposal_status: string | null
+          proposed_value: number | null
+          read_at: string | null
+          sender_email: string | null
+          sender_role: string
+          sender_user_id: string | null
+          type: string
+        }
+        Insert: {
+          body?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          proposal_status?: string | null
+          proposed_value?: number | null
+          read_at?: string | null
+          sender_email?: string | null
+          sender_role?: string
+          sender_user_id?: string | null
+          type?: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          proposal_status?: string | null
+          proposed_value?: number | null
+          read_at?: string | null
+          sender_email?: string | null
+          sender_role?: string
+          sender_user_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

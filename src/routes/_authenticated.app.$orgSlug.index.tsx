@@ -120,38 +120,43 @@ function OrgDashboard() {
       title={org.data.name}
       subtitle={org.data.description || `/${org.data.slug}`}
       actions={
-        canEdit ? (
-          <Dialog open={openTable} onOpenChange={setOpenTable}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4" />Nova tabela</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle className="font-display">Nova tabela</DialogTitle></DialogHeader>
-              <form onSubmit={handleCreateTable} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="t-name">Nome</Label>
-                  <Input id="t-name" required value={tName} onChange={(e) => setTName(e.target.value)} placeholder="Imóveis" />
-                  {tName ? <p className="text-xs text-muted-foreground">Slug: <span className="font-mono">{slugify(tName)}</span></p> : null}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="t-desc">Descrição</Label>
-                  <Textarea id="t-desc" rows={3} value={tDesc} onChange={(e) => setTDesc(e.target.value)} />
-                </div>
-                <div className="flex items-center justify-between rounded-md border border-border p-3">
-                  <div>
-                    <Label htmlFor="t-book" className="text-sm">Tabela com reservas</Label>
-                    <p className="text-xs text-muted-foreground">Ative para recursos com data de início e fim.</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to="/app/$orgSlug/conversations" params={{ orgSlug }}>
+            <Button variant="outline" size="sm">Conversas</Button>
+          </Link>
+          {canEdit ? (
+            <Dialog open={openTable} onOpenChange={setOpenTable}>
+              <DialogTrigger asChild>
+                <Button><Plus className="h-4 w-4" />Nova tabela</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle className="font-display">Nova tabela</DialogTitle></DialogHeader>
+                <form onSubmit={handleCreateTable} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="t-name">Nome</Label>
+                    <Input id="t-name" required value={tName} onChange={(e) => setTName(e.target.value)} placeholder="Imóveis" />
+                    {tName ? <p className="text-xs text-muted-foreground">Slug: <span className="font-mono">{slugify(tName)}</span></p> : null}
                   </div>
-                  <Switch id="t-book" checked={tBookable} onCheckedChange={setTBookable} />
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>Cancelar</Button>
-                  <Button type="submit" disabled={savingT}>{savingT ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        ) : null
+                  <div className="space-y-2">
+                    <Label htmlFor="t-desc">Descrição</Label>
+                    <Textarea id="t-desc" rows={3} value={tDesc} onChange={(e) => setTDesc(e.target.value)} />
+                  </div>
+                  <div className="flex items-center justify-between rounded-md border border-border p-3">
+                    <div>
+                      <Label htmlFor="t-book" className="text-sm">Tabela com reservas</Label>
+                      <p className="text-xs text-muted-foreground">Ative para recursos com data de início e fim.</p>
+                    </div>
+                    <Switch id="t-book" checked={tBookable} onCheckedChange={setTBookable} />
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>Cancelar</Button>
+                    <Button type="submit" disabled={savingT}>{savingT ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          ) : null}
+        </div>
       }
     >
       <section className="mb-10">
