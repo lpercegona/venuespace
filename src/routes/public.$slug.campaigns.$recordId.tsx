@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
+import { PublicHeader } from "@/components/venue/public-header";
 
 type Payload = {
   organization: { id: string; slug: string; name: string };
@@ -92,6 +93,7 @@ function CampaignPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PublicHeader back={{ to: "/explore", label: "Explorar" }} />
       <header className="border-b border-border/60 bg-surface">
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{q.data.organization.name}</p>

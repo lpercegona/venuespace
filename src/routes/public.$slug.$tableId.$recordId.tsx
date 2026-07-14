@@ -1,10 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, MessageCircle, ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
+import { PublicHeader } from "@/components/venue/public-header";
+import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
 type Payload = {
   organization: { id: string; slug: string; name: string; description: string | null };
@@ -57,6 +60,8 @@ function formatValue(field: Payload["fields"][number], raw: any, relations: Payl
 function PublicRecordDetail() {
   const { slug, tableId, recordId } = Route.useParams();
   const q = useQuery({ queryKey: ["public-record", slug, tableId, recordId], queryFn: () => fetchDetail(slug, tableId, recordId) });
+  const [interestOpen, setInterestOpen] = useState(false);
+
 
   if (q.isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
@@ -72,11 +77,11 @@ function PublicRecordDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PublicHeader
+        back={{ to: "/public/$slug/$tableId", params: { slug, tableId }, label: `Voltar para ${table.name}` }}
+      />
       <header className="border-b border-border/60 bg-surface">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-          <Link to="/public/$slug/$tableId" params={{ slug, tableId }} className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3 w-3" /> Voltar para {table.name}
-          </Link>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{organization.name}</p>
           <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
             <h1 className="font-display text-3xl font-semibold text-foreground sm:text-4xl">{title}</h1>
@@ -129,22 +134,27 @@ function PublicRecordDetail() {
         </div>
         <aside className="space-y-3">
           {public_form_view ? (
-            <Link
-              to="/public/$slug/$tableId/form"
-              params={{ slug, tableId }}
-              search={{ record: record.id, view: public_form_view.id }}
-            >
-              <Button size="lg" className="w-full">
-                <MessageCircle className="h-4 w-4" />
-                Manifestar interesse
-              </Button>
-            </Link>
+            <Button size="lg" className="w-full" onClick={() => setInterestOpen(true)}>
+              <MessageCircle className="h-4 w-4" />
+              Manifestar interesse
+            </Button>
           ) : null}
           <p className="text-xs text-muted-foreground">
             Publicado em {new Date(record.created_at).toLocaleDateString("pt-BR")}.
           </p>
         </aside>
       </main>
+      {public_form_view ? (
+        <InterestFormModal
+          open={interestOpen}
+          onOpenChange={setInterestOpen}
+          slug={slug}
+          tableId={tableId}
+          viewId={public_form_view.id}
+          recordId={record.id}
+          tableName={table.name}
+        />
+      ) : null}
     </div>
   );
 }

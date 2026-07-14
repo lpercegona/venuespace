@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Table as TableIcon, ArrowLeft } from "lucide-react";
+import { Loader2, Search, Table as TableIcon } from "lucide-react";
 import type { PublicTableSummary } from "@/lib/public.server";
+import { PublicHeader } from "@/components/venue/public-header";
 
 export const Route = createFileRoute("/explore")({
   head: () => ({
@@ -47,14 +48,8 @@ function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />Venuespace
-          </Link>
-          <Link to="/auth"><Button size="sm" variant="outline">Entrar</Button></Link>
-        </div>
-      </header>
+      <PublicHeader back={{ to: "/", label: "Início" }} />
+
 
       <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Explorar tabelas públicas</h1>

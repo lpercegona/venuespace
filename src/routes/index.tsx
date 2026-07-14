@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Database, MessageSquare, Sparkles, Compass } from "lucide-react";
+import { ArrowRight, Database, MessageSquare, Sparkles } from "lucide-react";
 import { PublicTablesCarousel } from "@/components/venue/public-tables-carousel";
+import { PublicHeader } from "@/components/venue/public-header";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -10,25 +11,8 @@ export const Route = createFileRoute("/")({
 function Landing() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-md bg-primary" aria-hidden />
-            <span className="font-display text-lg font-semibold tracking-tight">Venuespace</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link to="/explore">
-              <Button variant="ghost" size="sm"><Compass className="h-4 w-4" />Explorar</Button>
-            </Link>
-            <Link to="/auth">
-              <Button variant="ghost" size="sm">Entrar</Button>
-            </Link>
-            <Link to="/auth">
-              <Button size="sm">Começar</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <PublicHeader />
+
 
       <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
         <div className="max-w-3xl">

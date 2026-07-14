@@ -1,53 +1,69 @@
 ## Escopo
 
-Cinco ajustes: edição de organização, exclusão de organização e tabela, remoção do botão "Conversas" do painel, carrossel de tabelas públicas na landing e página `/explore` listando todas as tabelas públicas.
+1. **Header público reutilizável** em todas as rotas públicas.
+2. **Botão "Voltar"** nas páginas de detalhe/instância.
+3. **Formulário de interesse sempre como modal flutuante** (nunca página cheia).
 
----
+## 1. Componente `PublicHeader`
 
-### 1. Edição de organização (modal)
+Novo `src/components/venue/public-header.tsx`:
+- Marca "Venuespace" à esquerda (link para `/`).
+- Nav central: `Explorar` (`/explore`).
+- Ações à direita: `Entrar` e `Começar` (ambas → `/auth`).
+- Prop opcional `back?: { to: string; params?: any; label?: string }` renderizando um botão com ícone `ArrowLeft` antes da marca. Quando ausente, sem botão.
+- Sticky, `border-b`, tokens semânticos (`bg-surface/80 backdrop-blur`), responsivo mobile-first (menu colapsa itens não-essenciais em `<sm`).
 
-- Novo server fn `updateOrganization({ id, name, description, logo_url? })` em `src/lib/orgs.functions.ts` — restrito a role `owner` via `has_role`.
-- Novo componente `src/components/venue/edit-org-dialog.tsx` (Dialog shadcn + react-hook-form + zod).
-- Gatilho: ícone de lápis ao lado do nome da organização no header do `_authenticated.app.$orgSlug.index.tsx` (visível apenas para owner). Após salvar, invalida `["org", slug]` e `["my-orgs"]`.
+## 2. Aplicar em todas as rotas públicas
 
-### 2. Exclusão de organização e de tabela
+Substituir/complementar o `<header>` local por `<PublicHeader />` em:
 
-- Server fn `deleteOrganization({ id })` — apenas `owner`. Remove cascata natural via FKs existentes; se faltar cascade em alguma tabela filha, adicionar migração `ON DELETE CASCADE` nas FKs para `organization_id`.
-- Server fn `deleteTable({ id })` — `owner` ou `editor`. Cascade em `fields`, `records`, `views`, `permissions`, `conversations` que referenciem a tabela; ajustar FKs se necessário.
-- UI:
-  - Organização: item "Excluir organização" no mesmo modal de edição, com `AlertDialog` de confirmação exigindo digitar o slug. Ao concluir, `navigate({ to: "/app" })`.
-  - Tabela: ícone de lixeira no `TableCard` do dashboard da org (já tem lápis). `AlertDialog` de confirmação exigindo digitar o nome da tabela.
-- Ambas ações restritas por RLS já existente + checagem explícita no handler.
+- `src/routes/index.tsx` — troca o header inline pelo componente.
+- `src/routes/explore.tsx` — idem.
+- `src/routes/public.$slug.$tableId.index.tsx` — adiciona `PublicHeader` acima do header contextual da tabela (sem back — é topo do fluxo público daquela tabela).
+- `src/routes/public.$slug.$tableId.$recordId.tsx` — `PublicHeader` com `back` para `/public/$slug/$tableId`.
+- `src/routes/public.$slug.campaigns.$recordId.tsx` — `PublicHeader` com `back` para `/` (não há listagem pública de campanhas; alternativa: `/explore`).
+- `src/routes/lead.$token.tsx` — `PublicHeader` sem back (thread do lead é destino final).
+- `src/routes/auth.tsx` — `PublicHeader` sem os botões `Entrar/Começar` (variante `minimal` via prop `showAuthActions=false`).
 
-### 3. Remover botão "Conversas" do painel
+O botão voltar usa `<Link>` tipado do TanStack (`to` + `params`), nunca `history.back()` — mantém preload e evita quebrar entrada direta por URL.
 
-- Em `src/components/venue/app-shell.tsx`, remover o item "Conversas" do dropdown do avatar (mantém Configurações, Minhas candidaturas, Calendário, Membros, Sair).
-- Manter o `ChatWidget` flutuante intacto (já é a superfície única de acesso a conversas).
-- A rota `_authenticated.app.$orgSlug.conversations.*` permanece funcional (acesso via link direto), apenas sem entrada no menu.
+## 3. Formulário de interesse como modal
 
-### 4. Carrossel de tabelas públicas na landing (`/`)
+- Novo `src/components/venue/interest-form-modal.tsx`:
+  - Props: `open`, `onOpenChange`, `slug`, `tableId`, `viewId`, `recordId?`.
+  - `Dialog` shadcn com `max-w-2xl`, `ScrollArea` interno para telas pequenas.
+  - Move para dentro do modal a lógica atual de `public.$slug.$tableId.form.tsx`: `fetchFormFields(viewId)`, campos `contact_name`/`contact_email`, `DynamicForm` e `handleSubmit` que chama `/api/public/:slug/:tableId/submit`.
+  - Ao sucesso: `toast` + fecha modal + navega para `/lead/$token` quando o backend retornar token; caso autenticado (sem token), fecha e mostra toast "Enviado — acompanhe em Minhas candidaturas".
+  - Loading via `Loader2`; erro via `EmptyState` dentro do modal.
 
-- Novo endpoint `GET /api/public/tables` em `src/routes/api/public/tables.ts` (sem auth, `Cache-Control: public, max-age=60`): retorna as N tabelas mais recentes que possuem ao menos um `record` com `status = 'published'`. Projeção segura: `{ org_slug, org_name, table_id, table_slug, table_name, table_icon, published_count, latest_published_at }`. Ordena por `latest_published_at DESC`, limite 12.
-- Query via `supabaseAdmin` (server-only) com joins limitados às colunas acima; nenhuma PII de record.
-- UI: novo componente `src/components/venue/public-tables-carousel.tsx` usando o Carousel do shadcn (`embla-carousel-react`). Inserido em `src/routes/index.tsx` acima da grid de features. Cada card leva a `/public/$slug/$tableId`.
-- Se lista vazia, o carrossel não é renderizado (fail-soft).
+- Pontos de uso (substituem o `<Link to="/public/$slug/$tableId/form">`):
+  - Listagem pública (`public.$slug.$tableId.index.tsx`): botão "Manifestar interesse" em cada card abre o modal com `recordId` daquele card.
+  - Detalhe do registro (`public.$slug.$tableId.$recordId.tsx`): CTA principal abre o modal com o `recordId` da rota.
+  - Página de campanha (`public.$slug.campaigns.$recordId.tsx`): botão "Contribuir" continua fluxo próprio (fora do escopo desta iteração); nada muda ali.
 
-### 5. Página "Explorar" com todas as tabelas públicas
+- Rota antiga `public.$slug.$tableId.form.tsx`: mantida como fallback compatível (deep link) mas passa a renderizar o mesmo `InterestFormModal` com `open=true` sobre um shell mínimo (header + card resumido), para que URLs antigas continuem funcionando. Não redireciona.
 
-- Nova rota pública `src/routes/explore.tsx` (`/explore`), SSR, com `head()` próprio (title + description + og). Loader chama server fn `listAllPublicTables({ limit, offset, q? })` alimentado pelo mesmo dataset do endpoint acima, com paginação simples (offset/limit) e busca opcional por nome de tabela/organização.
-- UI: grid responsiva de cards (mesmo card do carrossel), input de busca, paginação (Prev/Next). Sem auth.
-- Link "Ver todas" no cabeçalho do carrossel na landing → `/explore`. Link "Explorar" também no header público da landing.
+## 4. Notas técnicas (para revisão)
 
----
+- `PublicHeader` importa apenas do `@tanstack/react-router` (`Link`) e primitives shadcn — nenhum estado global.
+- O modal usa `Dialog` + `DialogContent`; foco inicial no primeiro campo; `aria-describedby` no título.
+- Nenhuma mudança de esquema, RLS ou endpoint. Nenhum novo token de cor.
+- Iterações 3–6 (submissão pública, campanhas, chat) continuam funcionando: mesmos endpoints, mesmos payloads.
+- Checklist §7 aplicável: build + typecheck, 360/768/1280 em light+dark, sem hardcode de cor, CHANGELOG atualizado.
 
-## Detalhes técnicos
+## Arquivos
 
-- **Sem alterações de esquema** exceto, se necessário, ajustar `ON DELETE CASCADE` nas FKs para `organization_id` e `table_id` para permitir exclusão sem órfãos. Verificar antes com `information_schema` e migrar apenas o que faltar.
-- **RLS** já cobre delete via policies existentes de owner/editor; server fns fazem checagem explícita adicional com `has_role`.
-- **Endpoint público** de tabelas usa `supabaseAdmin` apenas para leitura projetada — nenhuma coluna sensível, nada de `data` de records. Confere §7.5 do checklist.
-- **CHANGELOG.md** atualizado com entrada datada cobrindo os cinco itens.
-- **Validação** antes de fechar: build + typecheck; testes manuais em 360/768/1280 light+dark de: modal de edição, dois AlertDialogs de exclusão, dropdown do avatar sem "Conversas", carrossel na `/`, `/explore` com busca e paginação; regressão do restante do app; nenhum PII em `/api/public/tables`.
+Criar:
+- `src/components/venue/public-header.tsx`
+- `src/components/venue/interest-form-modal.tsx`
 
-## Fora de escopo (não fazer nesta iteração)
-
-- Transferência de organização, arquivamento em vez de deletar, soft-delete, lixeira/undo, filtros avançados no explore (categorias, tags), SEO estruturado (JSON-LD) na `/explore`.
+Editar:
+- `src/routes/index.tsx`
+- `src/routes/explore.tsx`
+- `src/routes/public.$slug.$tableId.index.tsx`
+- `src/routes/public.$slug.$tableId.$recordId.tsx`
+- `src/routes/public.$slug.campaigns.$recordId.tsx`
+- `src/routes/lead.$token.tsx`
+- `src/routes/auth.tsx`
+- `src/routes/public.$slug.$tableId.form.tsx` (thin wrapper de compat)
+- `CHANGELOG.md`

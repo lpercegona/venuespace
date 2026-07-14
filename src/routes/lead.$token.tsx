@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ConversationThread, type ThreadMessage } from "@/components/venue/conversation-thread";
 import { EmptyState } from "@/components/venue/empty-state";
+import { PublicHeader } from "@/components/venue/public-header";
 
 type Payload = {
   conversation: { id: string; title: string; lead_email: string };
@@ -82,6 +83,7 @@ function LeadPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PublicHeader showAuthActions={false} />
       <header className="border-b border-border/60 bg-surface">
         <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{organization?.name}</p>
