@@ -1,3 +1,18 @@
+##  — Iteração 9 (parte 2): refactor transversal para contexto de instância/organização
+
+- `src/components/venue/conversation-thread.tsx` agora recebe `formatCtx` obrigatório; substitui `toLocaleString`/`Intl.NumberFormat` fixos por `formatDateTime`/`formatCurrency`.
+- `src/components/venue/chat-widget.tsx`: aceita `org` como prop, deriva `formatCtx` via `useFormatContext(org)`, propaga para `ConversationThread` e ao badge de valor acordado; datas do inbox usam `formatDateTime`.
+- `src/components/venue/app-shell.tsx`: passa `org` ao `ChatWidget`; adiciona link "Administração" no menu do perfil visível apenas quando `amISuperAdmin` retorna verdadeiro.
+- `src/routes/_authenticated.app.$orgSlug.conversations.$conversationId.tsx`: injeta `formatCtx` derivado do org atual no `ConversationThread`.
+- `src/routes/lead.$token.tsx`: usa `formatCtx` (padrão da instância) para valor acordado e mensagens; remove `Intl.NumberFormat` fixo.
+- `src/routes/public.$slug.campaigns.$recordId.tsx`: valores confirmados e meta agora usam `formatCurrency(formatCtx)`.
+- `src/routes/_authenticated.me.applications.tsx`: valor acordado via `formatCurrency`, data de envio via `formatDateTime`.
+- `src/components/venue/edit-org-dialog.tsx`: adiciona seleção de categoria e overrides opcionais de fuso horário e moeda; valores em branco herdam padrão da instância; envia `category_id`, `timezone`, `currency` no `updateOrganization`.
+- `src/routes/_authenticated.app.$orgSlug.index.tsx`: repassa `category_id`, `timezone`, `currency` do org atual ao `EditOrgDialog`.
+- `src/routes/_authenticated.app.index.tsx`: diálogo "Nova organização" agora exige selecionar categoria (com opção "Sem categoria"); remove import não usado de `useServerFn`.
+
+---
+
 # CHANGELOG — Venuespace
 
 Registro cronológico de todas as implementações do projeto. Norma soberana da skill `venuespace` (§0 e §7): nenhuma iteração fecha sem entrada correspondente.
