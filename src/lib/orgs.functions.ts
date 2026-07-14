@@ -112,6 +112,7 @@ export const updateOrganization = createServerFn({ method: "POST" })
     if (data.timezone !== undefined) patch.timezone = data.timezone;
     if (data.currency !== undefined) patch.currency = data.currency;
     if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
+    if (data.system_data !== undefined) patch.system_data = data.system_data;
     const { error } = await context.supabase.from("organizations").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
