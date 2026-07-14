@@ -254,3 +254,78 @@ function OrgDashboard() {
     </AppShell>
   );
 }
+
+function TableCard({
+  t, orgSlug, canEdit, onSaved,
+}: { t: any; orgSlug: string; canEdit: boolean; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(t.name);
+  const [desc, setDesc] = useState(t.description ?? "");
+  const [bookable, setBookable] = useState(!!t.bookable);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateTable({ data: { id: t.id, name, description: desc || null, bookable } });
+      toast.success("Tabela atualizada");
+      setEditing(false);
+      onSaved();
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="relative">
+      <Link to="/app/$orgSlug/tables/$tableId" params={{ orgSlug, tableId: t.id }}>
+        <Card className="h-full transition-shadow hover:shadow-elegant">
+          <CardHeader className="pb-2">
+            <CardTitle className="font-display text-base pr-8">{t.name}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">{t.description || "Sem descrição."}</p>
+            <div className="mt-3 flex items-center gap-2">
+              <Badge variant="secondary" className="font-mono">/{t.slug}</Badge>
+              {t.bookable ? <Badge>reservas</Badge> : null}
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+      {canEdit ? (
+        <>
+          <Button
+            type="button" variant="ghost" size="icon"
+            className="absolute right-2 top-2 h-8 w-8"
+            aria-label="Editar tabela"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); }}
+          ><Pencil className="h-4 w-4" /></Button>
+          <Dialog open={editing} onOpenChange={setEditing}>
+            <DialogContent>
+              <DialogHeader><DialogTitle className="font-display">Editar tabela</DialogTitle></DialogHeader>
+              <form onSubmit={handleSave} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor={`e-n-${t.id}`}>Nome</Label>
+                  <Input id={`e-n-${t.id}`} required value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`e-d-${t.id}`}>Descrição</Label>
+                  <Textarea id={`e-d-${t.id}`} rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} />
+                </div>
+                <div className="flex items-center justify-between rounded-md border border-border p-3">
+                  <Label htmlFor={`e-b-${t.id}`} className="text-sm">Tabela com reservas</Label>
+                  <Switch id={`e-b-${t.id}`} checked={bookable} onCheckedChange={setBookable} />
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
