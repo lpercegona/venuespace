@@ -201,6 +201,7 @@ export const createRecord = createServerFn({ method: "POST" })
     z.object({
       table_id: z.string().uuid(),
       data: z.record(z.string(), z.any()),
+      system_data: z.record(z.string(), z.any()).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -214,14 +215,17 @@ export const createRecord = createServerFn({ method: "POST" })
     const { schema } = await buildValidator(context.supabase, data.table_id);
     const clean = schema.parse(data.data);
 
+    const insertRow: Record<string, any> = {
+      table_id: data.table_id,
+      organization_id: table.organization_id,
+      data: clean as any,
+      created_by: context.userId,
+    };
+    if (data.system_data !== undefined) insertRow.system_data = data.system_data;
+
     const { data: row, error } = await context.supabase
       .from("records")
-      .insert({
-        table_id: data.table_id,
-        organization_id: table.organization_id,
-        data: clean as any,
-        created_by: context.userId,
-      })
+      .insert(insertRow as any)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -235,14 +239,17 @@ export const updateRecord = createServerFn({ method: "POST" })
       id: z.string().uuid(),
       table_id: z.string().uuid(),
       data: z.record(z.string(), z.any()),
+      system_data: z.record(z.string(), z.any()).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { schema } = await buildValidator(context.supabase, data.table_id);
     const clean = schema.parse(data.data);
+    const patch: Record<string, any> = { data: clean as any };
+    if (data.system_data !== undefined) patch.system_data = data.system_data;
     const { error } = await context.supabase
       .from("records")
-      .update({ data: clean as any })
+      .update(patch as any)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
