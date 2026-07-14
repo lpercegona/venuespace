@@ -1,3 +1,8 @@
+## 2026-07-14 19:42 (America/Sao_Paulo) — Restrição do atalho Administração no menu do perfil
+
+- `src/components/venue/app-shell.tsx`: corrige a condição do item "Administração" no dropdown do perfil para renderizar somente quando `amISuperAdmin()` retornar `is_super_admin: true`.
+- Nenhuma alteração de rota, backend, RLS ou tokens de design.
+
 ## 2026-07-14 — Iteração 10 (continuação): Campos de sistema editáveis + sweep de rótulos
 
 ### Backend

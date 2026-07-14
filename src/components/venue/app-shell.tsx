@@ -121,7 +121,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                     </DropdownMenuItem>
                   </>
                 ) : null}
-                {isAdmin.data ? (
+                {isAdmin.data?.is_super_admin ? (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => navigate({ to: "/admin" })}>
