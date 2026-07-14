@@ -19,6 +19,7 @@ Vale acima de qualquer outra seção. Em caso de conflito entre esta diretriz e 
 - **Critérios inegociáveis por entrega**: corretude, estabilidade, manutenibilidade, segurança, desempenho e compatibilidade com a arquitetura existente. Nenhuma implementação pode comprometer escalabilidade futura, integridade dos dados, interoperabilidade entre módulos ou funcionalidades já existentes.
 - **Validação técnica obrigatória antes de fechar etapa**: build, rotas afetadas em light+dark e mobile+desktop, iterações anteriores continuam funcionando (sem regressão), RLS e permissões nos endpoints tocados.
 - **Sem "melhorias" implícitas**: refactors, renomeações e otimizações fora do escopo só ocorrem por solicitação explícita.
+- **Registro obrigatório de implementações**: toda entrega técnica — iteração completa, correção, migração, nova rota, novo componente compartilhado, novo token — é registrada em `CHANGELOG.md` na raiz do projeto, na mesma edição em que é implementada. Formato: `## YYYY-MM-DD HH:MM (America/Sao_Paulo) — <escopo>` seguido de bullets objetivos do que foi feito. Ordem cronológica decrescente (mais recente no topo). Nenhuma iteração fecha sem entrada correspondente. Sem registro = entrega incompleta (§7, item 8).
 
 ---
 
@@ -161,5 +162,6 @@ Toda a interface deve usar **exclusivamente shadcn/ui** sobre **Tailwind v4**, c
   5. Iterações anteriores continuam funcionando (sem regressão); RLS e GRANTs revisados nas tabelas tocadas; endpoints `/api/public/*` sem PII.
   6. Meta tags específicas de rota preenchidas quando a iteração adicionar rotas públicas.
   7. Nenhum item fora do escopo da iteração foi introduzido (Diretriz §0).
+  8. `CHANGELOG.md` atualizado com entrada datada (America/Sao_Paulo) cobrindo tudo que a iteração implementou — migrations, rotas, componentes, tokens e correções.
 
 Se qualquer item do checklist falhar, a iteração **não fecha** — corrigir antes de avançar.
