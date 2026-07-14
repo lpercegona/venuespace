@@ -32,7 +32,7 @@ export function PublicHeader({ back, showAuthActions = true, showExplore = true 
           <Link to="/" className="flex min-w-0 items-center gap-2">
             <div className="h-6 w-6 shrink-0 rounded-md bg-primary" aria-hidden />
             <span className="truncate font-display text-base font-semibold tracking-tight text-foreground sm:text-lg">
-              Venuespace
+              VENUESPACE
             </span>
           </Link>
         </div>
