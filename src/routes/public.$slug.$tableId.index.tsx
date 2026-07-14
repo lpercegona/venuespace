@@ -56,6 +56,7 @@ function PublicListPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PublicHeader />
       <header className="border-b border-border/60 bg-surface">
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{organization.name}</p>
@@ -106,16 +107,14 @@ function PublicListPage() {
                           <Button variant="outline" size="sm" className="w-full">Ver detalhes</Button>
                         </Link>
                         {public_form_view ? (
-                          <Link
-                            to="/public/$slug/$tableId/form"
-                            params={{ slug, tableId }}
-                            search={{ record: r.id, view: public_form_view.id }}
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={() => setInterestFor(r.id)}
                           >
-                            <Button size="sm" className="w-full">
-                              <MessageCircle className="h-4 w-4" />
-                              Manifestar interesse
-                            </Button>
-                          </Link>
+                            <MessageCircle className="h-4 w-4" />
+                            Manifestar interesse
+                          </Button>
                         ) : null}
                       </div>
                     </CardContent>
@@ -126,6 +125,17 @@ function PublicListPage() {
           </ul>
         )}
       </main>
+      {public_form_view ? (
+        <InterestFormModal
+          open={interestFor !== null}
+          onOpenChange={(v) => { if (!v) setInterestFor(null); }}
+          slug={slug}
+          tableId={tableId}
+          viewId={public_form_view.id}
+          recordId={interestFor ?? undefined}
+          tableName={table.name}
+        />
+      ) : null}
     </div>
   );
 }
