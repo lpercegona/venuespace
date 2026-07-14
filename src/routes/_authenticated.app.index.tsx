@@ -1,14 +1,15 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listMyOrganizations, createOrganization } from "@/lib/orgs.functions";
+import { listOrganizationCategoriesPublic } from "@/lib/organization-categories.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -39,17 +40,29 @@ function OrgsPage() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [categoryId, setCategoryId] = useState<string>("__none__");
   const [saving, setSaving] = useState(false);
+
+  const cats = useQuery({
+    queryKey: ["public-org-categories"],
+    queryFn: () => listOrganizationCategoriesPublic(),
+    staleTime: 60_000,
+  });
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      const org = await createOrg({ data: { name, description: description || undefined } });
+      const org = await createOrg({ data: {
+        name,
+        description: description || undefined,
+        category_id: categoryId === "__none__" ? null : categoryId,
+      } });
       toast.success("Organização criada");
       setOpen(false);
       setName("");
       setDescription("");
+      setCategoryId("__none__");
       await refetch();
       router.invalidate();
       navigate({ to: "/app/$orgSlug", params: { orgSlug: org.slug } });
@@ -84,6 +97,18 @@ function OrgsPage() {
               <div className="space-y-2">
                 <Label htmlFor="org-desc">Descrição (opcional)</Label>
                 <Textarea id="org-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+              </div>
+              <div className="space-y-2">
+                <Label>Categoria</Label>
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Sem categoria</SelectItem>
+                    {(cats.data ?? []).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
