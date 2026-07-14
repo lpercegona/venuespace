@@ -3,6 +3,11 @@
 - `src/routes/api/public/platform-labels.ts`: troca o cache público do endpoint por `cache-control: no-store`, evitando respostas compartilhadas obsoletas enquanto termos-núcleo são administráveis em runtime.
 - `src/hooks/use-instance-context.ts`: consulta `/api/public/platform-labels` com `cache: "no-store"`, remove o `staleTime` de 5 min e revalida ao montar, focar a janela ou reconectar.
 - `src/routes/_authenticated.admin.tsx`: atualiza o texto da seção de termos-núcleo para refletir que a sessão atual é invalidada após salvar e outras sessões revalidam nos eventos configurados.
+## 2026-07-14 19:53 (America/Sao_Paulo) — Layout da tela de login
+
+- `src/routes/auth.tsx`: remove o botão de voltar ao início do header da tela de login, mantendo apenas marca e Explorar.
+- `src/routes/auth.tsx`: reorganiza a tela em duas colunas no desktop, com área esquerda em degradê preparada para futura imagem e formulário de login à direita; preserva layout responsivo em coluna única no mobile.
+- Nenhuma alteração de backend, RLS, rotas públicas ou tokens de design.
 
 ## 2026-07-14 19:42 (America/Sao_Paulo) — Restrição do atalho Administração no menu do perfil
 

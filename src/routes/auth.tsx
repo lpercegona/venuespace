@@ -75,9 +75,21 @@ function AuthPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PublicHeader showAuthActions={false} back={{ to: "/", label: "Início" }} />
-      <div className="flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md">
+      <PublicHeader showAuthActions={false} />
+      <main className="grid min-h-[calc(100vh-65px)] grid-cols-1 lg:grid-cols-2">
+        <section className="flex min-h-64 items-end overflow-hidden border-b border-border bg-linear-to-br from-surface via-muted to-primary/20 p-6 lg:min-h-full lg:border-b-0 lg:border-r lg:p-10">
+          <div className="max-w-lg space-y-3 rounded-2xl border border-border bg-card/80 p-5 shadow-elegant backdrop-blur">
+            <p className="text-sm font-medium text-primary">Venuespace</p>
+            <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Organize, publique e negocie em um só espaço.
+            </h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Área visual preparada para receber uma imagem institucional ou de produto sem alterar a estrutura da tela.
+            </p>
+          </div>
+        </section>
+        <section className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
+          <div className="w-full max-w-md">
 
 
         <Card>
@@ -140,7 +152,8 @@ function AuthPage() {
           </CardContent>
         </Card>
         </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }
