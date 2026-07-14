@@ -65,7 +65,7 @@ function PublicRecordDetail() {
     return <div className="mx-auto max-w-2xl px-4 py-16"><EmptyState title="Não encontrado" description={(q.error as Error | undefined)?.message ?? "Recurso indisponível"} /></div>;
   }
 
-  const { organization, table, fields, record, signed_urls, public_form_view } = q.data;
+  const { organization, table, fields, record, signed_urls, relations, public_form_view } = q.data;
   const visible = fields.filter((f) => f.key && !f.key.startsWith("__"));
   const titleField = visible.find((f) => f.type === "text" || f.type === "long_text") ?? visible[0];
   const title = titleField ? String(record.data?.[titleField.key] ?? "Detalhes") : "Detalhes";
@@ -94,7 +94,7 @@ function PublicRecordDetail() {
             return (
               <Card key={f.id}>
                 <CardContent className="p-0">
-                  <img src={url} alt={f.label} className="w-full rounded-lg object-cover" loading="lazy" />
+                  <img src={url} alt={f.label} className="w-full rounded-lg object-cover" loading="lazy" decoding="async" />
                 </CardContent>
               </Card>
             );
@@ -109,7 +109,7 @@ function PublicRecordDetail() {
                   return (
                     <div key={f.id} className="min-w-0 space-y-1">
                       <dt className="text-xs uppercase tracking-wide text-muted-foreground">{f.label}</dt>
-                      <dd className="whitespace-pre-wrap break-words text-sm text-foreground">{formatValue(f, raw)}</dd>
+                      <dd className="whitespace-pre-wrap break-words text-sm text-foreground">{formatValue(f, raw, relations)}</dd>
                     </div>
                   );
                 })}
