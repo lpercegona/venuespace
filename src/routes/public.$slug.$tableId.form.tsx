@@ -35,7 +35,7 @@ async function fetchFormFields(viewId: string) {
 }
 
 export const Route = createFileRoute("/public/$slug/$tableId/form")({
-  validateSearch: searchSchema,
+  validateSearch: (s: Record<string, unknown>) => searchSchema.parse(s),
   head: () => ({ meta: [{ title: "Manifestar interesse — Venuespace" }] }),
   component: PublicFormPage,
 });
