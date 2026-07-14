@@ -1,69 +1,64 @@
-## Escopo
+## Documento: Estado atual do Venuespace
 
-1. **Header público reutilizável** em todas as rotas públicas.
-2. **Botão "Voltar"** nas páginas de detalhe/instância.
-3. **Formulário de interesse sempre como modal flutuante** (nunca página cheia).
+Vou gerar um `.docx` em `/mnt/documents/venuespace-estado-atual.docx` cobrindo tudo o que foi construído até agora, para servir como handoff / referência do projeto.
 
-## 1. Componente `PublicHeader`
+### Estrutura do documento
 
-Novo `src/components/venue/public-header.tsx`:
-- Marca "Venuespace" à esquerda (link para `/`).
-- Nav central: `Explorar` (`/explore`).
-- Ações à direita: `Entrar` e `Começar` (ambas → `/auth`).
-- Prop opcional `back?: { to: string; params?: any; label?: string }` renderizando um botão com ícone `ArrowLeft` antes da marca. Quando ausente, sem botão.
-- Sticky, `border-b`, tokens semânticos (`bg-surface/80 backdrop-blur`), responsivo mobile-first (menu colapsa itens não-essenciais em `<sm`).
+1. **Capa e resumo executivo**
+   - Nome, categoria da solução, objetivo da v1, status atual.
 
-## 2. Aplicar em todas as rotas públicas
+2. **Skill do projeto (`/skill:venuespace`)**
+   - Diretriz de Desenvolvimento §0 (soberana): regras de escopo, ambiguidade = parada, validação obrigatória, registro em `CHANGELOG.md`.
+   - Design System vinculante: shadcn/ui + Tailwind v4, tokens oklch em `src/styles.css`, tipografia Space Grotesk, dark mode obrigatório, mobile-first 360px, acessibilidade AA.
+   - Governança e checklist de fechamento de iteração.
 
-Substituir/complementar o `<header>` local por `<PublicHeader />` em:
+3. **Arquitetura**
+   - Stack: TanStack Start v1, React 19, Vite 7, Tailwind v4, shadcn/ui, TanStack Query.
+   - Backend: Lovable Cloud (Supabase) — RLS + `createServerFn` + `/api/public/*`.
+   - Modelo de dados: `organizations`, `memberships`, `tables`, `fields`, `records`, `views`, `permissions`, `conversations`, `messages`, `lead_access_tokens`, `super_admins`.
+   - Segurança: `has_role`, `is_org_member`, `is_super_admin`, políticas RLS + GRANTs, `SECURITY DEFINER` `create_organization`.
+   - Convenções: `public_form` grava em tabela separada; motor de reserva rejeita datas sobrepostas.
 
-- `src/routes/index.tsx` — troca o header inline pelo componente.
-- `src/routes/explore.tsx` — idem.
-- `src/routes/public.$slug.$tableId.index.tsx` — adiciona `PublicHeader` acima do header contextual da tabela (sem back — é topo do fluxo público daquela tabela).
-- `src/routes/public.$slug.$tableId.$recordId.tsx` — `PublicHeader` com `back` para `/public/$slug/$tableId`.
-- `src/routes/public.$slug.campaigns.$recordId.tsx` — `PublicHeader` com `back` para `/` (não há listagem pública de campanhas; alternativa: `/explore`).
-- `src/routes/lead.$token.tsx` — `PublicHeader` sem back (thread do lead é destino final).
-- `src/routes/auth.tsx` — `PublicHeader` sem os botões `Entrar/Começar` (variante `minimal` via prop `showAuthActions=false`).
+4. **O que foi programado — por iteração**
+   - **1 Fundação**: Auth (e-mail + Google), schema base, RLS, tokens de design, layout `_authenticated/`, painel `/app` e `/app/$orgSlug`.
+   - **2 Records + Grid Dinâmico**: CRUD com validação Zod dinâmica, `computed` fields, `DynamicGrid` e `DynamicForm`.
+   - **3 Publicação pública + public_form**: `/api/public/$slug/$tableId`, submissões geram `lead_access_tokens` e conversas.
+   - **4 Chat + propostas + `deal_status`**: mensagens, propostas com valor, transições `negotiating → accepted/declined → closed`, inbox.
+   - **5 Candidaturas autenticadas**: `/me/applications`.
+   - **6 Campanhas**: soma apenas contribuições confirmadas, chave PIX, confirmação manual.
+   - **7 Motor de reserva**: `booking_role`, verificação de conflito, calendário de ocupação.
+   - **8 Membros + polimento**: convites, notificações in-app, SEO/OG por rota, landing.
+   - **Super admin universal**: `lpercegona@gmail.com` promovido via trigger.
+   - **Melhorias UX pós-v1**: edição de tabelas, uploads reais (imagem/arquivo com `venue-uploads`), opções inline em select/multiselect, chat flutuante, detalhes públicos de registro com URLs assinadas, dropdown de perfil, selecionador de organização, `SettingsModal`, edição de formulários públicos, otimizações de performance (staleTime, batching de signed URLs, cache-control), fonte Space Grotesk, edição/exclusão de organização e tabela, carrossel de publicações recentes na landing, página `/explore`, `PublicHeader` unificado + botão voltar, formulário de interesse como modal.
 
-O botão voltar usa `<Link>` tipado do TanStack (`to` + `params`), nunca `history.back()` — mantém preload e evita quebrar entrada direta por URL.
+5. **Fluxo completo de navegação**
+   - **Público**:
+     - `/` (landing + carrossel recentes) → `/explore` (busca/paginação).
+     - `/public/$slug/$tableId` (listagem) → `/public/$slug/$tableId/$recordId` (detalhe com PublicHeader + Voltar).
+     - Modal `InterestFormModal` (aberto pela listagem, pelo detalhe ou pela rota fallback `/public/$slug/$tableId/form`).
+     - `/public/$slug/campaigns/$recordId` (campanha + PIX + contribuir).
+     - `/lead/$token` (acompanhamento pós-submissão).
+     - `/auth` (login/cadastro, Google).
+   - **Autenticado (`_authenticated/`)**:
+     - `/app` (lista de organizações) → `/app/$orgSlug` (painel).
+     - `/app/$orgSlug/tables/$tableId` (grid + views) → `/tables/$tableId/schema` (fields).
+     - `/app/$orgSlug/conversations` (inbox).
+     - `/app/$orgSlug/members`, `/app/$orgSlug/calendar`.
+     - `/me/applications`.
+     - Chat flutuante (`ChatWidget`) e sino de notificações no `AppShell`.
+     - `SettingsModal` acionado pelo dropdown do avatar (Perfil / Notificações / Segurança).
+     - Selecionador de organização + "Ver todas as organizações".
 
-## 3. Formulário de interesse como modal
+6. **Fora de escopo (confirmado)**
+   - Pagamento automático, NF, estoque, marketplace, white label, realtime websocket, e-mail transacional.
 
-- Novo `src/components/venue/interest-form-modal.tsx`:
-  - Props: `open`, `onOpenChange`, `slug`, `tableId`, `viewId`, `recordId?`.
-  - `Dialog` shadcn com `max-w-2xl`, `ScrollArea` interno para telas pequenas.
-  - Move para dentro do modal a lógica atual de `public.$slug.$tableId.form.tsx`: `fetchFormFields(viewId)`, campos `contact_name`/`contact_email`, `DynamicForm` e `handleSubmit` que chama `/api/public/:slug/:tableId/submit`.
-  - Ao sucesso: `toast` + fecha modal + navega para `/lead/$token` quando o backend retornar token; caso autenticado (sem token), fecha e mostra toast "Enviado — acompanhe em Minhas candidaturas".
-  - Loading via `Loader2`; erro via `EmptyState` dentro do modal.
+7. **Governança operacional**
+   - `CHANGELOG.md` na raiz com todas as entradas datadas (América/São_Paulo).
+   - Checklist obrigatório antes de fechar iteração.
 
-- Pontos de uso (substituem o `<Link to="/public/$slug/$tableId/form">`):
-  - Listagem pública (`public.$slug.$tableId.index.tsx`): botão "Manifestar interesse" em cada card abre o modal com `recordId` daquele card.
-  - Detalhe do registro (`public.$slug.$tableId.$recordId.tsx`): CTA principal abre o modal com o `recordId` da rota.
-  - Página de campanha (`public.$slug.campaigns.$recordId.tsx`): botão "Contribuir" continua fluxo próprio (fora do escopo desta iteração); nada muda ali.
+### Formato
 
-- Rota antiga `public.$slug.$tableId.form.tsx`: mantida como fallback compatível (deep link) mas passa a renderizar o mesmo `InterestFormModal` com `open=true` sobre um shell mínimo (header + card resumido), para que URLs antigas continuem funcionando. Não redireciona.
-
-## 4. Notas técnicas (para revisão)
-
-- `PublicHeader` importa apenas do `@tanstack/react-router` (`Link`) e primitives shadcn — nenhum estado global.
-- O modal usa `Dialog` + `DialogContent`; foco inicial no primeiro campo; `aria-describedby` no título.
-- Nenhuma mudança de esquema, RLS ou endpoint. Nenhum novo token de cor.
-- Iterações 3–6 (submissão pública, campanhas, chat) continuam funcionando: mesmos endpoints, mesmos payloads.
-- Checklist §7 aplicável: build + typecheck, 360/768/1280 em light+dark, sem hardcode de cor, CHANGELOG atualizado.
-
-## Arquivos
-
-Criar:
-- `src/components/venue/public-header.tsx`
-- `src/components/venue/interest-form-modal.tsx`
-
-Editar:
-- `src/routes/index.tsx`
-- `src/routes/explore.tsx`
-- `src/routes/public.$slug.$tableId.index.tsx`
-- `src/routes/public.$slug.$tableId.$recordId.tsx`
-- `src/routes/public.$slug.campaigns.$recordId.tsx`
-- `src/routes/lead.$token.tsx`
-- `src/routes/auth.tsx`
-- `src/routes/public.$slug.$tableId.form.tsx` (thin wrapper de compat)
-- `CHANGELOG.md`
+- `.docx` gerado com `docx-js`, US Letter, Space Grotesk indisponível em Word → fallback Arial no documento (a fonte do produto continua Space Grotesk).
+- Cabeçalhos hierárquicos (H1/H2/H3), listas com `LevelFormat.BULLET`, sem tabelas decorativas.
+- Validação pós-geração (unpack + repack) e QA visual página a página antes de entregar.
+- Arquivo salvo em `/mnt/documents/venuespace-estado-atual.docx` e apresentado via `<presentation-artifact>`.
