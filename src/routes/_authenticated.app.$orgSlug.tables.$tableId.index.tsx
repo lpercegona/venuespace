@@ -98,6 +98,7 @@ function RecordsPage() {
   const [subFields, setSubFields] = useState<any[]>([]);
   const [autoRel, setAutoRel] = useState<string>("");
   const [savingView, setSavingView] = useState(false);
+  const [editingViewId, setEditingViewId] = useState<string | null>(null);
 
   async function loadSubFields(id: string) {
     setSubTableId(id);
@@ -231,7 +232,12 @@ function RecordsPage() {
                       </div>
                     </div>
                     {canEdit ? (
-                      <Button variant="ghost" size="sm" onClick={() => handleDeleteView(v.id)}>Remover</Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" aria-label="Editar formulário" onClick={() => setEditingViewId(v.id)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteView(v.id)}>Remover</Button>
+                      </div>
                     ) : null}
                   </CardContent>
                 </Card>
