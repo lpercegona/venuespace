@@ -13,8 +13,8 @@ export const Route = createFileRoute("/api/public/campaigns/$recordId")({
   server: {
     handlers: {
       GET: async ({ params }) => {
-        const { createPublicClient } = await import("@/lib/public.server");
-        const sb = createPublicClient();
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const sb = supabaseAdmin;
 
         const { data: campaign } = await sb
           .from("records")
@@ -133,8 +133,8 @@ export const Route = createFileRoute("/api/public/campaigns/$recordId")({
         const auth = request.headers.get("authorization");
         if (auth?.startsWith("Bearer ")) {
           try {
-            const { createPublicClient } = await import("@/lib/public.server");
-            const sb = createPublicClient();
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            const sb = supabaseAdmin;
             const { data: u } = await sb.auth.getUser(auth.slice(7));
             applicantUserId = u?.user?.id ?? null;
           } catch { /* ignore */ }
