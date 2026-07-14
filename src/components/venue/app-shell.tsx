@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, FileHeart } from "lucide-react";
+import { getOrganizationBySlug } from "@/lib/orgs.functions";
+import { NotificationsBell } from "./notifications-bell";
 
 type Props = {
   title?: string;
@@ -13,6 +16,14 @@ type Props = {
 
 export function AppShell({ title, subtitle, actions, children }: Props) {
   const navigate = useNavigate();
+  const params = useParams({ strict: false }) as { orgSlug?: string };
+  const orgSlug = params.orgSlug;
+  const org = useQuery({
+    queryKey: ["org", orgSlug],
+    queryFn: () => getOrganizationBySlug({ data: { slug: orgSlug! } }),
+    enabled: !!orgSlug,
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-surface/60 backdrop-blur">
@@ -23,17 +34,32 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
               Venuespace
             </span>
           </Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate({ to: "/auth" });
-            }}
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Sair</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            {orgSlug && org.data ? (
+              <>
+                <Link to="/app/$orgSlug/members" params={{ orgSlug }} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Membros</Link>
+                <Link to="/app/$orgSlug/calendar" params={{ orgSlug }} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Calendário</Link>
+                <NotificationsBell organizationId={org.data.id} orgSlug={orgSlug} />
+              </>
+            ) : null}
+            <Link to="/me/applications">
+              <Button variant="ghost" size="sm">
+                <FileHeart className="h-4 w-4" />
+                <span className="hidden sm:inline">Minhas candidaturas</span>
+              </Button>
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate({ to: "/auth" });
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </Button>
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
