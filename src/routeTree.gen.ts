@@ -12,8 +12,17 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LeadTokenRouteImport } from './routes/lead.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
+import { Route as PublicSlugTableIdRouteImport } from './routes/public.$slug.$tableId'
 import { Route as AuthenticatedAppOrgSlugIndexRouteImport } from './routes/_authenticated.app.$orgSlug.index'
+import { Route as PublicSlugTableIdFormRouteImport } from './routes/public.$slug.$tableId.form'
+import { Route as ApiPublicLeadTokenRouteImport } from './routes/api/public/lead/$token'
+import { Route as ApiPublicFormSchemaViewIdRouteImport } from './routes/api/public/form-schema/$viewId'
+import { Route as ApiPublicSlugTableIdRouteImport } from './routes/api/public/$slug/$tableId'
+import { Route as AuthenticatedAppOrgSlugConversationsRouteImport } from './routes/_authenticated.app.$orgSlug.conversations'
+import { Route as ApiPublicSlugTableIdSubmitRouteImport } from './routes/api/public/$slug/$tableId.submit'
+import { Route as AuthenticatedAppOrgSlugConversationsConversationIdRouteImport } from './routes/_authenticated.app.$orgSlug.conversations.$conversationId'
 import { Route as AuthenticatedAppOrgSlugTablesTableIdIndexRouteImport } from './routes/_authenticated.app.$orgSlug.tables.$tableId.index'
 import { Route as AuthenticatedAppOrgSlugTablesTableIdSchemaRouteImport } from './routes/_authenticated.app.$orgSlug.tables.$tableId.schema'
 
@@ -31,16 +40,65 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeadTokenRoute = LeadTokenRouteImport.update({
+  id: '/lead/$token',
+  path: '/lead/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const PublicSlugTableIdRoute = PublicSlugTableIdRouteImport.update({
+  id: '/public/$slug/$tableId',
+  path: '/public/$slug/$tableId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppOrgSlugIndexRoute =
   AuthenticatedAppOrgSlugIndexRouteImport.update({
     id: '/app/$orgSlug/',
     path: '/app/$orgSlug/',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const PublicSlugTableIdFormRoute = PublicSlugTableIdFormRouteImport.update({
+  id: '/form',
+  path: '/form',
+  getParentRoute: () => PublicSlugTableIdRoute,
+} as any)
+const ApiPublicLeadTokenRoute = ApiPublicLeadTokenRouteImport.update({
+  id: '/api/public/lead/$token',
+  path: '/api/public/lead/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFormSchemaViewIdRoute =
+  ApiPublicFormSchemaViewIdRouteImport.update({
+    id: '/api/public/form-schema/$viewId',
+    path: '/api/public/form-schema/$viewId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicSlugTableIdRoute = ApiPublicSlugTableIdRouteImport.update({
+  id: '/api/public/$slug/$tableId',
+  path: '/api/public/$slug/$tableId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAppOrgSlugConversationsRoute =
+  AuthenticatedAppOrgSlugConversationsRouteImport.update({
+    id: '/app/$orgSlug/conversations',
+    path: '/app/$orgSlug/conversations',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const ApiPublicSlugTableIdSubmitRoute =
+  ApiPublicSlugTableIdSubmitRouteImport.update({
+    id: '/submit',
+    path: '/submit',
+    getParentRoute: () => ApiPublicSlugTableIdRoute,
+  } as any)
+const AuthenticatedAppOrgSlugConversationsConversationIdRoute =
+  AuthenticatedAppOrgSlugConversationsConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => AuthenticatedAppOrgSlugConversationsRoute,
   } as any)
 const AuthenticatedAppOrgSlugTablesTableIdIndexRoute =
   AuthenticatedAppOrgSlugTablesTableIdIndexRouteImport.update({
@@ -58,16 +116,34 @@ const AuthenticatedAppOrgSlugTablesTableIdSchemaRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/lead/$token': typeof LeadTokenRoute
+  '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/$orgSlug/conversations': typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
+  '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
+  '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
+  '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
+  '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/app/$orgSlug/': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
+  '/api/public/$slug/$tableId/submit': typeof ApiPublicSlugTableIdSubmitRoute
   '/app/$orgSlug/tables/$tableId/schema': typeof AuthenticatedAppOrgSlugTablesTableIdSchemaRoute
   '/app/$orgSlug/tables/$tableId/': typeof AuthenticatedAppOrgSlugTablesTableIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/lead/$token': typeof LeadTokenRoute
+  '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/app': typeof AuthenticatedAppIndexRoute
+  '/app/$orgSlug/conversations': typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
+  '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
+  '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
+  '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
+  '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/app/$orgSlug': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
+  '/api/public/$slug/$tableId/submit': typeof ApiPublicSlugTableIdSubmitRoute
   '/app/$orgSlug/tables/$tableId/schema': typeof AuthenticatedAppOrgSlugTablesTableIdSchemaRoute
   '/app/$orgSlug/tables/$tableId': typeof AuthenticatedAppOrgSlugTablesTableIdIndexRoute
 }
@@ -76,8 +152,17 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
+  '/lead/$token': typeof LeadTokenRoute
+  '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/$orgSlug/conversations': typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
+  '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
+  '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
+  '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
+  '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/_authenticated/app/$orgSlug/': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/_authenticated/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
+  '/api/public/$slug/$tableId/submit': typeof ApiPublicSlugTableIdSubmitRoute
   '/_authenticated/app/$orgSlug/tables/$tableId/schema': typeof AuthenticatedAppOrgSlugTablesTableIdSchemaRoute
   '/_authenticated/app/$orgSlug/tables/$tableId/': typeof AuthenticatedAppOrgSlugTablesTableIdIndexRoute
 }
@@ -86,16 +171,34 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/lead/$token'
+    | '/public/$slug/$tableId'
     | '/app/'
+    | '/app/$orgSlug/conversations'
+    | '/api/public/$slug/$tableId'
+    | '/api/public/form-schema/$viewId'
+    | '/api/public/lead/$token'
+    | '/public/$slug/$tableId/form'
     | '/app/$orgSlug/'
+    | '/app/$orgSlug/conversations/$conversationId'
+    | '/api/public/$slug/$tableId/submit'
     | '/app/$orgSlug/tables/$tableId/schema'
     | '/app/$orgSlug/tables/$tableId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/lead/$token'
+    | '/public/$slug/$tableId'
     | '/app'
+    | '/app/$orgSlug/conversations'
+    | '/api/public/$slug/$tableId'
+    | '/api/public/form-schema/$viewId'
+    | '/api/public/lead/$token'
+    | '/public/$slug/$tableId/form'
     | '/app/$orgSlug'
+    | '/app/$orgSlug/conversations/$conversationId'
+    | '/api/public/$slug/$tableId/submit'
     | '/app/$orgSlug/tables/$tableId/schema'
     | '/app/$orgSlug/tables/$tableId'
   id:
@@ -103,8 +206,17 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/lead/$token'
+    | '/public/$slug/$tableId'
     | '/_authenticated/app/'
+    | '/_authenticated/app/$orgSlug/conversations'
+    | '/api/public/$slug/$tableId'
+    | '/api/public/form-schema/$viewId'
+    | '/api/public/lead/$token'
+    | '/public/$slug/$tableId/form'
     | '/_authenticated/app/$orgSlug/'
+    | '/_authenticated/app/$orgSlug/conversations/$conversationId'
+    | '/api/public/$slug/$tableId/submit'
     | '/_authenticated/app/$orgSlug/tables/$tableId/schema'
     | '/_authenticated/app/$orgSlug/tables/$tableId/'
   fileRoutesById: FileRoutesById
@@ -113,6 +225,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
+  LeadTokenRoute: typeof LeadTokenRoute
+  PublicSlugTableIdRoute: typeof PublicSlugTableIdRouteWithChildren
+  ApiPublicSlugTableIdRoute: typeof ApiPublicSlugTableIdRouteWithChildren
+  ApiPublicFormSchemaViewIdRoute: typeof ApiPublicFormSchemaViewIdRoute
+  ApiPublicLeadTokenRoute: typeof ApiPublicLeadTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -138,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lead/$token': {
+      id: '/lead/$token'
+      path: '/lead/$token'
+      fullPath: '/lead/$token'
+      preLoaderRoute: typeof LeadTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
       path: '/app'
@@ -145,12 +269,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/public/$slug/$tableId': {
+      id: '/public/$slug/$tableId'
+      path: '/public/$slug/$tableId'
+      fullPath: '/public/$slug/$tableId'
+      preLoaderRoute: typeof PublicSlugTableIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/$orgSlug/': {
       id: '/_authenticated/app/$orgSlug/'
       path: '/app/$orgSlug'
       fullPath: '/app/$orgSlug/'
       preLoaderRoute: typeof AuthenticatedAppOrgSlugIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/public/$slug/$tableId/form': {
+      id: '/public/$slug/$tableId/form'
+      path: '/form'
+      fullPath: '/public/$slug/$tableId/form'
+      preLoaderRoute: typeof PublicSlugTableIdFormRouteImport
+      parentRoute: typeof PublicSlugTableIdRoute
+    }
+    '/api/public/lead/$token': {
+      id: '/api/public/lead/$token'
+      path: '/api/public/lead/$token'
+      fullPath: '/api/public/lead/$token'
+      preLoaderRoute: typeof ApiPublicLeadTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/form-schema/$viewId': {
+      id: '/api/public/form-schema/$viewId'
+      path: '/api/public/form-schema/$viewId'
+      fullPath: '/api/public/form-schema/$viewId'
+      preLoaderRoute: typeof ApiPublicFormSchemaViewIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/$slug/$tableId': {
+      id: '/api/public/$slug/$tableId'
+      path: '/api/public/$slug/$tableId'
+      fullPath: '/api/public/$slug/$tableId'
+      preLoaderRoute: typeof ApiPublicSlugTableIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/app/$orgSlug/conversations': {
+      id: '/_authenticated/app/$orgSlug/conversations'
+      path: '/app/$orgSlug/conversations'
+      fullPath: '/app/$orgSlug/conversations'
+      preLoaderRoute: typeof AuthenticatedAppOrgSlugConversationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/public/$slug/$tableId/submit': {
+      id: '/api/public/$slug/$tableId/submit'
+      path: '/submit'
+      fullPath: '/api/public/$slug/$tableId/submit'
+      preLoaderRoute: typeof ApiPublicSlugTableIdSubmitRouteImport
+      parentRoute: typeof ApiPublicSlugTableIdRoute
+    }
+    '/_authenticated/app/$orgSlug/conversations/$conversationId': {
+      id: '/_authenticated/app/$orgSlug/conversations/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/app/$orgSlug/conversations/$conversationId'
+      preLoaderRoute: typeof AuthenticatedAppOrgSlugConversationsConversationIdRouteImport
+      parentRoute: typeof AuthenticatedAppOrgSlugConversationsRoute
     }
     '/_authenticated/app/$orgSlug/tables/$tableId/': {
       id: '/_authenticated/app/$orgSlug/tables/$tableId/'
@@ -169,8 +349,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAppOrgSlugConversationsRouteChildren {
+  AuthenticatedAppOrgSlugConversationsConversationIdRoute: typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
+}
+
+const AuthenticatedAppOrgSlugConversationsRouteChildren: AuthenticatedAppOrgSlugConversationsRouteChildren =
+  {
+    AuthenticatedAppOrgSlugConversationsConversationIdRoute:
+      AuthenticatedAppOrgSlugConversationsConversationIdRoute,
+  }
+
+const AuthenticatedAppOrgSlugConversationsRouteWithChildren =
+  AuthenticatedAppOrgSlugConversationsRoute._addFileChildren(
+    AuthenticatedAppOrgSlugConversationsRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppOrgSlugConversationsRoute: typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
   AuthenticatedAppOrgSlugIndexRoute: typeof AuthenticatedAppOrgSlugIndexRoute
   AuthenticatedAppOrgSlugTablesTableIdSchemaRoute: typeof AuthenticatedAppOrgSlugTablesTableIdSchemaRoute
   AuthenticatedAppOrgSlugTablesTableIdIndexRoute: typeof AuthenticatedAppOrgSlugTablesTableIdIndexRoute
@@ -178,6 +374,8 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppOrgSlugConversationsRoute:
+    AuthenticatedAppOrgSlugConversationsRouteWithChildren,
   AuthenticatedAppOrgSlugIndexRoute: AuthenticatedAppOrgSlugIndexRoute,
   AuthenticatedAppOrgSlugTablesTableIdSchemaRoute:
     AuthenticatedAppOrgSlugTablesTableIdSchemaRoute,
@@ -189,10 +387,37 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface PublicSlugTableIdRouteChildren {
+  PublicSlugTableIdFormRoute: typeof PublicSlugTableIdFormRoute
+}
+
+const PublicSlugTableIdRouteChildren: PublicSlugTableIdRouteChildren = {
+  PublicSlugTableIdFormRoute: PublicSlugTableIdFormRoute,
+}
+
+const PublicSlugTableIdRouteWithChildren =
+  PublicSlugTableIdRoute._addFileChildren(PublicSlugTableIdRouteChildren)
+
+interface ApiPublicSlugTableIdRouteChildren {
+  ApiPublicSlugTableIdSubmitRoute: typeof ApiPublicSlugTableIdSubmitRoute
+}
+
+const ApiPublicSlugTableIdRouteChildren: ApiPublicSlugTableIdRouteChildren = {
+  ApiPublicSlugTableIdSubmitRoute: ApiPublicSlugTableIdSubmitRoute,
+}
+
+const ApiPublicSlugTableIdRouteWithChildren =
+  ApiPublicSlugTableIdRoute._addFileChildren(ApiPublicSlugTableIdRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
+  LeadTokenRoute: LeadTokenRoute,
+  PublicSlugTableIdRoute: PublicSlugTableIdRouteWithChildren,
+  ApiPublicSlugTableIdRoute: ApiPublicSlugTableIdRouteWithChildren,
+  ApiPublicFormSchemaViewIdRoute: ApiPublicFormSchemaViewIdRoute,
+  ApiPublicLeadTokenRoute: ApiPublicLeadTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

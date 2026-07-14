@@ -2,21 +2,28 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plus, Rows3, Settings2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Loader2, Plus, Rows3, Settings2, Share2 } from "lucide-react";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
 import { DynamicGrid, type RecordRow } from "@/components/venue/dynamic-grid";
 import { DynamicForm } from "@/components/venue/dynamic-form";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getOrganizationBySlug, getTable } from "@/lib/orgs.functions";
+import { getOrganizationBySlug, getTable, listTables } from "@/lib/orgs.functions";
 import {
   listRecords, createRecord, updateRecord, deleteRecord, setRecordStatus,
+  listViews, deleteView,
 } from "@/lib/records.functions";
+import { createPublicFormView } from "@/lib/messages.functions";
 
 export const Route = createFileRoute("/_authenticated/app/$orgSlug/tables/$tableId/")({
   head: () => ({ meta: [{ title: "Registros — Venuespace" }, { name: "robots", content: "noindex" }] }),
@@ -78,18 +85,75 @@ function RecordsPage() {
 
   const hasFields = fields.filter((f) => f.type !== "computed").length > 0;
 
+  // Views + public form dialog
+  const views = useQuery({ queryKey: ["views", tableId], queryFn: () => listViews({ data: { table_id: tableId } }) });
+  const orgTables = useQuery({
+    queryKey: ["tables", org.data?.id],
+    queryFn: () => listTables({ data: { organization_id: org.data!.id } }),
+    enabled: !!org.data?.id,
+  });
+  const [openForm2, setOpenForm2] = useState(false);
+  const [subTableId, setSubTableId] = useState<string>("");
+  const [subFields, setSubFields] = useState<any[]>([]);
+  const [autoRel, setAutoRel] = useState<string>("");
+  const [savingView, setSavingView] = useState(false);
+
+  async function loadSubFields(id: string) {
+    setSubTableId(id);
+    setSubFields([]);
+    setAutoRel("");
+    if (!id) return;
+    // Reuse listRecords to pull fields
+    const res = await listRecords({ data: { table_id: id } });
+    setSubFields(res.fields);
+  }
+
+  async function handleCreateFormView() {
+    if (!subTableId) { toast.error("Escolha a tabela de destino."); return; }
+    setSavingView(true);
+    try {
+      await createPublicFormView({
+        data: {
+          table_id: tableId,
+          submissions_table_id: subTableId,
+          name: "Formulário público",
+          auto_relation_field_id: autoRel || null,
+        },
+      });
+      toast.success("Formulário público criado");
+      setOpenForm2(false);
+      setSubTableId(""); setAutoRel(""); setSubFields([]);
+      qc.invalidateQueries({ queryKey: ["views", tableId] });
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setSavingView(false); }
+  }
+
+  async function handleDeleteView(id: string) {
+    try {
+      await deleteView({ data: { id } });
+      qc.invalidateQueries({ queryKey: ["views", tableId] });
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  const publicUrl = org.data ? `/public/${org.data.slug}/${tableId}` : null;
+
   return (
     <AppShell
       title={table.data?.name ?? "Tabela"}
       subtitle={table.data?.description ?? undefined}
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link to="/app/$orgSlug" params={{ orgSlug }}>
             <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" />Voltar</Button>
           </Link>
           <Link to="/app/$orgSlug/tables/$tableId/schema" params={{ orgSlug, tableId }}>
             <Button variant="outline" size="sm"><Settings2 className="h-4 w-4" />Campos</Button>
           </Link>
+          {publicUrl ? (
+            <a href={publicUrl} target="_blank" rel="noreferrer">
+              <Button variant="outline" size="sm"><ExternalLink className="h-4 w-4" />Ver público</Button>
+            </a>
+          ) : null}
           {canEdit && hasFields ? (
             <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" />Novo registro</Button>
           ) : null}
@@ -127,6 +191,93 @@ function RecordsPage() {
           onTogglePublish={handleTogglePublish}
         />
       )}
+
+      {/* Views panel */}
+      <section className="mt-10">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Share2 className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-display text-lg font-semibold">Formulários públicos</h2>
+          </div>
+          {canEdit ? (
+            <Button variant="outline" size="sm" onClick={() => setOpenForm2(true)}>
+              <Plus className="h-4 w-4" />Novo formulário
+            </Button>
+          ) : null}
+        </div>
+        {views.isLoading ? (
+          <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : ((views.data ?? []) as any[]).filter((v: any) => v.type === "public_form").length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum formulário público. Crie um para permitir que interessados se manifestem.</p>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {((views.data ?? []) as any[]).filter((v: any) => v.type === "public_form").map((v: any) => (
+              <li key={v.id}>
+                <Card>
+                  <CardContent className="flex items-center justify-between gap-3 py-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{v.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">Destino: {v.submissions_table_id}</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge variant="secondary">public_form</Badge>
+                        {publicUrl ? (
+                          <a
+                            href={`${publicUrl}/form?view=${v.id}`}
+                            target="_blank" rel="noreferrer"
+                            className="text-xs text-primary underline"
+                          >Abrir formulário</a>
+                        ) : null}
+                      </div>
+                    </div>
+                    {canEdit ? (
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteView(v.id)}>Remover</Button>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <Dialog open={openForm2} onOpenChange={setOpenForm2}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">Novo formulário público</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Tabela de destino (submissões)</Label>
+              <Select value={subTableId} onValueChange={loadSubFields}>
+                <SelectTrigger><SelectValue placeholder="Escolha uma tabela para receber envios" /></SelectTrigger>
+                <SelectContent>
+                  {(orgTables.data ?? []).filter((t: any) => t.id !== tableId).map((t: any) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Cada envio cria um registro nessa tabela e uma conversa vinculada.</p>
+            </div>
+            {subFields.length > 0 ? (
+              <div className="space-y-2">
+                <Label>Campo relação para o registro de origem (opcional)</Label>
+                <Select value={autoRel || "__none__"} onValueChange={(v) => setAutoRel(v === "__none__" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
+                    {subFields.filter((f) => f.type === "relation").map((f) => (
+                      <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Se selecionado, o registro criado será vinculado automaticamente ao registro de origem.</p>
+              </div>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpenForm2(false)}>Cancelar</Button>
+            <Button onClick={handleCreateFormView} disabled={savingView || !subTableId}>{savingView ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent className="max-h-[85vh] overflow-y-auto">
