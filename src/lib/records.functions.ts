@@ -159,7 +159,7 @@ export const listRecords = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("records")
-      .select("id, data, status, deal_status, agreed_value, contribution_status, created_at, updated_at")
+      .select("id, data, system_data, status, deal_status, agreed_value, contribution_status, created_at, updated_at")
       .eq("table_id", data.table_id)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -174,6 +174,7 @@ export const listRecords = createServerFn({ method: "GET" })
     const recs = (rows ?? []) as Array<{
       id: string;
       data: Record<string, any>;
+      system_data: Record<string, any> | null;
       status: string;
       deal_status: string;
       agreed_value: number | null;
