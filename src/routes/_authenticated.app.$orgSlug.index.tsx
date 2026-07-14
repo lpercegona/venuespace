@@ -308,12 +308,20 @@ function TableCard({
       </Link>
       {canEdit ? (
         <>
-          <Button
-            type="button" variant="ghost" size="icon"
-            className="absolute right-2 top-2 h-8 w-8"
-            aria-label="Editar tabela"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); }}
-          ><Pencil className="h-4 w-4" /></Button>
+          <div className="absolute right-2 top-2 flex gap-1">
+            <Button
+              type="button" variant="ghost" size="icon" className="h-8 w-8"
+              aria-label="Editar tabela"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); }}
+            ><Pencil className="h-4 w-4" /></Button>
+            {isOwner ? (
+              <Button
+                type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                aria-label="Excluir tabela"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDel(true); }}
+              ><Trash2 className="h-4 w-4" /></Button>
+            ) : null}
+          </div>
           <Dialog open={editing} onOpenChange={setEditing}>
             <DialogContent>
               <DialogHeader><DialogTitle className="font-display">Editar tabela</DialogTitle></DialogHeader>
@@ -337,6 +345,40 @@ function TableCard({
               </form>
             </DialogContent>
           </Dialog>
+          {isOwner ? (
+            <AlertDialog open={confirmDel} onOpenChange={setConfirmDel}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir tabela?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso remove permanentemente a tabela, seus campos e registros. Digite o nome
+                    <span className="font-mono"> {t.name} </span> para confirmar.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input value={delConfirmName} onChange={(e) => setDelConfirmName(e.target.value)} placeholder={t.name} />
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={delConfirmName !== t.name || deleting}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      setDeleting(true);
+                      try {
+                        await deleteTable({ data: { id: t.id, confirm_name: delConfirmName } });
+                        toast.success("Tabela excluída");
+                        setConfirmDel(false);
+                        setDelConfirmName("");
+                        onSaved();
+                      } catch (err) { toast.error((err as Error).message); }
+                      finally { setDeleting(false); }
+                    }}
+                  >
+                    {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Excluir"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : null}
         </>
       ) : null}
     </div>
