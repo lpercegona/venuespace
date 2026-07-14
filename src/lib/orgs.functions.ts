@@ -219,11 +219,22 @@ export const listMembers = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("memberships")
-      .select("id, role, user_id, created_at, profile:profiles(email, display_name, avatar_url)")
+      .select("id, role, user_id, created_at")
       .eq("organization_id", data.organization_id)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    const list = rows ?? [];
+    const ids = list.map((r) => r.user_id);
+    let profiles: Record<string, { email: string | null; display_name: string | null; avatar_url: string | null }> = {};
+    if (ids.length > 0) {
+      const { data: prof, error: pErr } = await context.supabase
+        .from("profiles")
+        .select("id, email, display_name, avatar_url")
+        .in("id", ids);
+      if (pErr) throw new Error(pErr.message);
+      profiles = Object.fromEntries((prof ?? []).map((p: any) => [p.id, { email: p.email, display_name: p.display_name, avatar_url: p.avatar_url }]));
+    }
+    return list.map((r) => ({ ...r, profile: profiles[r.user_id] ?? null }));
   });
 
 export const addMemberByEmail = createServerFn({ method: "POST" })

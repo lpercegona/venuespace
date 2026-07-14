@@ -15,7 +15,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeadTokenRouteImport } from './routes/lead.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as PublicSlugTableIdRouteImport } from './routes/public.$slug.$tableId'
-import { Route as AuthenticatedMeSettingsRouteImport } from './routes/_authenticated.me.settings'
 import { Route as AuthenticatedMeApplicationsRouteImport } from './routes/_authenticated.me.applications'
 import { Route as AuthenticatedAppOrgSlugIndexRouteImport } from './routes/_authenticated.app.$orgSlug.index'
 import { Route as PublicSlugCampaignsRecordIdRouteImport } from './routes/public.$slug.campaigns.$recordId'
@@ -62,11 +61,6 @@ const PublicSlugTableIdRoute = PublicSlugTableIdRouteImport.update({
   id: '/public/$slug/$tableId',
   path: '/public/$slug/$tableId',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedMeSettingsRoute = AuthenticatedMeSettingsRouteImport.update({
-  id: '/me/settings',
-  path: '/me/settings',
-  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMeApplicationsRoute =
   AuthenticatedMeApplicationsRouteImport.update({
@@ -173,7 +167,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/lead/$token': typeof LeadTokenRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
-  '/me/settings': typeof AuthenticatedMeSettingsRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/$orgSlug/calendar': typeof AuthenticatedAppOrgSlugCalendarRoute
@@ -198,7 +191,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/lead/$token': typeof LeadTokenRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
-  '/me/settings': typeof AuthenticatedMeSettingsRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/$orgSlug/calendar': typeof AuthenticatedAppOrgSlugCalendarRoute
@@ -225,7 +217,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/lead/$token': typeof LeadTokenRoute
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
-  '/_authenticated/me/settings': typeof AuthenticatedMeSettingsRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/$orgSlug/calendar': typeof AuthenticatedAppOrgSlugCalendarRoute
@@ -252,7 +243,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/lead/$token'
     | '/me/applications'
-    | '/me/settings'
     | '/public/$slug/$tableId'
     | '/app/'
     | '/app/$orgSlug/calendar'
@@ -277,7 +267,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/lead/$token'
     | '/me/applications'
-    | '/me/settings'
     | '/public/$slug/$tableId'
     | '/app'
     | '/app/$orgSlug/calendar'
@@ -303,7 +292,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/lead/$token'
     | '/_authenticated/me/applications'
-    | '/_authenticated/me/settings'
     | '/public/$slug/$tableId'
     | '/_authenticated/app/'
     | '/_authenticated/app/$orgSlug/calendar'
@@ -380,13 +368,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/public/$slug/$tableId'
       preLoaderRoute: typeof PublicSlugTableIdRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/me/settings': {
-      id: '/_authenticated/me/settings'
-      path: '/me/settings'
-      fullPath: '/me/settings'
-      preLoaderRoute: typeof AuthenticatedMeSettingsRouteImport
-      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/me/applications': {
       id: '/_authenticated/me/applications'
@@ -527,7 +508,6 @@ const AuthenticatedAppOrgSlugConversationsRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedMeApplicationsRoute: typeof AuthenticatedMeApplicationsRoute
-  AuthenticatedMeSettingsRoute: typeof AuthenticatedMeSettingsRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppOrgSlugCalendarRoute: typeof AuthenticatedAppOrgSlugCalendarRoute
   AuthenticatedAppOrgSlugConversationsRoute: typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
@@ -539,7 +519,6 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMeApplicationsRoute: AuthenticatedMeApplicationsRoute,
-  AuthenticatedMeSettingsRoute: AuthenticatedMeSettingsRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppOrgSlugCalendarRoute: AuthenticatedAppOrgSlugCalendarRoute,
   AuthenticatedAppOrgSlugConversationsRoute:

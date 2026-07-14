@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { getOrganizationBySlug, listMyOrganizations } from "@/lib/orgs.functions
 import { getMyProfile } from "@/lib/profile.functions";
 import { NotificationsBell } from "./notifications-bell";
 import { ChatWidget } from "./chat-widget";
+import { SettingsModal } from "./settings-modal";
 
 type Props = {
   title?: string;
@@ -32,6 +33,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
   });
   const me = useQuery({ queryKey: ["me-profile"], queryFn: () => getMyProfile() });
   const myOrgs = useQuery({ queryKey: ["my-orgs"], queryFn: () => listMyOrganizations() });
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const initial = (me.data?.display_name ?? me.data?.email ?? "?").slice(0, 1).toUpperCase();
 
@@ -98,7 +100,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                   {me.data?.display_name ?? me.data?.email ?? "Perfil"}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => navigate({ to: "/me/settings" })}>
+                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSettingsOpen(true); }}>
                   <Settings className="h-4 w-4" />Configurações
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => navigate({ to: "/me/applications" })}>
@@ -147,6 +149,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
         {children}
       </main>
       {orgSlug && org.data ? <ChatWidget organizationId={org.data.id} /> : null}
+      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }
