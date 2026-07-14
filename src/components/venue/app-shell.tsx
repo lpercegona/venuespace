@@ -100,7 +100,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                   {me.data?.display_name ?? me.data?.email ?? "Perfil"}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => navigate({ to: "/me/settings" })}>
+                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSettingsOpen(true); }}>
                   <Settings className="h-4 w-4" />Configurações
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => navigate({ to: "/me/applications" })}>
