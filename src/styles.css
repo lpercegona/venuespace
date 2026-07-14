@@ -11,8 +11,8 @@
  */
 
 @theme inline {
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-body: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-body);
 
   --radius-sm: calc(var(--radius) - 4px);
