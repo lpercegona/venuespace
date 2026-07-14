@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, ExternalLink, Loader2, Pencil, Plus, Rows3, Settings2, Share2 } from "lucide-react";
 import { AppShell } from "@/components/venue/app-shell";
