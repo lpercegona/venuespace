@@ -59,9 +59,14 @@ function PublicFormPage() {
     }
     setSubmitting(true);
     try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       const res = await fetch(`/api/public/${encodeURIComponent(slug)}/${encodeURIComponent(tableId)}/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           view_id: viewId,
           source_record_id: recordId ?? null,
