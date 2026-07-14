@@ -1,3 +1,10 @@
+## 2026-07-14 19:57 (America/Sao_Paulo) — Rótulos dinâmicos em telas de domínio
+
+- Rotas autenticadas de organizações, tabelas, registros, esquema, calendário e candidaturas passaram a resolver termos de domínio via `useLabels()` com fallback explícito.
+- A exploração pública e o formulário dinâmico substituem referências fixas a organização/tabela/registro por labels configuráveis quando há chave semântica correspondente.
+- Admin recebeu ajustes em descrições e estados vazios relacionados a organizações, tabelas, registros e campos.
+- Nenhuma alteração de backend, RLS, tokens de design ou migrations.
+
 ## 2026-07-14 19:42 (America/Sao_Paulo) — Restrição do atalho Administração no menu do perfil
 
 - `src/components/venue/app-shell.tsx`: corrige a condição do item "Administração" no dropdown do perfil para renderizar somente quando `amISuperAdmin()` retornar `is_super_admin: true`.

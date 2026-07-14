@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/venue/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useFormatContext } from "@/hooks/use-instance-context";
+import { useFormatContext, useLabels } from "@/hooks/use-instance-context";
 import { formatCurrency, formatDateTime } from "@/lib/formatting";
 
 export const Route = createFileRoute("/_authenticated/me/applications")({
@@ -16,6 +16,8 @@ export const Route = createFileRoute("/_authenticated/me/applications")({
 });
 
 function MyApplicationsPage() {
+  const { t } = useLabels();
+  const recordLabel = t("record", "registro").toLowerCase();
   const q = useQuery({ queryKey: ["my-applications"], queryFn: () => getMyApplications() });
   const formatCtx = useFormatContext(null);
 
@@ -25,7 +27,7 @@ function MyApplicationsPage() {
       {q.isLoading ? (
         <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : !q.data || q.data.length === 0 ? (
-        <EmptyState title="Você ainda não enviou nada" description="Ao manifestar interesse em algum registro público, ele aparecerá aqui." />
+        <EmptyState title="Você ainda não enviou nada" description={`Ao manifestar interesse em algum ${recordLabel} público, ele aparecerá aqui.`} />
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {q.data.map((r: any) => (

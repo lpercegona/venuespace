@@ -25,6 +25,7 @@ import {
 } from "@/lib/records.functions";
 import { createPublicFormView, getPublicFormView, updatePublicFormView } from "@/lib/messages.functions";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useLabels } from "@/hooks/use-instance-context";
 
 export const Route = createFileRoute("/_authenticated/app/$orgSlug/tables/$tableId/")({
   head: () => ({ meta: [{ title: "Registros — Venuespace" }, { name: "robots", content: "noindex" }] }),
@@ -33,6 +34,11 @@ export const Route = createFileRoute("/_authenticated/app/$orgSlug/tables/$table
 
 function RecordsPage() {
   const { orgSlug, tableId } = Route.useParams();
+  const { t } = useLabels();
+  const tableLabel = t("table", "tabela").toLowerCase();
+  const recordLabel = t("record", "registro").toLowerCase();
+  const fieldLabel = t("field", "campo").toLowerCase();
+  const fieldsLabel = t("fields", "campos").toLowerCase();
   const qc = useQueryClient();
 
   const org = useQuery({ queryKey: ["org", orgSlug], queryFn: () => getOrganizationBySlug({ data: { slug: orgSlug } }) });
@@ -51,7 +57,7 @@ function RecordsPage() {
   async function handleCreate(values: Record<string, any>) {
     try {
       await createRecord({ data: { table_id: tableId, data: values } });
-      toast.success("Registro criado");
+      toast.success(`${t("record", "Registro")} criado`);
       setOpenForm(false);
       qc.invalidateQueries({ queryKey: ["records", tableId] });
     } catch (err) { toast.error((err as Error).message); }
@@ -61,7 +67,7 @@ function RecordsPage() {
     if (!editing) return;
     try {
       await updateRecord({ data: { id: editing.id, table_id: tableId, data: values } });
-      toast.success("Registro atualizado");
+      toast.success(`${t("record", "Registro")} atualizado`);
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["records", tableId] });
     } catch (err) { toast.error((err as Error).message); }
@@ -71,7 +77,7 @@ function RecordsPage() {
     if (!deleting) return;
     try {
       await deleteRecord({ data: { id: deleting.id } });
-      toast.success("Registro excluído");
+      toast.success(`${t("record", "Registro")} excluído`);
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["records", tableId] });
     } catch (err) { toast.error((err as Error).message); }
@@ -111,7 +117,7 @@ function RecordsPage() {
   }
 
   async function handleCreateFormView() {
-    if (!subTableId) { toast.error("Escolha a tabela de destino."); return; }
+    if (!subTableId) { toast.error(`Escolha a ${tableLabel} de destino.`); return; }
     setSavingView(true);
     try {
       await createPublicFormView({
@@ -141,7 +147,7 @@ function RecordsPage() {
 
   return (
     <AppShell
-      title={table.data?.name ?? "Tabela"}
+      title={table.data?.name ?? t("table", "Tabela")}
       subtitle={table.data?.description ?? undefined}
       actions={
         <div className="flex flex-wrap items-center gap-2">
@@ -149,7 +155,7 @@ function RecordsPage() {
             <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" />Voltar</Button>
           </Link>
           <Link to="/app/$orgSlug/tables/$tableId/schema" params={{ orgSlug, tableId }}>
-            <Button variant="outline" size="sm"><Settings2 className="h-4 w-4" />Campos</Button>
+            <Button variant="outline" size="sm"><Settings2 className="h-4 w-4" />{t("fields", "Campos")}</Button>
           </Link>
           {publicUrl ? (
             <a href={publicUrl} target="_blank" rel="noreferrer">
@@ -157,7 +163,7 @@ function RecordsPage() {
             </a>
           ) : null}
           {canEdit && hasFields ? (
-            <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" />Novo registro</Button>
+            <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" />Novo {recordLabel}</Button>
           ) : null}
         </div>
       }
@@ -167,20 +173,20 @@ function RecordsPage() {
       ) : !hasFields ? (
         <EmptyState
           icon={<Settings2 className="h-5 w-5" />}
-          title="Defina campos primeiro"
-          description="Esta tabela ainda não tem campos. Vá para o esquema e adicione ao menos um campo."
+          title={`Defina ${fieldsLabel} primeiro`}
+          description={`Esta ${tableLabel} ainda não tem ${fieldsLabel}. Vá para o esquema e adicione ao menos um ${fieldLabel}.`}
           action={
             <Link to="/app/$orgSlug/tables/$tableId/schema" params={{ orgSlug, tableId }}>
-              <Button variant="outline"><Settings2 className="h-4 w-4" />Ir para campos</Button>
+              <Button variant="outline"><Settings2 className="h-4 w-4" />Ir para {fieldsLabel}</Button>
             </Link>
           }
         />
       ) : rows.length === 0 ? (
         <EmptyState
           icon={<Rows3 className="h-5 w-5" />}
-          title="Nenhum registro ainda"
-          description="Crie o primeiro registro desta tabela."
-          action={canEdit ? <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" />Novo registro</Button> : undefined}
+          title={`Nenhum ${recordLabel} ainda`}
+          description={`Crie o primeiro ${recordLabel} desta ${tableLabel}.`}
+          action={canEdit ? <Button onClick={() => setOpenForm(true)}><Plus className="h-4 w-4" />Novo {recordLabel}</Button> : undefined}
         />
       ) : (
         <DynamicGrid
@@ -252,20 +258,20 @@ function RecordsPage() {
           <DialogHeader><DialogTitle className="font-display">Novo formulário público</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Tabela de destino (submissões)</Label>
+              <Label>{t("table", "Tabela")} de destino (submissões)</Label>
               <Select value={subTableId} onValueChange={loadSubFields}>
-                <SelectTrigger><SelectValue placeholder="Escolha uma tabela para receber envios" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={`Escolha uma ${tableLabel} para receber envios`} /></SelectTrigger>
                 <SelectContent>
                   {(orgTables.data ?? []).map((t: any) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}{t.id === tableId ? " (esta tabela)" : ""}</SelectItem>
+                    <SelectItem key={t.id} value={t.id}>{t.name}{t.id === tableId ? ` (esta ${tableLabel})` : ""}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">Cada envio cria um registro nessa tabela e uma conversa vinculada.</p>
+              <p className="text-xs text-muted-foreground">Cada envio cria um {recordLabel} nessa {tableLabel} e uma conversa vinculada.</p>
             </div>
             {subFields.length > 0 ? (
               <div className="space-y-2">
-                <Label>Campo relação para o registro de origem (opcional)</Label>
+                <Label>Campo relação para o {recordLabel} de origem (opcional)</Label>
                 <Select value={autoRel || "__none__"} onValueChange={(v) => setAutoRel(v === "__none__" ? "" : v)}>
                   <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
                   <SelectContent>
@@ -275,7 +281,7 @@ function RecordsPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Se selecionado, o registro criado será vinculado automaticamente ao registro de origem.</p>
+                <p className="text-xs text-muted-foreground">Se selecionado, o {recordLabel} criado será vinculado automaticamente ao {recordLabel} de origem.</p>
               </div>
             ) : null}
           </div>
@@ -288,14 +294,14 @@ function RecordsPage() {
 
       <Dialog open={openForm} onOpenChange={setOpenForm}>
         <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-display">Novo registro</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-display">Novo {recordLabel}</DialogTitle></DialogHeader>
           <DynamicForm fields={fields} onSubmit={handleCreate} onCancel={() => setOpenForm(false)} submitLabel="Criar" />
         </DialogContent>
       </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
         <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-display">Editar registro</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-display">Editar {recordLabel}</DialogTitle></DialogHeader>
           {editing ? (
             <DynamicForm fields={fields} initial={editing.data} onSubmit={handleUpdate} onCancel={() => setEditing(null)} submitLabel="Salvar" />
           ) : null}
@@ -305,7 +311,7 @@ function RecordsPage() {
       <AlertDialog open={!!deleting} onOpenChange={(o) => { if (!o) setDeleting(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir registro?</AlertDialogTitle>
+            <AlertDialogTitle>{`Excluir ${recordLabel}?`}</AlertDialogTitle>
             <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -325,6 +331,10 @@ function RecordsPage() {
 }
 
 function EditFormViewDialog({ viewId, onClose, onSaved }: { viewId: string | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLabels();
+  const recordLabel = t("record", "registro").toLowerCase();
+  const tableLabel = t("table", "tabela").toLowerCase();
+  const fieldsLabel = t("fields", "campos").toLowerCase();
   const q = useQuery({
     queryKey: ["public-form-view", viewId],
     queryFn: () => getPublicFormView({ data: { id: viewId as string } }),
@@ -391,7 +401,7 @@ function EditFormViewDialog({ viewId, onClose, onSaved }: { viewId: string | nul
               <Input id="form-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Formulário público" />
             </div>
             <div className="space-y-2">
-              <Label>Campo relação para o registro de origem</Label>
+              <Label>Campo relação para o {recordLabel} de origem</Label>
               <Select value={autoRel || "__none__"} onValueChange={(v) => setAutoRel(v === "__none__" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
                 <SelectContent>
@@ -401,13 +411,13 @@ function EditFormViewDialog({ viewId, onClose, onSaved }: { viewId: string | nul
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">Preenchido automaticamente com o registro de origem; ocultado do formulário.</p>
+              <p className="text-xs text-muted-foreground">Preenchido automaticamente com o {recordLabel} de origem; ocultado do formulário.</p>
             </div>
             <div className="space-y-2">
               <Label>Campos exibidos no formulário</Label>
               <ul className="space-y-2 rounded-md border border-border/60 p-3">
                 {selectableFields.length === 0 ? (
-                  <li className="text-xs text-muted-foreground">A tabela de destino não tem campos elegíveis.</li>
+                  <li className="text-xs text-muted-foreground">A {tableLabel} de destino não tem {fieldsLabel} elegíveis.</li>
                 ) : selectableFields.map((f) => {
                   const isAuto = f.id === autoRel;
                   return (

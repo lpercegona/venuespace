@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ArrowLeft, Columns3, Loader2, Plus, Trash2 } from "lucide-react";
+import { useLabels } from "@/hooks/use-instance-context";
 
 const FIELD_TYPES = [
   "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","file","relation","computed",
@@ -28,6 +29,10 @@ export const Route = createFileRoute("/_authenticated/app/$orgSlug/tables/$table
 
 function SchemaPage() {
   const { orgSlug, tableId } = Route.useParams();
+  const { t } = useLabels();
+  const tableLabel = t("table", "tabela").toLowerCase();
+  const fieldLabel = t("field", "campo").toLowerCase();
+  const fieldsLabel = t("fields", "campos").toLowerCase();
   const fetchOrg = (getOrganizationBySlug);
   const fetchTable = (getTable);
   const fetchFields = (listFields);
@@ -69,7 +74,7 @@ function SchemaPage() {
           position: (fields.data?.length ?? 0),
         },
       });
-      toast.success("Campo criado");
+      toast.success(`${t("field", "Campo")} criado`);
       setOpen(false);
       setFLabel(""); setFKey(""); setFType("text"); setFRequired(false);
       await fields.refetch();
@@ -92,7 +97,7 @@ function SchemaPage() {
   async function handleDelete(id: string) {
     try {
       await doDelete({ data: { id } });
-      toast.success("Campo removido");
+      toast.success(`${t("field", "Campo")} removido`);
       await fields.refetch();
     } catch (err) {
       toast.error((err as Error).message);
@@ -101,8 +106,8 @@ function SchemaPage() {
 
   return (
     <AppShell
-      title={table.data?.name ?? "Tabela"}
-      subtitle={table.data?.description ?? "Defina os campos desta tabela."}
+      title={table.data?.name ?? t("table", "Tabela")}
+      subtitle={table.data?.description ?? `Defina os ${fieldsLabel} desta ${tableLabel}.`}
       actions={
         <div className="flex items-center gap-2">
           <Link to="/app/$orgSlug" params={{ orgSlug }}>
@@ -111,10 +116,10 @@ function SchemaPage() {
           {canEdit ? (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4" />Novo campo</Button>
+                <Button><Plus className="h-4 w-4" />Novo {fieldLabel}</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle className="font-display">Novo campo</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle className="font-display">Novo {fieldLabel}</DialogTitle></DialogHeader>
                 <form onSubmit={handleCreate} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="f-label">Rótulo</Label>
@@ -153,9 +158,9 @@ function SchemaPage() {
       ) : !fields.data || fields.data.length === 0 ? (
         <EmptyState
           icon={<Columns3 className="h-5 w-5" />}
-          title="Nenhum campo ainda"
-          description="Adicione campos para definir a estrutura desta tabela."
-          action={canEdit ? <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" />Novo campo</Button> : undefined}
+          title={`Nenhum ${fieldLabel} ainda`}
+          description={`Adicione ${fieldsLabel} para definir a estrutura desta ${tableLabel}.`}
+          action={canEdit ? <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" />Novo {fieldLabel}</Button> : undefined}
         />
       ) : (
         <Card>
@@ -178,11 +183,11 @@ function SchemaPage() {
                           </label>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" aria-label="Remover"><Trash2 className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" aria-label={`Remover ${fieldLabel}`}><Trash2 className="h-4 w-4" /></Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Remover campo?</AlertDialogTitle>
+                                <AlertDialogTitle>{`Remover ${fieldLabel}?`}</AlertDialogTitle>
                                 <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
