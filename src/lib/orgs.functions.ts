@@ -258,6 +258,8 @@ export const addMemberByEmail = createServerFn({ method: "POST" })
       .insert({ organization_id: data.organization_id, user_id: profile.id, role: data.role });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
 
 // Field options (select/multiselect): append a new option to fields.config.options
 // Owner/editor of the org that owns the field only.
