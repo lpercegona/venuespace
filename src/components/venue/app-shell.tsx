@@ -8,9 +8,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building2, Check, List } from "lucide-react";
+import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building2, Check, List, Shield } from "lucide-react";
 import { getOrganizationBySlug, listMyOrganizations } from "@/lib/orgs.functions";
 import { getMyProfile } from "@/lib/profile.functions";
+import { amISuperAdmin } from "@/lib/instance-settings.functions";
 import { NotificationsBell } from "./notifications-bell";
 import { ChatWidget } from "./chat-widget";
 import { SettingsModal } from "./settings-modal";
@@ -34,6 +35,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
   });
   const me = useQuery({ queryKey: ["me-profile"], queryFn: () => getMyProfile(), staleTime: 60_000 });
   const myOrgs = useQuery({ queryKey: ["my-orgs"], queryFn: () => listMyOrganizations(), staleTime: 60_000 });
+  const isAdmin = useQuery({ queryKey: ["am-super-admin"], queryFn: () => amISuperAdmin(), staleTime: 60_000 });
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const initial = (me.data?.display_name ?? me.data?.email ?? "?").slice(0, 1).toUpperCase();
@@ -114,6 +116,14 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => navigate({ to: "/app/$orgSlug/members", params: { orgSlug } })}>
                       <Users className="h-4 w-4" />Membros
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+                {isAdmin.data ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => navigate({ to: "/admin" })}>
+                      <Shield className="h-4 w-4" />Administração
                     </DropdownMenuItem>
                   </>
                 ) : null}
