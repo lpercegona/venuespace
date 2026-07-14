@@ -171,7 +171,7 @@ function OrgDashboard() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {tables.data.map((t: any) => (
-              <Link key={t.id} to="/app/$orgSlug/tables/$tableId/schema" params={{ orgSlug, tableId: t.id }}>
+              <Link key={t.id} to="/app/$orgSlug/tables/$tableId" params={{ orgSlug, tableId: t.id }}>
                 <Card className="h-full transition-shadow hover:shadow-elegant">
                   <CardHeader className="pb-2">
                     <CardTitle className="font-display text-base">{t.name}</CardTitle>

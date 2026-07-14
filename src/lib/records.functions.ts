@@ -276,7 +276,7 @@ export const setRecordStatus = createServerFn({ method: "POST" })
 const viewCreate = z.object({
   table_id: z.string().uuid(),
   name: z.string().min(1).max(80),
-  type: z.enum(["grid", "public_grid", "public_form"]).default("grid"),
+  type: z.enum(["grid", "public_list", "public_detail", "public_form"]).default("grid"),
   config: z.record(z.string(), z.any()).optional(),
   submissions_table_id: z.string().uuid().nullable().optional(),
 });

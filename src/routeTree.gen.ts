@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as AuthenticatedAppOrgSlugIndexRouteImport } from './routes/_authenticated.app.$orgSlug.index'
+import { Route as AuthenticatedAppOrgSlugTablesTableIdIndexRouteImport } from './routes/_authenticated.app.$orgSlug.tables.$tableId.index'
 import { Route as AuthenticatedAppOrgSlugTablesTableIdSchemaRouteImport } from './routes/_authenticated.app.$orgSlug.tables.$tableId.schema'
 
 const AuthRoute = AuthRouteImport.update({
@@ -41,6 +42,12 @@ const AuthenticatedAppOrgSlugIndexRoute =
     path: '/app/$orgSlug/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppOrgSlugTablesTableIdIndexRoute =
+  AuthenticatedAppOrgSlugTablesTableIdIndexRouteImport.update({
+    id: '/app/$orgSlug/tables/$tableId/',
+    path: '/app/$orgSlug/tables/$tableId/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppOrgSlugTablesTableIdSchemaRoute =
   AuthenticatedAppOrgSlugTablesTableIdSchemaRouteImport.update({
     id: '/app/$orgSlug/tables/$tableId/schema',
@@ -54,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/$orgSlug/': typeof AuthenticatedAppOrgSlugIndexRoute
   '/app/$orgSlug/tables/$tableId/schema': typeof AuthenticatedAppOrgSlugTablesTableIdSchemaRoute
+  '/app/$orgSlug/tables/$tableId/': typeof AuthenticatedAppOrgSlugTablesTableIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,6 +69,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/$orgSlug': typeof AuthenticatedAppOrgSlugIndexRoute
   '/app/$orgSlug/tables/$tableId/schema': typeof AuthenticatedAppOrgSlugTablesTableIdSchemaRoute
+  '/app/$orgSlug/tables/$tableId': typeof AuthenticatedAppOrgSlugTablesTableIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,6 +79,7 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/$orgSlug/': typeof AuthenticatedAppOrgSlugIndexRoute
   '/_authenticated/app/$orgSlug/tables/$tableId/schema': typeof AuthenticatedAppOrgSlugTablesTableIdSchemaRoute
+  '/_authenticated/app/$orgSlug/tables/$tableId/': typeof AuthenticatedAppOrgSlugTablesTableIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -79,6 +89,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/$orgSlug/'
     | '/app/$orgSlug/tables/$tableId/schema'
+    | '/app/$orgSlug/tables/$tableId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -86,6 +97,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/$orgSlug'
     | '/app/$orgSlug/tables/$tableId/schema'
+    | '/app/$orgSlug/tables/$tableId'
   id:
     | '__root__'
     | '/'
@@ -94,6 +106,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_authenticated/app/$orgSlug/'
     | '/_authenticated/app/$orgSlug/tables/$tableId/schema'
+    | '/_authenticated/app/$orgSlug/tables/$tableId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -139,6 +152,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppOrgSlugIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/$orgSlug/tables/$tableId/': {
+      id: '/_authenticated/app/$orgSlug/tables/$tableId/'
+      path: '/app/$orgSlug/tables/$tableId'
+      fullPath: '/app/$orgSlug/tables/$tableId/'
+      preLoaderRoute: typeof AuthenticatedAppOrgSlugTablesTableIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/$orgSlug/tables/$tableId/schema': {
       id: '/_authenticated/app/$orgSlug/tables/$tableId/schema'
       path: '/app/$orgSlug/tables/$tableId/schema'
@@ -153,6 +173,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppOrgSlugIndexRoute: typeof AuthenticatedAppOrgSlugIndexRoute
   AuthenticatedAppOrgSlugTablesTableIdSchemaRoute: typeof AuthenticatedAppOrgSlugTablesTableIdSchemaRoute
+  AuthenticatedAppOrgSlugTablesTableIdIndexRoute: typeof AuthenticatedAppOrgSlugTablesTableIdIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -160,6 +181,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppOrgSlugIndexRoute: AuthenticatedAppOrgSlugIndexRoute,
   AuthenticatedAppOrgSlugTablesTableIdSchemaRoute:
     AuthenticatedAppOrgSlugTablesTableIdSchemaRoute,
+  AuthenticatedAppOrgSlugTablesTableIdIndexRoute:
+    AuthenticatedAppOrgSlugTablesTableIdIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
