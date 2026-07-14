@@ -11,6 +11,22 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 
 ---
 
+## 2026-07-14 22:30 — Edição/exclusão de organização e tabela + Explorar público
+
+- `src/lib/orgs.functions.ts`: `updateOrganization` (owner-only, patch de name/description/logo_url), `deleteOrganization` (owner-only, confirma slug), `deleteTable` (owner-only, confirma nome).
+- `src/components/venue/edit-org-dialog.tsx`: modal de edição da organização com AlertDialog de exclusão (digitar slug para confirmar); invalida `["org", slug]` e `["my-orgs"]`; ao excluir navega para `/app`.
+- `src/routes/_authenticated.app.$orgSlug.index.tsx`: botão "Editar organização" (visível para owner) que abre o modal; TableCard ganhou ícone de lixeira com AlertDialog exigindo digitar o nome; botão "Conversas" removido do header do painel (superfície única passa a ser o widget flutuante).
+- `src/lib/public.server.ts`: `listPublicTables({ limit, offset, q })` agregando tabelas com pelo menos um record `status='published'`, projetando apenas metadados seguros (sem PII e sem `data` de records).
+- `src/routes/api/public/tables.ts`: endpoint `GET /api/public/tables` com `Cache-Control: public, max-age=60, s-maxage=120, stale-while-revalidate=300`.
+- `src/components/venue/public-tables-carousel.tsx`: carrossel shadcn com as 12 publicações mais recentes; card leva a `/public/:slug/:tableId`; fail-soft se vazio.
+- `src/routes/index.tsx`: seção "Publicações recentes" com o carrossel + link "Ver todas" para `/explore`; novo botão "Explorar" no header público.
+- `src/routes/explore.tsx`: nova rota pública `/explore` com busca por nome de tabela/organização, paginação (24 por página), grid responsiva e `head()` próprio (title/description/og/twitter).
+- Nenhuma alteração de esquema: FKs de `organization_id` e `table_id` já estão com `ON DELETE CASCADE`.
+- Typecheck limpo.
+
+---
+
+
 ## 2026-07-14 21:00 — Fix: rota pública de detalhes e formulário não abriam
 
 - `src/routes/public.$slug.$tableId.tsx`: convertida em layout puro (`() => <Outlet />`); antes renderizava a listagem sem `<Outlet />`, o que impedia o render das rotas filhas (`$recordId`, `form`) apesar da URL casar.
