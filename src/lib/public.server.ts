@@ -1,23 +1,8 @@
 // Server-only helpers for public (anon) data access.
-// Publishable client + service-role admin client factories.
+// Uses the service-role admin client since anon RLS reads on org/tables/fields/views
+// were removed; scoping (published status, org/table match) is enforced in code here.
 
-import { createClient } from "@supabase/supabase-js";
-
-export function createPublicClient() {
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
-  const url = process.env.SUPABASE_URL!;
-  return createClient(url, key, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-    global: {
-      fetch: (input: any, init: any) => {
-        const h = new Headers(init?.headers);
-        if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization");
-        h.set("apikey", key);
-        return fetch(input, { ...init, headers: h });
-      },
-    },
-  });
-}
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type PublicTablePayload = {
   organization: { id: string; slug: string; name: string; description: string | null; logo_url: string | null };
@@ -33,7 +18,7 @@ export type PublicTablePayload = {
 };
 
 export async function loadPublicTable(slug: string, tableId: string): Promise<PublicTablePayload> {
-  const sb = createPublicClient();
+  const sb = supabaseAdmin;
 
   const { data: org, error: orgErr } = await sb
     .from("organizations")
