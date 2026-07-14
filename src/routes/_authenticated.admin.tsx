@@ -250,7 +250,7 @@ function LabelsSection() {
     <Card>
       <CardHeader>
         <CardTitle className="font-display">Termos-núcleo</CardTitle>
-        <p className="text-sm text-muted-foreground">Aplicados em toda a plataforma. Alterações refletem após atualização de cache (≤ 5 min).</p>
+        <p className="text-sm text-muted-foreground">Aplicados em toda a plataforma. Alterações salvas são revalidadas imediatamente nesta sessão; outras sessões atualizam ao abrir, focar ou reconectar.</p>
       </CardHeader>
       <CardContent>
         {labels.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : (

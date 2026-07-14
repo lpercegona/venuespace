@@ -1,3 +1,9 @@
+## 2026-07-14 19:54 (America/Sao_Paulo) — Cache previsível dos termos globais
+
+- `src/routes/api/public/platform-labels.ts`: troca o cache público do endpoint por `cache-control: no-store`, evitando respostas compartilhadas obsoletas enquanto termos-núcleo são administráveis em runtime.
+- `src/hooks/use-instance-context.ts`: consulta `/api/public/platform-labels` com `cache: "no-store"`, remove o `staleTime` de 5 min e revalida ao montar, focar a janela ou reconectar.
+- `src/routes/_authenticated.admin.tsx`: atualiza o texto da seção de termos-núcleo para refletir que a sessão atual é invalidada após salvar e outras sessões revalidam nos eventos configurados.
+
 ## 2026-07-14 19:42 (America/Sao_Paulo) — Restrição do atalho Administração no menu do perfil
 
 - `src/components/venue/app-shell.tsx`: corrige a condição do item "Administração" no dropdown do perfil para renderizar somente quando `amISuperAdmin()` retornar `is_super_admin: true`.
