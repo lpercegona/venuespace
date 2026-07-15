@@ -145,6 +145,15 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
           </div>
           <p className="text-xs text-muted-foreground">Deixe fuso e moeda em branco para herdar o padrão da instância.</p>
 
+          <CategoryFieldsForm
+            categoryId={categoryId === "__none__" ? null : categoryId}
+            scope="org"
+            value={catData}
+            onChange={setCatData}
+            title="Campos da categoria"
+          />
+
+
           {sysFields.length > 0 ? (
             <div className="space-y-3 rounded-lg border border-dashed border-border p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Campos de sistema</p>
