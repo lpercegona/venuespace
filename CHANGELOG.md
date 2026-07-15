@@ -20,7 +20,7 @@
 - UI no `/admin` para editar `category_org_fields`, `category_table_fields` e `base_field_config` por categoria.
 - Formulários dinâmicos usando `getCategorySchemaPublic` na criação/edição de organização e tabela.
 - Botão "Reconciliar retroativamente" na aba Categorias.
-
+## 2026-07-14 19:57 (America/Sao_Paulo) — Rótulos dinâmicos em telas de domínio
 
 
 - Rotas autenticadas de organizações, tabelas, registros, esquema, calendário e candidaturas passaram a resolver termos de domínio via `useLabels()` com fallback explícito.
