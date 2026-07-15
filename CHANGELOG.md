@@ -1,4 +1,27 @@
-## 2026-07-14 19:57 (America/Sao_Paulo) — Rótulos dinâmicos em telas de domínio
+## 2026-07-15 (America/Sao_Paulo) — Iteração 11 (parcial): Cascata de campos por categoria
+
+### Backend
+- Migration: `category_org_fields`, `category_table_fields`, `organizations.category_data`, `tables.category_data`, `organization_categories.base_field_config`, `fields.source` (`user | category | legacy`) e `fields.category_field_key`; RPC `reconcile_org_category_fields(_org_id uuid)` idempotente.
+- Nova `src/lib/category-cascade.functions.ts`: `listCategoryCascadeFields`, `upsertCategoryCascadeField`, `deleteCategoryCascadeField`, `updateCategoryBaseFieldConfig`, `getCategoryBaseFieldConfig`, `reconcileOrganizationCategoryFields`, `reconcileCategoryAllOrganizations`, `getCategorySchemaPublic`.
+- Nova rota `src/routes/api/public/category-schema.$categoryId.ts` (cache 30s).
+- `src/lib/orgs.functions.ts`:
+  - `createOrganization` passa a exigir `category_id`; aceita `category_data`.
+  - `updateOrganization` aceita `category_data` e dispara `reconcile_org_category_fields` quando a categoria muda.
+  - `createTable` / `updateTable` aceitam `category_data`; `getTable` retorna `category_data`.
+  - `createTable` marca fields semeados com `source='category'` e `category_field_key`.
+  - `listFields` retorna `source` e `category_field_key`.
+  - Novo guard `assertFieldMutable`: apenas super admin pode editar/remover fields com `source != 'user'`.
+
+### Frontend
+- `src/routes/_authenticated.app.$orgSlug.tables.$tableId.schema.tsx`: badge "categoria" e bloqueio de edição/remoção para fields de origem categoria a usuários não-super-admin.
+- `src/routes/_authenticated.app.index.tsx`: categoria obrigatória na criação de organização; removida a opção "Sem categoria".
+
+### Pendente da Iteração 11 (próximo passo)
+- UI no `/admin` para editar `category_org_fields`, `category_table_fields` e `base_field_config` por categoria.
+- Formulários dinâmicos usando `getCategorySchemaPublic` na criação/edição de organização e tabela.
+- Botão "Reconciliar retroativamente" na aba Categorias.
+
+
 
 - Rotas autenticadas de organizações, tabelas, registros, esquema, calendário e candidaturas passaram a resolver termos de domínio via `useLabels()` com fallback explícito.
 - A exploração pública e o formulário dinâmico substituem referências fixas a organização/tabela/registro por labels configuráveis quando há chave semântica correspondente.
