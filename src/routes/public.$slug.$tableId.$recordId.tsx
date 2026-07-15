@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
-import { PublicHeader } from "@/components/venue/public-header";
+import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
 type Payload = {
@@ -78,12 +78,11 @@ function PublicRecordDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PublicHeader
-        back={{ to: "/public/$slug/$tableId", params: { slug, tableId }, label: `Voltar para ${table.name}` }}
-      />
+      <PublicHeader />
       <header className="border-b border-border/60 bg-surface">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{organization.name}</p>
+          <BackLink to="/public/$slug/$tableId" params={{ slug, tableId }} label={`Voltar para ${table.name}`} />
+          <p className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{organization.name}</p>
           <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
             <h1 className="font-display text-3xl font-semibold text-foreground sm:text-4xl">{title}</h1>
             {record.deal_status && record.deal_status !== "negotiating" ? (

@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Search, Building2, FileText } from "lucide-react";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
-import { PublicHeader } from "@/components/venue/public-header";
+import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { PublicCardBody } from "@/components/venue/public-card-renderer";
 
 import { useLabels } from "@/hooks/use-instance-context";
@@ -83,10 +83,11 @@ function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PublicHeader back={{ to: "/", label: "Início" }} />
+      <PublicHeader />
 
       <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Explorar</h1>
+        <BackLink to="/" label="Início" />
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">Explorar</h1>
         <p className="mt-2 text-sm text-muted-foreground">Navegue por {orgLabel}s e {recordLabel}s publicados.</p>
 
         <Tabs

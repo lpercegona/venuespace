@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
-import { PublicHeader } from "@/components/venue/public-header";
+import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { useFormatContext } from "@/hooks/use-instance-context";
 import { formatCurrency } from "@/lib/formatting";
 
@@ -96,10 +96,11 @@ function CampaignPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PublicHeader back={{ to: "/explore", label: "Explorar" }} />
+      <PublicHeader />
       <header className="border-b border-border/60 bg-surface">
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{q.data.organization.name}</p>
+          <BackLink to="/explore" label="Explorar" />
+          <p className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{q.data.organization.name}</p>
           <h1 className="mt-2 font-display text-3xl font-semibold text-foreground sm:text-4xl">{title}</h1>
           {description ? <p className="mt-3 max-w-2xl text-sm text-muted-foreground">{description}</p> : null}
         </div>

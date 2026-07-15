@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
-import { PublicHeader } from "@/components/venue/public-header";
+import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
 const searchSchema = z.object({
@@ -23,10 +23,11 @@ function PublicFormPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PublicHeader
-        back={{ to: "/public/$slug/$tableId", params: { slug, tableId }, label: "Voltar" }}
-      />
+      <PublicHeader />
       <main className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
+        <div className="mb-3 flex justify-center">
+          <BackLink to="/public/$slug/$tableId" params={{ slug, tableId }} label="Voltar" />
+        </div>
         <h1 className="font-display text-2xl font-semibold text-foreground">Manifestar interesse</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           O formulário abre em uma janela sobre esta página.
