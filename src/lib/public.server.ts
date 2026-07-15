@@ -4,6 +4,14 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+export type PublicLayoutField = {
+  id: string;
+  field_key: string;
+  width_percent: 25 | 50 | 75 | 100;
+  order_index: number;
+  config: Record<string, any>;
+};
+
 export type PublicTablePayload = {
   organization: { id: string; slug: string; name: string; description: string | null; logo_url: string | null; category_id: string | null };
   table: { id: string; slug: string; name: string; description: string | null; icon: string | null; bookable: boolean };
@@ -15,7 +23,7 @@ export type PublicTablePayload = {
     auto_relation_field_id: string | null;
     form_field_ids: string[] | null;
   } | null;
-  category_layout: Array<{ id: string; field_source: string; field_ref: string; icon: string | null; label_override: string | null; order_index: number }>;
+  record_card_layout: PublicLayoutField[];
 };
 
 export type PublicTableSummary = {
@@ -128,15 +136,7 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
       }
     : null;
 
-  let category_layout: PublicTablePayload["category_layout"] = [];
-  if ((org as any).category_id) {
-    const { data: layout } = await sb
-      .from("organization_category_public_layouts")
-      .select("id, field_source, field_ref, icon, label_override, order_index")
-      .eq("category_id", (org as any).category_id)
-      .order("order_index", { ascending: true });
-    category_layout = (layout ?? []) as any;
-  }
+  const record_card_layout = await loadPublicLayout((org as any).category_id ?? null, "record_card");
 
   return {
     organization: {
@@ -151,8 +151,129 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
     fields: (fields ?? []) as any,
     records: (records ?? []) as any,
     public_form_view,
-    category_layout,
+    record_card_layout,
   };
+}
+
+export async function loadPublicLayout(categoryId: string | null, scope: "organization_card" | "record_card"): Promise<PublicLayoutField[]> {
+  if (!categoryId) return [];
+  const sb = supabaseAdmin;
+  const { data: parent } = await (sb as any)
+    .from("category_public_layouts")
+    .select("id")
+    .eq("category_id", categoryId)
+    .eq("scope", scope)
+    .maybeSingle();
+  if (!parent) return [];
+  const { data: rows } = await (sb as any)
+    .from("category_public_layout_fields")
+    .select("id, field_key, width_percent, order_index, config")
+    .eq("layout_id", (parent as any).id)
+    .order("order_index", { ascending: true });
+  return ((rows ?? []) as any[]).map((r) => ({
+    id: r.id,
+    field_key: r.field_key,
+    width_percent: r.width_percent,
+    order_index: r.order_index,
+    config: r.config ?? {},
+  }));
+}
+
+export type PublicOrganizationSummary = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  category_id: string | null;
+  category_data: Record<string, any>;
+  updated_at: string;
+};
+
+export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
+  const sb = supabaseAdmin;
+  const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
+  const offset = Math.max(opts.offset ?? 0, 0);
+  const q = (opts.q ?? "").trim().toLowerCase();
+  const categoryId = opts.category_id?.trim() || undefined;
+
+  // Only organizations with ≥1 published record.
+  const { data: pubRecs } = await sb.from("records").select("table:tables!inner(organization_id)").eq("status", "published").limit(5000);
+  const orgIds = new Set<string>();
+  for (const r of (pubRecs ?? []) as any[]) if (r.table?.organization_id) orgIds.add(r.table.organization_id);
+  if (orgIds.size === 0) return { items: [], total: 0 };
+
+  let query = sb.from("organizations")
+    .select("id, slug, name, description, logo_url, category_id, category_data, updated_at")
+    .in("id", Array.from(orgIds))
+    .order("updated_at", { ascending: false });
+  if (categoryId) query = query.eq("category_id", categoryId);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  let items = ((data ?? []) as any[]).map((o) => ({
+    id: o.id, slug: o.slug, name: o.name,
+    description: o.description ?? null, logo_url: o.logo_url ?? null,
+    category_id: o.category_id ?? null, category_data: o.category_data ?? {},
+    updated_at: o.updated_at,
+  }));
+  if (q) items = items.filter((i) =>
+    i.name.toLowerCase().includes(q) ||
+    (i.description ?? "").toLowerCase().includes(q),
+  );
+  const total = items.length;
+  return { items: items.slice(offset, offset + limit), total };
+}
+
+export type PublicRecordSummary = {
+  record_id: string;
+  data: Record<string, any>;
+  created_at: string;
+  org_slug: string;
+  org_name: string;
+  org_category_id: string | null;
+  table_id: string;
+  table_slug: string;
+  table_name: string;
+  table_icon: string | null;
+};
+
+export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
+  const sb = supabaseAdmin;
+  const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
+  const offset = Math.max(opts.offset ?? 0, 0);
+  const q = (opts.q ?? "").trim().toLowerCase();
+  const categoryId = opts.category_id?.trim() || undefined;
+
+  const { data, error } = await sb.from("records")
+    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(slug, name, category_id))")
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(2000);
+  if (error) throw new Error(error.message);
+  let items = ((data ?? []) as any[]).map((r) => ({
+    record_id: r.id,
+    data: r.data ?? {},
+    created_at: r.created_at,
+    org_slug: r.table.organization.slug,
+    org_name: r.table.organization.name,
+    org_category_id: r.table.organization.category_id ?? null,
+    table_id: r.table.id,
+    table_slug: r.table.slug,
+    table_name: r.table.name,
+    table_icon: r.table.icon ?? null,
+  }));
+  if (categoryId) items = items.filter((i) => i.org_category_id === categoryId);
+  if (q) {
+    items = items.filter((i) => {
+      if (i.table_name.toLowerCase().includes(q) || i.org_name.toLowerCase().includes(q)) return true;
+      for (const v of Object.values(i.data)) {
+        if (typeof v === "string" && v.toLowerCase().includes(q)) return true;
+      }
+      return false;
+    });
+  }
+  const total = items.length;
+  return { items: items.slice(offset, offset + limit), total };
 }
 
 export async function loadPublicFormSchema(viewId: string) {
