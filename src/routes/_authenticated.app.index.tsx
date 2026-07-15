@@ -46,7 +46,7 @@ function OrgsPage() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [categoryId, setCategoryId] = useState<string>("__none__");
+  const [categoryId, setCategoryId] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   const cats = useQuery({
@@ -57,18 +57,22 @@ function OrgsPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    if (!categoryId) {
+      toast.error("Selecione uma categoria.");
+      return;
+    }
     setSaving(true);
     try {
       const org = await createOrg({ data: {
         name,
         description: description || undefined,
-        category_id: categoryId === "__none__" ? null : categoryId,
+        category_id: categoryId,
       } });
       toast.success("Organização criada");
       setOpen(false);
       setName("");
       setDescription("");
-      setCategoryId("__none__");
+      setCategoryId("");
       await refetch();
       router.invalidate();
       navigate({ to: "/app/$orgSlug", params: { orgSlug: org.slug } });
@@ -78,6 +82,7 @@ function OrgsPage() {
       setSaving(false);
     }
   }
+
 
   return (
     <AppShell
