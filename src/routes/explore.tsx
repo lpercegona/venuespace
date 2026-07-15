@@ -133,10 +133,13 @@ function ExplorePage() {
                         <CardTitle className="font-display text-lg">{o.name}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {o.description ? (
+                        {o.layout && o.layout.length > 0 ? (
+                          <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} />
+                        ) : o.description ? (
                           <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
                         ) : null}
                       </CardContent>
+
                     </Card>
                   </Link>
                 ))}
