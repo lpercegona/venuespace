@@ -13,6 +13,16 @@ const currencyDisplaySchema = z
   .nullable()
   .optional();
 
+const addressSchema = z.object({
+  cep: z.string().max(12).optional().nullable(),
+  street: z.string().max(200).optional().nullable(),
+  number: z.string().max(20).optional().nullable(),
+  complement: z.string().max(120).optional().nullable(),
+  neighborhood: z.string().max(120).optional().nullable(),
+  city: z.string().max(120).optional().nullable(),
+  state: z.string().max(60).optional().nullable(),
+}).partial();
+
 const orgCreate = z.object({
   name: z.string().min(2).max(80),
   slug: z.string().min(2).max(60).regex(/^[a-z0-9-]+$/).optional(),
@@ -23,6 +33,7 @@ const orgCreate = z.object({
   currency_display: currencyDisplaySchema,
   system_data: z.record(z.string(), z.any()).optional(),
   category_data: z.record(z.string(), z.any()).optional(),
+  address: addressSchema.optional(),
 });
 
 
