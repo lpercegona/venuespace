@@ -1,3 +1,11 @@
+## 2026-07-15 06:57 (America/Sao_Paulo) — Correção de imagens em cards públicos + landing de espaços
+
+- `src/components/venue/public-card-renderer.tsx`: renderer público agora identifica mídia por tipo (`image`/`gallery`), nome de campo/rótulo (`foto`, `imagem`, `galeria`, `logo`, `capa`) e extensão de imagem em URL; URLs assinadas deixam de cair no fallback textual e passam a renderizar `<img>`/galeria.
+- `src/lib/public.server.ts`: assinatura server-side ampliada para campos de mídia detectados por tipo, nome/rótulo e paths com extensão de imagem, cobrindo layouts configurados com chaves como `foto_capa`/`galeria` mesmo quando o metadado chega inconsistente.
+- `src/routes/index.tsx`, `src/routes/explore.tsx` e `src/routes/public.$slug.index.tsx`: cards de registros/ambientes deixam de remover o primeiro item do layout para título; o layout público completo definido pelo super admin é renderizado no card.
+- `src/routes/index.tsx`: textos, meta description e CTAs da landing ajustados para a proposta atual de listagem e negociação de espaços de eventos.
+- Auditoria de propagação: superfícies afetadas atualizadas — landing `/`, explorar `/explore` e perfil público `/public/$slug`; endpoints `/api/public/organizations` e `/api/public/records` mantidos sem PII e com URLs assinadas; roles internas não alteradas.
+
 ## 2026-07-15 (America/Sao_Paulo) — Endereço padrão em organizações + correção da criação
 
 - DB: adicionada coluna `organizations.address jsonb NOT NULL DEFAULT '{}'`.
