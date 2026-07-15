@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Database, MessageSquare, Sparkles, Loader2, Building2, FileText } from "lucide-react";
 import { PublicHeader } from "@/components/venue/public-header";
+import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
