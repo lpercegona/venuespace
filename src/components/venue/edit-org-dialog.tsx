@@ -73,6 +73,7 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
         timezone: timezone.trim() ? timezone.trim() : null,
         currency: currency.trim() ? currency.trim().toUpperCase() : null,
         system_data: sysData,
+        category_data: catData,
       } });
       toast.success("Organização atualizada");
       await Promise.all([
