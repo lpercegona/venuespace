@@ -85,6 +85,57 @@ function UploadField({
   );
 }
 
+function GalleryField({
+  paths, disabled, onChange,
+}: { paths: string[]; disabled?: boolean; onChange: (next: string[]) => void }) {
+  const [busy, setBusy] = useState(false);
+  async function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setBusy(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u.user?.id ?? "anon";
+      const uploaded: string[] = [];
+      for (const file of files) {
+        const safe = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+        const path = `${uid}/gallery/${Date.now()}-${Math.random().toString(36).slice(2,7)}-${safe}`;
+        const { error } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: false });
+        if (error) throw error;
+        uploaded.push(path);
+      }
+      onChange([...paths, ...uploaded]);
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setBusy(false); e.target.value = ""; }
+  }
+  if (disabled) {
+    return <p className="text-xs text-muted-foreground">Upload desabilitado.</p>;
+  }
+  return (
+    <div className="space-y-2">
+      {paths.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {paths.map((p, i) => (
+            <div key={p + i} className="relative">
+              <FilePreview path={p} kind="image" />
+              <Button type="button" variant="secondary" size="icon" className="absolute -right-1 -top-1 h-6 w-6"
+                onClick={() => onChange(paths.filter((_, idx) => idx !== i))}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <label className="inline-flex">
+        <input type="file" accept="image/*" multiple className="hidden" onChange={onFiles} />
+        <Button type="button" variant="outline" size="sm" disabled={busy} asChild>
+          <span><Upload className="h-4 w-4" />{busy ? "Enviando..." : "Adicionar imagens"}</span>
+        </Button>
+      </label>
+    </div>
+  );
+}
+
 function OptionInliner({
   fieldId, current, disabled, onAdded,
 }: { fieldId: string; current: string[]; disabled?: boolean; onAdded: (opts: string[]) => void }) {
