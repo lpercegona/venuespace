@@ -48,6 +48,8 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
   const [sysData, setSysData] = useState<Record<string, any>>(initialSys);
   const initialCat = useMemo(() => (org.category_data ?? {}) as Record<string, any>, [org.category_data]);
   const [catData, setCatData] = useState<Record<string, any>>(initialCat);
+  const initialAddr = useMemo(() => (org.address ?? {}) as AddressValue, [org.address]);
+  const [address, setAddress] = useState<AddressValue>(initialAddr);
   const [saving, setSaving] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
