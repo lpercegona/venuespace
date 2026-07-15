@@ -90,11 +90,12 @@ const orgUpdate = z.object({
   name: z.string().min(2).max(80).optional(),
   description: z.string().max(500).nullable().optional(),
   logo_url: z.string().url().max(2000).nullable().optional(),
-  category_id: z.string().uuid().nullable().optional(),
+  category_id: z.string().uuid().optional(),
   timezone: z.string().max(64).nullable().optional(),
   currency: z.string().max(8).nullable().optional(),
   currency_display: currencyDisplaySchema,
   system_data: z.record(z.string(), z.any()).optional(),
+  category_data: z.record(z.string(), z.any()).optional(),
 });
 
 export const updateOrganization = createServerFn({ method: "POST" })
@@ -105,6 +106,15 @@ export const updateOrganization = createServerFn({ method: "POST" })
       .rpc("has_role", { _user_id: context.userId, _org_id: data.id, _role: "owner" });
     if (rErr) throw new Error(rErr.message);
     if (!isOwner) throw new Error("Sem permissão para editar esta organização.");
+
+    // Track category change to reconcile fields retroactively.
+    let categoryChanged = false;
+    if (data.category_id !== undefined) {
+      const { data: cur } = await context.supabase
+        .from("organizations").select("category_id").eq("id", data.id).maybeSingle();
+      categoryChanged = (cur as any)?.category_id !== data.category_id;
+    }
+
     const patch: Record<string, any> = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.description !== undefined) patch.description = data.description;
@@ -114,10 +124,16 @@ export const updateOrganization = createServerFn({ method: "POST" })
     if (data.currency !== undefined) patch.currency = data.currency;
     if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
     if (data.system_data !== undefined) patch.system_data = data.system_data;
+    if (data.category_data !== undefined) patch.category_data = data.category_data;
     const { error } = await context.supabase.from("organizations").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
-    return { ok: true };
+
+    if (categoryChanged) {
+      await context.supabase.rpc("reconcile_org_category_fields", { _org_id: data.id });
+    }
+    return { ok: true, category_reconciled: categoryChanged };
   });
+
 
 export const deleteOrganization = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
