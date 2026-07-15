@@ -212,10 +212,12 @@ export const createTable = createServerFn({ method: "POST" })
         description: data.description ?? null,
         icon: data.icon ?? null,
         bookable: data.bookable ?? false,
-      })
+        category_data: (data.category_data ?? {}) as any,
+      } as any)
       .select("id, slug, name")
       .single();
     if (error) throw new Error(error.message);
+
 
     // Seed default fields from org's category, if any.
     try {
