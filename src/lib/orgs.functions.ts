@@ -51,18 +51,17 @@ export const createOrganization = createServerFn({ method: "POST" })
     const org = Array.isArray(rows) ? rows[0] : rows;
     if (!org) throw new Error("Falha ao criar organização");
     // Apply category + overrides via update (owner policy, caller is owner).
-    const patch: Record<string, any> = {};
-    if (data.category_id !== undefined) patch.category_id = data.category_id;
+    const patch: Record<string, any> = { category_id: data.category_id };
     if (data.timezone !== undefined) patch.timezone = data.timezone;
     if (data.currency !== undefined) patch.currency = data.currency;
     if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
     if (data.system_data !== undefined) patch.system_data = data.system_data;
-    if (Object.keys(patch).length > 0) {
-      const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
-      if (uErr) throw new Error(uErr.message);
-    }
+    if (data.category_data !== undefined) patch.category_data = data.category_data;
+    const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
+    if (uErr) throw new Error(uErr.message);
     return org as { id: string; slug: string; name: string };
   });
+
 
 export const getOrganizationBySlug = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
