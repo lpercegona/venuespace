@@ -287,8 +287,8 @@ function OrgDashboard() {
 }
 
 function TableCard({
-  t, orgSlug, canEdit, isOwner, onSaved,
-}: { t: any; orgSlug: string; canEdit: boolean; isOwner: boolean; onSaved: () => void }) {
+  t, orgSlug, orgCategoryId, canEdit, isOwner, onSaved,
+}: { t: any; orgSlug: string; orgCategoryId: string | null; canEdit: boolean; isOwner: boolean; onSaved: () => void }) {
   const { t: label } = useLabels();
   const tableLabel = label("table", "tabela").toLowerCase();
   const recordsLabel = label("records", "registros").toLowerCase();
@@ -299,13 +299,14 @@ function TableCard({
   const [name, setName] = useState(t.name);
   const [desc, setDesc] = useState(t.description ?? "");
   const [bookable, setBookable] = useState(!!t.bookable);
+  const [catData, setCatData] = useState<Record<string, any>>((t.category_data ?? {}) as Record<string, any>);
   const [saving, setSaving] = useState(false);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await updateTable({ data: { id: t.id, name, description: desc || null, bookable } });
+      await updateTable({ data: { id: t.id, name, description: desc || null, bookable, category_data: catData } });
       toast.success(`${label("table", "Tabela")} atualizada`);
       setEditing(false);
       onSaved();
