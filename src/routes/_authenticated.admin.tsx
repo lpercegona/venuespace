@@ -56,6 +56,8 @@ import {
   type SystemFieldRow,
   type SystemFieldScope,
 } from "@/lib/system-fields.functions";
+import { CategoryCascadeSection } from "@/components/venue/category-cascade-section";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Venuespace" }, { name: "robots", content: "noindex" }] }),
@@ -101,6 +103,7 @@ function AdminPage() {
           <TabsTrigger value="labels">Rótulos</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
+          <TabsTrigger value="cascade">Cascata</TabsTrigger>
           <TabsTrigger value="layout">Layout público</TabsTrigger>
           <TabsTrigger value="system">Campos de sistema</TabsTrigger>
         </TabsList>
@@ -108,9 +111,11 @@ function AdminPage() {
         <TabsContent value="labels"><LabelsSection /></TabsContent>
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
+        <TabsContent value="cascade"><CategoryCascadeSection /></TabsContent>
         <TabsContent value="layout"><PublicLayoutSection /></TabsContent>
         <TabsContent value="system"><SystemFieldsSection /></TabsContent>
       </Tabs>
+
     </AppShell>
   );
 }
