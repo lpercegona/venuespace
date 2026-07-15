@@ -4,6 +4,14 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+export type PublicLayoutField = {
+  id: string;
+  field_key: string;
+  width_percent: 25 | 50 | 75 | 100;
+  order_index: number;
+  config: Record<string, any>;
+};
+
 export type PublicTablePayload = {
   organization: { id: string; slug: string; name: string; description: string | null; logo_url: string | null; category_id: string | null };
   table: { id: string; slug: string; name: string; description: string | null; icon: string | null; bookable: boolean };
@@ -15,7 +23,7 @@ export type PublicTablePayload = {
     auto_relation_field_id: string | null;
     form_field_ids: string[] | null;
   } | null;
-  category_layout: Array<{ id: string; field_source: string; field_ref: string; icon: string | null; label_override: string | null; order_index: number }>;
+  record_card_layout: PublicLayoutField[];
 };
 
 export type PublicTableSummary = {
