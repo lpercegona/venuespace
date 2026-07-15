@@ -16,6 +16,7 @@ import { listOrganizationCategoriesPublic } from "@/lib/organization-categories.
 import { useSystemFields } from "@/hooks/use-system-fields";
 import { useLabels } from "@/hooks/use-instance-context";
 import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
+import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
 
 type Props = {
   open: boolean;
