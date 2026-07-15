@@ -419,7 +419,7 @@ const BASE_FIELDS: Record<DefaultsScope, Array<{ key: string; label: string; typ
     { key: "address.complement", label: "Complemento", type: "text", required: false },
     { key: "address.neighborhood", label: "Bairro", type: "text", required: false },
     { key: "address.city", label: "Cidade", type: "text", required: false },
-    { key: "state", label: "UF", type: "text", required: false },
+    { key: "address.state", label: "UF", type: "text", required: false },
   ],
   table: [
     { key: "name", label: "Nome", type: "text", required: true },
