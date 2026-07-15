@@ -413,6 +413,13 @@ const BASE_FIELDS: Record<DefaultsScope, Array<{ key: string; label: string; typ
     { key: "name", label: "Nome", type: "text", required: true },
     { key: "slug", label: "Slug", type: "text", required: true },
     { key: "category_id", label: "Categoria", type: "relation", required: true },
+    { key: "address.cep", label: "CEP", type: "text", required: false },
+    { key: "address.street", label: "Logradouro", type: "text", required: false },
+    { key: "address.number", label: "Número", type: "text", required: false },
+    { key: "address.complement", label: "Complemento", type: "text", required: false },
+    { key: "address.neighborhood", label: "Bairro", type: "text", required: false },
+    { key: "address.city", label: "Cidade", type: "text", required: false },
+    { key: "state", label: "UF", type: "text", required: false },
   ],
   table: [
     { key: "name", label: "Nome", type: "text", required: true },
