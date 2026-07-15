@@ -267,6 +267,8 @@ function OrgDashboard() {
           category_id: (org.data as any).category_id ?? null,
           timezone: (org.data as any).timezone ?? null,
           currency: (org.data as any).currency ?? null,
+          system_data: (org.data as any).system_data ?? null,
+          category_data: (org.data as any).category_data ?? null,
         }} />
       ) : null}
     </AppShell>
