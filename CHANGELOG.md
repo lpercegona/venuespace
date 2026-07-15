@@ -1,3 +1,17 @@
+## 2026-07-15 (America/Sao_Paulo) — Iteração 12: Consolidação da administração de campos
+
+### Frontend
+- `/admin`: removidas as abas **Layout público**, **Campos de sistema** e **Cascata**.
+- Nova aba unificada **Campos padrão** com sub-tabs `Organização` / `Tabela` / `Registro`, mesmo modelo de edição (rótulo → chave snake_case com sufixo `_2`, chave travada em edição, tipo, obrigatório, ordem) e painel único de reconciliação retroativa via `reconcileCategoryAllOrganizations`.
+- Listagem de cada escopo exibe no topo os campos-base fixos (org: `name`, `slug`, `category_id`; tabela: `name`, `icon`, `description`; registro: nenhum) marcados com badge `base` e sem ações de edição/remoção.
+- Escopo **Registro** grava em `organization_category_default_fields` via `listCategoryDefaultFields` / `upsertCategoryDefaultField` / `deleteCategoryDefaultField`; escopos **Organização** e **Tabela** continuam gravando em `category_org_fields` / `category_table_fields` via cascade functions.
+
+### Limpeza
+- Removidos `src/components/venue/category-cascade-section.tsx` e `src/lib/category-layouts.functions.ts` (não referenciados).
+- Sem migrations, sem alterações em RLS, GRANTs ou endpoints públicos.
+
+---
+
 ## 2026-07-15 (America/Sao_Paulo) — Iteração 11 (parcial): Cascata de campos por categoria
 
 ### Backend
