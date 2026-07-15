@@ -50,6 +50,7 @@ function OrgsPage() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [categoryData, setCategoryData] = useState<Record<string, any>>({});
+  const [address, setAddress] = useState<AddressValue>({});
   const [saving, setSaving] = useState(false);
 
   const cats = useQuery({
