@@ -48,6 +48,7 @@ import {
   reconcileCategoryAllOrganizations,
   type CategoryCascadeField,
 } from "@/lib/category-cascade.functions";
+import { listCategoryLayout, saveCategoryLayout, type LayoutField } from "@/lib/category-layouts.functions";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -94,6 +95,7 @@ function AdminPage() {
           <TabsTrigger value="labels">Rótulos</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
+          <TabsTrigger value="layouts">Layout público</TabsTrigger>
         </TabsList>
         <TabsContent value="general"><GeneralSection /></TabsContent>
         <TabsContent value="labels"><LabelsSection /></TabsContent>
