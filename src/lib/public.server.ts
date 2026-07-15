@@ -302,6 +302,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     };
     return { ...o, data, fields, layout };
   });
+  await signImagePathsInItems(items);
   return { items, total };
 }
 
@@ -320,12 +321,13 @@ export type PublicRecordSummary = {
   layout: PublicLayoutField[];
 };
 
-export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
+export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string; slug?: string } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
   const sb = supabaseAdmin;
   const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
   const offset = Math.max(opts.offset ?? 0, 0);
   const q = (opts.q ?? "").trim().toLowerCase();
   const categoryId = opts.category_id?.trim() || undefined;
+  const slug = opts.slug?.trim() || undefined;
 
   const { data, error } = await sb.from("records")
     .select("id, data, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(slug, name, category_id))")
@@ -346,6 +348,7 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     table_icon: r.table.icon ?? null,
   }));
   if (categoryId) base = base.filter((i) => i.org_category_id === categoryId);
+  if (slug) base = base.filter((i) => i.org_slug === slug);
   if (q) {
     base = base.filter((i) => {
       if (i.table_name.toLowerCase().includes(q) || i.org_name.toLowerCase().includes(q)) return true;
@@ -378,7 +381,49 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     fields: fieldsByTable.get(r.table_id) ?? [],
     layout: (r.org_category_id && layouts.get(r.org_category_id)) || [],
   }));
+  await signImagePathsInItems(items);
   return { items, total };
+}
+
+// Batch-sign image/gallery paths across items so listing cards can render <img>.
+async function signImagePathsInItems(items: Array<{ data: Record<string, any>; fields: PublicRendererField[] }>) {
+  type Ref =
+    | { kind: "single"; data: Record<string, any>; key: string }
+    | { kind: "gallery"; data: Record<string, any>; key: string; index: number };
+  const refs: Ref[] = [];
+  const paths: string[] = [];
+  for (const it of items) {
+    for (const f of it.fields) {
+      if (f.type === "image") {
+        const v = it.data?.[f.key];
+        if (typeof v !== "string" || !v) continue;
+        if (/^https?:\/\//i.test(v)) continue;
+        refs.push({ kind: "single", data: it.data, key: f.key });
+        paths.push(v);
+      } else if (f.type === "gallery") {
+        const arr = it.data?.[f.key];
+        if (!Array.isArray(arr)) continue;
+        arr.forEach((p, i) => {
+          if (typeof p !== "string" || !p) return;
+          if (/^https?:\/\//i.test(p)) return;
+          refs.push({ kind: "gallery", data: it.data, key: f.key, index: i });
+          paths.push(p);
+        });
+      }
+    }
+  }
+  if (paths.length === 0) return;
+  const { data: signed } = await supabaseAdmin.storage.from("venue-uploads").createSignedUrls(paths, 60 * 60);
+  (signed ?? []).forEach((s, i) => {
+    const ref = refs[i];
+    if (!s?.signedUrl || !ref) return;
+    if (ref.kind === "single") {
+      ref.data[ref.key] = s.signedUrl;
+    } else {
+      const arr = ref.data[ref.key];
+      if (Array.isArray(arr)) arr[ref.index] = s.signedUrl;
+    }
+  });
 }
 
 

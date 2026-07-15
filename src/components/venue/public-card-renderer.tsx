@@ -36,6 +36,22 @@ function formatValue(field: RendererField | undefined, raw: any): string {
   return String(raw);
 }
 
+function isUrl(v: unknown): v is string {
+  return typeof v === "string" && /^https?:\/\//i.test(v);
+}
+
+function ImageCell({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      className={className ?? "aspect-video w-full rounded-md object-cover"}
+    />
+  );
+}
+
 export function PublicCardBody({
   layout,
   fields,
@@ -70,14 +86,39 @@ export function PublicCardBody({
           {row.map((it) => {
             const f = byKey.get(it.field_key);
             const raw = data?.[it.field_key];
-            const text = formatValue(f, raw);
-            if (!text) return null;
             const basis =
               it.width_percent === 25 ? "basis-1/4" :
               it.width_percent === 50 ? "basis-1/2" :
               it.width_percent === 75 ? "basis-3/4" : "basis-full";
             const label = (it.config?.label_override as string) ?? f?.label ?? it.field_key;
             const iconName = (it.config?.icon as string) ?? null;
+
+            // Image field
+            if (f?.type === "image") {
+              if (!isUrl(raw)) return null;
+              return (
+                <div key={it.id} className={`${basis} min-w-0 grow-0`}>
+                  <ImageCell src={raw} alt={label} />
+                </div>
+              );
+            }
+            // Gallery field
+            if (f?.type === "gallery") {
+              const arr = Array.isArray(raw) ? raw.filter(isUrl) : [];
+              if (arr.length === 0) return null;
+              return (
+                <div key={it.id} className={`${basis} min-w-0 grow-0`}>
+                  <div className="grid grid-cols-3 gap-1">
+                    {arr.slice(0, 3).map((u, idx) => (
+                      <img key={idx} src={u} alt={`${label} ${idx + 1}`} loading="lazy" decoding="async" className="aspect-square w-full rounded-sm object-cover" />
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
+            const text = formatValue(f, raw);
+            if (!text) return null;
             return (
               <div key={it.id} className={`${basis} min-w-0 grow-0`}>
                 <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
