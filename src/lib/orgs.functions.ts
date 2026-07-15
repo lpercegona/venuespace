@@ -337,18 +337,30 @@ export const listFields = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("fields")
-      .select("id, key, label, type, required, position, config")
+      .select("id, key, label, type, required, position, config, source, category_field_key")
       .eq("table_id", data.table_id)
       .order("position", { ascending: true });
     if (error) throw new Error(error.message);
     return rows ?? [];
   });
 
+async function assertFieldMutable(supabase: any, userId: string, fieldId: string) {
+  const { data: isSA } = await supabase.rpc("is_super_admin", { _user_id: userId });
+  if (isSA) return;
+  const { data: f, error } = await supabase.from("fields").select("source").eq("id", fieldId).maybeSingle();
+  if (error) throw new Error(error.message);
+  const source = (f as any)?.source ?? "user";
+  if (source !== "user") {
+    throw new Error("Este campo é definido pela categoria da organização e só pode ser alterado pelo super admin.");
+  }
+}
+
 export const createField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => fieldCreate.parse(d))
   .handler(async ({ data, context }) => {
     await checkFieldManagementAllowed(context.supabase, context.userId);
+    const { data: isSA } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
     const { data: row, error } = await context.supabase
       .from("fields")
       .insert({
@@ -359,7 +371,8 @@ export const createField = createServerFn({ method: "POST" })
         required: data.required ?? false,
         position: data.position ?? 0,
         config: (data.config ?? {}) as any,
-      })
+        source: isSA ? "user" : "user",
+      } as any)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -371,6 +384,7 @@ export const updateField = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => fieldUpdate.parse(d))
   .handler(async ({ data, context }) => {
     await checkFieldManagementAllowed(context.supabase, context.userId);
+    await assertFieldMutable(context.supabase, context.userId, data.id);
     const { id, ...rest } = data;
     const { error } = await context.supabase.from("fields").update(rest as any).eq("id", id);
     if (error) throw new Error(error.message);
@@ -382,10 +396,12 @@ export const deleteField = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await checkFieldManagementAllowed(context.supabase, context.userId);
+    await assertFieldMutable(context.supabase, context.userId, data.id);
     const { error } = await context.supabase.from("fields").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 // Memberships (basic)
 
