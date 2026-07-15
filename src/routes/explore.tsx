@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Search, Building2, FileText } from "lucide-react";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import { PublicHeader } from "@/components/venue/public-header";
+import { PublicCardBody } from "@/components/venue/public-card-renderer";
+
 import { useLabels } from "@/hooks/use-instance-context";
 
 const searchSchema = z.object({
