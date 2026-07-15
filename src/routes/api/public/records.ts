@@ -9,6 +9,7 @@ export const Route = createFileRoute("/api/public/records")({
         const offset = Number(url.searchParams.get("offset") ?? "0");
         const q = url.searchParams.get("q") ?? undefined;
         const category_id = url.searchParams.get("category") ?? undefined;
+        const slug = url.searchParams.get("slug") ?? undefined;
         const { listPublicRecords } = await import("@/lib/public.server");
         try {
           const payload = await listPublicRecords({
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/api/public/records")({
             offset: Number.isFinite(offset) ? offset : 0,
             q,
             category_id,
+            slug,
           });
           return new Response(JSON.stringify(payload), {
             headers: {
