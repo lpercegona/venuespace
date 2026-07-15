@@ -129,14 +129,15 @@ export const getCategoryBaseFieldConfig = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ category_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row, error } = await supabaseAdmin
-      .from("organization_categories" as any)
+    const { data: row, error } = await (supabaseAdmin as any)
+      .from("organization_categories")
       .select("base_field_config")
       .eq("id", data.category_id)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return ((row as any)?.base_field_config ?? null) as BaseFieldConfig | null;
   });
+
 
 // -------- Reconcile --------
 
