@@ -420,6 +420,7 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
     fields: (fields ?? []) as any[],
     record: record as { id: string; data: Record<string, any>; deal_status: string; created_at: string },
     signed_urls: signed,
+    galleries,
     relations,
     public_form_view,
   };
