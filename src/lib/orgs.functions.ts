@@ -57,19 +57,27 @@ export const createOrganization = createServerFn({ method: "POST" })
     if (!slug) throw new Error("Slug inválido");
     // Create via SECURITY DEFINER RPC (bypasses org SELECT during insert-and-return).
     const { data: rows, error } = await context.supabase
-      .rpc("create_organization", { _name: data.name, _slug: slug, _description: data.description ?? undefined });
+      .rpc("create_organization", {
+        _name: data.name,
+        _slug: slug,
+        _category_id: data.category_id,
+        _description: data.description ?? undefined,
+        _address: (data.address ?? {}) as any,
+      });
     if (error) throw new Error(error.message);
     const org = Array.isArray(rows) ? rows[0] : rows;
     if (!org) throw new Error("Falha ao criar organização");
-    // Apply category + overrides via update (owner policy, caller is owner).
-    const patch: Record<string, any> = { category_id: data.category_id };
+    // Apply optional overrides via update (owner policy, caller is owner).
+    const patch: Record<string, any> = {};
     if (data.timezone !== undefined) patch.timezone = data.timezone;
     if (data.currency !== undefined) patch.currency = data.currency;
     if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
     if (data.system_data !== undefined) patch.system_data = data.system_data;
     if (data.category_data !== undefined) patch.category_data = data.category_data;
-    const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
-    if (uErr) throw new Error(uErr.message);
+    if (Object.keys(patch).length > 0) {
+      const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
+      if (uErr) throw new Error(uErr.message);
+    }
     return org as { id: string; slug: string; name: string };
   });
 
