@@ -1,3 +1,13 @@
+## 2026-07-15 (America/Sao_Paulo) — Endereço padrão em organizações + correção da criação
+
+- DB: adicionada coluna `organizations.address jsonb NOT NULL DEFAULT '{}'`.
+- DB: `create_organization` agora exige `_category_id` (era ignorado — causava violação NOT NULL) e aceita `_address jsonb`. Antigas assinaturas removidas.
+- `src/lib/orgs.functions.ts`: `orgCreate`/`orgUpdate` incluem `address` (CEP, logradouro, número, complemento, bairro, cidade, UF). `createOrganization` passa `category_id` e `address` diretamente para a RPC, evitando `UPDATE` pós-insert quando não há overrides.
+- `src/components/venue/address-fields.tsx`: novo componente compartilhado com autocomplete via `/api/public/viacep/{cep}` (blur do CEP).
+- `src/routes/_authenticated.app.index.tsx`: novo formulário de criação inclui `AddressFields`.
+- `src/components/venue/edit-org-dialog.tsx` + `src/routes/_authenticated.app.$orgSlug.index.tsx`: edição da organização inclui e carrega `address`.
+- `src/routes/_authenticated.admin.tsx`: `BASE_FIELDS.org` (aba Campos padrão) exibe CEP, logradouro, número, complemento, bairro, cidade e UF como campos padrão read-only.
+
 ## 2026-07-15 (America/Sao_Paulo) — Cards públicos de landing/explore usam layout do super admin
 
 - `src/lib/public.server.ts`: `listPublicOrganizations` e `listPublicRecords` agora anexam por item `layout` (do `category_public_layouts` do escopo `organization_card`/`record_card`) e `fields` (built-ins + `category_org_fields` para orgs; `fields` da tabela para records). Batch: uma única consulta de layouts/campos por página de resultados.

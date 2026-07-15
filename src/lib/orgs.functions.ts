@@ -13,6 +13,16 @@ const currencyDisplaySchema = z
   .nullable()
   .optional();
 
+const addressSchema = z.object({
+  cep: z.string().max(12).optional().nullable(),
+  street: z.string().max(200).optional().nullable(),
+  number: z.string().max(20).optional().nullable(),
+  complement: z.string().max(120).optional().nullable(),
+  neighborhood: z.string().max(120).optional().nullable(),
+  city: z.string().max(120).optional().nullable(),
+  state: z.string().max(60).optional().nullable(),
+}).partial();
+
 const orgCreate = z.object({
   name: z.string().min(2).max(80),
   slug: z.string().min(2).max(60).regex(/^[a-z0-9-]+$/).optional(),
@@ -23,6 +33,7 @@ const orgCreate = z.object({
   currency_display: currencyDisplaySchema,
   system_data: z.record(z.string(), z.any()).optional(),
   category_data: z.record(z.string(), z.any()).optional(),
+  address: addressSchema.optional(),
 });
 
 
@@ -46,19 +57,27 @@ export const createOrganization = createServerFn({ method: "POST" })
     if (!slug) throw new Error("Slug inválido");
     // Create via SECURITY DEFINER RPC (bypasses org SELECT during insert-and-return).
     const { data: rows, error } = await context.supabase
-      .rpc("create_organization", { _name: data.name, _slug: slug, _description: data.description ?? undefined });
+      .rpc("create_organization", {
+        _name: data.name,
+        _slug: slug,
+        _category_id: data.category_id,
+        _description: data.description ?? undefined,
+        _address: (data.address ?? {}) as any,
+      });
     if (error) throw new Error(error.message);
     const org = Array.isArray(rows) ? rows[0] : rows;
     if (!org) throw new Error("Falha ao criar organização");
-    // Apply category + overrides via update (owner policy, caller is owner).
-    const patch: Record<string, any> = { category_id: data.category_id };
+    // Apply optional overrides via update (owner policy, caller is owner).
+    const patch: Record<string, any> = {};
     if (data.timezone !== undefined) patch.timezone = data.timezone;
     if (data.currency !== undefined) patch.currency = data.currency;
     if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
     if (data.system_data !== undefined) patch.system_data = data.system_data;
     if (data.category_data !== undefined) patch.category_data = data.category_data;
-    const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
-    if (uErr) throw new Error(uErr.message);
+    if (Object.keys(patch).length > 0) {
+      const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
+      if (uErr) throw new Error(uErr.message);
+    }
     return org as { id: string; slug: string; name: string };
   });
 
@@ -69,7 +88,7 @@ export const getOrganizationBySlug = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: org, error } = await context.supabase
       .from("organizations")
-      .select("id, slug, name, description, logo_url, category_id, category_data, timezone, currency, currency_display, system_data, created_at")
+      .select("id, slug, name, description, logo_url, category_id, category_data, timezone, currency, currency_display, system_data, address, created_at")
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -96,6 +115,7 @@ const orgUpdate = z.object({
   currency_display: currencyDisplaySchema,
   system_data: z.record(z.string(), z.any()).optional(),
   category_data: z.record(z.string(), z.any()).optional(),
+  address: addressSchema.optional(),
 });
 
 export const updateOrganization = createServerFn({ method: "POST" })
@@ -125,6 +145,7 @@ export const updateOrganization = createServerFn({ method: "POST" })
     if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
     if (data.system_data !== undefined) patch.system_data = data.system_data;
     if (data.category_data !== undefined) patch.category_data = data.category_data;
+    if (data.address !== undefined) patch.address = data.address;
     const { error } = await context.supabase.from("organizations").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
 

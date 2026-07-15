@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
 import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
+import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
@@ -49,6 +50,7 @@ function OrgsPage() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [categoryData, setCategoryData] = useState<Record<string, any>>({});
+  const [address, setAddress] = useState<AddressValue>({});
   const [saving, setSaving] = useState(false);
 
   const cats = useQuery({
@@ -70,6 +72,7 @@ function OrgsPage() {
         description: description || undefined,
         category_id: categoryId,
         category_data: categoryData,
+        address,
       } });
       toast.success("Organização criada");
       setOpen(false);
@@ -77,6 +80,7 @@ function OrgsPage() {
       setDescription("");
       setCategoryId("");
       setCategoryData({});
+      setAddress({});
       await refetch();
       router.invalidate();
       navigate({ to: "/app/$orgSlug", params: { orgSlug: org.slug } });
@@ -125,6 +129,10 @@ function OrgsPage() {
                 </Select>
                 <p className="text-xs text-muted-foreground">A categoria define os campos padrão desta {organizationLabel}.</p>
               </div>
+
+              <AddressFields value={address} onChange={setAddress} />
+
+
 
               <CategoryFieldsForm
                 categoryId={categoryId || null}
