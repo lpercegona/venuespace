@@ -135,14 +135,6 @@ function PublicListPage() {
                         <Link to="/public/$slug/$tableId/$recordId" params={{ slug, tableId, recordId: r.id }}>
                           <Button variant="outline" size="sm" className="w-full">Ver detalhes</Button>
                         </Link>
-                        {public_form_view ? (
-                          <Button
-                            size="sm"
-                            className="w-full"
-                            onClick={() => setInterestFor(r.id)}
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                            Manifestar interesse
                       <div className="flex flex-col gap-2">
                         <Link to="/public/$slug/$tableId/$recordId" params={{ slug, tableId, recordId: r.id }}>
                           <Button variant="outline" size="sm" className="w-full">Ver detalhes</Button>
