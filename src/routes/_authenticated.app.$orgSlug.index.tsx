@@ -64,6 +64,7 @@ function OrgDashboard() {
   const [tName, setTName] = useState("");
   const [tDesc, setTDesc] = useState("");
   const [tBookable, setTBookable] = useState(false);
+  const [tCatData, setTCatData] = useState<Record<string, any>>({});
   const [savingT, setSavingT] = useState(false);
 
   async function handleCreateTable(e: React.FormEvent) {
@@ -77,11 +78,12 @@ function OrgDashboard() {
           name: tName,
           description: tDesc || undefined,
           bookable: tBookable,
+          category_data: tCatData,
         },
       });
       toast.success(`${t("table", "Tabela")} criada`);
       setOpenTable(false);
-      setTName(""); setTDesc(""); setTBookable(false);
+      setTName(""); setTDesc(""); setTBookable(false); setTCatData({});
       await tables.refetch();
       navigate({ to: "/app/$orgSlug/tables/$tableId/schema", params: { orgSlug, tableId: row.id } });
     } catch (err) {
