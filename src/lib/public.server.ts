@@ -179,6 +179,8 @@ export async function loadPublicLayout(categoryId: string | null, scope: "organi
   }));
 }
 
+export type PublicRendererField = { key: string; label: string; type: string };
+
 export type PublicOrganizationSummary = {
   id: string;
   slug: string;
@@ -188,7 +190,65 @@ export type PublicOrganizationSummary = {
   category_id: string | null;
   category_data: Record<string, any>;
   updated_at: string;
+  data: Record<string, any>;
+  fields: PublicRendererField[];
+  layout: PublicLayoutField[];
 };
+
+const ORG_BUILTIN_FIELDS: PublicRendererField[] = [
+  { key: "name", label: "Nome", type: "text" },
+  { key: "slug", label: "Slug", type: "text" },
+  { key: "description", label: "Descrição", type: "text" },
+  { key: "logo_url", label: "Logo", type: "image" },
+];
+
+async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card"): Promise<Map<string, PublicLayoutField[]>> {
+  const out = new Map<string, PublicLayoutField[]>();
+  if (categoryIds.length === 0) return out;
+  const sb = supabaseAdmin;
+  const { data: parents } = await (sb as any)
+    .from("category_public_layouts")
+    .select("id, category_id")
+    .in("category_id", categoryIds)
+    .eq("scope", scope);
+  const parentList = (parents ?? []) as Array<{ id: string; category_id: string }>;
+  if (parentList.length === 0) return out;
+  const { data: rows } = await (sb as any)
+    .from("category_public_layout_fields")
+    .select("id, layout_id, field_key, width_percent, order_index, config")
+    .in("layout_id", parentList.map((p) => p.id))
+    .order("order_index", { ascending: true });
+  const byLayout = new Map<string, PublicLayoutField[]>();
+  for (const r of ((rows ?? []) as any[])) {
+    const arr = byLayout.get(r.layout_id) ?? [];
+    arr.push({
+      id: r.id,
+      field_key: r.field_key,
+      width_percent: r.width_percent,
+      order_index: r.order_index,
+      config: r.config ?? {},
+    });
+    byLayout.set(r.layout_id, arr);
+  }
+  for (const p of parentList) out.set(p.category_id, byLayout.get(p.id) ?? []);
+  return out;
+}
+
+async function loadOrgCategoryFieldsBatch(categoryIds: string[]): Promise<Map<string, PublicRendererField[]>> {
+  const out = new Map<string, PublicRendererField[]>();
+  if (categoryIds.length === 0) return out;
+  const { data } = await (supabaseAdmin as any)
+    .from("category_org_fields")
+    .select("category_id, field_key, label, field_type, order_index")
+    .in("category_id", categoryIds)
+    .order("order_index", { ascending: true });
+  for (const r of ((data ?? []) as any[])) {
+    const arr = out.get(r.category_id) ?? [];
+    arr.push({ key: r.field_key, label: r.label, type: r.field_type });
+    out.set(r.category_id, arr);
+  }
+  return out;
+}
 
 export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
   const sb = supabaseAdmin;
@@ -210,18 +270,39 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   if (categoryId) query = query.eq("category_id", categoryId);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  let items = ((data ?? []) as any[]).map((o) => ({
+  let base = ((data ?? []) as any[]).map((o) => ({
     id: o.id, slug: o.slug, name: o.name,
     description: o.description ?? null, logo_url: o.logo_url ?? null,
     category_id: o.category_id ?? null, category_data: o.category_data ?? {},
     updated_at: o.updated_at,
   }));
-  if (q) items = items.filter((i) =>
+  if (q) base = base.filter((i) =>
     i.name.toLowerCase().includes(q) ||
     (i.description ?? "").toLowerCase().includes(q),
   );
-  const total = items.length;
-  return { items: items.slice(offset, offset + limit), total };
+  const total = base.length;
+  const paged = base.slice(offset, offset + limit);
+
+  const catIds = Array.from(new Set(paged.map((o) => o.category_id).filter(Boolean))) as string[];
+  const [layouts, catFields] = await Promise.all([
+    loadLayoutsBatch(catIds, "organization_card"),
+    loadOrgCategoryFieldsBatch(catIds),
+  ]);
+
+  const items: PublicOrganizationSummary[] = paged.map((o) => {
+    const layout = (o.category_id && layouts.get(o.category_id)) || [];
+    const catF = (o.category_id && catFields.get(o.category_id)) || [];
+    const fields = [...ORG_BUILTIN_FIELDS, ...catF];
+    const data: Record<string, any> = {
+      name: o.name,
+      slug: o.slug,
+      description: o.description,
+      logo_url: o.logo_url,
+      ...o.category_data,
+    };
+    return { ...o, data, fields, layout };
+  });
+  return { items, total };
 }
 
 export type PublicRecordSummary = {
@@ -235,6 +316,8 @@ export type PublicRecordSummary = {
   table_slug: string;
   table_name: string;
   table_icon: string | null;
+  fields: PublicRendererField[];
+  layout: PublicLayoutField[];
 };
 
 export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
@@ -250,7 +333,7 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     .order("created_at", { ascending: false })
     .limit(2000);
   if (error) throw new Error(error.message);
-  let items = ((data ?? []) as any[]).map((r) => ({
+  let base = ((data ?? []) as any[]).map((r) => ({
     record_id: r.id,
     data: r.data ?? {},
     created_at: r.created_at,
@@ -262,9 +345,9 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     table_name: r.table.name,
     table_icon: r.table.icon ?? null,
   }));
-  if (categoryId) items = items.filter((i) => i.org_category_id === categoryId);
+  if (categoryId) base = base.filter((i) => i.org_category_id === categoryId);
   if (q) {
-    items = items.filter((i) => {
+    base = base.filter((i) => {
       if (i.table_name.toLowerCase().includes(q) || i.org_name.toLowerCase().includes(q)) return true;
       for (const v of Object.values(i.data)) {
         if (typeof v === "string" && v.toLowerCase().includes(q)) return true;
@@ -272,9 +355,32 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
       return false;
     });
   }
-  const total = items.length;
-  return { items: items.slice(offset, offset + limit), total };
+  const total = base.length;
+  const paged = base.slice(offset, offset + limit);
+
+  const tableIds = Array.from(new Set(paged.map((r) => r.table_id)));
+  const catIds = Array.from(new Set(paged.map((r) => r.org_category_id).filter(Boolean))) as string[];
+  const [fieldsRes, layouts] = await Promise.all([
+    tableIds.length
+      ? sb.from("fields").select("table_id, key, label, type, position").in("table_id", tableIds).order("position", { ascending: true })
+      : Promise.resolve({ data: [] as any[] } as any),
+    loadLayoutsBatch(catIds, "record_card"),
+  ]);
+  const fieldsByTable = new Map<string, PublicRendererField[]>();
+  for (const f of (((fieldsRes as any).data ?? []) as any[])) {
+    const arr = fieldsByTable.get(f.table_id) ?? [];
+    arr.push({ key: f.key, label: f.label, type: f.type });
+    fieldsByTable.set(f.table_id, arr);
+  }
+
+  const items: PublicRecordSummary[] = paged.map((r) => ({
+    ...r,
+    fields: fieldsByTable.get(r.table_id) ?? [],
+    layout: (r.org_category_id && layouts.get(r.org_category_id)) || [],
+  }));
+  return { items, total };
 }
+
 
 export async function loadPublicFormSchema(viewId: string) {
   const sb = supabaseAdmin;
