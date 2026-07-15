@@ -2,40 +2,20 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type BackTo =
-  | { to: "/"; params?: undefined; label?: string }
-  | { to: "/explore"; params?: undefined; label?: string }
-  | { to: "/public/$slug/$tableId"; params: { slug: string; tableId: string }; label?: string };
-
 type Props = {
-  back?: BackTo;
   showAuthActions?: boolean;
   showExplore?: boolean;
 };
 
-export function PublicHeader({ back, showAuthActions = true, showExplore = true }: Props) {
+export function PublicHeader({ showAuthActions = true, showExplore = true }: Props) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          {back ? (
-            <Link
-              to={back.to as any}
-              params={back.params as any}
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              aria-label={back.label ?? "Voltar"}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">{back.label ?? "Voltar"}</span>
-            </Link>
-          ) : null}
-          <Link to="/" className="flex min-w-0 items-center gap-2">
-            <span className="truncate font-display text-base font-semibold tracking-tight text-foreground sm:text-lg">
-
-              VENUESPACE
-            </span>
-          </Link>
-        </div>
+        <Link to="/" className="flex min-w-0 items-center gap-2">
+          <span className="truncate font-display text-base font-semibold tracking-tight text-foreground sm:text-lg">
+            VENUESPACE
+          </span>
+        </Link>
         <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {showExplore ? (
             <Link to="/explore">
@@ -58,5 +38,24 @@ export function PublicHeader({ back, showAuthActions = true, showExplore = true 
         </nav>
       </div>
     </header>
+  );
+}
+
+type BackTo =
+  | { to: "/"; params?: undefined }
+  | { to: "/explore"; params?: undefined }
+  | { to: "/public/$slug"; params: { slug: string } }
+  | { to: "/public/$slug/$tableId"; params: { slug: string; tableId: string } };
+
+export function BackLink({ to, params, label = "Voltar" }: BackTo & { label?: string }) {
+  return (
+    <Link
+      to={to as any}
+      params={params as any}
+      className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <ArrowLeft className="h-3.5 w-3.5" />
+      {label}
+    </Link>
   );
 }
