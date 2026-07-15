@@ -255,6 +255,45 @@ export function DynamicForm({
               </div>
             );
           }
+          if (f.type === "gallery") {
+            const arr: string[] = Array.isArray(v) ? v : [];
+            return (
+              <div key={f.id} className="space-y-2">
+                {labelEl}
+                <GalleryField paths={arr} disabled={disableUploads} onChange={(next) => set(f.key, next)} />
+              </div>
+            );
+          }
+          const cfgRole = ((f.config ?? {}) as any).role as string | undefined;
+          if (f.type === "text" && cfgRole === "cep") {
+            const targets = ((f.config ?? {}) as any).cep_targets as Record<string, string> | undefined;
+            return (
+              <div key={f.id} className="space-y-2">
+                {labelEl}
+                <Input id={id} type="text" required={f.required} value={v ?? ""}
+                  onChange={(e) => set(f.key, e.target.value)}
+                  onBlur={async (e) => {
+                    const cep = e.target.value.replace(/\D/g, "");
+                    if (cep.length !== 8) return;
+                    try {
+                      const r = await fetch(`/api/public/viacep/${cep}`);
+                      if (!r.ok) return;
+                      const body = await r.json();
+                      setValues((prev) => {
+                        const next = { ...prev };
+                        const map = targets ?? { logradouro: "logradouro", bairro: "bairro", localidade: "cidade", uf: "estado" };
+                        for (const [via, target] of Object.entries(map)) {
+                          if (body[via]) next[target] = body[via];
+                        }
+                        return next;
+                      });
+                      toast.success("Endereço preenchido pelo CEP");
+                    } catch {}
+                  }}
+                />
+              </div>
+            );
+          }
           const inputType =
             f.type === "email" ? "email" : f.type === "url" ? "url" : f.type === "phone" ? "tel" : "text";
           return (
