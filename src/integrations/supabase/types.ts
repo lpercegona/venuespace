@@ -562,6 +562,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          address: Json
           category_data: Json
           category_id: string
           created_at: string
@@ -578,6 +579,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address?: Json
           category_data?: Json
           category_id: string
           created_at?: string
@@ -594,6 +596,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address?: Json
           category_data?: Json
           category_id?: string
           created_at?: string
@@ -992,7 +995,13 @@ export type Database = {
         Returns: boolean
       }
       create_organization: {
-        Args: { _description?: string; _name: string; _slug: string }
+        Args: {
+          _address?: Json
+          _category_id: string
+          _description?: string
+          _name: string
+          _slug: string
+        }
         Returns: {
           id: string
           name: string
