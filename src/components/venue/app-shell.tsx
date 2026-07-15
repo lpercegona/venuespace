@@ -47,7 +47,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
       <header className="border-b border-border bg-surface/60 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <Link to="/app" className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-md bg-primary" aria-hidden />
+            
             <span className="font-display text-lg font-semibold tracking-tight text-foreground">
               VENUESPACE
             </span>
