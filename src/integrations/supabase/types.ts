@@ -14,6 +14,100 @@ export type Database = {
   }
   public: {
     Tables: {
+      category_org_fields: {
+        Row: {
+          category_id: string
+          config: Json
+          created_at: string
+          field_key: string
+          field_type: string
+          id: string
+          label: string
+          order_index: number
+          required: boolean
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          config?: Json
+          created_at?: string
+          field_key: string
+          field_type: string
+          id?: string
+          label: string
+          order_index?: number
+          required?: boolean
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          config?: Json
+          created_at?: string
+          field_key?: string
+          field_type?: string
+          id?: string
+          label?: string
+          order_index?: number
+          required?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_org_fields_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_table_fields: {
+        Row: {
+          category_id: string
+          config: Json
+          created_at: string
+          field_key: string
+          field_type: string
+          id: string
+          label: string
+          order_index: number
+          required: boolean
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          config?: Json
+          created_at?: string
+          field_key: string
+          field_type: string
+          id?: string
+          label: string
+          order_index?: number
+          required?: boolean
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          config?: Json
+          created_at?: string
+          field_key?: string
+          field_type?: string
+          id?: string
+          label?: string
+          order_index?: number
+          required?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_table_fields_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           applicant_user_id: string | null
@@ -64,6 +158,7 @@ export type Database = {
       }
       fields: {
         Row: {
+          category_field_key: string | null
           config: Json
           created_at: string
           id: string
@@ -71,11 +166,13 @@ export type Database = {
           label: string
           position: number
           required: boolean
+          source: string
           table_id: string
           type: Database["public"]["Enums"]["field_type"]
           updated_at: string
         }
         Insert: {
+          category_field_key?: string | null
           config?: Json
           created_at?: string
           id?: string
@@ -83,11 +180,13 @@ export type Database = {
           label: string
           position?: number
           required?: boolean
+          source?: string
           table_id: string
           type: Database["public"]["Enums"]["field_type"]
           updated_at?: string
         }
         Update: {
+          category_field_key?: string | null
           config?: Json
           created_at?: string
           id?: string
@@ -95,6 +194,7 @@ export type Database = {
           label?: string
           position?: number
           required?: boolean
+          source?: string
           table_id?: string
           type?: Database["public"]["Enums"]["field_type"]
           updated_at?: string
@@ -285,6 +385,7 @@ export type Database = {
       }
       organization_categories: {
         Row: {
+          base_field_config: Json
           created_at: string
           description: string | null
           icon: string | null
@@ -293,6 +394,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_field_config?: Json
           created_at?: string
           description?: string | null
           icon?: string | null
@@ -301,6 +403,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_field_config?: Json
           created_at?: string
           description?: string | null
           icon?: string | null
@@ -436,7 +539,8 @@ export type Database = {
       }
       organizations: {
         Row: {
-          category_id: string | null
+          category_data: Json
+          category_id: string
           created_at: string
           created_by: string
           currency: string | null
@@ -451,7 +555,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          category_id?: string | null
+          category_data?: Json
+          category_id: string
           created_at?: string
           created_by: string
           currency?: string | null
@@ -466,7 +571,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          category_id?: string | null
+          category_data?: Json
+          category_id?: string
           created_at?: string
           created_by?: string
           currency?: string | null
@@ -742,6 +848,7 @@ export type Database = {
       tables: {
         Row: {
           bookable: boolean
+          category_data: Json
           created_at: string
           description: string | null
           icon: string | null
@@ -755,6 +862,7 @@ export type Database = {
         }
         Insert: {
           bookable?: boolean
+          category_data?: Json
           created_at?: string
           description?: string | null
           icon?: string | null
@@ -768,6 +876,7 @@ export type Database = {
         }
         Update: {
           bookable?: boolean
+          category_data?: Json
           created_at?: string
           description?: string | null
           icon?: string | null
@@ -881,6 +990,13 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin_email: { Args: { _email: string }; Returns: boolean }
+      reconcile_org_category_fields: {
+        Args: { _org_id: string }
+        Returns: {
+          fields_added: number
+          tables_touched: number
+        }[]
+      }
     }
     Enums: {
       app_role: "owner" | "editor" | "viewer"
