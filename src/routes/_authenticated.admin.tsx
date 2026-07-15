@@ -30,14 +30,6 @@ import {
   upsertPlatformLabel,
 } from "@/lib/platform-labels.functions";
 import {
-  listCategoryPublicLayoutPublic,
-  upsertCategoryPublicLayoutItem,
-  deleteCategoryPublicLayoutItem,
-  seedCategoryDefaultsRetroactive,
-  type PublicLayoutItem,
-  type FieldSourceKind,
-} from "@/lib/category-layouts.functions";
-import {
   countOrganizationsByCategory,
   createOrganizationCategory,
   deleteOrganizationCategory,
@@ -50,13 +42,12 @@ import {
   type OrganizationCategory,
 } from "@/lib/organization-categories.functions";
 import {
-  listSystemFieldsPublic,
-  upsertSystemField,
-  deleteSystemField,
-  type SystemFieldRow,
-  type SystemFieldScope,
-} from "@/lib/system-fields.functions";
-import { CategoryCascadeSection } from "@/components/venue/category-cascade-section";
+  listCategoryCascadeFields,
+  upsertCategoryCascadeField,
+  deleteCategoryCascadeField,
+  reconcileCategoryAllOrganizations,
+  type CategoryCascadeField,
+} from "@/lib/category-cascade.functions";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
