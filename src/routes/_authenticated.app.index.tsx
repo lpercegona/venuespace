@@ -72,6 +72,7 @@ function OrgsPage() {
         description: description || undefined,
         category_id: categoryId,
         category_data: categoryData,
+        address,
       } });
       toast.success("Organização criada");
       setOpen(false);
@@ -79,6 +80,7 @@ function OrgsPage() {
       setDescription("");
       setCategoryId("");
       setCategoryData({});
+      setAddress({});
       await refetch();
       router.invalidate();
       navigate({ to: "/app/$orgSlug", params: { orgSlug: org.slug } });
