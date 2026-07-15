@@ -302,6 +302,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     };
     return { ...o, data, fields, layout };
   });
+  await signImagePathsInItems(items);
   return { items, total };
 }
 
