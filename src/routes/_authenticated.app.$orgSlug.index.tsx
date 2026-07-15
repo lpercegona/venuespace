@@ -362,6 +362,13 @@ function TableCard({
                   <Label htmlFor={`e-b-${t.id}`} className="text-sm">{label("table", "Tabela")} com reservas</Label>
                   <Switch id={`e-b-${t.id}`} checked={bookable} onCheckedChange={setBookable} />
                 </div>
+                <CategoryFieldsForm
+                  categoryId={orgCategoryId}
+                  scope="table"
+                  value={catData}
+                  onChange={setCatData}
+                  title="Campos da categoria"
+                />
                 <DialogFooter>
                   <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
                   <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}</Button>
