@@ -125,7 +125,10 @@ function Landing() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {(recs.data?.items ?? []).map((r) => {
-                  const firstText = Object.values(r.data).find((v) => typeof v === "string" && v.length > 0) as string | undefined;
+                  const titleKey = r.layout?.[0]?.field_key;
+                  const title = titleKey ? String(r.data?.[titleKey] ?? "") : "";
+                  const fallback = Object.values(r.data).find((v) => typeof v === "string" && v.length > 0) as string | undefined;
+                  const restLayout = (r.layout ?? []).slice(1);
                   return (
                     <Link
                       key={r.record_id}
@@ -137,13 +140,19 @@ function Landing() {
                         <CardHeader className="pb-2">
                           <p className="text-xs text-muted-foreground truncate">{r.org_name} · {r.table_name}</p>
                           <CardTitle className="font-display text-base line-clamp-2">
-                            {firstText ?? "Registro"}
+                            {title || fallback || "Registro"}
                           </CardTitle>
                         </CardHeader>
+                        {restLayout.length > 0 ? (
+                          <CardContent>
+                            <PublicCardBody layout={restLayout as any} fields={r.fields as any} data={r.data} />
+                          </CardContent>
+                        ) : null}
                       </Card>
                     </Link>
                   );
                 })}
+
               </div>
             )}
           </section>
