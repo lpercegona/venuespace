@@ -94,15 +94,18 @@ function Landing() {
                         <CardTitle className="font-display text-base">{o.name}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {o.description ? (
+                        {o.layout && o.layout.length > 0 ? (
+                          <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} />
+                        ) : o.description ? (
                           <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
                         ) : (
-                          <Badge variant="secondary">/{o.slug}</Badge>
+                          <p className="text-xs text-muted-foreground">/{o.slug}</p>
                         )}
                       </CardContent>
                     </Card>
                   </Link>
                 ))}
+
               </div>
             )}
           </section>
