@@ -166,7 +166,10 @@ function SchemaPage() {
         <Card>
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
-              {fields.data.map((f: any) => (
+              {fields.data.map((f: any) => {
+                const isCategoryField = (f.source ?? "user") === "category";
+                const canMutate = canEdit && !isCategoryField;
+                return (
                 <li key={f.id} className="px-4 py-3">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
                     <div className="min-w-0">
@@ -175,7 +178,8 @@ function SchemaPage() {
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge variant="secondary">{f.type}</Badge>
-                      {canEdit ? (
+                      {isCategoryField ? <Badge variant="outline">categoria</Badge> : null}
+                      {canMutate ? (
                         <>
                           <label className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Switch checked={f.required} onCheckedChange={(v) => handleToggleRequired(f.id, v)} />
@@ -202,11 +206,13 @@ function SchemaPage() {
                       )}
                     </div>
                   </div>
-                  {canEdit && (f.type === "select" || f.type === "multiselect") ? (
+                  {canMutate && (f.type === "select" || f.type === "multiselect") ? (
                     <OptionsManager field={f} onChanged={() => fields.refetch()} />
                   ) : null}
                 </li>
-              ))}
+                );
+              })}
+
             </ul>
           </CardContent>
         </Card>
