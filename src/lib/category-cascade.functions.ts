@@ -186,10 +186,10 @@ export const getCategorySchemaPublic = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [{ data: cat }, { data: org }, { data: tbl }, { data: rec }] = await Promise.all([
-      supabaseAdmin.from("organization_categories" as any).select("id, name, base_field_config").eq("id", data.category_id).maybeSingle(),
-      supabaseAdmin.from("category_org_fields" as any).select("id, field_key, label, field_type, required, config, order_index").eq("category_id", data.category_id).order("order_index"),
-      supabaseAdmin.from("category_table_fields" as any).select("id, field_key, label, field_type, required, config, order_index").eq("category_id", data.category_id).order("order_index"),
-      supabaseAdmin.from("organization_category_default_fields" as any).select("id, field_key, label, field_type, required, config, order_index").eq("category_id", data.category_id).order("order_index"),
+      (supabaseAdmin as any).from("organization_categories").select("id, name, base_field_config").eq("id", data.category_id).maybeSingle(),
+      (supabaseAdmin as any).from("category_org_fields").select("id, field_key, label, field_type, required, config, order_index").eq("category_id", data.category_id).order("order_index"),
+      (supabaseAdmin as any).from("category_table_fields").select("id, field_key, label, field_type, required, config, order_index").eq("category_id", data.category_id).order("order_index"),
+      (supabaseAdmin as any).from("organization_category_default_fields").select("id, field_key, label, field_type, required, config, order_index").eq("category_id", data.category_id).order("order_index"),
     ]);
     return {
       category: cat ?? null,
@@ -198,3 +198,4 @@ export const getCategorySchemaPublic = createServerFn({ method: "GET" })
       record_fields: (rec ?? []) as CategoryCascadeField[],
     };
   });
+
