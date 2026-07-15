@@ -150,6 +150,10 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
           </div>
           <p className="text-xs text-muted-foreground">Deixe fuso e moeda em branco para herdar o padrão da instância.</p>
 
+          <AddressFields value={address} onChange={setAddress} />
+
+
+
           <CategoryFieldsForm
             categoryId={categoryId === "__none__" ? null : categoryId}
             scope="org"
