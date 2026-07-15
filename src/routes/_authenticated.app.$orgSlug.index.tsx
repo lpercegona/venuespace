@@ -280,6 +280,7 @@ function OrgDashboard() {
           currency: (org.data as any).currency ?? null,
           system_data: (org.data as any).system_data ?? null,
           category_data: (org.data as any).category_data ?? null,
+          address: (org.data as any).address ?? null,
         }} />
       ) : null}
     </AppShell>
