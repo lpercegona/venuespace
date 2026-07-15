@@ -1,3 +1,19 @@
+## 2026-07-15 (America/Sao_Paulo) — Conexão dos campos padrão ao fluxo do usuário
+
+### Frontend
+- Novo componente `src/components/venue/category-fields-form.tsx`: renderiza os campos definidos por super admin em `category_org_fields` / `category_table_fields` a partir de `/api/public/category-schema/$categoryId`, escopo `org | table`, com suporte a text/long_text/number/currency/date/datetime/email/url/phone/select/boolean.
+- `src/routes/_authenticated.app.index.tsx`: diálogo "Nova organização" passou a renderizar os campos da categoria escolhida e envia `category_data` no `createOrganization`.
+- `src/components/venue/edit-org-dialog.tsx`: prop `org` recebe `category_data`; edição de organização carrega os valores atuais e persiste em `category_data` via `updateOrganization`.
+- `src/routes/_authenticated.app.$orgSlug.index.tsx`:
+  - `EditOrgDialog` passa a receber `system_data` e `category_data` do carregamento da organização.
+  - Diálogo "Nova tabela" renderiza os campos de categoria (`scope=table`) usando `organizations.category_id` e envia `category_data` no `createTable`.
+  - `TableCard` recebe `orgCategoryId` e usa `t.category_data` como valor inicial; edição envia `category_data` no `updateTable`.
+
+### Backend
+- `src/lib/orgs.functions.ts`: `getOrganizationBySlug` retorna `category_data`; `listTables` retorna `category_data`. Sem migrations, sem alterações em RLS/GRANTs.
+
+---
+
 ## 2026-07-15 (America/Sao_Paulo) — Iteração 12: Consolidação da administração de campos
 
 ### Frontend

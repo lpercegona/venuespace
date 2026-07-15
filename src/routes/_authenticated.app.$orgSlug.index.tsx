@@ -20,6 +20,7 @@ import { Table as TableIcon, Plus, Loader2, UserPlus, Users, Pencil, Trash2 } fr
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
+import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
 
 export const Route = createFileRoute("/_authenticated/app/$orgSlug/")({
   head: ({ params }) => ({
@@ -63,6 +64,7 @@ function OrgDashboard() {
   const [tName, setTName] = useState("");
   const [tDesc, setTDesc] = useState("");
   const [tBookable, setTBookable] = useState(false);
+  const [tCatData, setTCatData] = useState<Record<string, any>>({});
   const [savingT, setSavingT] = useState(false);
 
   async function handleCreateTable(e: React.FormEvent) {
@@ -76,11 +78,12 @@ function OrgDashboard() {
           name: tName,
           description: tDesc || undefined,
           bookable: tBookable,
+          category_data: tCatData,
         },
       });
       toast.success(`${t("table", "Tabela")} criada`);
       setOpenTable(false);
-      setTName(""); setTDesc(""); setTBookable(false);
+      setTName(""); setTDesc(""); setTBookable(false); setTCatData({});
       await tables.refetch();
       navigate({ to: "/app/$orgSlug/tables/$tableId/schema", params: { orgSlug, tableId: row.id } });
     } catch (err) {
@@ -156,6 +159,13 @@ function OrgDashboard() {
                     </div>
                     <Switch id="t-book" checked={tBookable} onCheckedChange={setTBookable} />
                   </div>
+                  <CategoryFieldsForm
+                    categoryId={(org.data as any).category_id ?? null}
+                    scope="table"
+                    value={tCatData}
+                    onChange={setTCatData}
+                    title="Campos da categoria"
+                  />
                   <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>Cancelar</Button>
                     <Button type="submit" disabled={savingT}>{savingT ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}</Button>
@@ -188,6 +198,7 @@ function OrgDashboard() {
                 key={t.id}
                 t={t}
                 orgSlug={orgSlug}
+                orgCategoryId={(org.data as any).category_id ?? null}
                 canEdit={canEdit}
                 isOwner={isOwner}
                 onSaved={() => tables.refetch()}
@@ -267,6 +278,8 @@ function OrgDashboard() {
           category_id: (org.data as any).category_id ?? null,
           timezone: (org.data as any).timezone ?? null,
           currency: (org.data as any).currency ?? null,
+          system_data: (org.data as any).system_data ?? null,
+          category_data: (org.data as any).category_data ?? null,
         }} />
       ) : null}
     </AppShell>
@@ -274,8 +287,8 @@ function OrgDashboard() {
 }
 
 function TableCard({
-  t, orgSlug, canEdit, isOwner, onSaved,
-}: { t: any; orgSlug: string; canEdit: boolean; isOwner: boolean; onSaved: () => void }) {
+  t, orgSlug, orgCategoryId, canEdit, isOwner, onSaved,
+}: { t: any; orgSlug: string; orgCategoryId: string | null; canEdit: boolean; isOwner: boolean; onSaved: () => void }) {
   const { t: label } = useLabels();
   const tableLabel = label("table", "tabela").toLowerCase();
   const recordsLabel = label("records", "registros").toLowerCase();
@@ -286,13 +299,14 @@ function TableCard({
   const [name, setName] = useState(t.name);
   const [desc, setDesc] = useState(t.description ?? "");
   const [bookable, setBookable] = useState(!!t.bookable);
+  const [catData, setCatData] = useState<Record<string, any>>((t.category_data ?? {}) as Record<string, any>);
   const [saving, setSaving] = useState(false);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await updateTable({ data: { id: t.id, name, description: desc || null, bookable } });
+      await updateTable({ data: { id: t.id, name, description: desc || null, bookable, category_data: catData } });
       toast.success(`${label("table", "Tabela")} atualizada`);
       setEditing(false);
       onSaved();
@@ -348,6 +362,13 @@ function TableCard({
                   <Label htmlFor={`e-b-${t.id}`} className="text-sm">{label("table", "Tabela")} com reservas</Label>
                   <Switch id={`e-b-${t.id}`} checked={bookable} onCheckedChange={setBookable} />
                 </div>
+                <CategoryFieldsForm
+                  categoryId={orgCategoryId}
+                  scope="table"
+                  value={catData}
+                  onChange={setCatData}
+                  title="Campos da categoria"
+                />
                 <DialogFooter>
                   <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
                   <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}</Button>

@@ -15,6 +15,7 @@ import { updateOrganization, deleteOrganization } from "@/lib/orgs.functions";
 import { listOrganizationCategoriesPublic } from "@/lib/organization-categories.functions";
 import { useSystemFields } from "@/hooks/use-system-fields";
 import { useLabels } from "@/hooks/use-instance-context";
+import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
 
 type Props = {
   open: boolean;
@@ -26,6 +27,7 @@ type Props = {
     timezone?: string | null;
     currency?: string | null;
     system_data?: Record<string, any> | null;
+    category_data?: Record<string, any> | null;
   };
 };
 
@@ -42,6 +44,8 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
   const [currency, setCurrency] = useState(org.currency ?? "");
   const initialSys = useMemo(() => (org.system_data ?? {}) as Record<string, any>, [org.system_data]);
   const [sysData, setSysData] = useState<Record<string, any>>(initialSys);
+  const initialCat = useMemo(() => (org.category_data ?? {}) as Record<string, any>, [org.category_data]);
+  const [catData, setCatData] = useState<Record<string, any>>(initialCat);
   const [saving, setSaving] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -69,6 +73,7 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
         timezone: timezone.trim() ? timezone.trim() : null,
         currency: currency.trim() ? currency.trim().toUpperCase() : null,
         system_data: sysData,
+        category_data: catData,
       } });
       toast.success("Organização atualizada");
       await Promise.all([
@@ -139,6 +144,15 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
             </div>
           </div>
           <p className="text-xs text-muted-foreground">Deixe fuso e moeda em branco para herdar o padrão da instância.</p>
+
+          <CategoryFieldsForm
+            categoryId={categoryId === "__none__" ? null : categoryId}
+            scope="org"
+            value={catData}
+            onChange={setCatData}
+            title="Campos da categoria"
+          />
+
 
           {sysFields.length > 0 ? (
             <div className="space-y-3 rounded-lg border border-dashed border-border p-4">
