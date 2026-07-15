@@ -61,6 +61,73 @@ export type Database = {
           },
         ]
       }
+      category_public_layout_fields: {
+        Row: {
+          config: Json
+          created_at: string
+          field_key: string
+          id: string
+          layout_id: string
+          order_index: number
+          width_percent: number
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          field_key: string
+          id?: string
+          layout_id: string
+          order_index?: number
+          width_percent: number
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          field_key?: string
+          id?: string
+          layout_id?: string
+          order_index?: number
+          width_percent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_public_layout_fields_layout_id_fkey"
+            columns: ["layout_id"]
+            isOneToOne: false
+            referencedRelation: "category_public_layouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_public_layouts: {
+        Row: {
+          category_id: string
+          id: string
+          scope: Database["public"]["Enums"]["public_layout_scope"]
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          id?: string
+          scope: Database["public"]["Enums"]["public_layout_scope"]
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          id?: string
+          scope?: Database["public"]["Enums"]["public_layout_scope"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_public_layouts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_table_fields: {
         Row: {
           category_id: string
@@ -450,50 +517,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "organization_category_default_fields_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "organization_categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      organization_category_public_layouts: {
-        Row: {
-          category_id: string
-          created_at: string
-          field_ref: string
-          field_source: Database["public"]["Enums"]["field_source_kind"]
-          icon: string
-          id: string
-          label_override: string | null
-          order_index: number
-          updated_at: string
-        }
-        Insert: {
-          category_id: string
-          created_at?: string
-          field_ref: string
-          field_source: Database["public"]["Enums"]["field_source_kind"]
-          icon: string
-          id?: string
-          label_override?: string | null
-          order_index?: number
-          updated_at?: string
-        }
-        Update: {
-          category_id?: string
-          created_at?: string
-          field_ref?: string
-          field_source?: Database["public"]["Enums"]["field_source_kind"]
-          icon?: string
-          id?: string
-          label_override?: string | null
-          order_index?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organization_category_public_layouts_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "organization_categories"
@@ -1024,6 +1047,8 @@ export type Database = {
         | "file"
         | "relation"
         | "computed"
+        | "gallery"
+      public_layout_scope: "organization_card" | "record_card"
       record_status: "draft" | "published" | "archived"
       view_type: "grid" | "public_list" | "public_detail" | "public_form"
     }
@@ -1179,7 +1204,9 @@ export const Constants = {
         "file",
         "relation",
         "computed",
+        "gallery",
       ],
+      public_layout_scope: ["organization_card", "record_card"],
       record_status: ["draft", "published", "archived"],
       view_type: ["grid", "public_list", "public_detail", "public_form"],
     },
