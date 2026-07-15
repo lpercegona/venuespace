@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Database, MessageSquare, Sparkles, Loader2, Building2, FileText } from "lucide-react";
 import { PublicHeader } from "@/components/venue/public-header";
+import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -93,15 +94,18 @@ function Landing() {
                         <CardTitle className="font-display text-base">{o.name}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {o.description ? (
+                        {o.layout && o.layout.length > 0 ? (
+                          <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} />
+                        ) : o.description ? (
                           <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
                         ) : (
-                          <Badge variant="secondary">/{o.slug}</Badge>
+                          <p className="text-xs text-muted-foreground">/{o.slug}</p>
                         )}
                       </CardContent>
                     </Card>
                   </Link>
                 ))}
+
               </div>
             )}
           </section>
@@ -121,7 +125,10 @@ function Landing() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {(recs.data?.items ?? []).map((r) => {
-                  const firstText = Object.values(r.data).find((v) => typeof v === "string" && v.length > 0) as string | undefined;
+                  const titleKey = r.layout?.[0]?.field_key;
+                  const title = titleKey ? String(r.data?.[titleKey] ?? "") : "";
+                  const fallback = Object.values(r.data).find((v) => typeof v === "string" && v.length > 0) as string | undefined;
+                  const restLayout = (r.layout ?? []).slice(1);
                   return (
                     <Link
                       key={r.record_id}
@@ -133,13 +140,19 @@ function Landing() {
                         <CardHeader className="pb-2">
                           <p className="text-xs text-muted-foreground truncate">{r.org_name} · {r.table_name}</p>
                           <CardTitle className="font-display text-base line-clamp-2">
-                            {firstText ?? "Registro"}
+                            {title || fallback || "Registro"}
                           </CardTitle>
                         </CardHeader>
+                        {restLayout.length > 0 ? (
+                          <CardContent>
+                            <PublicCardBody layout={restLayout as any} fields={r.fields as any} data={r.data} />
+                          </CardContent>
+                        ) : null}
                       </Card>
                     </Link>
                   );
                 })}
+
               </div>
             )}
           </section>

@@ -1,4 +1,10 @@
+## 2026-07-15 (America/Sao_Paulo) — Cards públicos de landing/explore usam layout do super admin
+
+- `src/lib/public.server.ts`: `listPublicOrganizations` e `listPublicRecords` agora anexam por item `layout` (do `category_public_layouts` do escopo `organization_card`/`record_card`) e `fields` (built-ins + `category_org_fields` para orgs; `fields` da tabela para records). Batch: uma única consulta de layouts/campos por página de resultados.
+- `src/routes/index.tsx` e `src/routes/explore.tsx`: cards passam a renderizar via `PublicCardBody` quando há layout configurado; fallback para descrição/data quando a categoria não tem layout. Título do card de registro segue o primeiro campo do layout.
+
 ## 2026-07-15 (America/Sao_Paulo) — Iteração 13 (Fase B): UI de layouts + galeria + ViaCEP + Explore
+
 
 ### Frontend
 - `src/routes/index.tsx` (landing): removido o carrossel único de tabelas; substituído por dois blocos separados "Organizações recentes" e "Registros recentes" consumindo `/api/public/organizations` e `/api/public/records`. Adicionado CTA "Explorar" apontando para `/explore`.
