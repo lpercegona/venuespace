@@ -110,17 +110,18 @@ function OrgsPage() {
                 <Textarea id="org-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
               </div>
               <div className="space-y-2">
-                <Label>Categoria</Label>
+                <Label>Categoria *</Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma categoria" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Sem categoria</SelectItem>
                     {(cats.data ?? []).map((c) => (
                       <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">A categoria define os campos padrão desta {organizationLabel}.</p>
               </div>
+
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
                 <Button type="submit" disabled={saving}>
