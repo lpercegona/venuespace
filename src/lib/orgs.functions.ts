@@ -17,12 +17,14 @@ const orgCreate = z.object({
   name: z.string().min(2).max(80),
   slug: z.string().min(2).max(60).regex(/^[a-z0-9-]+$/).optional(),
   description: z.string().max(500).optional(),
-  category_id: z.string().uuid().nullable().optional(),
+  category_id: z.string().uuid({ message: "Categoria é obrigatória." }),
   timezone: z.string().max(64).nullable().optional(),
   currency: z.string().max(8).nullable().optional(),
   currency_display: currencyDisplaySchema,
   system_data: z.record(z.string(), z.any()).optional(),
+  category_data: z.record(z.string(), z.any()).optional(),
 });
+
 
 export const listMyOrganizations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
