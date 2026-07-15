@@ -15,6 +15,7 @@ type Payload = {
   fields: Array<{ id: string; key: string; label: string; type: string; position: number; config: any }>;
   record: { id: string; data: Record<string, any>; deal_status: string; created_at: string };
   signed_urls: Record<string, string>;
+  galleries?: Record<string, string[]>;
   relations: Record<string, Record<string, { id: string; label: string }>>;
   public_form_view: { id: string; auto_relation_field_id: string | null } | null;
 };
