@@ -652,6 +652,23 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                   <Label htmlFor="df-req" className="text-sm">Obrigatório</Label>
                   <Switch id="df-req" checked={required} onCheckedChange={setRequired} />
                 </div>
+                {(type === "select" || type === "multiselect") ? (
+                  <div className="sm:col-span-2 space-y-2">
+                    <Label htmlFor="df-options">Opções (uma por linha)</Label>
+                    <Textarea id="df-options" rows={4} value={optionsText}
+                      onChange={(e) => setOptionsText(e.target.value)}
+                      placeholder="Ex: Aluguel&#10;Venda&#10;Temporada" />
+                  </div>
+                ) : null}
+                {type === "text" ? (
+                  <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
+                    <div>
+                      <Label htmlFor="df-cep" className="text-sm">Autocompletar via ViaCEP</Label>
+                      <p className="text-xs text-muted-foreground">Ao preencher, busca endereço e preenche logradouro/bairro/cidade/estado.</p>
+                    </div>
+                    <Switch id="df-cep" checked={cepRole} onCheckedChange={setCepRole} />
+                  </div>
+                ) : null}
               </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
