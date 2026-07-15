@@ -17,12 +17,14 @@ const orgCreate = z.object({
   name: z.string().min(2).max(80),
   slug: z.string().min(2).max(60).regex(/^[a-z0-9-]+$/).optional(),
   description: z.string().max(500).optional(),
-  category_id: z.string().uuid().nullable().optional(),
+  category_id: z.string().uuid({ message: "Categoria é obrigatória." }),
   timezone: z.string().max(64).nullable().optional(),
   currency: z.string().max(8).nullable().optional(),
   currency_display: currencyDisplaySchema,
   system_data: z.record(z.string(), z.any()).optional(),
+  category_data: z.record(z.string(), z.any()).optional(),
 });
+
 
 export const listMyOrganizations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -49,18 +51,17 @@ export const createOrganization = createServerFn({ method: "POST" })
     const org = Array.isArray(rows) ? rows[0] : rows;
     if (!org) throw new Error("Falha ao criar organização");
     // Apply category + overrides via update (owner policy, caller is owner).
-    const patch: Record<string, any> = {};
-    if (data.category_id !== undefined) patch.category_id = data.category_id;
+    const patch: Record<string, any> = { category_id: data.category_id };
     if (data.timezone !== undefined) patch.timezone = data.timezone;
     if (data.currency !== undefined) patch.currency = data.currency;
     if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
     if (data.system_data !== undefined) patch.system_data = data.system_data;
-    if (Object.keys(patch).length > 0) {
-      const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
-      if (uErr) throw new Error(uErr.message);
-    }
+    if (data.category_data !== undefined) patch.category_data = data.category_data;
+    const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
+    if (uErr) throw new Error(uErr.message);
     return org as { id: string; slug: string; name: string };
   });
+
 
 export const getOrganizationBySlug = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -89,11 +90,12 @@ const orgUpdate = z.object({
   name: z.string().min(2).max(80).optional(),
   description: z.string().max(500).nullable().optional(),
   logo_url: z.string().url().max(2000).nullable().optional(),
-  category_id: z.string().uuid().nullable().optional(),
+  category_id: z.string().uuid().optional(),
   timezone: z.string().max(64).nullable().optional(),
   currency: z.string().max(8).nullable().optional(),
   currency_display: currencyDisplaySchema,
   system_data: z.record(z.string(), z.any()).optional(),
+  category_data: z.record(z.string(), z.any()).optional(),
 });
 
 export const updateOrganization = createServerFn({ method: "POST" })
@@ -104,6 +106,15 @@ export const updateOrganization = createServerFn({ method: "POST" })
       .rpc("has_role", { _user_id: context.userId, _org_id: data.id, _role: "owner" });
     if (rErr) throw new Error(rErr.message);
     if (!isOwner) throw new Error("Sem permissão para editar esta organização.");
+
+    // Track category change to reconcile fields retroactively.
+    let categoryChanged = false;
+    if (data.category_id !== undefined) {
+      const { data: cur } = await context.supabase
+        .from("organizations").select("category_id").eq("id", data.id).maybeSingle();
+      categoryChanged = (cur as any)?.category_id !== data.category_id;
+    }
+
     const patch: Record<string, any> = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.description !== undefined) patch.description = data.description;
@@ -113,10 +124,16 @@ export const updateOrganization = createServerFn({ method: "POST" })
     if (data.currency !== undefined) patch.currency = data.currency;
     if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
     if (data.system_data !== undefined) patch.system_data = data.system_data;
+    if (data.category_data !== undefined) patch.category_data = data.category_data;
     const { error } = await context.supabase.from("organizations").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
-    return { ok: true };
+
+    if (categoryChanged) {
+      await context.supabase.rpc("reconcile_org_category_fields", { _org_id: data.id });
+    }
+    return { ok: true, category_reconciled: categoryChanged };
   });
+
 
 export const deleteOrganization = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -163,7 +180,9 @@ const tableCreate = z.object({
   description: z.string().max(500).optional(),
   icon: z.string().max(40).optional(),
   bookable: z.boolean().optional(),
+  category_data: z.record(z.string(), z.any()).optional(),
 });
+
 
 export const listTables = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -193,10 +212,12 @@ export const createTable = createServerFn({ method: "POST" })
         description: data.description ?? null,
         icon: data.icon ?? null,
         bookable: data.bookable ?? false,
-      })
+        category_data: (data.category_data ?? {}) as any,
+      } as any)
       .select("id, slug, name")
       .single();
     if (error) throw new Error(error.message);
+
 
     // Seed default fields from org's category, if any.
     try {
@@ -222,10 +243,15 @@ export const createTable = createServerFn({ method: "POST" })
             required: !!f.required,
             position: f.order_index ?? idx,
             config: (f.config ?? {}) as any,
+            source: "category",
+            category_field_key: f.field_key,
           }));
           await context.supabase.from("fields").insert(rows as any);
         }
       }
+
+      // Seed category_table_fields definitions as tables.category_data schema is loaded elsewhere;
+      // here we just leave category_data default {} — validated on update via cascade schema.
     } catch {
       // Seeding failure must not block table creation.
     }
@@ -233,12 +259,14 @@ export const createTable = createServerFn({ method: "POST" })
     return row;
   });
 
+
 const tableUpdate = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(80).optional(),
   description: z.string().max(500).nullable().optional(),
   icon: z.string().max(40).nullable().optional(),
   bookable: z.boolean().optional(),
+  category_data: z.record(z.string(), z.any()).optional(),
 });
 
 export const updateTable = createServerFn({ method: "POST" })
@@ -251,6 +279,7 @@ export const updateTable = createServerFn({ method: "POST" })
     if (rest.description !== undefined) patch.description = rest.description;
     if (rest.icon !== undefined) patch.icon = rest.icon;
     if (rest.bookable !== undefined) patch.bookable = rest.bookable;
+    if (rest.category_data !== undefined) patch.category_data = rest.category_data;
     const { error } = await context.supabase.from("tables").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -262,10 +291,11 @@ export const getTable = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("tables")
-      .select("id, slug, name, description, icon, bookable, organization_id")
+      .select("id, slug, name, description, icon, bookable, category_data, organization_id")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
+
     if (!row) throw new Error("Tabela não encontrada");
     return row;
   });
@@ -307,18 +337,30 @@ export const listFields = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("fields")
-      .select("id, key, label, type, required, position, config")
+      .select("id, key, label, type, required, position, config, source, category_field_key")
       .eq("table_id", data.table_id)
       .order("position", { ascending: true });
     if (error) throw new Error(error.message);
     return rows ?? [];
   });
 
+async function assertFieldMutable(supabase: any, userId: string, fieldId: string) {
+  const { data: isSA } = await supabase.rpc("is_super_admin", { _user_id: userId });
+  if (isSA) return;
+  const { data: f, error } = await supabase.from("fields").select("source").eq("id", fieldId).maybeSingle();
+  if (error) throw new Error(error.message);
+  const source = (f as any)?.source ?? "user";
+  if (source !== "user") {
+    throw new Error("Este campo é definido pela categoria da organização e só pode ser alterado pelo super admin.");
+  }
+}
+
 export const createField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => fieldCreate.parse(d))
   .handler(async ({ data, context }) => {
     await checkFieldManagementAllowed(context.supabase, context.userId);
+    const { data: isSA } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
     const { data: row, error } = await context.supabase
       .from("fields")
       .insert({
@@ -329,7 +371,8 @@ export const createField = createServerFn({ method: "POST" })
         required: data.required ?? false,
         position: data.position ?? 0,
         config: (data.config ?? {}) as any,
-      })
+        source: isSA ? "user" : "user",
+      } as any)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -341,6 +384,7 @@ export const updateField = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => fieldUpdate.parse(d))
   .handler(async ({ data, context }) => {
     await checkFieldManagementAllowed(context.supabase, context.userId);
+    await assertFieldMutable(context.supabase, context.userId, data.id);
     const { id, ...rest } = data;
     const { error } = await context.supabase.from("fields").update(rest as any).eq("id", id);
     if (error) throw new Error(error.message);
@@ -352,10 +396,12 @@ export const deleteField = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await checkFieldManagementAllowed(context.supabase, context.userId);
+    await assertFieldMutable(context.supabase, context.userId, data.id);
     const { error } = await context.supabase.from("fields").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 // Memberships (basic)
 

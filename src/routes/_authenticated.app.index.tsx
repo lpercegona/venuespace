@@ -46,7 +46,7 @@ function OrgsPage() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [categoryId, setCategoryId] = useState<string>("__none__");
+  const [categoryId, setCategoryId] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   const cats = useQuery({
@@ -57,18 +57,22 @@ function OrgsPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    if (!categoryId) {
+      toast.error("Selecione uma categoria.");
+      return;
+    }
     setSaving(true);
     try {
       const org = await createOrg({ data: {
         name,
         description: description || undefined,
-        category_id: categoryId === "__none__" ? null : categoryId,
+        category_id: categoryId,
       } });
       toast.success("Organização criada");
       setOpen(false);
       setName("");
       setDescription("");
-      setCategoryId("__none__");
+      setCategoryId("");
       await refetch();
       router.invalidate();
       navigate({ to: "/app/$orgSlug", params: { orgSlug: org.slug } });
@@ -78,6 +82,7 @@ function OrgsPage() {
       setSaving(false);
     }
   }
+
 
   return (
     <AppShell
@@ -105,17 +110,18 @@ function OrgsPage() {
                 <Textarea id="org-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
               </div>
               <div className="space-y-2">
-                <Label>Categoria</Label>
+                <Label>Categoria *</Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Selecione uma categoria" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Sem categoria</SelectItem>
                     {(cats.data ?? []).map((c) => (
                       <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">A categoria define os campos padrão desta {organizationLabel}.</p>
               </div>
+
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
                 <Button type="submit" disabled={saving}>
