@@ -145,6 +145,7 @@ export const updateOrganization = createServerFn({ method: "POST" })
     if (data.currency_display !== undefined) patch.currency_display = data.currency_display;
     if (data.system_data !== undefined) patch.system_data = data.system_data;
     if (data.category_data !== undefined) patch.category_data = data.category_data;
+    if (data.address !== undefined) patch.address = data.address;
     const { error } = await context.supabase.from("organizations").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
 
