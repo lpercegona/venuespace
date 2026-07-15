@@ -266,6 +266,7 @@ const tableUpdate = z.object({
   description: z.string().max(500).nullable().optional(),
   icon: z.string().max(40).nullable().optional(),
   bookable: z.boolean().optional(),
+  category_data: z.record(z.string(), z.any()).optional(),
 });
 
 export const updateTable = createServerFn({ method: "POST" })
@@ -278,6 +279,7 @@ export const updateTable = createServerFn({ method: "POST" })
     if (rest.description !== undefined) patch.description = rest.description;
     if (rest.icon !== undefined) patch.icon = rest.icon;
     if (rest.bookable !== undefined) patch.bookable = rest.bookable;
+    if (rest.category_data !== undefined) patch.category_data = rest.category_data;
     const { error } = await context.supabase.from("tables").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -289,10 +291,11 @@ export const getTable = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("tables")
-      .select("id, slug, name, description, icon, bookable, organization_id")
+      .select("id, slug, name, description, icon, bookable, category_data, organization_id")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
+
     if (!row) throw new Error("Tabela não encontrada");
     return row;
   });
