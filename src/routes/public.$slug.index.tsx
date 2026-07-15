@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
-import { PublicCardBody } from "@/components/venue/public-card-renderer";
+import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 import { EmptyState } from "@/components/venue/empty-state";
 import type { PublicRecordSummary } from "@/lib/public.server";
 
@@ -49,10 +49,7 @@ function PublicOrgPage() {
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((r) => {
-              const titleKey = r.layout?.[0]?.field_key;
-              const title = titleKey ? String(r.data?.[titleKey] ?? "") : "";
-              const fallback = Object.values(r.data).find((v) => typeof v === "string" && v.length > 0) as string | undefined;
-              const restLayout = (r.layout ?? []).slice(1);
+              const title = getPublicCardTitle({ layout: r.layout ?? [], fields: r.fields ?? [], data: r.data, fallback: "Ambiente" });
               return (
                 <li key={r.record_id}>
                   <Link
@@ -68,9 +65,9 @@ function PublicOrgPage() {
                         </div>
                         <CardTitle className="font-display text-lg line-clamp-2">{title || fallback || "Registro"}</CardTitle>
                       </CardHeader>
-                      {restLayout.length > 0 ? (
+                      {(r.layout ?? []).length > 0 ? (
                         <CardContent>
-                          <PublicCardBody layout={restLayout as any} fields={r.fields as any} data={r.data} />
+                          <PublicCardBody layout={r.layout as any} fields={r.fields as any} data={r.data} />
                         </CardContent>
                       ) : null}
                     </Card>

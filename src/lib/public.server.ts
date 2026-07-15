@@ -392,20 +392,26 @@ async function signImagePathsInItems(items: Array<{ data: Record<string, any>; f
     | { kind: "gallery"; data: Record<string, any>; key: string; index: number };
   const refs: Ref[] = [];
   const paths: string[] = [];
+  const isHttp = (v: string) => /^https?:\/\//i.test(v);
+  const hasImageExtension = (v: string) => /\.(avif|gif|jpe?g|png|webp|bmp|svg)(\?.*)?$/i.test(v);
+  const isImageLikeName = (key: string, label?: string) => /(avatar|capa|cover|foto|galeria|gallery|imagem|image|logo|photo|picture)/i.test(`${key} ${label ?? ""}`);
   for (const it of items) {
     for (const f of it.fields) {
-      if (f.type === "image") {
+      const imageLike = f.type === "image" || f.type === "gallery" || isImageLikeName(f.key, f.label);
+      if (f.type === "image" || imageLike) {
         const v = it.data?.[f.key];
-        if (typeof v !== "string" || !v) continue;
-        if (/^https?:\/\//i.test(v)) continue;
+        if (typeof v !== "string" || !v || isHttp(v)) continue;
+        if (!imageLike && !hasImageExtension(v)) continue;
         refs.push({ kind: "single", data: it.data, key: f.key });
         paths.push(v);
-      } else if (f.type === "gallery") {
+      }
+      if (f.type === "gallery" || imageLike) {
         const arr = it.data?.[f.key];
         if (!Array.isArray(arr)) continue;
         arr.forEach((p, i) => {
           if (typeof p !== "string" || !p) return;
-          if (/^https?:\/\//i.test(p)) return;
+          if (isHttp(p)) return;
+          if (!imageLike && !hasImageExtension(p)) return;
           refs.push({ kind: "gallery", data: it.data, key: f.key, index: i });
           paths.push(p);
         });

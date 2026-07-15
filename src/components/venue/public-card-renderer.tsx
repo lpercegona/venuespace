@@ -40,6 +40,50 @@ function isUrl(v: unknown): v is string {
   return typeof v === "string" && /^https?:\/\//i.test(v);
 }
 
+function hasImageExtension(v: string) {
+  try {
+    const path = decodeURIComponent(new URL(v).pathname);
+    return /\.(avif|gif|jpe?g|png|webp|bmp|svg)$/i.test(path);
+  } catch {
+    return /\.(avif|gif|jpe?g|png|webp|bmp|svg)(\?.*)?$/i.test(v);
+  }
+}
+
+function isImageLikeName(key: string, label?: string) {
+  return /(avatar|capa|cover|foto|galeria|gallery|imagem|image|logo|photo|picture)/i.test(`${key} ${label ?? ""}`);
+}
+
+function mediaUrlsFor(field: RendererField | undefined, key: string, label: string, raw: any) {
+  const imageLike = field?.type === "image" || field?.type === "gallery" || isImageLikeName(key, label);
+  if (Array.isArray(raw)) return raw.filter((v) => isUrl(v) && (imageLike || hasImageExtension(v)));
+  if (!isUrl(raw)) return [];
+  if (field?.type === "url" && !imageLike) return [];
+  return imageLike || hasImageExtension(raw) ? [raw] : [];
+}
+
+export function getPublicCardTitle({
+  layout,
+  fields,
+  data,
+  fallback,
+}: {
+  layout: LayoutItem[];
+  fields: RendererField[];
+  data: Record<string, any>;
+  fallback: string;
+}) {
+  const byKey = new Map(fields.map((f) => [f.key, f]));
+  for (const it of layout ?? []) {
+    const f = byKey.get(it.field_key);
+    const label = (it.config?.label_override as string) ?? f?.label ?? it.field_key;
+    const raw = data?.[it.field_key];
+    if (mediaUrlsFor(f, it.field_key, label, raw).length > 0) continue;
+    const text = formatValue(f, raw).trim();
+    if (text && !isUrl(text)) return text;
+  }
+  return fallback;
+}
+
 function ImageCell({ src, alt, className }: { src: string; alt: string; className?: string }) {
   return (
     <img
@@ -93,23 +137,19 @@ export function PublicCardBody({
             const label = (it.config?.label_override as string) ?? f?.label ?? it.field_key;
             const iconName = (it.config?.icon as string) ?? null;
 
-            // Image field
-            if (f?.type === "image") {
-              if (!isUrl(raw)) return null;
+            const mediaUrls = mediaUrlsFor(f, it.field_key, label, raw);
+            if (mediaUrls.length === 1) {
               return (
                 <div key={it.id} className={`${basis} min-w-0 grow-0`}>
-                  <ImageCell src={raw} alt={label} />
+                  <ImageCell src={mediaUrls[0]} alt={label} />
                 </div>
               );
             }
-            // Gallery field
-            if (f?.type === "gallery") {
-              const arr = Array.isArray(raw) ? raw.filter(isUrl) : [];
-              if (arr.length === 0) return null;
+            if (mediaUrls.length > 1) {
               return (
                 <div key={it.id} className={`${basis} min-w-0 grow-0`}>
                   <div className="grid grid-cols-3 gap-1">
-                    {arr.slice(0, 3).map((u, idx) => (
+                    {mediaUrls.slice(0, 3).map((u, idx) => (
                       <img key={idx} src={u} alt={`${label} ${idx + 1}`} loading="lazy" decoding="async" className="aspect-square w-full rounded-sm object-cover" />
                     ))}
                   </div>

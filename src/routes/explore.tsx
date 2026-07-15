@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Search, Building2, FileText } from "lucide-react";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
-import { PublicCardBody } from "@/components/venue/public-card-renderer";
+import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 
 import { useLabels } from "@/hooks/use-instance-context";
 
@@ -24,9 +24,9 @@ export const Route = createFileRoute("/explore")({
   head: () => ({
     meta: [
       { title: "Explorar — Venuespace" },
-      { name: "description", content: "Descubra organizações e registros públicos no Venuespace." },
+      { name: "description", content: "Descubra espaços de eventos e ambientes publicados no Venuespace." },
       { property: "og:title", content: "Explorar — Venuespace" },
-      { property: "og:description", content: "Descubra organizações e registros públicos no Venuespace." },
+      { property: "og:description", content: "Descubra espaços de eventos e ambientes publicados no Venuespace." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -88,7 +88,7 @@ function ExplorePage() {
       <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
         <BackLink to="/" label="Início" />
         <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">Explorar</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Navegue por {orgLabel}s e {recordLabel}s publicados.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Navegue por espaços de eventos e ambientes publicados.</p>
 
         <Tabs
           value={activeTab}
@@ -96,8 +96,8 @@ function ExplorePage() {
           className="mt-6"
         >
           <TabsList>
-            <TabsTrigger value="orgs"><Building2 className="h-4 w-4" />Organizações</TabsTrigger>
-            <TabsTrigger value="records"><FileText className="h-4 w-4" />Registros</TabsTrigger>
+            <TabsTrigger value="orgs"><Building2 className="h-4 w-4" />Espaços</TabsTrigger>
+            <TabsTrigger value="records"><FileText className="h-4 w-4" />Ambientes</TabsTrigger>
           </TabsList>
 
           <form
@@ -115,7 +115,7 @@ function ExplorePage() {
             {orgsQ.isLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (orgsQ.data?.items ?? []).length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">Nenhuma {orgLabel} encontrada.</p>
+              <p className="py-16 text-center text-sm text-muted-foreground">Nenhum espaço encontrado.</p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(orgsQ.data?.items ?? []).map((o) => (
@@ -152,14 +152,11 @@ function ExplorePage() {
             {recsQ.isLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : (recsQ.data?.items ?? []).length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">Nenhum {recordLabel} encontrado.</p>
+              <p className="py-16 text-center text-sm text-muted-foreground">Nenhum ambiente encontrado.</p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(recsQ.data?.items ?? []).map((r) => {
-                  const titleKey = r.layout?.[0]?.field_key;
-                  const title = titleKey ? String(r.data?.[titleKey] ?? "") : "";
-                  const fallback = Object.values(r.data).find((v) => typeof v === "string" && v.length > 0) as string | undefined;
-                  const restLayout = (r.layout ?? []).slice(1);
+                  const title = getPublicCardTitle({ layout: r.layout ?? [], fields: r.fields ?? [], data: r.data, fallback: "Ambiente" });
                   return (
                     <Link
                       key={r.record_id}
@@ -175,9 +172,9 @@ function ExplorePage() {
                           </div>
                           <CardTitle className="font-display text-lg line-clamp-2">{title || fallback || "Registro"}</CardTitle>
                         </CardHeader>
-                        {restLayout.length > 0 ? (
+                        {(r.layout ?? []).length > 0 ? (
                           <CardContent>
-                            <PublicCardBody layout={restLayout as any} fields={r.fields as any} data={r.data} />
+                            <PublicCardBody layout={r.layout as any} fields={r.fields as any} data={r.data} />
                           </CardContent>
                         ) : (
                           <CardContent>
