@@ -137,7 +137,7 @@ function Landing() {
                         <CardHeader className="pb-2">
                           <p className="text-xs text-muted-foreground truncate">{r.org_name} · {r.table_name}</p>
                           <CardTitle className="font-display text-base line-clamp-2">
-                            {title || fallback || "Registro"}
+                            {title || "Ambiente"}
                           </CardTitle>
                         </CardHeader>
                         {(r.layout ?? []).length > 0 ? (

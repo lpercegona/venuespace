@@ -63,7 +63,7 @@ function PublicOrgPage() {
                           <FileText className="h-3.5 w-3.5" />
                           <span className="truncate">{r.table_name}</span>
                         </div>
-                        <CardTitle className="font-display text-lg line-clamp-2">{title || fallback || "Registro"}</CardTitle>
+                        <CardTitle className="font-display text-lg line-clamp-2">{title || "Ambiente"}</CardTitle>
                       </CardHeader>
                       {(r.layout ?? []).length > 0 ? (
                         <CardContent>
