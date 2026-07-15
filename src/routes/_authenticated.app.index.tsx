@@ -69,12 +69,14 @@ function OrgsPage() {
         name,
         description: description || undefined,
         category_id: categoryId,
+        category_data: categoryData,
       } });
       toast.success("Organização criada");
       setOpen(false);
       setName("");
       setDescription("");
       setCategoryId("");
+      setCategoryData({});
       await refetch();
       router.invalidate();
       navigate({ to: "/app/$orgSlug", params: { orgSlug: org.slug } });
@@ -113,7 +115,7 @@ function OrgsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Categoria *</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
+                <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setCategoryData({}); }}>
                   <SelectTrigger><SelectValue placeholder="Selecione uma categoria" /></SelectTrigger>
                   <SelectContent>
                     {(cats.data ?? []).map((c) => (
@@ -123,6 +125,15 @@ function OrgsPage() {
                 </Select>
                 <p className="text-xs text-muted-foreground">A categoria define os campos padrão desta {organizationLabel}.</p>
               </div>
+
+              <CategoryFieldsForm
+                categoryId={categoryId || null}
+                scope="org"
+                value={categoryData}
+                onChange={setCategoryData}
+                title={`Campos da categoria`}
+              />
+
 
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
