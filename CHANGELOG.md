@@ -1,3 +1,39 @@
+## 2026-07-15 (America/Sao_Paulo) — Iteração 13 (Fase A): Backend de layouts públicos + galeria + ViaCEP
+
+### Banco
+- Migration: nova tabela `category_public_layouts (category_id, scope, unique)` e `category_public_layout_fields (layout_id, field_key, width_percent, order_index, config)`; `scope` é um enum `public_layout_scope ('organization_card', 'record_card')`.
+- Migration: tipo de campo `gallery` adicionado ao enum `field_type` (array de arquivos com URLs pré-assinadas — consumidores serão atualizados na Fase B).
+- Migration: removida a antiga tabela `organization_category_public_layouts` (substituída pelo novo modelo em dois escopos).
+- GRANTs: `SELECT` público em ambas as tabelas de layout; escrita restrita a super admin via RLS (`is_super_admin(auth.uid())`).
+
+### Backend
+- `src/lib/public.server.ts`:
+  - Novo helper `loadPublicLayout(categoryId, scope)` para resolver layout por categoria.
+  - Nova função `listPublicOrganizations({ q, category_id, limit, offset })` — devolve apenas organizações com ≥1 registro publicado, ordenadas por `updated_at`, com busca em nome + descrição.
+  - Nova função `listPublicRecords({ q, category_id, limit, offset })` — devolve registros publicados com JOIN em tabela e organização, busca em nome de tabela, organização e valores textuais de `record.data`.
+  - `loadPublicTable` agora retorna `record_card_layout` (novo formato: `{ field_key, width_percent, order_index, config }`) no lugar do antigo `category_layout`.
+- Novas server functions `listCategoryLayout` e `saveCategoryLayout` em `src/lib/category-layouts.functions.ts` — CRUD restrito a super admin, valida `width_percent ∈ {25,50,75,100}` e soma por linha ≤ 100.
+
+### Endpoints públicos
+- `GET /api/public/organizations` — busca de perfis públicos.
+- `GET /api/public/records` — busca de registros publicados.
+- `GET /api/public/viacep/$cep` — proxy server-side para `viacep.com.br` com validação de CEP e cache 24h.
+- `GET /api/public/category-layout/$categoryId?scope=organization_card|record_card` — layout público resolvido para consumo anônimo.
+
+### Frontend (mínimo para desbloquear build)
+- `src/routes/public.$slug.$tableId.index.tsx`: consumidor migrado para o novo formato `record_card_layout` (campo `field_key`, ícone e rótulo lidos de `config`).
+
+### Pendente para Fase B (próxima iteração)
+- Editor "Layout Público" no `/admin` (drag-order + largura 25/50/75/100 por linha, por escopo).
+- Componente `PublicCardRenderer` (CSS grid respeitando `width_percent`).
+- Suporte a `type='gallery'` em `DynamicForm`, `DynamicGrid` e página de detalhe pública (upload múltiplo + pré-assinatura em lote).
+- Reformulação de `/` (blocos separados de organizações recentes / registros recentes) e `/explore` (abas Organizações | Registros).
+- Editor de opções de `select`/`multiselect` em Campos Padrão.
+- Autocomplete de CEP via `config.role = 'cep'` disparando o proxy `/api/public/viacep/$cep`.
+- Auditoria e correção dos 17 tipos de campo em 5 superfícies (DynamicGrid, DynamicForm, público, PublicCardRenderer, editor de opções).
+
+---
+
 ## 2026-07-15 (America/Sao_Paulo) — Conexão dos campos padrão ao fluxo do usuário
 
 ### Frontend

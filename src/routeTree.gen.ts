@@ -19,7 +19,9 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as PublicSlugTableIdRouteImport } from './routes/public.$slug.$tableId'
 import { Route as ApiPublicTablesRouteImport } from './routes/api/public/tables'
 import { Route as ApiPublicSystemFieldsRouteImport } from './routes/api/public/system-fields'
+import { Route as ApiPublicRecordsRouteImport } from './routes/api/public/records'
 import { Route as ApiPublicPlatformLabelsRouteImport } from './routes/api/public/platform-labels'
+import { Route as ApiPublicOrganizationsRouteImport } from './routes/api/public/organizations'
 import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/api/public/organization-categories'
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
 import { Route as AuthenticatedMeApplicationsRouteImport } from './routes/_authenticated.me.applications'
@@ -28,9 +30,11 @@ import { Route as AuthenticatedAppOrgSlugIndexRouteImport } from './routes/_auth
 import { Route as PublicSlugCampaignsRecordIdRouteImport } from './routes/public.$slug.campaigns.$recordId'
 import { Route as PublicSlugTableIdFormRouteImport } from './routes/public.$slug.$tableId.form'
 import { Route as PublicSlugTableIdRecordIdRouteImport } from './routes/public.$slug.$tableId.$recordId'
+import { Route as ApiPublicViacepCepRouteImport } from './routes/api/public/viacep.$cep'
 import { Route as ApiPublicLeadTokenRouteImport } from './routes/api/public/lead/$token'
 import { Route as ApiPublicFormSchemaViewIdRouteImport } from './routes/api/public/form-schema/$viewId'
 import { Route as ApiPublicCategorySchemaCategoryIdRouteImport } from './routes/api/public/category-schema.$categoryId'
+import { Route as ApiPublicCategoryLayoutCategoryIdRouteImport } from './routes/api/public/category-layout.$categoryId'
 import { Route as ApiPublicCampaignsRecordIdRouteImport } from './routes/api/public/campaigns/$recordId'
 import { Route as ApiPublicSlugTableIdRouteImport } from './routes/api/public/$slug/$tableId'
 import { Route as AuthenticatedAppOrgSlugMembersRouteImport } from './routes/_authenticated.app.$orgSlug.members'
@@ -91,9 +95,19 @@ const ApiPublicSystemFieldsRoute = ApiPublicSystemFieldsRouteImport.update({
   path: '/api/public/system-fields',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRecordsRoute = ApiPublicRecordsRouteImport.update({
+  id: '/api/public/records',
+  path: '/api/public/records',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPlatformLabelsRoute = ApiPublicPlatformLabelsRouteImport.update({
   id: '/api/public/platform-labels',
   path: '/api/public/platform-labels',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicOrganizationsRoute = ApiPublicOrganizationsRouteImport.update({
+  id: '/api/public/organizations',
+  path: '/api/public/organizations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicOrganizationCategoriesRoute =
@@ -142,6 +156,11 @@ const PublicSlugTableIdRecordIdRoute =
     path: '/$recordId',
     getParentRoute: () => PublicSlugTableIdRoute,
   } as any)
+const ApiPublicViacepCepRoute = ApiPublicViacepCepRouteImport.update({
+  id: '/api/public/viacep/$cep',
+  path: '/api/public/viacep/$cep',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLeadTokenRoute = ApiPublicLeadTokenRouteImport.update({
   id: '/api/public/lead/$token',
   path: '/api/public/lead/$token',
@@ -157,6 +176,12 @@ const ApiPublicCategorySchemaCategoryIdRoute =
   ApiPublicCategorySchemaCategoryIdRouteImport.update({
     id: '/api/public/category-schema/$categoryId',
     path: '/api/public/category-schema/$categoryId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCategoryLayoutCategoryIdRoute =
+  ApiPublicCategoryLayoutCategoryIdRouteImport.update({
+    id: '/api/public/category-layout/$categoryId',
+    path: '/api/public/category-layout/$categoryId',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicCampaignsRecordIdRoute =
@@ -228,7 +253,9 @@ export interface FileRoutesByFullPath {
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
+  '/api/public/organizations': typeof ApiPublicOrganizationsRoute
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
+  '/api/public/records': typeof ApiPublicRecordsRoute
   '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
@@ -238,9 +265,11 @@ export interface FileRoutesByFullPath {
   '/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
+  '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
+  '/api/public/viacep/$cep': typeof ApiPublicViacepCepRoute
   '/public/$slug/$tableId/$recordId': typeof PublicSlugTableIdRecordIdRoute
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
@@ -261,7 +290,9 @@ export interface FileRoutesByTo {
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
+  '/api/public/organizations': typeof ApiPublicOrganizationsRoute
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
+  '/api/public/records': typeof ApiPublicRecordsRoute
   '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -270,9 +301,11 @@ export interface FileRoutesByTo {
   '/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
+  '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
+  '/api/public/viacep/$cep': typeof ApiPublicViacepCepRoute
   '/public/$slug/$tableId/$recordId': typeof PublicSlugTableIdRecordIdRoute
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
@@ -295,7 +328,9 @@ export interface FileRoutesById {
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
+  '/api/public/organizations': typeof ApiPublicOrganizationsRoute
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
+  '/api/public/records': typeof ApiPublicRecordsRoute
   '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
@@ -305,9 +340,11 @@ export interface FileRoutesById {
   '/_authenticated/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
+  '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
+  '/api/public/viacep/$cep': typeof ApiPublicViacepCepRoute
   '/public/$slug/$tableId/$recordId': typeof PublicSlugTableIdRecordIdRoute
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
@@ -330,7 +367,9 @@ export interface FileRouteTypes {
     | '/me/applications'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
+    | '/api/public/organizations'
     | '/api/public/platform-labels'
+    | '/api/public/records'
     | '/api/public/system-fields'
     | '/api/public/tables'
     | '/public/$slug/$tableId'
@@ -340,9 +379,11 @@ export interface FileRouteTypes {
     | '/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
     | '/api/public/campaigns/$recordId'
+    | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
     | '/api/public/lead/$token'
+    | '/api/public/viacep/$cep'
     | '/public/$slug/$tableId/$recordId'
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
@@ -363,7 +404,9 @@ export interface FileRouteTypes {
     | '/me/applications'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
+    | '/api/public/organizations'
     | '/api/public/platform-labels'
+    | '/api/public/records'
     | '/api/public/system-fields'
     | '/api/public/tables'
     | '/app'
@@ -372,9 +415,11 @@ export interface FileRouteTypes {
     | '/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
     | '/api/public/campaigns/$recordId'
+    | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
     | '/api/public/lead/$token'
+    | '/api/public/viacep/$cep'
     | '/public/$slug/$tableId/$recordId'
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
@@ -396,7 +441,9 @@ export interface FileRouteTypes {
     | '/_authenticated/me/applications'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
+    | '/api/public/organizations'
     | '/api/public/platform-labels'
+    | '/api/public/records'
     | '/api/public/system-fields'
     | '/api/public/tables'
     | '/public/$slug/$tableId'
@@ -406,9 +453,11 @@ export interface FileRouteTypes {
     | '/_authenticated/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
     | '/api/public/campaigns/$recordId'
+    | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
     | '/api/public/lead/$token'
+    | '/api/public/viacep/$cep'
     | '/public/$slug/$tableId/$recordId'
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
@@ -429,15 +478,19 @@ export interface RootRouteChildren {
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
   ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
+  ApiPublicOrganizationsRoute: typeof ApiPublicOrganizationsRoute
   ApiPublicPlatformLabelsRoute: typeof ApiPublicPlatformLabelsRoute
+  ApiPublicRecordsRoute: typeof ApiPublicRecordsRoute
   ApiPublicSystemFieldsRoute: typeof ApiPublicSystemFieldsRoute
   ApiPublicTablesRoute: typeof ApiPublicTablesRoute
   PublicSlugTableIdRoute: typeof PublicSlugTableIdRouteWithChildren
   ApiPublicSlugTableIdRoute: typeof ApiPublicSlugTableIdRouteWithChildren
   ApiPublicCampaignsRecordIdRoute: typeof ApiPublicCampaignsRecordIdRoute
+  ApiPublicCategoryLayoutCategoryIdRoute: typeof ApiPublicCategoryLayoutCategoryIdRoute
   ApiPublicCategorySchemaCategoryIdRoute: typeof ApiPublicCategorySchemaCategoryIdRoute
   ApiPublicFormSchemaViewIdRoute: typeof ApiPublicFormSchemaViewIdRoute
   ApiPublicLeadTokenRoute: typeof ApiPublicLeadTokenRoute
+  ApiPublicViacepCepRoute: typeof ApiPublicViacepCepRoute
   PublicSlugCampaignsRecordIdRoute: typeof PublicSlugCampaignsRecordIdRoute
 }
 
@@ -513,11 +566,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSystemFieldsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/records': {
+      id: '/api/public/records'
+      path: '/api/public/records'
+      fullPath: '/api/public/records'
+      preLoaderRoute: typeof ApiPublicRecordsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/platform-labels': {
       id: '/api/public/platform-labels'
       path: '/api/public/platform-labels'
       fullPath: '/api/public/platform-labels'
       preLoaderRoute: typeof ApiPublicPlatformLabelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/organizations': {
+      id: '/api/public/organizations'
+      path: '/api/public/organizations'
+      fullPath: '/api/public/organizations'
+      preLoaderRoute: typeof ApiPublicOrganizationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/organization-categories': {
@@ -576,6 +643,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicSlugTableIdRecordIdRouteImport
       parentRoute: typeof PublicSlugTableIdRoute
     }
+    '/api/public/viacep/$cep': {
+      id: '/api/public/viacep/$cep'
+      path: '/api/public/viacep/$cep'
+      fullPath: '/api/public/viacep/$cep'
+      preLoaderRoute: typeof ApiPublicViacepCepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/lead/$token': {
       id: '/api/public/lead/$token'
       path: '/api/public/lead/$token'
@@ -595,6 +669,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/category-schema/$categoryId'
       fullPath: '/api/public/category-schema/$categoryId'
       preLoaderRoute: typeof ApiPublicCategorySchemaCategoryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/category-layout/$categoryId': {
+      id: '/api/public/category-layout/$categoryId'
+      path: '/api/public/category-layout/$categoryId'
+      fullPath: '/api/public/category-layout/$categoryId'
+      preLoaderRoute: typeof ApiPublicCategoryLayoutCategoryIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/campaigns/$recordId': {
@@ -752,16 +833,21 @@ const rootRouteChildren: RootRouteChildren = {
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
   ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,
+  ApiPublicOrganizationsRoute: ApiPublicOrganizationsRoute,
   ApiPublicPlatformLabelsRoute: ApiPublicPlatformLabelsRoute,
+  ApiPublicRecordsRoute: ApiPublicRecordsRoute,
   ApiPublicSystemFieldsRoute: ApiPublicSystemFieldsRoute,
   ApiPublicTablesRoute: ApiPublicTablesRoute,
   PublicSlugTableIdRoute: PublicSlugTableIdRouteWithChildren,
   ApiPublicSlugTableIdRoute: ApiPublicSlugTableIdRouteWithChildren,
   ApiPublicCampaignsRecordIdRoute: ApiPublicCampaignsRecordIdRoute,
+  ApiPublicCategoryLayoutCategoryIdRoute:
+    ApiPublicCategoryLayoutCategoryIdRoute,
   ApiPublicCategorySchemaCategoryIdRoute:
     ApiPublicCategorySchemaCategoryIdRoute,
   ApiPublicFormSchemaViewIdRoute: ApiPublicFormSchemaViewIdRoute,
   ApiPublicLeadTokenRoute: ApiPublicLeadTokenRoute,
+  ApiPublicViacepCepRoute: ApiPublicViacepCepRoute,
   PublicSlugCampaignsRecordIdRoute: PublicSlugCampaignsRecordIdRoute,
 }
 export const routeTree = rootRouteImport
