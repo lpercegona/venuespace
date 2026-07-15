@@ -17,6 +17,7 @@ import { Building2, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
+import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
@@ -47,6 +48,7 @@ function OrgsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
+  const [categoryData, setCategoryData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
 
   const cats = useQuery({
