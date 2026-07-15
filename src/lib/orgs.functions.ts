@@ -115,6 +115,7 @@ const orgUpdate = z.object({
   currency_display: currencyDisplaySchema,
   system_data: z.record(z.string(), z.any()).optional(),
   category_data: z.record(z.string(), z.any()).optional(),
+  address: addressSchema.optional(),
 });
 
 export const updateOrganization = createServerFn({ method: "POST" })
