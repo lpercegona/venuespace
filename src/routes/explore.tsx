@@ -155,7 +155,10 @@ function ExplorePage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(recsQ.data?.items ?? []).map((r) => {
-                  const firstText = Object.values(r.data).find((v) => typeof v === "string" && v.length > 0) as string | undefined;
+                  const titleKey = r.layout?.[0]?.field_key;
+                  const title = titleKey ? String(r.data?.[titleKey] ?? "") : "";
+                  const fallback = Object.values(r.data).find((v) => typeof v === "string" && v.length > 0) as string | undefined;
+                  const restLayout = (r.layout ?? []).slice(1);
                   return (
                     <Link
                       key={r.record_id}
@@ -169,11 +172,17 @@ function ExplorePage() {
                             <FileText className="h-3.5 w-3.5" />
                             <span className="truncate">{r.org_name} · {r.table_name}</span>
                           </div>
-                          <CardTitle className="font-display text-lg line-clamp-2">{firstText ?? "Registro"}</CardTitle>
+                          <CardTitle className="font-display text-lg line-clamp-2">{title || fallback || "Registro"}</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <Badge variant="secondary">{new Date(r.created_at).toLocaleDateString("pt-BR")}</Badge>
-                        </CardContent>
+                        {restLayout.length > 0 ? (
+                          <CardContent>
+                            <PublicCardBody layout={restLayout as any} fields={r.fields as any} data={r.data} />
+                          </CardContent>
+                        ) : (
+                          <CardContent>
+                            <Badge variant="secondary">{new Date(r.created_at).toLocaleDateString("pt-BR")}</Badge>
+                          </CardContent>
+                        )}
                       </Card>
                     </Link>
                   );
@@ -181,6 +190,7 @@ function ExplorePage() {
               </div>
             )}
           </TabsContent>
+
         </Tabs>
 
         {total > PAGE_SIZE ? (
