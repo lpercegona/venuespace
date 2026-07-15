@@ -101,6 +101,7 @@ function AdminPage() {
         <TabsContent value="labels"><LabelsSection /></TabsContent>
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
+        <TabsContent value="layouts"><LayoutsSection /></TabsContent>
       </Tabs>
 
     </AppShell>
