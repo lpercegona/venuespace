@@ -486,7 +486,7 @@ function DefaultFieldsSection() {
           <div className="mt-6 rounded-lg border border-border p-4">
             <p className="text-sm font-medium">Reconciliação retroativa</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Aplica os {fieldsLabel} padrão desta categoria em todas as {tablesLabel} de todas as {t("organizations", "organizações").toLowerCase()} vinculadas. Idempotente.
+              Aplica os {fieldsLabel} padrão desta categoria em todas as ambientes de espaços.
             </p>
             <div className="mt-3 flex items-center gap-3">
               <Button size="sm" onClick={reconcile} disabled={reconciling}>
