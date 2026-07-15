@@ -20,6 +20,7 @@ import { Table as TableIcon, Plus, Loader2, UserPlus, Users, Pencil, Trash2 } fr
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
+import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
 
 export const Route = createFileRoute("/_authenticated/app/$orgSlug/")({
   head: ({ params }) => ({
