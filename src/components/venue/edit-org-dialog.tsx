@@ -78,6 +78,7 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
         currency: currency.trim() ? currency.trim().toUpperCase() : null,
         system_data: sysData,
         category_data: catData,
+        address,
       } });
       toast.success("Organização atualizada");
       await Promise.all([
