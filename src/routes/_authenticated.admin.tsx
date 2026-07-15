@@ -533,11 +533,13 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
   const [type, setType] = useState<(typeof FIELD_TYPES)[number]>("text");
   const [required, setRequired] = useState(false);
   const [order, setOrder] = useState(0);
+  const [optionsText, setOptionsText] = useState("");
+  const [cepRole, setCepRole] = useState(false);
   const [saving, setSaving] = useState(false);
 
   function reset() {
     setEditing(null); setLabel(""); setKey(""); setKeyTouched(false);
-    setType("text"); setRequired(false); setOrder(0);
+    setType("text"); setRequired(false); setOrder(0); setOptionsText(""); setCepRole(false);
   }
 
   function uniqueKey(base: string) {
