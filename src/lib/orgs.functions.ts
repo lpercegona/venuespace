@@ -190,7 +190,7 @@ export const listTables = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("tables")
-      .select("id, slug, name, description, icon, bookable, updated_at")
+      .select("id, slug, name, description, icon, bookable, category_data, updated_at")
       .eq("organization_id", data.organization_id)
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
