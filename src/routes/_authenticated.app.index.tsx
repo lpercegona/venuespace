@@ -130,6 +130,10 @@ function OrgsPage() {
                 <p className="text-xs text-muted-foreground">A categoria define os campos padrão desta {organizationLabel}.</p>
               </div>
 
+              <AddressFields value={address} onChange={setAddress} />
+
+
+
               <CategoryFieldsForm
                 categoryId={categoryId || null}
                 scope="org"
