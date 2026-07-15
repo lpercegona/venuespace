@@ -222,16 +222,22 @@ export const createTable = createServerFn({ method: "POST" })
             required: !!f.required,
             position: f.order_index ?? idx,
             config: (f.config ?? {}) as any,
+            source: "category",
+            category_field_key: f.field_key,
           }));
           await context.supabase.from("fields").insert(rows as any);
         }
       }
+
+      // Seed category_table_fields definitions as tables.category_data schema is loaded elsewhere;
+      // here we just leave category_data default {} — validated on update via cascade schema.
     } catch {
       // Seeding failure must not block table creation.
     }
 
     return row;
   });
+
 
 const tableUpdate = z.object({
   id: z.string().uuid(),

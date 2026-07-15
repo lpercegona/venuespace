@@ -30,6 +30,7 @@ import { Route as PublicSlugTableIdFormRouteImport } from './routes/public.$slug
 import { Route as PublicSlugTableIdRecordIdRouteImport } from './routes/public.$slug.$tableId.$recordId'
 import { Route as ApiPublicLeadTokenRouteImport } from './routes/api/public/lead/$token'
 import { Route as ApiPublicFormSchemaViewIdRouteImport } from './routes/api/public/form-schema/$viewId'
+import { Route as ApiPublicCategorySchemaCategoryIdRouteImport } from './routes/api/public/category-schema.$categoryId'
 import { Route as ApiPublicCampaignsRecordIdRouteImport } from './routes/api/public/campaigns/$recordId'
 import { Route as ApiPublicSlugTableIdRouteImport } from './routes/api/public/$slug/$tableId'
 import { Route as AuthenticatedAppOrgSlugMembersRouteImport } from './routes/_authenticated.app.$orgSlug.members'
@@ -152,6 +153,12 @@ const ApiPublicFormSchemaViewIdRoute =
     path: '/api/public/form-schema/$viewId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCategorySchemaCategoryIdRoute =
+  ApiPublicCategorySchemaCategoryIdRouteImport.update({
+    id: '/api/public/category-schema/$categoryId',
+    path: '/api/public/category-schema/$categoryId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCampaignsRecordIdRoute =
   ApiPublicCampaignsRecordIdRouteImport.update({
     id: '/api/public/campaigns/$recordId',
@@ -231,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
+  '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
   '/public/$slug/$tableId/$recordId': typeof PublicSlugTableIdRecordIdRoute
@@ -262,6 +270,7 @@ export interface FileRoutesByTo {
   '/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
+  '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
   '/public/$slug/$tableId/$recordId': typeof PublicSlugTableIdRecordIdRoute
@@ -296,6 +305,7 @@ export interface FileRoutesById {
   '/_authenticated/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
+  '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
   '/public/$slug/$tableId/$recordId': typeof PublicSlugTableIdRecordIdRoute
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
     | '/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
     | '/api/public/campaigns/$recordId'
+    | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
     | '/api/public/lead/$token'
     | '/public/$slug/$tableId/$recordId'
@@ -361,6 +372,7 @@ export interface FileRouteTypes {
     | '/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
     | '/api/public/campaigns/$recordId'
+    | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
     | '/api/public/lead/$token'
     | '/public/$slug/$tableId/$recordId'
@@ -394,6 +406,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
     | '/api/public/campaigns/$recordId'
+    | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
     | '/api/public/lead/$token'
     | '/public/$slug/$tableId/$recordId'
@@ -422,6 +435,7 @@ export interface RootRouteChildren {
   PublicSlugTableIdRoute: typeof PublicSlugTableIdRouteWithChildren
   ApiPublicSlugTableIdRoute: typeof ApiPublicSlugTableIdRouteWithChildren
   ApiPublicCampaignsRecordIdRoute: typeof ApiPublicCampaignsRecordIdRoute
+  ApiPublicCategorySchemaCategoryIdRoute: typeof ApiPublicCategorySchemaCategoryIdRoute
   ApiPublicFormSchemaViewIdRoute: typeof ApiPublicFormSchemaViewIdRoute
   ApiPublicLeadTokenRoute: typeof ApiPublicLeadTokenRoute
   PublicSlugCampaignsRecordIdRoute: typeof PublicSlugCampaignsRecordIdRoute
@@ -574,6 +588,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/form-schema/$viewId'
       fullPath: '/api/public/form-schema/$viewId'
       preLoaderRoute: typeof ApiPublicFormSchemaViewIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/category-schema/$categoryId': {
+      id: '/api/public/category-schema/$categoryId'
+      path: '/api/public/category-schema/$categoryId'
+      fullPath: '/api/public/category-schema/$categoryId'
+      preLoaderRoute: typeof ApiPublicCategorySchemaCategoryIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/campaigns/$recordId': {
@@ -737,6 +758,8 @@ const rootRouteChildren: RootRouteChildren = {
   PublicSlugTableIdRoute: PublicSlugTableIdRouteWithChildren,
   ApiPublicSlugTableIdRoute: ApiPublicSlugTableIdRouteWithChildren,
   ApiPublicCampaignsRecordIdRoute: ApiPublicCampaignsRecordIdRoute,
+  ApiPublicCategorySchemaCategoryIdRoute:
+    ApiPublicCategorySchemaCategoryIdRoute,
   ApiPublicFormSchemaViewIdRoute: ApiPublicFormSchemaViewIdRoute,
   ApiPublicLeadTokenRoute: ApiPublicLeadTokenRoute,
   PublicSlugCampaignsRecordIdRoute: PublicSlugCampaignsRecordIdRoute,
