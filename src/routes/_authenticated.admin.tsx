@@ -571,15 +571,21 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setSaving(true);
     try {
       const finalKey = editing ? key : uniqueKey(toSnake(key || label));
+      const config: Record<string, any> = {};
+      if (type === "select" || type === "multiselect") {
+        const opts = optionsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
+        if (opts.length > 0) config.options = opts;
+      }
+      if (type === "text" && cepRole) config.role = "cep";
       if (scope === "record") {
         await upsertCategoryDefaultField({ data: {
           id: editing?.id, category_id: categoryId,
-          field_key: finalKey, label, field_type: type, required, order_index: order,
+          field_key: finalKey, label, field_type: type, required, order_index: order, config,
         } });
       } else {
         await upsertCategoryCascadeField({ data: {
           id: editing?.id, scope, category_id: categoryId,
-          field_key: finalKey, label, field_type: type, required, order_index: order,
+          field_key: finalKey, label, field_type: type, required, order_index: order, config,
         } });
       }
       toast.success(editing ? "Campo atualizado" : "Campo criado");
