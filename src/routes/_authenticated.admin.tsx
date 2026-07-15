@@ -56,6 +56,8 @@ import {
   type SystemFieldRow,
   type SystemFieldScope,
 } from "@/lib/system-fields.functions";
+import { CategoryCascadeSection } from "@/components/venue/category-cascade-section";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Venuespace" }, { name: "robots", content: "noindex" }] }),
