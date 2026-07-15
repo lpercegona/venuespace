@@ -48,6 +48,7 @@ import {
   reconcileCategoryAllOrganizations,
   type CategoryCascadeField,
 } from "@/lib/category-cascade.functions";
+import { listCategoryLayout, saveCategoryLayout, type LayoutField } from "@/lib/category-layouts.functions";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -94,11 +95,13 @@ function AdminPage() {
           <TabsTrigger value="labels">Rótulos</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
+          <TabsTrigger value="layouts">Layout público</TabsTrigger>
         </TabsList>
         <TabsContent value="general"><GeneralSection /></TabsContent>
         <TabsContent value="labels"><LabelsSection /></TabsContent>
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
+        <TabsContent value="layouts"><LayoutsSection /></TabsContent>
       </Tabs>
 
     </AppShell>
@@ -391,7 +394,7 @@ function CategoriesSection() {
 // ---------- Default fields per category (unified: org / table / record) ----------
 
 const FIELD_TYPES = [
-  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","file","relation","computed",
+  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file","relation","computed",
 ] as const;
 
 type DefaultsScope = "org" | "table" | "record";
@@ -533,11 +536,13 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
   const [type, setType] = useState<(typeof FIELD_TYPES)[number]>("text");
   const [required, setRequired] = useState(false);
   const [order, setOrder] = useState(0);
+  const [optionsText, setOptionsText] = useState("");
+  const [cepRole, setCepRole] = useState(false);
   const [saving, setSaving] = useState(false);
 
   function reset() {
     setEditing(null); setLabel(""); setKey(""); setKeyTouched(false);
-    setType("text"); setRequired(false); setOrder(0);
+    setType("text"); setRequired(false); setOrder(0); setOptionsText(""); setCepRole(false);
   }
 
   function uniqueKey(base: string) {
@@ -569,15 +574,21 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setSaving(true);
     try {
       const finalKey = editing ? key : uniqueKey(toSnake(key || label));
+      const config: Record<string, any> = {};
+      if (type === "select" || type === "multiselect") {
+        const opts = optionsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
+        if (opts.length > 0) config.options = opts;
+      }
+      if (type === "text" && cepRole) config.role = "cep";
       if (scope === "record") {
         await upsertCategoryDefaultField({ data: {
           id: editing?.id, category_id: categoryId,
-          field_key: finalKey, label, field_type: type, required, order_index: order,
+          field_key: finalKey, label, field_type: type, required, order_index: order, config,
         } });
       } else {
         await upsertCategoryCascadeField({ data: {
           id: editing?.id, scope, category_id: categoryId,
-          field_key: finalKey, label, field_type: type, required, order_index: order,
+          field_key: finalKey, label, field_type: type, required, order_index: order, config,
         } });
       }
       toast.success(editing ? "Campo atualizado" : "Campo criado");
@@ -644,6 +655,23 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                   <Label htmlFor="df-req" className="text-sm">Obrigatório</Label>
                   <Switch id="df-req" checked={required} onCheckedChange={setRequired} />
                 </div>
+                {(type === "select" || type === "multiselect") ? (
+                  <div className="sm:col-span-2 space-y-2">
+                    <Label htmlFor="df-options">Opções (uma por linha)</Label>
+                    <Textarea id="df-options" rows={4} value={optionsText}
+                      onChange={(e) => setOptionsText(e.target.value)}
+                      placeholder="Ex: Aluguel&#10;Venda&#10;Temporada" />
+                  </div>
+                ) : null}
+                {type === "text" ? (
+                  <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
+                    <div>
+                      <Label htmlFor="df-cep" className="text-sm">Autocompletar via ViaCEP</Label>
+                      <p className="text-xs text-muted-foreground">Ao preencher, busca endereço e preenche logradouro/bairro/cidade/estado.</p>
+                    </div>
+                    <Switch id="df-cep" checked={cepRole} onCheckedChange={setCepRole} />
+                  </div>
+                ) : null}
               </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -713,6 +741,193 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
           </TableBody>
         </Table>
       </div>
+    </div>
+  );
+}
+
+// ---------- Public card layout editor ----------
+
+type EditorRow = {
+  field_key: string;
+  width_percent: 25 | 50 | 75 | 100;
+  order_index: number;
+  label_override?: string;
+  icon?: string;
+};
+
+function LayoutsSection() {
+  const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
+  const [selected, setSelected] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selected && cats.data && cats.data.length > 0) setSelected(cats.data[0].id);
+  }, [cats.data, selected]);
+
+  return (
+    <Card>
+      <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle className="font-display">Layout dos cards públicos</CardTitle>
+          <p className="text-sm text-muted-foreground">Escolha quais campos aparecem no card da organização e do registro, e em que largura.</p>
+        </div>
+        <Select value={selected ?? ""} onValueChange={setSelected}>
+          <SelectTrigger className="w-64"><SelectValue placeholder="Selecione categoria" /></SelectTrigger>
+          <SelectContent>
+            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </CardHeader>
+      <CardContent>
+        {!selected ? (
+          <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p>
+        ) : (
+          <Tabs defaultValue="organization_card">
+            <TabsList>
+              <TabsTrigger value="organization_card">Card de organização</TabsTrigger>
+              <TabsTrigger value="record_card">Card de registro</TabsTrigger>
+            </TabsList>
+            <TabsContent value="organization_card"><LayoutEditor categoryId={selected} scope="organization_card" /></TabsContent>
+            <TabsContent value="record_card"><LayoutEditor categoryId={selected} scope="record_card" /></TabsContent>
+          </Tabs>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organization_card" | "record_card" }) {
+  const qc = useQueryClient();
+  const src = useQuery({
+    queryKey: ["admin-layout", scope, categoryId],
+    queryFn: async () => {
+      const layout = await listCategoryLayout({ data: { category_id: categoryId, scope } });
+      const scopeArg = scope === "organization_card" ? "org" : "record";
+      const fields = scopeArg === "record"
+        ? await listCategoryDefaultFields({ data: { category_id: categoryId } })
+        : await listCategoryCascadeFields({ data: { category_id: categoryId, scope: "org" } });
+      return { layout: layout.fields as LayoutField[], fields: fields as Array<{ field_key: string; label: string }> };
+    },
+  });
+
+  const [rows, setRows] = useState<EditorRow[]>([]);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (src.data) {
+      setRows(src.data.layout.map((r) => ({
+        field_key: r.field_key,
+        width_percent: r.width_percent,
+        order_index: r.order_index,
+        label_override: (r.config?.label_override as string) ?? "",
+        icon: (r.config?.icon as string) ?? "",
+      })));
+    }
+  }, [src.data]);
+
+  const available = (src.data?.fields ?? []).filter((f) => !rows.some((r) => r.field_key === f.field_key));
+
+  function updateRow(i: number, patch: Partial<EditorRow>) {
+    setRows((prev) => prev.map((r, idx) => idx === i ? { ...r, ...patch } : r));
+  }
+  function moveRow(i: number, dir: -1 | 1) {
+    setRows((prev) => {
+      const next = [...prev];
+      const j = i + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[i], next[j]] = [next[j], next[i]];
+      return next.map((r, idx) => ({ ...r, order_index: idx }));
+    });
+  }
+  function removeRow(i: number) {
+    setRows((prev) => prev.filter((_, idx) => idx !== i).map((r, idx) => ({ ...r, order_index: idx })));
+  }
+  function addField(field_key: string) {
+    setRows((prev) => [...prev, { field_key, width_percent: 100 as const, order_index: prev.length }]);
+  }
+  async function save() {
+    setSaving(true);
+    try {
+      await saveCategoryLayout({ data: {
+        category_id: categoryId, scope,
+        fields: rows.map((r, i) => ({
+          field_key: r.field_key, width_percent: r.width_percent, order_index: i,
+          config: {
+            ...(r.label_override ? { label_override: r.label_override } : {}),
+            ...(r.icon ? { icon: r.icon } : {}),
+          },
+        })),
+      } });
+      toast.success("Layout salvo");
+      qc.invalidateQueries({ queryKey: ["admin-layout", scope, categoryId] });
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setSaving(false); }
+  }
+
+  if (src.isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="rounded-lg border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-24">Ordem</TableHead>
+              <TableHead>Campo</TableHead>
+              <TableHead>Rótulo (override)</TableHead>
+              <TableHead>Ícone (lucide)</TableHead>
+              <TableHead className="w-32">Largura</TableHead>
+              <TableHead className="w-20"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow><TableCell colSpan={6} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
+            ) : rows.map((r, i) => (
+              <TableRow key={i}>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" onClick={() => moveRow(i, -1)} disabled={i === 0}>↑</Button>
+                    <Button size="sm" variant="outline" onClick={() => moveRow(i, 1)} disabled={i === rows.length - 1}>↓</Button>
+                  </div>
+                </TableCell>
+                <TableCell className="font-mono text-xs">{r.field_key}</TableCell>
+                <TableCell><Input value={r.label_override ?? ""} onChange={(e) => updateRow(i, { label_override: e.target.value })} placeholder="—" /></TableCell>
+                <TableCell><Input value={r.icon ?? ""} onChange={(e) => updateRow(i, { icon: e.target.value })} placeholder="Home, MapPin..." /></TableCell>
+                <TableCell>
+                  <Select value={String(r.width_percent)} onValueChange={(v) => updateRow(i, { width_percent: Number(v) as any })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25">25%</SelectItem>
+                      <SelectItem value="50">50%</SelectItem>
+                      <SelectItem value="75">75%</SelectItem>
+                      <SelectItem value="100">100%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  <Button size="sm" variant="outline" onClick={() => removeRow(i)}><Trash2 className="h-4 w-4" /></Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">Adicionar campo:</span>
+        {available.length === 0 ? <span className="text-xs text-muted-foreground">Todos os campos da categoria já foram incluídos.</span> : (
+          available.map((f) => (
+            <Button key={f.field_key} size="sm" variant="outline" onClick={() => addField(f.field_key)}>
+              <Plus className="h-3 w-3" />{f.label}
+            </Button>
+          ))
+        )}
+      </div>
+      <div className="flex justify-end">
+        <Button onClick={save} disabled={saving}>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4" />Salvar layout</>}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        As larguras devem somar 100% por linha (25+75, 50+50, 25+25+50, ou 100). O motor agrupa os campos em linhas automaticamente.
+      </p>
     </div>
   );
 }

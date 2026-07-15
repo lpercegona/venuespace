@@ -1,3 +1,39 @@
+## 2026-07-15 (America/Sao_Paulo) — Iteração 13 (Fase B): UI de layouts + galeria + ViaCEP + Explore
+
+### Frontend
+- `src/routes/index.tsx` (landing): removido o carrossel único de tabelas; substituído por dois blocos separados "Organizações recentes" e "Registros recentes" consumindo `/api/public/organizations` e `/api/public/records`. Adicionado CTA "Explorar" apontando para `/explore`.
+- `src/routes/explore.tsx`: reescrita com abas `Organizações | Registros` (search param `tab` validado com Zod adapter). Busca unificada aplica-se à aba ativa. Paginação preservada.
+- `src/routes/public.$slug.index.tsx`: nova rota pública `/public/$slug` — listagem das tabelas publicadas da organização.
+- `src/components/venue/public-card-renderer.tsx`: novo componente `PublicCardBody` que agrupa `LayoutItem`s por linhas cumulativas de 100% e renderiza cada item com `basis-1/4|1/2|3/4|full`, rótulo override, ícone lucide e formatação por tipo.
+
+### Campo `gallery` (ponta a ponta)
+- `src/components/venue/dynamic-form.tsx`: novo `GalleryField` com upload múltiplo para bucket `venue-uploads` (paths `${uid}/gallery/...`) e remoção individual. Integrado ao switch de tipos.
+- `src/components/venue/dynamic-grid.tsx`: `formatValue` renderiza até 3 thumbs + contador `+N` para o tipo `gallery`.
+- `src/lib/public.server.ts` (`loadPublicRecord`): pré-assinatura em lote também dos paths de galerias; retorno inclui `galleries: Record<key, string[]>`.
+- `src/routes/public.$slug.$tableId.$recordId.tsx`: nova seção de cards de galeria (grid 2/3 colunas responsivo) usando `galleries[key]`.
+
+### ViaCEP autocomplete
+- `src/components/venue/dynamic-form.tsx`: para campos `text` com `config.role === "cep"`, o `onBlur` chama `/api/public/viacep/{cep}` e preenche automaticamente os campos-alvo (defaults: `logradouro`, `bairro`, `cidade`, `estado`; customizável via `config.cep_targets`).
+
+### Editor de campos padrão (super admin)
+- `src/routes/_authenticated.admin.tsx` (`ScopeEditor`):
+  - Adicionado `gallery` à lista `FIELD_TYPES` (super admin agora pode criar campos de galeria em qualquer escopo).
+  - Nova área "Opções (uma por linha)" no diálogo quando o tipo é `select` ou `multiselect`; salva em `config.options`.
+  - Novo toggle "Autocompletar via ViaCEP" quando o tipo é `text`; grava `config.role = "cep"`.
+  - `config` agora é enviado no `upsertCategoryDefaultField` / `upsertCategoryCascadeField`.
+
+### Editor de Layout Público (super admin)
+- `src/routes/_authenticated.admin.tsx`: nova aba superior "Layout público" com sub-abas `Card de organização | Card de registro`. `LayoutEditor` lista os campos configurados com controles de ordem (↑↓), rótulo override, ícone lucide e largura (25/50/75/100%); permite adicionar campos disponíveis da categoria e salvar via `saveCategoryLayout`.
+
+### Dependências
+- `bun add @tanstack/zod-adapter` — usado pelo `validateSearch` da `/explore`.
+
+### Auditoria de propagação
+- DynamicGrid / DynamicForm / detalhe público: novo tipo `gallery` propagado em todas as três superfícies.
+- Rotas públicas afetadas: `/`, `/explore`, `/public/$slug`, `/public/$slug/$tableId/$recordId` — todas atualizadas ou criadas.
+- Endpoints públicos: `/api/public/organizations`, `/api/public/records`, `/api/public/viacep/$cep` já criados na Fase A; nenhum retorna PII.
+- Roles: alterações no admin permanecem restritas a `super_admin` (gate `amISuperAdmin` + RLS `is_super_admin(auth.uid())`). Papéis owner/editor/viewer/anônimo não são impactados nesta iteração.
+
 ## 2026-07-15 (America/Sao_Paulo) — Iteração 13 (Fase A): Backend de layouts públicos + galeria + ViaCEP
 
 ### Banco

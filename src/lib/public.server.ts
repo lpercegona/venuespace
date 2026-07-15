@@ -356,25 +356,40 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
     ? { id: v.id, auto_relation_field_id: (v.config ?? {}).auto_relation_field_id ?? null }
     : null;
 
-  // Pre-sign image/file URLs (batched) and resolve relation labels in parallel.
+  // Pre-sign image/file/gallery URLs (batched).
   const paths: Array<{ key: string; path: string }> = [];
   const signed: Record<string, string> = {};
+  const galleries: Record<string, string[]> = {};
+  const galleryPaths: Array<{ key: string; index: number; path: string }> = [];
   for (const f of (fields ?? []) as any[]) {
-    if (f.type !== "image" && f.type !== "file") continue;
-    const path = (record.data as any)?.[f.key];
-    if (typeof path !== "string" || !path) continue;
-    if (path.startsWith("http://") || path.startsWith("https://")) {
-      signed[f.key] = path;
-      continue;
+    if (f.type === "image" || f.type === "file") {
+      const path = (record.data as any)?.[f.key];
+      if (typeof path !== "string" || !path) continue;
+      if (path.startsWith("http://") || path.startsWith("https://")) { signed[f.key] = path; continue; }
+      paths.push({ key: f.key, path });
+    } else if (f.type === "gallery") {
+      const arr = (record.data as any)?.[f.key];
+      if (!Array.isArray(arr)) continue;
+      galleries[f.key] = new Array(arr.length).fill("");
+      arr.forEach((p, i) => {
+        if (typeof p !== "string" || !p) return;
+        if (p.startsWith("http")) { galleries[f.key][i] = p; return; }
+        galleryPaths.push({ key: f.key, index: i, path: p });
+      });
     }
-    paths.push({ key: f.key, path });
   }
-  if (paths.length > 0) {
+  const allPaths = [...paths.map((p) => p.path), ...galleryPaths.map((p) => p.path)];
+  if (allPaths.length > 0) {
     const { data: signedList } = await sb.storage
       .from("venue-uploads")
-      .createSignedUrls(paths.map((p) => p.path), 60 * 60);
+      .createSignedUrls(allPaths, 60 * 60);
     (signedList ?? []).forEach((s, i) => {
-      if (s?.signedUrl) signed[paths[i].key] = s.signedUrl;
+      if (!s?.signedUrl) return;
+      if (i < paths.length) signed[paths[i].key] = s.signedUrl;
+      else {
+        const gp = galleryPaths[i - paths.length];
+        galleries[gp.key][gp.index] = s.signedUrl;
+      }
     });
   }
 
@@ -405,6 +420,7 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
     fields: (fields ?? []) as any[],
     record: record as { id: string; data: Record<string, any>; deal_status: string; created_at: string },
     signed_urls: signed,
+    galleries,
     relations,
     public_form_view,
   };

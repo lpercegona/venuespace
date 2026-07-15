@@ -15,6 +15,7 @@ type Payload = {
   fields: Array<{ id: string; key: string; label: string; type: string; position: number; config: any }>;
   record: { id: string; data: Record<string, any>; deal_status: string; created_at: string };
   signed_urls: Record<string, string>;
+  galleries?: Record<string, string[]>;
   relations: Record<string, Record<string, { id: string; label: string }>>;
   public_form_view: { id: string; auto_relation_field_id: string | null } | null;
 };
@@ -70,7 +71,7 @@ function PublicRecordDetail() {
     return <div className="mx-auto max-w-2xl px-4 py-16"><EmptyState title="Não encontrado" description={(q.error as Error | undefined)?.message ?? "Recurso indisponível"} /></div>;
   }
 
-  const { organization, table, fields, record, signed_urls, relations, public_form_view } = q.data;
+  const { organization, table, fields, record, signed_urls, galleries, relations, public_form_view } = q.data;
   const visible = fields.filter((f) => f.key && !f.key.startsWith("__"));
   const titleField = visible.find((f) => f.type === "text" || f.type === "long_text") ?? visible[0];
   const title = titleField ? String(record.data?.[titleField.key] ?? "Detalhes") : "Detalhes";
@@ -104,11 +105,30 @@ function PublicRecordDetail() {
               </Card>
             );
           })}
+          {visible.filter((f) => f.type === "gallery").map((f) => {
+            const urls = galleries?.[f.key] ?? [];
+            const filtered = urls.filter((u) => !!u);
+            if (filtered.length === 0) return null;
+            return (
+              <Card key={f.id}>
+                <CardContent className="p-3">
+                  <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{f.label}</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {filtered.map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noreferrer" className="block">
+                        <img src={url} alt="" className="aspect-square w-full rounded-md object-cover" loading="lazy" decoding="async" />
+                      </a>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
           <Card>
             <CardHeader><CardTitle className="font-display text-base">Informações</CardTitle></CardHeader>
             <CardContent>
               <dl className="grid gap-3 sm:grid-cols-2">
-                {visible.filter((f) => f.type !== "image" && f.type !== "file").map((f) => {
+                {visible.filter((f) => f.type !== "image" && f.type !== "file" && f.type !== "gallery").map((f) => {
                   const raw = record.data?.[f.key];
                   if (raw == null || raw === "") return null;
                   return (

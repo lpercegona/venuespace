@@ -51,6 +51,11 @@ type Props = {
 function formatValue(field: FieldRow, value: any, relations: RelationMap): any {
   if (value === null || value === undefined || value === "") return "—";
   if (field.type === "image") return typeof value === "string" && value ? <SignedThumb path={value} /> : "—";
+  if (field.type === "gallery") {
+    const arr = Array.isArray(value) ? value : [];
+    if (arr.length === 0) return "—";
+    return <div className="flex gap-1">{arr.slice(0, 3).map((p, i) => <SignedThumb key={i} path={p} />)}{arr.length > 3 ? <span className="text-xs text-muted-foreground">+{arr.length - 3}</span> : null}</div>;
+  }
   if (field.type === "file") return typeof value === "string" && value
     ? <span className="inline-flex items-center gap-1 text-primary"><FileText className="h-3 w-3" />arquivo</span>
     : "—";
