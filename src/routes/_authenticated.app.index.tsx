@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
 import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
+import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
