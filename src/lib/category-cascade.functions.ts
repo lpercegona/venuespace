@@ -42,7 +42,7 @@ export const listCategoryCascadeFields = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin
+    const { data: rows, error } = await (supabaseAdmin as any)
       .from(tableFor(data.scope) as any)
       .select("id, category_id, field_key, label, field_type, required, config, order_index")
       .eq("category_id", data.category_id)
