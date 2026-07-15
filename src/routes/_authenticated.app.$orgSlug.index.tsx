@@ -159,6 +159,13 @@ function OrgDashboard() {
                     </div>
                     <Switch id="t-book" checked={tBookable} onCheckedChange={setTBookable} />
                   </div>
+                  <CategoryFieldsForm
+                    categoryId={(org.data as any).category_id ?? null}
+                    scope="table"
+                    value={tCatData}
+                    onChange={setTCatData}
+                    title="Campos da categoria"
+                  />
                   <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>Cancelar</Button>
                     <Button type="submit" disabled={savingT}>{savingT ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}</Button>
@@ -191,6 +198,7 @@ function OrgDashboard() {
                 key={t.id}
                 t={t}
                 orgSlug={orgSlug}
+                orgCategoryId={(org.data as any).category_id ?? null}
                 canEdit={canEdit}
                 isOwner={isOwner}
                 onSaved={() => tables.refetch()}
