@@ -14,7 +14,7 @@ export function PublicHeader({ showAuthActions = true, showExplore = true, showB
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center gap-2">
           <span className="truncate font-display text-base font-semibold tracking-tight text-foreground sm:text-lg">
-            <img src="/Venuespace logo1.svg" alt="Venuespace Logo" className="h-4 w-auto" />
+            <img src="/Venuespace logo1.svg" alt="Venuespace Logo" className="h-5 w-auto" />
           </span>
         </Link>
         <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
