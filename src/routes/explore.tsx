@@ -92,17 +92,28 @@ function ExplorePage() {
 
         <Tabs
           value={activeTab}
-          onValueChange={(v) => { setOffset(0); navigate({ search: { tab: v } }); }}
+          onValueChange={(v) => {
+            setOffset(0);
+            navigate({ search: { tab: v } });
+          }}
           className="mt-6"
         >
           <TabsList>
-            <TabsTrigger value="orgs"><Building2 className="h-4 w-4" />Espaços</TabsTrigger>
-            <TabsTrigger value="records"><FileText className="h-4 w-4" />Ambientes</TabsTrigger>
+            <TabsTrigger value="orgs">
+              <Building2 className="h-4 w-4" /> Espaços
+            </TabsTrigger>
+            <TabsTrigger value="records">
+              <FileText className="h-4 w-4" /> Ambientes
+            </TabsTrigger>
           </TabsList>
 
           <form
             className="mt-4 flex gap-2"
-            onSubmit={(e) => { e.preventDefault(); setOffset(0); setQ(term.trim()); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              setOffset(0);
+              setQ(term.trim());
+            }}
           >
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -113,7 +124,9 @@ function ExplorePage() {
 
           <TabsContent value="orgs" className="mt-6">
             {orgsQ.isLoading ? (
-              <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
             ) : (orgsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum espaço encontrado.</p>
             ) : (
@@ -140,7 +153,6 @@ function ExplorePage() {
                           <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
                         ) : null}
                       </CardContent>
-
                     </Card>
                   </Link>
                 ))}
@@ -150,13 +162,20 @@ function ExplorePage() {
 
           <TabsContent value="records" className="mt-6">
             {recsQ.isLoading ? (
-              <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
             ) : (recsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum ambiente encontrado.</p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(recsQ.data?.items ?? []).map((r) => {
-                  const title = getPublicCardTitle({ layout: r.layout ?? [], fields: r.fields ?? [], data: r.data, fallback: "Ambiente" });
+                  const title = getPublicCardTitle({
+                    layout: r.layout ?? [],
+                    fields: r.fields ?? [],
+                    data: r.data,
+                    fallback: "Ambiente",
+                  });
                   return (
                     <Link
                       key={r.record_id}
@@ -168,7 +187,9 @@ function ExplorePage() {
                         <CardHeader className="pb-2">
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <FileText className="h-3.5 w-3.5" />
-                            <span className="truncate">{r.org_name} · {r.table_name}</span>
+                            <span className="truncate">
+                              {r.org_name} · {r.table_name}
+                            </span>
                           </div>
                           <CardTitle className="font-display text-lg line-clamp-2">{title || "Ambiente"}</CardTitle>
                         </CardHeader>
@@ -188,18 +209,27 @@ function ExplorePage() {
               </div>
             )}
           </TabsContent>
-
         </Tabs>
 
         {total > PAGE_SIZE ? (
           <div className="mt-8 flex items-center justify-between">
-            <Button variant="outline" size="sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={offset === 0}
+              onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+            >
               Anterior
             </Button>
             <span className="text-xs text-muted-foreground">
               {offset + 1}–{Math.min(offset + PAGE_SIZE, total)} de {total}
             </span>
-            <Button variant="outline" size="sm" disabled={offset + PAGE_SIZE >= total} onClick={() => setOffset(offset + PAGE_SIZE)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={offset + PAGE_SIZE >= total}
+              onClick={() => setOffset(offset + PAGE_SIZE)}
+            >
               Próxima
             </Button>
           </div>
