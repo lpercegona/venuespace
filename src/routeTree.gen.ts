@@ -10,10 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as LeadTokenRouteImport } from './routes/lead.$token'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as PublicSlugIndexRouteImport } from './routes/public.$slug.index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
@@ -54,6 +57,11 @@ const ExploreRoute = ExploreRouteImport.update({
   path: '/explore',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -68,10 +76,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BlogRoute,
+} as any)
 const LeadTokenRoute = LeadTokenRouteImport.update({
   id: '/lead/$token',
   path: '/lead/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
@@ -265,9 +283,12 @@ const AuthenticatedAppOrgSlugTablesTableIdSchemaRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/blog': typeof BlogRouteWithChildren
   '/explore': typeof ExploreRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/lead/$token': typeof LeadTokenRoute
+  '/blog/': typeof BlogIndexRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -307,7 +328,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/explore': typeof ExploreRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/lead/$token': typeof LeadTokenRoute
+  '/blog': typeof BlogIndexRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -346,9 +369,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
+  '/blog': typeof BlogRouteWithChildren
   '/explore': typeof ExploreRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/lead/$token': typeof LeadTokenRoute
+  '/blog/': typeof BlogIndexRoute
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -388,9 +414,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/blog'
     | '/explore'
     | '/admin'
+    | '/blog/$slug'
     | '/lead/$token'
+    | '/blog/'
     | '/me/applications'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
@@ -430,7 +459,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/explore'
     | '/admin'
+    | '/blog/$slug'
     | '/lead/$token'
+    | '/blog'
     | '/me/applications'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
@@ -468,9 +499,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/blog'
     | '/explore'
     | '/_authenticated/admin'
+    | '/blog/$slug'
     | '/lead/$token'
+    | '/blog/'
     | '/_authenticated/me/applications'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
@@ -510,6 +544,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
+  BlogRoute: typeof BlogRouteWithChildren
   ExploreRoute: typeof ExploreRoute
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
@@ -542,6 +577,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExploreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -563,12 +605,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/lead/$token': {
       id: '/lead/$token'
       path: '/lead/$token'
       fullPath: '/lead/$token'
       preLoaderRoute: typeof LeadTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
     }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
@@ -857,6 +913,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface BlogRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
+
 interface PublicSlugTableIdRouteChildren {
   PublicSlugTableIdRecordIdRoute: typeof PublicSlugTableIdRecordIdRoute
   PublicSlugTableIdFormRoute: typeof PublicSlugTableIdFormRoute
@@ -889,6 +957,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
+  BlogRoute: BlogRouteWithChildren,
   ExploreRoute: ExploreRoute,
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,

@@ -44,6 +44,7 @@ export function PublicHeader({ showAuthActions = true, showExplore = true }: Pro
 type BackTo =
   | { to: "/"; params?: undefined }
   | { to: "/explore"; params?: undefined }
+  | { to: "/blog"; params?: undefined }
   | { to: "/public/$slug"; params: { slug: string } }
   | { to: "/public/$slug/$tableId"; params: { slug: string; tableId: string } };
 
