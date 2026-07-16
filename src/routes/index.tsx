@@ -7,12 +7,15 @@ import { PublicHeader } from "@/components/venue/public-header";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Venuespace — espaços para eventos" },
-      { name: "description", content: "Liste espaços de eventos, publique ambientes disponíveis, receba interessados e conduza negociações em um só lugar." },
+      {
+        name: "description",
+        content:
+          "Liste espaços de eventos, publique ambientes disponíveis, receba interessados e conduza negociações em um só lugar.",
+      },
       { property: "og:title", content: "Venuespace" },
       { property: "og:description", content: "Plataforma para descoberta e negociação de espaços de eventos." },
       { property: "og:type", content: "website" },
@@ -44,16 +47,11 @@ function Landing() {
 
       <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
         <div className="max-w-3xl">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Espaços para eventos publicados por quem opera o lugar
-          </p>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Espaços</p>
           <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-6xl">
-            Encontre e publique espaços de eventos com fotos, capacidade e negociação direta.
+            Encontre e publique espaços de eventos.
           </h1>
-          <p className="mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Venuespace organiza a vitrine pública de ambientes para eventos: salões,
-            casas, áreas externas e espaços flexíveis com formulários de interesse e chat.
-          </p>
+
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/auth">
               <Button size="lg" className="h-12 px-6">
@@ -62,7 +60,9 @@ function Landing() {
               </Button>
             </Link>
             <Link to="/explore">
-              <Button size="lg" variant="outline" className="h-12 px-6">Explorar espaços</Button>
+              <Button size="lg" variant="outline" className="h-12 px-6">
+                Explorar espaços
+              </Button>
             </Link>
           </div>
         </div>
@@ -74,7 +74,9 @@ function Landing() {
                 <Building2 className="h-5 w-5 text-primary" />
                 Espaços recentes
               </h2>
-              <Link to="/explore" className="text-sm text-primary hover:underline">Ver todas</Link>
+              <Link to="/explore" className="text-sm text-primary hover:underline">
+                Ver todas
+              </Link>
             </div>
             {orgs.isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -105,7 +107,6 @@ function Landing() {
                     </Card>
                   </Link>
                 ))}
-
               </div>
             )}
           </section>
@@ -116,7 +117,9 @@ function Landing() {
                 <FileText className="h-5 w-5 text-primary" />
                 Ambientes publicados
               </h2>
-              <Link to="/explore" search={{ tab: "records" }} className="text-sm text-primary hover:underline">Ver todos</Link>
+              <Link to="/explore" search={{ tab: "records" }} className="text-sm text-primary hover:underline">
+                Ver todos
+              </Link>
             </div>
             {recs.isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -125,7 +128,12 @@ function Landing() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {(recs.data?.items ?? []).map((r) => {
-                  const title = getPublicCardTitle({ layout: r.layout ?? [], fields: r.fields ?? [], data: r.data, fallback: "Ambiente" });
+                  const title = getPublicCardTitle({
+                    layout: r.layout ?? [],
+                    fields: r.fields ?? [],
+                    data: r.data,
+                    fallback: "Ambiente",
+                  });
                   return (
                     <Link
                       key={r.record_id}
@@ -135,10 +143,10 @@ function Landing() {
                     >
                       <Card className="h-full transition-shadow hover:shadow-elegant">
                         <CardHeader className="pb-2">
-                          <p className="text-xs text-muted-foreground truncate">{r.org_name} · {r.table_name}</p>
-                          <CardTitle className="font-display text-base line-clamp-2">
-                            {title || "Ambiente"}
-                          </CardTitle>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {r.org_name} · {r.table_name}
+                          </p>
+                          <CardTitle className="font-display text-base line-clamp-2">{title || "Ambiente"}</CardTitle>
                         </CardHeader>
                         {(r.layout ?? []).length > 0 ? (
                           <CardContent>
@@ -149,7 +157,6 @@ function Landing() {
                     </Link>
                   );
                 })}
-
               </div>
             )}
           </section>
@@ -157,9 +164,21 @@ function Landing() {
 
         <div className="mt-16 grid gap-4 sm:grid-cols-3">
           {[
-            { icon: Database, title: "Perfis de espaços", body: "Cada local pode apresentar dados, endereço, capacidade, fotos e ambientes." },
-            { icon: Sparkles, title: "Vitrine pública", body: "Cards seguem o layout definido para a categoria, sem depender de página manual." },
-            { icon: MessageSquare, title: "Interesse e negociação", body: "Visitantes enviam solicitações e a conversa continua vinculada ao ambiente." },
+            {
+              icon: Database,
+              title: "Perfis de espaços",
+              body: "Cada local pode apresentar dados, endereço, capacidade, fotos e ambientes.",
+            },
+            {
+              icon: Sparkles,
+              title: "Vitrine pública",
+              body: "Cards seguem o layout definido para a categoria, sem depender de página manual.",
+            },
+            {
+              icon: MessageSquare,
+              title: "Interesse e negociação",
+              body: "Visitantes enviam solicitações e a conversa continua vinculada ao ambiente.",
+            },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="rounded-xl border border-border bg-card p-6 shadow-soft">
               <Icon className="h-5 w-5 text-primary" />
