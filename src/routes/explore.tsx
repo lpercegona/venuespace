@@ -100,7 +100,7 @@ function ExplorePage() {
         >
           <TabsList>
             <TabsTrigger value="orgs" className="gap-1">
-              <Building2 className="h-4 w-4" /> Espaços
+              <Building2 className="h-4 w-4 p-2" /> Espaços
             </TabsTrigger>
             <TabsTrigger value="records">
               <FileText className="h-4 w-4" /> Ambientes
