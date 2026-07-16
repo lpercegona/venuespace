@@ -1,3 +1,14 @@
+## 2026-07-16 — Iteração 14 — Blog (Super Admin)
+- Fix: ícones Lucide nos cards públicos agora resolvem kebab-case/PascalCase.
+- Tabela `blog_posts` com RLS (Super Admin escreve; anon lê publicados).
+- Server fns `src/lib/blog.functions.ts` (CRUD + sign cover) e helpers públicos `src/lib/blog-public.server.ts`.
+- Rotas públicas `/blog` (listagem) e `/blog/$slug` (post) com SEO/OG e capa.
+- Endpoints `/api/public/blog` e `/api/public/blog/$slug`.
+- Editor Tiptap (`src/components/venue/tiptap-editor.tsx`) com upload inline em `venue-uploads`.
+- Aba "Blog" no `/admin` com listagem, criação, edição, publicação e remoção.
+- Link "Blog" no `PublicHeader`.
+- Sanitização de HTML server-side com `sanitize-html`.
+
 ## 2026-07-16 (America/Sao_Paulo) — Cards públicos respeitam largura e ícone do layout do super admin
 
 - `src/components/venue/public-card-renderer.tsx`: trocado `flex flex-wrap` + `basis-*` por grid CSS de 4 colunas (`grid grid-cols-4 gap-3`) com `col-span-1/2/3/4` mapeado às larguras 25/50/75/100%. Combinações 50/50, 25/75 e 25/25/50 agora ocupam exatamente uma linha em vez de quebrar.

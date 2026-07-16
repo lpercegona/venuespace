@@ -1,13 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Compass } from "lucide-react";
+import { ArrowLeft, Compass, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
   showAuthActions?: boolean;
   showExplore?: boolean;
+  showBlog?: boolean;
 };
 
-export function PublicHeader({ showAuthActions = true, showExplore = true }: Props) {
+export function PublicHeader({ showAuthActions = true, showExplore = true, showBlog = true }: Props) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
@@ -22,6 +23,14 @@ export function PublicHeader({ showAuthActions = true, showExplore = true }: Pro
               <Button variant="ghost" size="sm" className="gap-1.5">
                 <Compass className="h-4 w-4" />
                 <span className="hidden sm:inline">Explorar</span>
+              </Button>
+            </Link>
+          ) : null}
+          {showBlog ? (
+            <Link to="/blog">
+              <Button variant="ghost" size="sm" className="gap-1.5">
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden sm:inline">Blog</span>
               </Button>
             </Link>
           ) : null}
