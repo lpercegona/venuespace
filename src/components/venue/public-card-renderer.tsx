@@ -15,7 +15,7 @@ function IconByName({ name, className }: { name: string | null | undefined; clas
   if (!name) return null;
   const Cmp = (LucideIcons as any)[name] as LucideIcon | undefined;
   if (!Cmp) return null;
-  return <Cmp className={className ?? "h-3.5 w-3.5"} />;
+  return <Cmp className={className ?? "h-4 w-4 shrink-0"} />;
 }
 
 function formatValue(field: RendererField | undefined, raw: any): string {
@@ -124,30 +124,37 @@ export function PublicCardBody({
   if (current.length) rows.push(current);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {rows.map((row, i) => (
-        <div key={i} className="flex flex-wrap gap-2">
+        <div key={i} className="grid grid-cols-4 gap-3">
           {row.map((it) => {
             const f = byKey.get(it.field_key);
             const raw = data?.[it.field_key];
-            const basis =
-              it.width_percent === 25 ? "basis-1/4" :
-              it.width_percent === 50 ? "basis-1/2" :
-              it.width_percent === 75 ? "basis-3/4" : "basis-full";
+            const span =
+              it.width_percent === 25 ? "col-span-1" :
+              it.width_percent === 50 ? "col-span-2" :
+              it.width_percent === 75 ? "col-span-3" : "col-span-4";
             const label = (it.config?.label_override as string) ?? f?.label ?? it.field_key;
             const iconName = (it.config?.icon as string) ?? null;
 
             const mediaUrls = mediaUrlsFor(f, it.field_key, label, raw);
+            const imgAspect = it.width_percent === 100 ? "aspect-video" : "aspect-square";
             if (mediaUrls.length === 1) {
               return (
-                <div key={it.id} className={`${basis} min-w-0 grow-0`}>
-                  <ImageCell src={mediaUrls[0]} alt={label} />
+                <div key={it.id} className={`${span} min-w-0`}>
+                  <img
+                    src={mediaUrls[0]}
+                    alt={label}
+                    loading="lazy"
+                    decoding="async"
+                    className={`${imgAspect} w-full rounded-md object-cover`}
+                  />
                 </div>
               );
             }
             if (mediaUrls.length > 1) {
               return (
-                <div key={it.id} className={`${basis} min-w-0 grow-0`}>
+                <div key={it.id} className={`${span} min-w-0`}>
                   <div className="grid grid-cols-3 gap-1">
                     {mediaUrls.slice(0, 3).map((u, idx) => (
                       <img key={idx} src={u} alt={`${label} ${idx + 1}`} loading="lazy" decoding="async" className="aspect-square w-full rounded-sm object-cover" />
@@ -160,9 +167,9 @@ export function PublicCardBody({
             const text = formatValue(f, raw);
             if (!text) return null;
             return (
-              <div key={it.id} className={`${basis} min-w-0 grow-0`}>
+              <div key={it.id} className={`${span} min-w-0`}>
                 <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  <IconByName name={iconName} />
+                  <IconByName name={iconName} className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{label}</span>
                 </div>
                 <div className="truncate text-sm text-foreground">{text}</div>

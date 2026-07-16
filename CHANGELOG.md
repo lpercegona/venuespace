@@ -1,3 +1,9 @@
+## 2026-07-16 (America/Sao_Paulo) — Cards públicos respeitam largura e ícone do layout do super admin
+
+- `src/components/venue/public-card-renderer.tsx`: trocado `flex flex-wrap` + `basis-*` por grid CSS de 4 colunas (`grid grid-cols-4 gap-3`) com `col-span-1/2/3/4` mapeado às larguras 25/50/75/100%. Combinações 50/50, 25/75 e 25/25/50 agora ocupam exatamente uma linha em vez de quebrar.
+- Ícones definidos pelo super admin (`config.icon`) renderizam com `h-3.5 w-3.5 shrink-0` alinhados ao rótulo uppercase; imagens com span < 100% usam `aspect-square`, span=100% mantém `aspect-video`.
+- Propagação automática: landing `/`, `/explore` (abas de perfis e registros) e `/public/$slug` compartilham o mesmo renderer, sem alterações nos consumidores. Backend, API pública e roles não foram tocados.
+
 ## 2026-07-15 06:57 (America/Sao_Paulo) — Correção de imagens em cards públicos + landing de espaços
 
 - `src/components/venue/public-card-renderer.tsx`: renderer público agora identifica mídia por tipo (`image`/`gallery`), nome de campo/rótulo (`foto`, `imagem`, `galeria`, `logo`, `capa`) e extensão de imagem em URL; URLs assinadas deixam de cair no fallback textual e passam a renderizar `<img>`/galeria.
