@@ -966,7 +966,7 @@ function BlogSection() {
         {q.isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : (q.data ?? []).length === 0 ? (
-          <EmptyState icon={FileText} title="Nenhum post ainda" description="Crie o primeiro post do blog." />
+          <EmptyState icon={<FileText className="h-6 w-6" />} title="Nenhum post ainda" description="Crie o primeiro post do blog." />
         ) : (
           <Table>
             <TableHeader>
