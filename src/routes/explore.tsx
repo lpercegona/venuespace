@@ -99,7 +99,7 @@ function ExplorePage() {
           className="mt-6"
         >
           <TabsList>
-            <TabsTrigger value="orgs">
+            <TabsTrigger value="orgs" className="gap-1">
               <Building2 className="h-4 w-4" /> Espaços
             </TabsTrigger>
             <TabsTrigger value="records">
