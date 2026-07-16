@@ -10,10 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as LeadTokenRouteImport } from './routes/lead.$token'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as PublicSlugIndexRouteImport } from './routes/public.$slug.index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
@@ -27,6 +30,7 @@ import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/ap
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
 import { Route as AuthenticatedMeApplicationsRouteImport } from './routes/_authenticated.me.applications'
 import { Route as PublicSlugTableIdIndexRouteImport } from './routes/public.$slug.$tableId.index'
+import { Route as ApiPublicBlogIndexRouteImport } from './routes/api/public/blog/index'
 import { Route as AuthenticatedAppOrgSlugIndexRouteImport } from './routes/_authenticated.app.$orgSlug.index'
 import { Route as PublicSlugCampaignsRecordIdRouteImport } from './routes/public.$slug.campaigns.$recordId'
 import { Route as PublicSlugTableIdFormRouteImport } from './routes/public.$slug.$tableId.form'
@@ -37,10 +41,12 @@ import { Route as ApiPublicFormSchemaViewIdRouteImport } from './routes/api/publ
 import { Route as ApiPublicCategorySchemaCategoryIdRouteImport } from './routes/api/public/category-schema.$categoryId'
 import { Route as ApiPublicCategoryLayoutCategoryIdRouteImport } from './routes/api/public/category-layout.$categoryId'
 import { Route as ApiPublicCampaignsRecordIdRouteImport } from './routes/api/public/campaigns/$recordId'
+import { Route as ApiPublicBlogSlugRouteImport } from './routes/api/public/blog/$slug'
 import { Route as ApiPublicSlugTableIdRouteImport } from './routes/api/public/$slug/$tableId'
 import { Route as AuthenticatedAppOrgSlugMembersRouteImport } from './routes/_authenticated.app.$orgSlug.members'
 import { Route as AuthenticatedAppOrgSlugConversationsRouteImport } from './routes/_authenticated.app.$orgSlug.conversations'
 import { Route as AuthenticatedAppOrgSlugCalendarRouteImport } from './routes/_authenticated.app.$orgSlug.calendar'
+import { Route as AuthenticatedAdminBlogPostIdRouteImport } from './routes/_authenticated.admin.blog.$postId'
 import { Route as ApiPublicSlugTableIdSubmitRouteImport } from './routes/api/public/$slug/$tableId.submit'
 import { Route as ApiPublicSlugTableIdRecordIdRouteImport } from './routes/api/public/$slug/$tableId.$recordId'
 import { Route as AuthenticatedAppOrgSlugConversationsConversationIdRouteImport } from './routes/_authenticated.app.$orgSlug.conversations.$conversationId'
@@ -50,6 +56,11 @@ import { Route as AuthenticatedAppOrgSlugTablesTableIdSchemaRouteImport } from '
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -66,10 +77,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BlogRoute,
+} as any)
 const LeadTokenRoute = LeadTokenRouteImport.update({
   id: '/lead/$token',
   path: '/lead/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
@@ -139,6 +160,11 @@ const PublicSlugTableIdIndexRoute = PublicSlugTableIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PublicSlugTableIdRoute,
 } as any)
+const ApiPublicBlogIndexRoute = ApiPublicBlogIndexRouteImport.update({
+  id: '/api/public/blog/',
+  path: '/api/public/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppOrgSlugIndexRoute =
   AuthenticatedAppOrgSlugIndexRouteImport.update({
     id: '/app/$orgSlug/',
@@ -196,6 +222,11 @@ const ApiPublicCampaignsRecordIdRoute =
     path: '/api/public/campaigns/$recordId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBlogSlugRoute = ApiPublicBlogSlugRouteImport.update({
+  id: '/api/public/blog/$slug',
+  path: '/api/public/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSlugTableIdRoute = ApiPublicSlugTableIdRouteImport.update({
   id: '/api/public/$slug/$tableId',
   path: '/api/public/$slug/$tableId',
@@ -218,6 +249,12 @@ const AuthenticatedAppOrgSlugCalendarRoute =
     id: '/app/$orgSlug/calendar',
     path: '/app/$orgSlug/calendar',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminBlogPostIdRoute =
+  AuthenticatedAdminBlogPostIdRouteImport.update({
+    id: '/blog/$postId',
+    path: '/blog/$postId',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const ApiPublicSlugTableIdSubmitRoute =
   ApiPublicSlugTableIdSubmitRouteImport.update({
@@ -253,9 +290,12 @@ const AuthenticatedAppOrgSlugTablesTableIdSchemaRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/blog': typeof BlogRouteWithChildren
   '/explore': typeof ExploreRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/blog/$slug': typeof BlogSlugRoute
   '/lead/$token': typeof LeadTokenRoute
+  '/blog/': typeof BlogIndexRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -267,10 +307,12 @@ export interface FileRoutesByFullPath {
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
   '/public/$slug/': typeof PublicSlugIndexRoute
+  '/admin/blog/$postId': typeof AuthenticatedAdminBlogPostIdRoute
   '/app/$orgSlug/calendar': typeof AuthenticatedAppOrgSlugCalendarRoute
   '/app/$orgSlug/conversations': typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
   '/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
+  '/api/public/blog/$slug': typeof ApiPublicBlogSlugRoute
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
   '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
@@ -281,6 +323,7 @@ export interface FileRoutesByFullPath {
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
   '/app/$orgSlug/': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/api/public/blog/': typeof ApiPublicBlogIndexRoute
   '/public/$slug/$tableId/': typeof PublicSlugTableIdIndexRoute
   '/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
   '/api/public/$slug/$tableId/$recordId': typeof ApiPublicSlugTableIdRecordIdRoute
@@ -292,8 +335,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/explore': typeof ExploreRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/blog/$slug': typeof BlogSlugRoute
   '/lead/$token': typeof LeadTokenRoute
+  '/blog': typeof BlogIndexRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -304,10 +349,12 @@ export interface FileRoutesByTo {
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/public/$slug': typeof PublicSlugIndexRoute
+  '/admin/blog/$postId': typeof AuthenticatedAdminBlogPostIdRoute
   '/app/$orgSlug/calendar': typeof AuthenticatedAppOrgSlugCalendarRoute
   '/app/$orgSlug/conversations': typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
   '/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
+  '/api/public/blog/$slug': typeof ApiPublicBlogSlugRoute
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
   '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
@@ -318,6 +365,7 @@ export interface FileRoutesByTo {
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
   '/app/$orgSlug': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/api/public/blog': typeof ApiPublicBlogIndexRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdIndexRoute
   '/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
   '/api/public/$slug/$tableId/$recordId': typeof ApiPublicSlugTableIdRecordIdRoute
@@ -330,9 +378,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
+  '/blog': typeof BlogRouteWithChildren
   '/explore': typeof ExploreRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/blog/$slug': typeof BlogSlugRoute
   '/lead/$token': typeof LeadTokenRoute
+  '/blog/': typeof BlogIndexRoute
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -344,10 +395,12 @@ export interface FileRoutesById {
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/public/$slug/': typeof PublicSlugIndexRoute
+  '/_authenticated/admin/blog/$postId': typeof AuthenticatedAdminBlogPostIdRoute
   '/_authenticated/app/$orgSlug/calendar': typeof AuthenticatedAppOrgSlugCalendarRoute
   '/_authenticated/app/$orgSlug/conversations': typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
   '/_authenticated/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
+  '/api/public/blog/$slug': typeof ApiPublicBlogSlugRoute
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
   '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
@@ -358,6 +411,7 @@ export interface FileRoutesById {
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
   '/_authenticated/app/$orgSlug/': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/api/public/blog/': typeof ApiPublicBlogIndexRoute
   '/public/$slug/$tableId/': typeof PublicSlugTableIdIndexRoute
   '/_authenticated/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
   '/api/public/$slug/$tableId/$recordId': typeof ApiPublicSlugTableIdRecordIdRoute
@@ -370,9 +424,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/blog'
     | '/explore'
     | '/admin'
+    | '/blog/$slug'
     | '/lead/$token'
+    | '/blog/'
     | '/me/applications'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
@@ -384,10 +441,12 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId'
     | '/app/'
     | '/public/$slug/'
+    | '/admin/blog/$postId'
     | '/app/$orgSlug/calendar'
     | '/app/$orgSlug/conversations'
     | '/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
+    | '/api/public/blog/$slug'
     | '/api/public/campaigns/$recordId'
     | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
@@ -398,6 +457,7 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
     | '/app/$orgSlug/'
+    | '/api/public/blog/'
     | '/public/$slug/$tableId/'
     | '/app/$orgSlug/conversations/$conversationId'
     | '/api/public/$slug/$tableId/$recordId'
@@ -410,7 +470,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/explore'
     | '/admin'
+    | '/blog/$slug'
     | '/lead/$token'
+    | '/blog'
     | '/me/applications'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
@@ -421,10 +483,12 @@ export interface FileRouteTypes {
     | '/api/public/tables'
     | '/app'
     | '/public/$slug'
+    | '/admin/blog/$postId'
     | '/app/$orgSlug/calendar'
     | '/app/$orgSlug/conversations'
     | '/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
+    | '/api/public/blog/$slug'
     | '/api/public/campaigns/$recordId'
     | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
@@ -435,6 +499,7 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
     | '/app/$orgSlug'
+    | '/api/public/blog'
     | '/public/$slug/$tableId'
     | '/app/$orgSlug/conversations/$conversationId'
     | '/api/public/$slug/$tableId/$recordId'
@@ -446,9 +511,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/blog'
     | '/explore'
     | '/_authenticated/admin'
+    | '/blog/$slug'
     | '/lead/$token'
+    | '/blog/'
     | '/_authenticated/me/applications'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
@@ -460,10 +528,12 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId'
     | '/_authenticated/app/'
     | '/public/$slug/'
+    | '/_authenticated/admin/blog/$postId'
     | '/_authenticated/app/$orgSlug/calendar'
     | '/_authenticated/app/$orgSlug/conversations'
     | '/_authenticated/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
+    | '/api/public/blog/$slug'
     | '/api/public/campaigns/$recordId'
     | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
@@ -474,6 +544,7 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
     | '/_authenticated/app/$orgSlug/'
+    | '/api/public/blog/'
     | '/public/$slug/$tableId/'
     | '/_authenticated/app/$orgSlug/conversations/$conversationId'
     | '/api/public/$slug/$tableId/$recordId'
@@ -486,6 +557,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
+  BlogRoute: typeof BlogRouteWithChildren
   ExploreRoute: typeof ExploreRoute
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
@@ -498,6 +570,7 @@ export interface RootRouteChildren {
   PublicSlugTableIdRoute: typeof PublicSlugTableIdRouteWithChildren
   PublicSlugIndexRoute: typeof PublicSlugIndexRoute
   ApiPublicSlugTableIdRoute: typeof ApiPublicSlugTableIdRouteWithChildren
+  ApiPublicBlogSlugRoute: typeof ApiPublicBlogSlugRoute
   ApiPublicCampaignsRecordIdRoute: typeof ApiPublicCampaignsRecordIdRoute
   ApiPublicCategoryLayoutCategoryIdRoute: typeof ApiPublicCategoryLayoutCategoryIdRoute
   ApiPublicCategorySchemaCategoryIdRoute: typeof ApiPublicCategorySchemaCategoryIdRoute
@@ -505,6 +578,7 @@ export interface RootRouteChildren {
   ApiPublicLeadTokenRoute: typeof ApiPublicLeadTokenRoute
   ApiPublicViacepCepRoute: typeof ApiPublicViacepCepRoute
   PublicSlugCampaignsRecordIdRoute: typeof PublicSlugCampaignsRecordIdRoute
+  ApiPublicBlogIndexRoute: typeof ApiPublicBlogIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -514,6 +588,13 @@ declare module '@tanstack/react-router' {
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -537,12 +618,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/lead/$token': {
       id: '/lead/$token'
       path: '/lead/$token'
       fullPath: '/lead/$token'
       preLoaderRoute: typeof LeadTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
     }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
@@ -635,6 +730,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicSlugTableIdIndexRouteImport
       parentRoute: typeof PublicSlugTableIdRoute
     }
+    '/api/public/blog/': {
+      id: '/api/public/blog/'
+      path: '/api/public/blog'
+      fullPath: '/api/public/blog/'
+      preLoaderRoute: typeof ApiPublicBlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/$orgSlug/': {
       id: '/_authenticated/app/$orgSlug/'
       path: '/app/$orgSlug'
@@ -705,6 +807,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCampaignsRecordIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/blog/$slug': {
+      id: '/api/public/blog/$slug'
+      path: '/api/public/blog/$slug'
+      fullPath: '/api/public/blog/$slug'
+      preLoaderRoute: typeof ApiPublicBlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/$slug/$tableId': {
       id: '/api/public/$slug/$tableId'
       path: '/api/public/$slug/$tableId'
@@ -732,6 +841,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/$orgSlug/calendar'
       preLoaderRoute: typeof AuthenticatedAppOrgSlugCalendarRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/blog/$postId': {
+      id: '/_authenticated/admin/blog/$postId'
+      path: '/blog/$postId'
+      fullPath: '/admin/blog/$postId'
+      preLoaderRoute: typeof AuthenticatedAdminBlogPostIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/api/public/$slug/$tableId/submit': {
       id: '/api/public/$slug/$tableId/submit'
@@ -771,6 +887,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminBlogPostIdRoute: typeof AuthenticatedAdminBlogPostIdRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminBlogPostIdRoute: AuthenticatedAdminBlogPostIdRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedAppOrgSlugConversationsRouteChildren {
   AuthenticatedAppOrgSlugConversationsConversationIdRoute: typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
 }
@@ -787,7 +914,7 @@ const AuthenticatedAppOrgSlugConversationsRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedMeApplicationsRoute: typeof AuthenticatedMeApplicationsRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppOrgSlugCalendarRoute: typeof AuthenticatedAppOrgSlugCalendarRoute
@@ -799,7 +926,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedMeApplicationsRoute: AuthenticatedMeApplicationsRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppOrgSlugCalendarRoute: AuthenticatedAppOrgSlugCalendarRoute,
@@ -816,6 +943,18 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
+
+interface BlogRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 interface PublicSlugTableIdRouteChildren {
   PublicSlugTableIdRecordIdRoute: typeof PublicSlugTableIdRecordIdRoute
@@ -849,6 +988,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
+  BlogRoute: BlogRouteWithChildren,
   ExploreRoute: ExploreRoute,
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
@@ -861,6 +1001,7 @@ const rootRouteChildren: RootRouteChildren = {
   PublicSlugTableIdRoute: PublicSlugTableIdRouteWithChildren,
   PublicSlugIndexRoute: PublicSlugIndexRoute,
   ApiPublicSlugTableIdRoute: ApiPublicSlugTableIdRouteWithChildren,
+  ApiPublicBlogSlugRoute: ApiPublicBlogSlugRoute,
   ApiPublicCampaignsRecordIdRoute: ApiPublicCampaignsRecordIdRoute,
   ApiPublicCategoryLayoutCategoryIdRoute:
     ApiPublicCategoryLayoutCategoryIdRoute,
@@ -870,6 +1011,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLeadTokenRoute: ApiPublicLeadTokenRoute,
   ApiPublicViacepCepRoute: ApiPublicViacepCepRoute,
   PublicSlugCampaignsRecordIdRoute: PublicSlugCampaignsRecordIdRoute,
+  ApiPublicBlogIndexRoute: ApiPublicBlogIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

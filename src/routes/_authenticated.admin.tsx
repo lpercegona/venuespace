@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Save, Trash2, Pencil, ArrowLeft, Shield } from "lucide-react";
+import { Loader2, Plus, Save, Trash2, Pencil, ArrowLeft, Shield, FileText } from "lucide-react";
+import { listBlogPostsAdmin, deleteBlogPost, type BlogPostListItem } from "@/lib/blog.functions";
 
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
@@ -96,12 +97,14 @@ function AdminPage() {
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
           <TabsTrigger value="layouts">Layout público</TabsTrigger>
+          <TabsTrigger value="blog">Blog</TabsTrigger>
         </TabsList>
         <TabsContent value="general"><GeneralSection /></TabsContent>
         <TabsContent value="labels"><LabelsSection /></TabsContent>
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
         <TabsContent value="layouts"><LayoutsSection /></TabsContent>
+        <TabsContent value="blog"><BlogSection /></TabsContent>
       </Tabs>
 
     </AppShell>
@@ -938,4 +941,89 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
     </div>
   );
 }
+
+
+function BlogSection() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["admin-blog-posts"], queryFn: () => listBlogPostsAdmin() });
+  async function onDelete(id: string) {
+    try {
+      await deleteBlogPost({ data: { id } });
+      toast.success("Post removido");
+      qc.invalidateQueries({ queryKey: ["admin-blog-posts"] });
+      qc.invalidateQueries({ queryKey: ["public-blog"] });
+    } catch (e) { toast.error((e as Error).message); }
+  }
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-3">
+        <CardTitle className="font-display">Posts do blog</CardTitle>
+        <Button size="sm" asChild>
+          <Link to="/admin/blog/$postId" params={{ postId: "new" }}><Plus className="h-4 w-4" />Novo post</Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {q.isLoading ? (
+          <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : (q.data ?? []).length === 0 ? (
+          <EmptyState icon={<FileText className="h-6 w-6" />} title="Nenhum post ainda" description="Crie o primeiro post do blog." />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Título</TableHead>
+                <TableHead className="hidden sm:table-cell">Status</TableHead>
+                <TableHead className="hidden md:table-cell">Atualizado</TableHead>
+                <TableHead className="w-32 text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(q.data ?? []).map((p: BlogPostListItem) => (
+                <TableRow key={p.id}>
+                  <TableCell>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{p.title}</p>
+                      <p className="truncate text-xs text-muted-foreground">/{p.slug}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Badge variant={p.status === "published" ? "default" : "secondary"}>
+                      {p.status === "published" ? "Publicado" : "Rascunho"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                    {new Date(p.updated_at).toLocaleDateString("pt-BR")}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button size="sm" variant="ghost" asChild>
+                        <Link to="/admin/blog/$postId" params={{ postId: p.id }}><Pencil className="h-4 w-4" /></Link>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="ghost"><Trash2 className="h-4 w-4" /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remover post?</AlertDialogTitle>
+                            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onDelete(p.id)}>Remover</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 

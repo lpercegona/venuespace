@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_posts: {
+        Row: {
+          author_user_id: string | null
+          content_html: string
+          content_text: string
+          cover_image_alt: string | null
+          cover_image_path: string | null
+          created_at: string
+          id: string
+          published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          status: Database["public"]["Enums"]["blog_post_status"]
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_user_id?: string | null
+          content_html?: string
+          content_text?: string
+          cover_image_alt?: string | null
+          cover_image_path?: string | null
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["blog_post_status"]
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_user_id?: string | null
+          content_html?: string
+          content_text?: string
+          cover_image_alt?: string | null
+          cover_image_path?: string | null
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["blog_post_status"]
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       category_org_fields: {
         Row: {
           category_id: string
@@ -1032,6 +1086,7 @@ export type Database = {
     }
     Enums: {
       app_role: "owner" | "editor" | "viewer"
+      blog_post_status: "draft" | "published"
       contribution_status: "none" | "pledged" | "confirmed" | "refunded"
       deal_status: "none" | "negotiating" | "accepted" | "declined" | "closed"
       field_source_kind:
@@ -1188,6 +1243,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "editor", "viewer"],
+      blog_post_status: ["draft", "published"],
       contribution_status: ["none", "pledged", "confirmed", "refunded"],
       deal_status: ["none", "negotiating", "accepted", "declined", "closed"],
       field_source_kind: [
