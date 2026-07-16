@@ -77,21 +77,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Venuespace — Motor de dados para operações vivas" },
+      { title: "Venuespace — espaços para eventos" },
       {
         name: "description",
         content:
-          "Venuespace: crie suas próprias tabelas, publique páginas, receba interessados e feche negócios — sem código.",
+          "Liste espaços de eventos, publique ambientes disponíveis, receba interessados e conduza negociações em um só lugar.",
       },
       { name: "author", content: "Venuespace" },
-      { property: "og:title", content: "Venuespace" },
+      { property: "og:title", content: "Venuespace — espaços para eventos" },
       {
         property: "og:description",
         content:
-          "Motor de dados multi-tenant para catálogos, candidaturas, campanhas e reservas.",
+          "Liste espaços de eventos, publique ambientes disponíveis, receba interessados e conduza negociações em um só lugar.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Venuespace — espaços para eventos" },
+      { name: "twitter:description", content: "Liste espaços de eventos, publique ambientes disponíveis, receba interessados e conduza negociações em um só lugar." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a7f5af82-30fa-411a-8e90-4668ae240b27/id-preview-4690c0bb--0433e389-2dd9-441a-9ff5-ff7f287eeee8.lovable.app-1784241331460.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a7f5af82-30fa-411a-8e90-4668ae240b27/id-preview-4690c0bb--0433e389-2dd9-441a-9ff5-ff7f287eeee8.lovable.app-1784241331460.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

@@ -16,8 +16,8 @@ export const Route = createFileRoute("/")({
         content:
           "Liste espaços de eventos, publique ambientes disponíveis, receba interessados e conduza negociações em um só lugar.",
       },
-      { property: "og:title", content: "Venuespace" },
-      { property: "og:description", content: "Plataforma para descoberta e negociação de espaços de eventos." },
+      { property: "og:title", content: "Venuespace — espaços para eventos" },
+      { property: "og:description", content: "Liste espaços de eventos, publique ambientes disponíveis, receba interessados e conduza negociações em um só lugar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
