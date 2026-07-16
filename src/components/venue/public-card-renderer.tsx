@@ -15,7 +15,7 @@ function IconByName({ name, className }: { name: string | null | undefined; clas
   if (!name) return null;
   const Cmp = (LucideIcons as any)[name] as LucideIcon | undefined;
   if (!Cmp) return null;
-  return <Cmp className={className ?? "h-3.5 w-3.5"} />;
+  return <Cmp className={className ?? "h-4 w-4 shrink-0"} />;
 }
 
 function formatValue(field: RendererField | undefined, raw: any): string {
