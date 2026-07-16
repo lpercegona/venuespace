@@ -14,7 +14,11 @@ export function PublicHeader({ showAuthActions = true, showExplore = true, showB
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center gap-2">
           <span className="truncate font-display text-base font-semibold tracking-tight text-foreground sm:text-lg">
-            VENUESPACE
+            <img
+              src="/Venuespace logo1.svg"
+              alt="Venuespace Logo"
+              className="h-6 w-auto" // Ajuste a altura (h-6) conforme necessário para o seu layout
+            />
           </span>
         </Link>
         <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
@@ -37,7 +41,9 @@ export function PublicHeader({ showAuthActions = true, showExplore = true, showB
           {showAuthActions ? (
             <>
               <Link to="/auth">
-                <Button variant="ghost" size="sm">Entrar</Button>
+                <Button variant="ghost" size="sm">
+                  Entrar
+                </Button>
               </Link>
               <Link to="/auth">
                 <Button size="sm">Começar</Button>
