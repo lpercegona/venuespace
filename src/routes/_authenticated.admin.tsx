@@ -96,12 +96,14 @@ function AdminPage() {
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
           <TabsTrigger value="layouts">Layout público</TabsTrigger>
+          <TabsTrigger value="blog">Blog</TabsTrigger>
         </TabsList>
         <TabsContent value="general"><GeneralSection /></TabsContent>
         <TabsContent value="labels"><LabelsSection /></TabsContent>
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
         <TabsContent value="layouts"><LayoutsSection /></TabsContent>
+        <TabsContent value="blog"><BlogSection /></TabsContent>
       </Tabs>
 
     </AppShell>
