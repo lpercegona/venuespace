@@ -940,6 +940,8 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
       </p>
     </div>
   );
+}
+
 
 function BlogSection() {
   const qc = useQueryClient();
