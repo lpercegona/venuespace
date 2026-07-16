@@ -27,6 +27,7 @@ import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/ap
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
 import { Route as AuthenticatedMeApplicationsRouteImport } from './routes/_authenticated.me.applications'
 import { Route as PublicSlugTableIdIndexRouteImport } from './routes/public.$slug.$tableId.index'
+import { Route as ApiPublicBlogIndexRouteImport } from './routes/api/public/blog/index'
 import { Route as AuthenticatedAppOrgSlugIndexRouteImport } from './routes/_authenticated.app.$orgSlug.index'
 import { Route as PublicSlugCampaignsRecordIdRouteImport } from './routes/public.$slug.campaigns.$recordId'
 import { Route as PublicSlugTableIdFormRouteImport } from './routes/public.$slug.$tableId.form'
@@ -37,6 +38,7 @@ import { Route as ApiPublicFormSchemaViewIdRouteImport } from './routes/api/publ
 import { Route as ApiPublicCategorySchemaCategoryIdRouteImport } from './routes/api/public/category-schema.$categoryId'
 import { Route as ApiPublicCategoryLayoutCategoryIdRouteImport } from './routes/api/public/category-layout.$categoryId'
 import { Route as ApiPublicCampaignsRecordIdRouteImport } from './routes/api/public/campaigns/$recordId'
+import { Route as ApiPublicBlogSlugRouteImport } from './routes/api/public/blog/$slug'
 import { Route as ApiPublicSlugTableIdRouteImport } from './routes/api/public/$slug/$tableId'
 import { Route as AuthenticatedAppOrgSlugMembersRouteImport } from './routes/_authenticated.app.$orgSlug.members'
 import { Route as AuthenticatedAppOrgSlugConversationsRouteImport } from './routes/_authenticated.app.$orgSlug.conversations'
@@ -139,6 +141,11 @@ const PublicSlugTableIdIndexRoute = PublicSlugTableIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PublicSlugTableIdRoute,
 } as any)
+const ApiPublicBlogIndexRoute = ApiPublicBlogIndexRouteImport.update({
+  id: '/api/public/blog/',
+  path: '/api/public/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppOrgSlugIndexRoute =
   AuthenticatedAppOrgSlugIndexRouteImport.update({
     id: '/app/$orgSlug/',
@@ -196,6 +203,11 @@ const ApiPublicCampaignsRecordIdRoute =
     path: '/api/public/campaigns/$recordId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBlogSlugRoute = ApiPublicBlogSlugRouteImport.update({
+  id: '/api/public/blog/$slug',
+  path: '/api/public/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSlugTableIdRoute = ApiPublicSlugTableIdRouteImport.update({
   id: '/api/public/$slug/$tableId',
   path: '/api/public/$slug/$tableId',
@@ -271,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/app/$orgSlug/conversations': typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
   '/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
+  '/api/public/blog/$slug': typeof ApiPublicBlogSlugRoute
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
   '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
@@ -281,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
   '/app/$orgSlug/': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/api/public/blog/': typeof ApiPublicBlogIndexRoute
   '/public/$slug/$tableId/': typeof PublicSlugTableIdIndexRoute
   '/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
   '/api/public/$slug/$tableId/$recordId': typeof ApiPublicSlugTableIdRecordIdRoute
@@ -308,6 +322,7 @@ export interface FileRoutesByTo {
   '/app/$orgSlug/conversations': typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
   '/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
+  '/api/public/blog/$slug': typeof ApiPublicBlogSlugRoute
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
   '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
@@ -318,6 +333,7 @@ export interface FileRoutesByTo {
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
   '/app/$orgSlug': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/api/public/blog': typeof ApiPublicBlogIndexRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdIndexRoute
   '/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
   '/api/public/$slug/$tableId/$recordId': typeof ApiPublicSlugTableIdRecordIdRoute
@@ -348,6 +364,7 @@ export interface FileRoutesById {
   '/_authenticated/app/$orgSlug/conversations': typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
   '/_authenticated/app/$orgSlug/members': typeof AuthenticatedAppOrgSlugMembersRoute
   '/api/public/$slug/$tableId': typeof ApiPublicSlugTableIdRouteWithChildren
+  '/api/public/blog/$slug': typeof ApiPublicBlogSlugRoute
   '/api/public/campaigns/$recordId': typeof ApiPublicCampaignsRecordIdRoute
   '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
@@ -358,6 +375,7 @@ export interface FileRoutesById {
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
   '/public/$slug/campaigns/$recordId': typeof PublicSlugCampaignsRecordIdRoute
   '/_authenticated/app/$orgSlug/': typeof AuthenticatedAppOrgSlugIndexRoute
+  '/api/public/blog/': typeof ApiPublicBlogIndexRoute
   '/public/$slug/$tableId/': typeof PublicSlugTableIdIndexRoute
   '/_authenticated/app/$orgSlug/conversations/$conversationId': typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
   '/api/public/$slug/$tableId/$recordId': typeof ApiPublicSlugTableIdRecordIdRoute
@@ -388,6 +406,7 @@ export interface FileRouteTypes {
     | '/app/$orgSlug/conversations'
     | '/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
+    | '/api/public/blog/$slug'
     | '/api/public/campaigns/$recordId'
     | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
@@ -398,6 +417,7 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
     | '/app/$orgSlug/'
+    | '/api/public/blog/'
     | '/public/$slug/$tableId/'
     | '/app/$orgSlug/conversations/$conversationId'
     | '/api/public/$slug/$tableId/$recordId'
@@ -425,6 +445,7 @@ export interface FileRouteTypes {
     | '/app/$orgSlug/conversations'
     | '/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
+    | '/api/public/blog/$slug'
     | '/api/public/campaigns/$recordId'
     | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
@@ -435,6 +456,7 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
     | '/app/$orgSlug'
+    | '/api/public/blog'
     | '/public/$slug/$tableId'
     | '/app/$orgSlug/conversations/$conversationId'
     | '/api/public/$slug/$tableId/$recordId'
@@ -464,6 +486,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/$orgSlug/conversations'
     | '/_authenticated/app/$orgSlug/members'
     | '/api/public/$slug/$tableId'
+    | '/api/public/blog/$slug'
     | '/api/public/campaigns/$recordId'
     | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
@@ -474,6 +497,7 @@ export interface FileRouteTypes {
     | '/public/$slug/$tableId/form'
     | '/public/$slug/campaigns/$recordId'
     | '/_authenticated/app/$orgSlug/'
+    | '/api/public/blog/'
     | '/public/$slug/$tableId/'
     | '/_authenticated/app/$orgSlug/conversations/$conversationId'
     | '/api/public/$slug/$tableId/$recordId'
@@ -498,6 +522,7 @@ export interface RootRouteChildren {
   PublicSlugTableIdRoute: typeof PublicSlugTableIdRouteWithChildren
   PublicSlugIndexRoute: typeof PublicSlugIndexRoute
   ApiPublicSlugTableIdRoute: typeof ApiPublicSlugTableIdRouteWithChildren
+  ApiPublicBlogSlugRoute: typeof ApiPublicBlogSlugRoute
   ApiPublicCampaignsRecordIdRoute: typeof ApiPublicCampaignsRecordIdRoute
   ApiPublicCategoryLayoutCategoryIdRoute: typeof ApiPublicCategoryLayoutCategoryIdRoute
   ApiPublicCategorySchemaCategoryIdRoute: typeof ApiPublicCategorySchemaCategoryIdRoute
@@ -505,6 +530,7 @@ export interface RootRouteChildren {
   ApiPublicLeadTokenRoute: typeof ApiPublicLeadTokenRoute
   ApiPublicViacepCepRoute: typeof ApiPublicViacepCepRoute
   PublicSlugCampaignsRecordIdRoute: typeof PublicSlugCampaignsRecordIdRoute
+  ApiPublicBlogIndexRoute: typeof ApiPublicBlogIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -635,6 +661,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicSlugTableIdIndexRouteImport
       parentRoute: typeof PublicSlugTableIdRoute
     }
+    '/api/public/blog/': {
+      id: '/api/public/blog/'
+      path: '/api/public/blog'
+      fullPath: '/api/public/blog/'
+      preLoaderRoute: typeof ApiPublicBlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/$orgSlug/': {
       id: '/_authenticated/app/$orgSlug/'
       path: '/app/$orgSlug'
@@ -703,6 +736,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/campaigns/$recordId'
       fullPath: '/api/public/campaigns/$recordId'
       preLoaderRoute: typeof ApiPublicCampaignsRecordIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/blog/$slug': {
+      id: '/api/public/blog/$slug'
+      path: '/api/public/blog/$slug'
+      fullPath: '/api/public/blog/$slug'
+      preLoaderRoute: typeof ApiPublicBlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/$slug/$tableId': {
@@ -861,6 +901,7 @@ const rootRouteChildren: RootRouteChildren = {
   PublicSlugTableIdRoute: PublicSlugTableIdRouteWithChildren,
   PublicSlugIndexRoute: PublicSlugIndexRoute,
   ApiPublicSlugTableIdRoute: ApiPublicSlugTableIdRouteWithChildren,
+  ApiPublicBlogSlugRoute: ApiPublicBlogSlugRoute,
   ApiPublicCampaignsRecordIdRoute: ApiPublicCampaignsRecordIdRoute,
   ApiPublicCategoryLayoutCategoryIdRoute:
     ApiPublicCategoryLayoutCategoryIdRoute,
@@ -870,6 +911,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLeadTokenRoute: ApiPublicLeadTokenRoute,
   ApiPublicViacepCepRoute: ApiPublicViacepCepRoute,
   PublicSlugCampaignsRecordIdRoute: PublicSlugCampaignsRecordIdRoute,
+  ApiPublicBlogIndexRoute: ApiPublicBlogIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
