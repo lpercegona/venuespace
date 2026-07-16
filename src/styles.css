@@ -86,6 +86,7 @@
 :root {
   --radius: 0.75rem;
 
+  /* Neutrals — Baseadas em #f7f7f7 (fundos) e #232323 (textos/pretos) */
   --background: oklch(0.97 0 0);
   --foreground: oklch(0.21 0 0);
   --surface: oklch(0.94 0 0);
