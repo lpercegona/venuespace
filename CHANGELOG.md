@@ -1,3 +1,11 @@
+## 2026-07-17 — Iteração 15 — Correções (Blog + fluxo público sem tabelas)
+- Renomeado `src/routes/_authenticated.admin.tsx` → `_authenticated.admin.index.tsx` para permitir rotas filhas (`admin.blog.$postId`) renderizarem — editor de novo post volta a abrir.
+- `src/components/venue/tiptap-editor.tsx`: `immediatelyRender: false` (React 19) e guardas para evitar hydration mismatch.
+- `src/components/venue/public-card-renderer.tsx`: filtra células vazias antes de agrupar em linhas, eliminando gaps quando `category_data` não preenche todos os campos do layout.
+- `src/routes/index.tsx`: removida seção "Ambientes publicados" (fluxo público sem tabelas).
+- `src/routes/public.$slug.index.tsx`: removida referência ao nome da tabela nos cards de registros.
+- `src/routes/public.$slug.$tableId.$recordId.tsx` e `.form.tsx`: BackLinks agora voltam ao perfil da organização em vez da listagem de tabela.
+
 ## 2026-07-16 — Iteração 14 — Blog (Super Admin)
 - Fix: ícones Lucide nos cards públicos agora resolvem kebab-case/PascalCase.
 - Tabela `blog_posts` com RLS (Super Admin escreve; anon lê publicados).

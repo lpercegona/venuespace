@@ -81,7 +81,7 @@ function PublicRecordDetail() {
       <PublicHeader />
       <header className="border-b border-border/60 bg-surface">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-          <BackLink to="/public/$slug/$tableId" params={{ slug, tableId }} label={`Voltar para ${table.name}`} />
+          <BackLink to="/public/$slug" params={{ slug }} label={`Voltar para ${organization.name}`} />
           <p className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{organization.name}</p>
           <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
             <h1 className="font-display text-3xl font-semibold text-foreground sm:text-4xl">{title}</h1>

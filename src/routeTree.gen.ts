@@ -17,9 +17,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as LeadTokenRouteImport } from './routes/lead.$token'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as PublicSlugIndexRouteImport } from './routes/public.$slug.index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
 import { Route as PublicSlugTableIdRouteImport } from './routes/public.$slug.$tableId'
 import { Route as ApiPublicTablesRouteImport } from './routes/api/public/tables'
 import { Route as ApiPublicSystemFieldsRouteImport } from './routes/api/public/system-fields'
@@ -92,11 +92,6 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => BlogRoute,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const PublicSlugIndexRoute = PublicSlugIndexRouteImport.update({
   id: '/public/$slug/',
   path: '/public/$slug/',
@@ -105,6 +100,11 @@ const PublicSlugIndexRoute = PublicSlugIndexRouteImport.update({
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const PublicSlugTableIdRoute = PublicSlugTableIdRouteImport.update({
@@ -252,9 +252,9 @@ const AuthenticatedAppOrgSlugCalendarRoute =
   } as any)
 const AuthenticatedAdminBlogPostIdRoute =
   AuthenticatedAdminBlogPostIdRouteImport.update({
-    id: '/blog/$postId',
-    path: '/blog/$postId',
-    getParentRoute: () => AuthenticatedAdminRoute,
+    id: '/admin/blog/$postId',
+    path: '/admin/blog/$postId',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const ApiPublicSlugTableIdSubmitRoute =
   ApiPublicSlugTableIdSubmitRouteImport.update({
@@ -292,7 +292,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
   '/explore': typeof ExploreRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/lead/$token': typeof LeadTokenRoute
   '/blog/': typeof BlogIndexRoute
@@ -305,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/public/$slug/': typeof PublicSlugIndexRoute
   '/admin/blog/$postId': typeof AuthenticatedAdminBlogPostIdRoute
@@ -335,7 +335,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/explore': typeof ExploreRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/lead/$token': typeof LeadTokenRoute
   '/blog': typeof BlogIndexRoute
@@ -347,6 +346,7 @@ export interface FileRoutesByTo {
   '/api/public/records': typeof ApiPublicRecordsRoute
   '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/public/$slug': typeof PublicSlugIndexRoute
   '/admin/blog/$postId': typeof AuthenticatedAdminBlogPostIdRoute
@@ -380,7 +380,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
   '/explore': typeof ExploreRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/lead/$token': typeof LeadTokenRoute
   '/blog/': typeof BlogIndexRoute
@@ -393,6 +392,7 @@ export interface FileRoutesById {
   '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
   '/api/public/tables': typeof ApiPublicTablesRoute
   '/public/$slug/$tableId': typeof PublicSlugTableIdRouteWithChildren
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/public/$slug/': typeof PublicSlugIndexRoute
   '/_authenticated/admin/blog/$postId': typeof AuthenticatedAdminBlogPostIdRoute
@@ -426,7 +426,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/blog'
     | '/explore'
-    | '/admin'
     | '/blog/$slug'
     | '/lead/$token'
     | '/blog/'
@@ -439,6 +438,7 @@ export interface FileRouteTypes {
     | '/api/public/system-fields'
     | '/api/public/tables'
     | '/public/$slug/$tableId'
+    | '/admin/'
     | '/app/'
     | '/public/$slug/'
     | '/admin/blog/$postId'
@@ -469,7 +469,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/explore'
-    | '/admin'
     | '/blog/$slug'
     | '/lead/$token'
     | '/blog'
@@ -481,6 +480,7 @@ export interface FileRouteTypes {
     | '/api/public/records'
     | '/api/public/system-fields'
     | '/api/public/tables'
+    | '/admin'
     | '/app'
     | '/public/$slug'
     | '/admin/blog/$postId'
@@ -513,7 +513,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/blog'
     | '/explore'
-    | '/_authenticated/admin'
     | '/blog/$slug'
     | '/lead/$token'
     | '/blog/'
@@ -526,6 +525,7 @@ export interface FileRouteTypes {
     | '/api/public/system-fields'
     | '/api/public/tables'
     | '/public/$slug/$tableId'
+    | '/_authenticated/admin/'
     | '/_authenticated/app/'
     | '/public/$slug/'
     | '/_authenticated/admin/blog/$postId'
@@ -639,13 +639,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof BlogRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/public/$slug/': {
       id: '/public/$slug/'
       path: '/public/$slug'
@@ -658,6 +651,13 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/public/$slug/$tableId': {
@@ -844,10 +844,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/admin/blog/$postId': {
       id: '/_authenticated/admin/blog/$postId'
-      path: '/blog/$postId'
+      path: '/admin/blog/$postId'
       fullPath: '/admin/blog/$postId'
       preLoaderRoute: typeof AuthenticatedAdminBlogPostIdRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/public/$slug/$tableId/submit': {
       id: '/api/public/$slug/$tableId/submit'
@@ -887,17 +887,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedAdminRouteChildren {
-  AuthenticatedAdminBlogPostIdRoute: typeof AuthenticatedAdminBlogPostIdRoute
-}
-
-const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
-  AuthenticatedAdminBlogPostIdRoute: AuthenticatedAdminBlogPostIdRoute,
-}
-
-const AuthenticatedAdminRouteWithChildren =
-  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
-
 interface AuthenticatedAppOrgSlugConversationsRouteChildren {
   AuthenticatedAppOrgSlugConversationsConversationIdRoute: typeof AuthenticatedAppOrgSlugConversationsConversationIdRoute
 }
@@ -914,9 +903,10 @@ const AuthenticatedAppOrgSlugConversationsRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedMeApplicationsRoute: typeof AuthenticatedMeApplicationsRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAdminBlogPostIdRoute: typeof AuthenticatedAdminBlogPostIdRoute
   AuthenticatedAppOrgSlugCalendarRoute: typeof AuthenticatedAppOrgSlugCalendarRoute
   AuthenticatedAppOrgSlugConversationsRoute: typeof AuthenticatedAppOrgSlugConversationsRouteWithChildren
   AuthenticatedAppOrgSlugMembersRoute: typeof AuthenticatedAppOrgSlugMembersRoute
@@ -926,9 +916,10 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedMeApplicationsRoute: AuthenticatedMeApplicationsRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAdminBlogPostIdRoute: AuthenticatedAdminBlogPostIdRoute,
   AuthenticatedAppOrgSlugCalendarRoute: AuthenticatedAppOrgSlugCalendarRoute,
   AuthenticatedAppOrgSlugConversationsRoute:
     AuthenticatedAppOrgSlugConversationsRouteWithChildren,
@@ -1016,13 +1007,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

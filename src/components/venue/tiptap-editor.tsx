@@ -13,6 +13,7 @@ type Props = { value: string; onChange: (html: string) => void };
 export function TiptapEditor({ value, onChange }: Props) {
   const [uploading, setUploading] = useState(false);
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
       Image.configure({ inline: false }),
@@ -54,6 +55,7 @@ export function TiptapEditor({ value, onChange }: Props) {
   }
 
   function onSetLink() {
+    if (!editor) return;
     const prev = editor.getAttributes("link").href as string | undefined;
     const url = window.prompt("URL do link", prev ?? "https://");
     if (url === null) return;
