@@ -1,80 +1,61 @@
-## Iteração 14 — Blog do Super Admin + correção de ícones nos cards
+## Iteração 15 — Correções: Cards públicos, fluxo sem tabela e editor de blog
 
-### A. Correção: ícones nos cards de listagem
+### Parte A — Cards públicos de organização renderizando vazio
 
-**Causa raiz.** No admin, ícones são salvos em kebab-case (`users-round`, `layout-grid`, `map-pin`), mas `LucideIcons` só expõe em PascalCase (`UsersRound`, `LayoutGrid`, `MapPin`). O lookup `(LucideIcons as any)[name]` retorna `undefined` e nada renderiza.
+**Diagnóstico:** `PublicCardBody` monta a grade (4 col) mas nenhum item aparece nas linhas. Os cards em landing/explorar/perfil recebem `layout` (do super admin) + `fields` (builtins + `category_org_fields`) + `data` (org.name, slug, description, logo_url, ...category_data). Como o replay mostra as linhas `.grid.grid-cols-4` sem filhos, a causa é uma das duas:
 
-**Correção pontual.** Em `src/components/venue/public-card-renderer.tsx`, normalizar o nome antes do lookup: aceitar kebab, snake e PascalCase. Um único helper `resolveLucide(name)` tenta `LucideIcons[name]`, `LucideIcons[pascal(name)]` e retorna `null` silenciosamente se não achar. Sem tocar em schema, backend ou admin.
+1. `layout.field_key` aponta para chaves de campos da categoria mas `organizations.category_data` está `{}` para as orgs existentes (retroativo não populou).
+2. `formatValue` retorna string vazia para valores `null/""`, e `mediaUrlsFor` filtra URLs de storage não assinadas → item retorna `null` e a linha fica vazia.
 
-### B. Blog do Super Admin
+**Correções:**
 
-Escopo confirmado: apenas super admin cria/edita/publica. Blog global da instância. Editor rich text (Tiptap).
+- Em `src/lib/public.server.ts` (`listPublicOrganizations`): ao montar `data`, garantir merge de fallbacks (name/slug/description/logo_url) e preservar `category_data` mesmo quando `null`. Confirmar via consulta se orgs existentes têm `category_data` vazio; se sim, exibir mesmo assim os campos builtin (nome/descrição) sempre que o layout referenciar `field_key` inexistente em `data`.
+- Em `src/components/venue/public-card-renderer.tsx`:
+  - Quando `raw` é vazio e o `field_key` do layout não corresponde a nenhum campo conhecido, renderizar um placeholder com apenas o ícone + label (mantendo grid) em vez de retornar `null`, para dar feedback visível do layout configurado.
+  - Alternativa preferida: renderizar o item somente quando houver conteúdo, mas colapsar a linha ausente para não gerar `<div>` vazio (recomputar rows apenas com items visíveis, preservando `width_percent`).
+  - Corrigir: se todos os itens da linha estiverem vazios, não renderizar a linha.
+- Adicionar fallback visual: quando o card não tem nenhum item renderizado do layout, exibir descrição da org (mantendo o texto atual como fallback).
+- Validar renderização com Playwright em `/`, `/explore` e `/public/$slug`.
 
-**Migração (uma só, com GRANTs):**
-- `blog_posts (id, slug unique, title, subtitle, cover_image_path, cover_image_alt, content_html, content_text, status enum('draft','published'), published_at, author_user_id → auth.users, seo_title, seo_description, created_at, updated_at)`
-- GRANTs: `SELECT` a `anon` filtrado por RLS `status='published'`; `SELECT/INSERT/UPDATE/DELETE` a `authenticated` restrito a `is_super_admin(auth.uid())`; `ALL` a `service_role`.
-- Trigger `updated_at`.
+### Parte B — Remover páginas que contenham tabela do fluxo público
 
-**Storage.** Reutilizar bucket privado `venue-uploads` com prefixo `blog/covers/`. URLs assinadas server-side (mesma abordagem já usada em galeria).
+**Escopo:** Simplificar o fluxo público removendo o conceito de "Tabela/Ambientes" da navegação exposta ao visitante. O fluxo passa a ser **Home → Organização → Registro** (sem passar por tabela).
 
-**Server layer (`src/lib/blog.functions.ts`):**
-- `listBlogPostsAdmin` (super admin, todos status)
-- `getBlogPostAdmin({ id })` (super admin)
-- `upsertBlogPost({ id?, slug, title, subtitle, cover_image_path, cover_image_alt, content_html, content_text, status, seo_title, seo_description })` (super admin)
-- `deleteBlogPost({ id })` (super admin)
-- `uploadBlogCover` — mesmo padrão dos uploads existentes de gallery/image
-Todas com `.middleware([requireSupabaseAuth])` + checagem de `is_super_admin` via RPC.
+**Alterações:**
 
-**Rotas públicas (server routes, `/api/public/blog/*`):**
-- `GET /api/public/blog` — lista publicados (id, slug, title, subtitle, cover signed url, published_at). Cache `public, s-maxage=120, swr=300`.
-- `GET /api/public/blog/$slug` — post publicado completo com cover assinada.
+- **Landing (`src/routes/index.tsx`)**: remover a seção "Ambientes publicados" (grid de records) e o card de destaque relacionado a tabelas. Manter apenas "Espaços recentes" (orgs).
+- Manter Organizações e Ambientes no /explore Mantendo listagem de perfis e de ambientes.
+- **Perfil público da org (`src/routes/public.$slug.index.tsx`)**: continuar listando registros publicados. Os cards devem ir direto para o registro.
+- **Rotas de tabela**: manter apenas as rotas de detalhe de registro e API. As rotas de listagem por tabela deixam de ser linkadas na UI pública (mantidas em disco para não quebrar links diretos existentes, mas sem entrada de navegação):
+  - `src/routes/public.$slug.$tableId.index.tsx` (rota folha) — remover links de navegação que apontem para ela; nenhum componente público deve gerar essa URL.
+  - Confirmar que `PublicHeader` e `BackLink` não expõem link para tabela.
+- Atualizar textos que mencionam "tabela/ambiente" para vocabulário neutro do visitante (rótulos configurados pelo super admin já cobrem admin/negócio; público perde a menção).
 
-Ambos com publishable client (§ server-functions-modern), policy `TO anon` `status='published'`.
+### Parte C — Página de criação de post do blog não abre
 
-**Rotas de página:**
-- `src/routes/blog.tsx` (layout com `<Outlet />` + `<PublicHeader />`)
-- `src/routes/blog.index.tsx` — listagem pública. Grid de cards (capa aspect-video, título display, subtítulo, data formatada com `useFormatContext`). SEO próprio.
-- `src/routes/blog.$slug.tsx` — post individual. `head()` derivado do loader (title, description, og:title, og:description, og:image = capa assinada, twitter:card summary_large_image). Renderiza `content_html` sanitizado dentro de container `prose`-like usando tokens semânticos (tipografia via `font-display`/`font-body`, sem cores hardcoded). `BackLink` para `/blog` acima do título.
-- Link "Blog" adicionado ao `PublicHeader`.
+**Diagnóstico a executar em modo build:**
 
-**Admin (`src/routes/_authenticated.admin.tsx`):**
-- Nova aba **"Blog"** ao lado das existentes.
-- Listagem: `Table` shadcn com título, status (`Badge`), data de publicação, ações (editar/excluir com `AlertDialog`). Botão "Novo post".
-- Formulário de edição em rota dedicada `src/routes/_authenticated.admin.blog.$postId.tsx` (aceita `new` como id):
-  - Campos: título, slug (auto-gerado com colisão-safe), subtítulo, capa (uploader single-image reaproveitando padrão do `GalleryField`), alt da capa, editor Tiptap para corpo, SEO title/description, switch draft/published.
-  - Editor Tiptap: `@tiptap/react` + `@tiptap/starter-kit` + `@tiptap/extension-image` + `@tiptap/extension-link`. Toolbar com Bold, Italic, H2, H3, lista, link, imagem inline (upload para o mesmo bucket), citação. Estilizado com tokens semânticos.
-  - `content_html` sanitizado server-side com `sanitize-html` antes de persistir (whitelist de tags/atributos); `content_text` derivado para busca/preview.
-- Botões "Ver publicação" (abre `/blog/$slug` em nova aba) quando publicado.
+1. Abrir preview autenticado como super admin, ir em `/admin` → aba Blog → "Novo post" com Playwright e capturar console/network para identificar o erro real (rota `/admin/blog/new`).
+2. Hipóteses prováveis a checar no código:
+  - `TiptapEditor` chamando `useEditor` no primeiro render sem guarda de SSR (layout `_authenticated` é `ssr:false`, mas se `immediatelyRender` estiver default, pode disparar warning/erro em React 19 strict).
+  - Import faltante (`@tiptap/extension-image`, `@tiptap/extension-link`) ou versão incompatível.
+  - `getBlogPostAdmin` sendo disparado mesmo com `isNew` (não deveria — `enabled: !isNew`), mas se `postId` chegar como string `"new"` e algum outro efeito tentar validar uuid, quebra.
+  - Rota `/_authenticated/admin/blog/$postId` matcheando "new" corretamente — verificar que não há conflito com outra rota.
 
-**Navegação completa:**
-```
-/blog                         → listagem pública
-/blog/$slug                   → post individual
-/admin (aba Blog)             → listagem + criar
-/admin/blog/new               → editor novo post
-/admin/blog/$postId           → editor de post existente
-```
+**Correção esperada (a confirmar após diagnóstico):**
 
-**Aceite:**
-1. Super admin cria post rascunho, edita corpo em Tiptap, faz upload de capa e imagem inline, define slug e SEO, publica.
-2. `/blog` mostra o post publicado; rascunhos não aparecem.
-3. `/blog/$slug` renderiza o corpo com meta tags corretas (title, og:image = capa).
-4. Excluir remove da listagem pública imediatamente.
-5. Não-super-admin recebe 401 nas server fns e não vê a aba.
-6. Cards de listagem em `/`, `/explore` e `/public/$slug` renderizam ícones do layout público (fix independente do blog).
+- Passar `immediatelyRender: false` para `useEditor` no `TiptapEditor` (compatibilidade React 19/SSR-safe).
+- Adicionar `errorComponent`/tratamento visível no route file para não deixar tela em branco em caso de exceção do editor.
+- Se o erro for dependência faltando, instalar o pacote correto.
+- Garantir que o botão "Novo post" leva a `/admin/blog/new` e que a página renderiza formulário mesmo sem query carregada.
 
-### Governança (checklist §7)
+### Parte D — CHANGELOG
 
-- Build + typecheck limpos.
-- Todas as novas rotas validadas em 360/768/1280, light + dark.
-- Estados loading/empty/error cobertos.
-- Nenhuma cor hardcoded; novos elementos usam tokens existentes.
-- RLS + GRANTs revisados; `/api/public/blog/*` sem PII (só campos publicáveis).
-- Meta tags específicas em `/blog` e `/blog/$slug`; og:image apenas em leaf (`/blog/$slug`).
-- Propagação verificada: super_admin (cria/edita/publica), owner/editor/viewer (não veem admin), autenticado não-membro (só leitura pública), anônimo (só leitura pública).
-- `CHANGELOG.md` com entrada datada cobrindo fix de ícones + iteração blog.
-- Auditoria de coerência (iterações 12/13/14) executada.
+Registrar Iteração 15 em `CHANGELOG.md` cobrindo A, B e C.
 
-### Fora de escopo
+### Detalhes técnicos
 
-Comentários, reações, autores múltiplos, categorias/tags de post, RSS, agendamento futuro, revisões/versionamento, i18n de posts, blog por organização (esta última fica registrada como próximo passo caso solicitada).
+- `PublicCardBody`: nova lógica de agrupamento — filtrar itens vazios antes de montar as rows, mantendo `width_percent` como span.
+- `listPublicOrganizations`: garantir que `data` inclui sempre `name`, `description`, `logo_url` mesmo se layout referenciar outra chave, e que campos com `type: image` sem valor não geram slot vazio.
+- Explore: remover `zodValidator`/`fallback` da import list se não houver mais search params.
+- Blog editor: reproduzir com Playwright em `/admin/blog/new`, coletar erro exato, aplicar patch mínimo.

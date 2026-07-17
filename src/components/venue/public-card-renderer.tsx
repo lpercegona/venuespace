@@ -115,18 +115,55 @@ export function PublicCardBody({
   const byKey = new Map(fields.map((f) => [f.key, f]));
   if (!layout || layout.length === 0) return null;
 
-  // Group by rows using width_percent cumulative sum up to 100.
-  const rows: LayoutItem[][] = [];
-  let current: LayoutItem[] = [];
-  let acc = 0;
+  // Compute renderable cells first, dropping empty ones so we don't
+  // emit empty rows when a layout references fields with no data.
+  type Cell = {
+    id: string;
+    width_percent: number;
+    span: string;
+    label: string;
+    iconName: string | null;
+    imgAspect: string;
+    kind: "single-image" | "gallery" | "text";
+    urls?: string[];
+    text?: string;
+  };
+
+  const cells: Cell[] = [];
   for (const it of layout) {
-    current.push(it);
-    acc += it.width_percent;
-    if (acc >= 100) {
-      rows.push(current);
-      current = [];
-      acc = 0;
+    const f = byKey.get(it.field_key);
+    const raw = data?.[it.field_key];
+    const label = (it.config?.label_override as string) ?? f?.label ?? it.field_key;
+    const iconName = (it.config?.icon as string) ?? null;
+    const span =
+      it.width_percent === 25 ? "col-span-1" :
+      it.width_percent === 50 ? "col-span-2" :
+      it.width_percent === 75 ? "col-span-3" : "col-span-4";
+    const imgAspect = it.width_percent === 100 ? "aspect-video" : "aspect-square";
+    const mediaUrls = mediaUrlsFor(f, it.field_key, label, raw);
+    if (mediaUrls.length === 1) {
+      cells.push({ id: it.id, width_percent: it.width_percent, span, label, iconName, imgAspect, kind: "single-image", urls: mediaUrls });
+      continue;
     }
+    if (mediaUrls.length > 1) {
+      cells.push({ id: it.id, width_percent: it.width_percent, span, label, iconName, imgAspect, kind: "gallery", urls: mediaUrls });
+      continue;
+    }
+    const text = formatValue(f, raw);
+    if (!text) continue;
+    cells.push({ id: it.id, width_percent: it.width_percent, span, label, iconName, imgAspect, kind: "text", text });
+  }
+
+  if (cells.length === 0) return null;
+
+  // Group into rows summing to 100%.
+  const rows: Cell[][] = [];
+  let current: Cell[] = [];
+  let acc = 0;
+  for (const c of cells) {
+    current.push(c);
+    acc += c.width_percent;
+    if (acc >= 100) { rows.push(current); current = []; acc = 0; }
   }
   if (current.length) rows.push(current);
 
@@ -134,52 +171,38 @@ export function PublicCardBody({
     <div className="space-y-3">
       {rows.map((row, i) => (
         <div key={i} className="grid grid-cols-4 gap-3">
-          {row.map((it) => {
-            const f = byKey.get(it.field_key);
-            const raw = data?.[it.field_key];
-            const span =
-              it.width_percent === 25 ? "col-span-1" :
-              it.width_percent === 50 ? "col-span-2" :
-              it.width_percent === 75 ? "col-span-3" : "col-span-4";
-            const label = (it.config?.label_override as string) ?? f?.label ?? it.field_key;
-            const iconName = (it.config?.icon as string) ?? null;
-
-            const mediaUrls = mediaUrlsFor(f, it.field_key, label, raw);
-            const imgAspect = it.width_percent === 100 ? "aspect-video" : "aspect-square";
-            if (mediaUrls.length === 1) {
+          {row.map((c) => {
+            if (c.kind === "single-image") {
               return (
-                <div key={it.id} className={`${span} min-w-0`}>
+                <div key={c.id} className={`${c.span} min-w-0`}>
                   <img
-                    src={mediaUrls[0]}
-                    alt={label}
+                    src={c.urls![0]}
+                    alt={c.label}
                     loading="lazy"
                     decoding="async"
-                    className={`${imgAspect} w-full rounded-md object-cover`}
+                    className={`${c.imgAspect} w-full rounded-md object-cover`}
                   />
                 </div>
               );
             }
-            if (mediaUrls.length > 1) {
+            if (c.kind === "gallery") {
               return (
-                <div key={it.id} className={`${span} min-w-0`}>
+                <div key={c.id} className={`${c.span} min-w-0`}>
                   <div className="grid grid-cols-3 gap-1">
-                    {mediaUrls.slice(0, 3).map((u, idx) => (
-                      <img key={idx} src={u} alt={`${label} ${idx + 1}`} loading="lazy" decoding="async" className="aspect-square w-full rounded-sm object-cover" />
+                    {c.urls!.slice(0, 3).map((u, idx) => (
+                      <img key={idx} src={u} alt={`${c.label} ${idx + 1}`} loading="lazy" decoding="async" className="aspect-square w-full rounded-sm object-cover" />
                     ))}
                   </div>
                 </div>
               );
             }
-
-            const text = formatValue(f, raw);
-            if (!text) return null;
             return (
-              <div key={it.id} className={`${span} min-w-0`}>
+              <div key={c.id} className={`${c.span} min-w-0`}>
                 <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  <IconByName name={iconName} className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{label}</span>
+                  <IconByName name={c.iconName} className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{c.label}</span>
                 </div>
-                <div className="truncate text-sm text-foreground">{text}</div>
+                <div className="truncate text-sm text-foreground">{c.text}</div>
               </div>
             );
           })}

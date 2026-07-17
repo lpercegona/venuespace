@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, FileText } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
@@ -59,10 +59,6 @@ function PublicOrgPage() {
                   >
                     <Card className="h-full transition-shadow hover:shadow-elegant">
                       <CardHeader className="pb-2">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <FileText className="h-3.5 w-3.5" />
-                          <span className="truncate">{r.table_name}</span>
-                        </div>
                         <CardTitle className="font-display text-lg line-clamp-2">{title || "Ambiente"}</CardTitle>
                       </CardHeader>
                       {(r.layout ?? []).length > 0 ? (

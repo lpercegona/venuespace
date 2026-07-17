@@ -2,10 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Database, MessageSquare, Sparkles, Loader2, Building2, FileText } from "lucide-react";
+import { ArrowRight, Database, MessageSquare, Sparkles, Loader2, Building2 } from "lucide-react";
 import { PublicHeader } from "@/components/venue/public-header";
-import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
-import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
+import { PublicCardBody } from "@/components/venue/public-card-renderer";
+import type { PublicOrganizationSummary } from "@/lib/public.server";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -31,15 +31,8 @@ async function fetchOrgs(): Promise<{ items: PublicOrganizationSummary[] }> {
   return res.json();
 }
 
-async function fetchRecords(): Promise<{ items: PublicRecordSummary[] }> {
-  const res = await fetch("/api/public/records?limit=8");
-  if (!res.ok) throw new Error("Falha ao carregar");
-  return res.json();
-}
-
 function Landing() {
   const orgs = useQuery({ queryKey: ["landing-orgs"], queryFn: fetchOrgs, staleTime: 60_000 });
-  const recs = useQuery({ queryKey: ["landing-records"], queryFn: fetchRecords, staleTime: 60_000 });
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,55 +104,6 @@ function Landing() {
             )}
           </section>
 
-          <section>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight sm:text-2xl">
-                <FileText className="h-5 w-5 text-primary" />
-                Ambientes publicados
-              </h2>
-              <Link to="/explore" search={{ tab: "records" }} className="text-sm text-primary hover:underline">
-                Ver todos
-              </Link>
-            </div>
-            {recs.isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            ) : (recs.data?.items ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum ambiente publicado ainda.</p>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {(recs.data?.items ?? []).map((r) => {
-                  const title = getPublicCardTitle({
-                    layout: r.layout ?? [],
-                    fields: r.fields ?? [],
-                    data: r.data,
-                    fallback: "Ambiente",
-                  });
-                  return (
-                    <Link
-                      key={r.record_id}
-                      to="/public/$slug/$tableId/$recordId"
-                      params={{ slug: r.org_slug, tableId: r.table_id, recordId: r.record_id }}
-                      className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    >
-                      <Card className="h-full transition-shadow hover:shadow-elegant">
-                        <CardHeader className="pb-2">
-                          <p className="text-xs text-muted-foreground truncate">
-                            {r.org_name} · {r.table_name}
-                          </p>
-                          <CardTitle className="font-display text-base line-clamp-2">{title || "Ambiente"}</CardTitle>
-                        </CardHeader>
-                        {(r.layout ?? []).length > 0 ? (
-                          <CardContent>
-                            <PublicCardBody layout={r.layout as any} fields={r.fields as any} data={r.data} />
-                          </CardContent>
-                        ) : null}
-                      </Card>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </section>
         </div>
 
         <div className="mt-16 grid gap-4 sm:grid-cols-3">
