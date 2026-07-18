@@ -68,6 +68,50 @@ export type Database = {
         }
         Relationships: []
       }
+      category_filter_fields: {
+        Row: {
+          category_id: string
+          created_at: string
+          field_key: string
+          filter_type: string
+          id: string
+          label_override: string | null
+          order_index: number
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          field_key: string
+          filter_type: string
+          id?: string
+          label_override?: string | null
+          order_index?: number
+          scope: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          field_key?: string
+          filter_type?: string
+          id?: string
+          label_override?: string | null
+          order_index?: number
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_filter_fields_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_org_fields: {
         Row: {
           category_id: string
