@@ -1,3 +1,13 @@
+## 2026-07-18 — Iteração 16 — Filtros dinâmicos em Explorar
+- Nova tabela `category_filter_fields` (categoria + escopo + chave + tipo `search`/`select`) com GRANTs para `anon`/`authenticated`/`service_role` e políticas: leitura pública, escrita restrita a super admin.
+- `src/lib/category-filters.functions.ts`: CRUD (`listCategoryFilterFieldsPublic`, `upsertCategoryFilterField`, `deleteCategoryFilterField`).
+- `src/lib/explore-filters.server.ts` + `src/routes/api/public/explore-filters.ts`: retorna definições de filtro + valores distintos por categoria/escopo.
+- `src/lib/public.server.ts`: `listPublicOrganizations` e `listPublicRecords` aceitam `filters` e ampliam a busca livre para chaves `search` configuradas (inclui bloco de endereço em organização, incluindo cidade).
+- `src/routes/api/public/organizations.ts` e `records.ts`: leem parâmetros `f_<key>` da querystring.
+- `src/routes/explore.tsx`: tabs com termos dinâmicos (`useLabels`), estado (q, page, filtros) sincronizado no URL, paginação independente por aba, dropdowns dinâmicos por filtro e botão "Limpar".
+- `src/routes/index.tsx`: reintroduzido bloco "{Registros} recentes" e títulos usam `useLabels`; import `FileText` corrigido.
+- `_authenticated.admin.index.tsx`: nova aba "Filtros públicos" com sub-abas Organização/Registro, seleciona campos disponíveis (base + campos da categoria) e alterna entre `select` e `search`.
+
 ## 2026-07-17 — Iteração 15 — Correções (Blog + fluxo público sem tabelas)
 - Renomeado `src/routes/_authenticated.admin.tsx` → `_authenticated.admin.index.tsx` para permitir rotas filhas (`admin.blog.$postId`) renderizarem — editor de novo post volta a abrir.
 - `src/components/venue/tiptap-editor.tsx`: `immediatelyRender: false` (React 19) e guardas para evitar hydration mismatch.
