@@ -50,6 +50,12 @@ import {
   type CategoryCascadeField,
 } from "@/lib/category-cascade.functions";
 import { listCategoryLayout, saveCategoryLayout, type LayoutField } from "@/lib/category-layouts.functions";
+import {
+  listCategoryFilterFieldsPublic,
+  upsertCategoryFilterField,
+  deleteCategoryFilterField,
+  type CategoryFilterField,
+} from "@/lib/category-filters.functions";
 
 
 export const Route = createFileRoute("/_authenticated/admin/")({
@@ -96,6 +102,7 @@ function AdminPage() {
           <TabsTrigger value="labels">Rótulos</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
+          <TabsTrigger value="filters">Filtros públicos</TabsTrigger>
           <TabsTrigger value="layouts">Layout público</TabsTrigger>
           <TabsTrigger value="blog">Blog</TabsTrigger>
         </TabsList>
@@ -103,6 +110,7 @@ function AdminPage() {
         <TabsContent value="labels"><LabelsSection /></TabsContent>
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
+        <TabsContent value="filters"><FilterFieldsSection /></TabsContent>
         <TabsContent value="layouts"><LayoutsSection /></TabsContent>
         <TabsContent value="blog"><BlogSection /></TabsContent>
       </Tabs>
@@ -1026,4 +1034,192 @@ function BlogSection() {
   );
 }
 
+
+// ---------- Filter fields (explore) ----------
+
+function FilterFieldsSection() {
+  const { t } = useLabels();
+  const qc = useQueryClient();
+  const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
+  const [selected, setSelected] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selected && cats.data && cats.data.length > 0) setSelected(cats.data[0].id);
+  }, [cats.data, selected]);
+
+  return (
+    <Card>
+      <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle className="font-display">Filtros públicos por categoria</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Escolha quais campos aparecem como filtros ou entram na busca livre em Explorar.
+          </p>
+        </div>
+        <Select value={selected ?? ""} onValueChange={setSelected}>
+          <SelectTrigger className="w-64"><SelectValue placeholder="Selecione categoria" /></SelectTrigger>
+          <SelectContent>
+            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </CardHeader>
+      <CardContent>
+        {!selected ? (
+          <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p>
+        ) : (
+          <Tabs defaultValue="organization">
+            <TabsList className="mb-4">
+              <TabsTrigger value="organization">{t("organization", "Organização")}</TabsTrigger>
+              <TabsTrigger value="record">{t("record", "Registro")}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="organization"><FilterScopeEditor categoryId={selected} scope="organization" /></TabsContent>
+            <TabsContent value="record"><FilterScopeEditor categoryId={selected} scope="record" /></TabsContent>
+          </Tabs>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+const ORG_BASE_FILTER_KEYS: Array<{ key: string; label: string }> = [
+  { key: "name", label: "Nome" },
+  { key: "description", label: "Descrição" },
+  { key: "address.city", label: "Cidade" },
+  { key: "address.state", label: "UF" },
+  { key: "address.neighborhood", label: "Bairro" },
+];
+
+function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "organization" | "record" }) {
+  const qc = useQueryClient();
+  const list = useQuery({
+    queryKey: ["admin-filters", scope, categoryId],
+    queryFn: () => listCategoryFilterFieldsPublic({ data: { category_id: categoryId, scope } }),
+  });
+  const catFields = useQuery({
+    queryKey: ["admin-defaults", scope === "organization" ? "org" : "record", categoryId],
+    queryFn: async () => {
+      if (scope === "record") {
+        const rows = await listCategoryDefaultFields({ data: { category_id: categoryId } });
+        return (rows as CategoryDefaultField[]).map((r) => ({ key: r.field_key, label: r.label }));
+      }
+      const rows = await listCategoryCascadeFields({ data: { category_id: categoryId, scope: "org" } });
+      return (rows as CategoryCascadeField[]).map((r) => ({ key: r.field_key, label: r.label }));
+    },
+  });
+
+  const availableKeys = [
+    ...(scope === "organization" ? ORG_BASE_FILTER_KEYS : []),
+    ...((catFields.data ?? []) as Array<{ key: string; label: string }>),
+  ];
+  const usedKeys = new Set((list.data ?? []).map((f) => f.field_key));
+  const pickable = availableKeys.filter((f) => !usedKeys.has(f.key));
+
+  const [newKey, setNewKey] = useState<string>("");
+  const [newType, setNewType] = useState<"search" | "select">("select");
+
+  async function add() {
+    if (!newKey) return;
+    try {
+      await upsertCategoryFilterField({
+        data: {
+          category_id: categoryId,
+          scope,
+          field_key: newKey,
+          filter_type: newType,
+          order_index: (list.data ?? []).length,
+        },
+      });
+      toast.success("Filtro adicionado");
+      setNewKey("");
+      qc.invalidateQueries({ queryKey: ["admin-filters", scope, categoryId] });
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  async function updateType(f: CategoryFilterField, filter_type: "search" | "select") {
+    try {
+      await upsertCategoryFilterField({ data: { id: f.id, category_id: f.category_id, scope: f.scope, field_key: f.field_key, filter_type, order_index: f.order_index } });
+      qc.invalidateQueries({ queryKey: ["admin-filters", scope, categoryId] });
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  async function remove(id: string) {
+    try {
+      await deleteCategoryFilterField({ data: { id } });
+      qc.invalidateQueries({ queryKey: ["admin-filters", scope, categoryId] });
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  const labelFor = (key: string) => availableKeys.find((f) => f.key === key)?.label ?? key;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="min-w-[240px] flex-1 space-y-1">
+          <Label>Campo</Label>
+          <Select value={newKey} onValueChange={setNewKey}>
+            <SelectTrigger><SelectValue placeholder="Selecione um campo" /></SelectTrigger>
+            <SelectContent>
+              {pickable.length === 0 ? (
+                <SelectItem value="__none" disabled>Todos os campos já foram adicionados.</SelectItem>
+              ) : pickable.map((f) => (
+                <SelectItem key={f.key} value={f.key}>{f.label} <span className="text-muted-foreground">({f.key})</span></SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-48 space-y-1">
+          <Label>Comportamento</Label>
+          <Select value={newType} onValueChange={(v) => setNewType(v as any)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="select">Filtro (lista)</SelectItem>
+              <SelectItem value="search">Busca (texto livre)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button size="sm" onClick={add} disabled={!newKey || newKey === "__none"}>
+          <Plus className="h-4 w-4" /> Adicionar
+        </Button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Campo</TableHead>
+              <TableHead>Chave</TableHead>
+              <TableHead className="w-52">Comportamento</TableHead>
+              <TableHead className="w-24"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {list.isLoading ? (
+              <TableRow><TableCell colSpan={4} className="py-6 text-center"><Loader2 className="inline h-4 w-4 animate-spin text-muted-foreground" /></TableCell></TableRow>
+            ) : (list.data ?? []).length === 0 ? (
+              <TableRow><TableCell colSpan={4} className="py-6 text-center text-sm text-muted-foreground">Nenhum filtro configurado.</TableCell></TableRow>
+            ) : (
+              (list.data ?? []).map((f) => (
+                <TableRow key={f.id}>
+                  <TableCell>{labelFor(f.field_key)}</TableCell>
+                  <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
+                  <TableCell>
+                    <Select value={f.filter_type} onValueChange={(v) => updateType(f, v as any)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="select">Filtro (lista)</SelectItem>
+                        <SelectItem value="search">Busca (texto livre)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Button size="sm" variant="outline" onClick={() => remove(f.id)}><Trash2 className="h-4 w-4" /></Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
 

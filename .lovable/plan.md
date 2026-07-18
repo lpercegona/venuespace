@@ -1,61 +1,92 @@
-## Iteração 15 — Correções: Cards públicos, fluxo sem tabela e editor de blog
+Adicione ao Skill Venuespace
 
-### Parte A — Cards públicos de organização renderizando vazio
+Diretriz §0 - Prioridade: ajustar antes de expandir.
 
-**Diagnóstico:** `PublicCardBody` monta a grade (4 col) mas nenhum item aparece nas linhas. Os cards em landing/explorar/perfil recebem `layout` (do super admin) + `fields` (builtins + `category_org_fields`) + `data` (org.name, slug, description, logo_url, ...category_data). Como o replay mostra as linhas `.grid.grid-cols-4` sem filhos, a causa é uma das duas:
+No início de cada iteração, antes de implementar os itens novos, verificar se alguma funcionalidade já validada em iteração anterior está quebrada ou divergente do especificado, na área tocada por esta iteração. Se houver, corrigir primeiro — a iteração não fecha com algo existente quebrado, mesmo que a correção não estivesse no pedido original. Só depois de confirmado o funcionamento correto, seguir para as novas funcionalidades do escopo.
 
-1. `layout.field_key` aponta para chaves de campos da categoria mas `organizations.category_data` está `{}` para as orgs existentes (retroativo não populou).
-2. `formatValue` retorna string vazia para valores `null/""`, e `mediaUrlsFor` filtra URLs de storage não assinadas → item retorna `null` e a linha fica vazia.
+&nbsp;
 
-**Correções:**
+## Iteração 16 — Filtros configuráveis em Explorar
 
-- Em `src/lib/public.server.ts` (`listPublicOrganizations`): ao montar `data`, garantir merge de fallbacks (name/slug/description/logo_url) e preservar `category_data` mesmo quando `null`. Confirmar via consulta se orgs existentes têm `category_data` vazio; se sim, exibir mesmo assim os campos builtin (nome/descrição) sempre que o layout referenciar `field_key` inexistente em `data`.
-- Em `src/components/venue/public-card-renderer.tsx`:
-  - Quando `raw` é vazio e o `field_key` do layout não corresponde a nenhum campo conhecido, renderizar um placeholder com apenas o ícone + label (mantendo grid) em vez de retornar `null`, para dar feedback visível do layout configurado.
-  - Alternativa preferida: renderizar o item somente quando houver conteúdo, mas colapsar a linha ausente para não gerar `<div>` vazio (recomputar rows apenas com items visíveis, preservando `width_percent`).
-  - Corrigir: se todos os itens da linha estiverem vazios, não renderizar a linha.
-- Adicionar fallback visual: quando o card não tem nenhum item renderizado do layout, exibir descrição da org (mantendo o texto atual como fallback).
-- Validar renderização com Playwright em `/`, `/explore` e `/public/$slug`.
+Objetivo: super admin decide, por categoria, quais campos (organização e registro) participam da busca textual e quais aparecem como filtros no `/explore`. Cidade da organização é o caso principal, mas o mecanismo é genérico. Landing e `/explore` passam a usar os rótulos dinâmicos (`useLabels`) para "Organizações" e "Registros".
 
-### Parte B — Remover páginas que contenham tabela do fluxo público
+### 1. Backend / Schema
 
-**Escopo:** Simplificar o fluxo público removendo o conceito de "Tabela/Ambientes" da navegação exposta ao visitante. O fluxo passa a ser **Home → Organização → Registro** (sem passar por tabela).
+Nova tabela `category_filter_fields` (migração + GRANT + RLS):
 
-**Alterações:**
+```
+category_filter_fields (
+  id uuid pk,
+  category_id uuid fk organization_categories,
+  scope text check in ('organization','record'),
+  field_key text,               -- chave do campo (built-in ou de category_*_fields)
+  filter_type text check in ('search','select','city'),
+  label_override text null,
+  order_index int default 0,
+  unique(category_id, scope, field_key)
+)
+```
 
-- **Landing (`src/routes/index.tsx`)**: remover a seção "Ambientes publicados" (grid de records) e o card de destaque relacionado a tabelas. Manter apenas "Espaços recentes" (orgs).
-- Manter Organizações e Ambientes no /explore Mantendo listagem de perfis e de ambientes.
-- **Perfil público da org (`src/routes/public.$slug.index.tsx`)**: continuar listando registros publicados. Os cards devem ir direto para o registro.
-- **Rotas de tabela**: manter apenas as rotas de detalhe de registro e API. As rotas de listagem por tabela deixam de ser linkadas na UI pública (mantidas em disco para não quebrar links diretos existentes, mas sem entrada de navegação):
-  - `src/routes/public.$slug.$tableId.index.tsx` (rota folha) — remover links de navegação que apontem para ela; nenhum componente público deve gerar essa URL.
-  - Confirmar que `PublicHeader` e `BackLink` não expõem link para tabela.
-- Atualizar textos que mencionam "tabela/ambiente" para vocabulário neutro do visitante (rótulos configurados pelo super admin já cobrem admin/negócio; público perde a menção).
+- `search`: entra apenas na busca textual (`q`).
+- `select`: vira dropdown com valores distintos agregados server-side.
+- `city`: variante de `select` que lê a chave `address.city` (endereço estruturado das organizações).
+- RLS: super admin CRUD; leitura pública (`SELECT TO anon`).
 
-### Parte C — Página de criação de post do blog não abre
+### 2. Server helpers (`src/lib/public.server.ts`)
 
-**Diagnóstico a executar em modo build:**
+- `listPublicOrganizations` / `listPublicRecords` aceitam:
+  - `q` (já existe) — passa a percorrer também `category_data` das orgs e `data` dos registros, considerando apenas as chaves marcadas como `search` ou `select`/`city` (com fallback para todos os strings quando categoria não tem filtros).
+  - `filters: Record<string, string>` — pares `field_key=valor` aplicados como igualdade (case-insensitive) sobre `category_data` (org) ou `data` (record), respeitando `city` como `address.city`.
+- Novo helper `listCategoryFilters(scope, categoryIds?)` retornando definições + valores distintos agregados a partir das linhas visíveis publicamente.
 
-1. Abrir preview autenticado como super admin, ir em `/admin` → aba Blog → "Novo post" com Playwright e capturar console/network para identificar o erro real (rota `/admin/blog/new`).
-2. Hipóteses prováveis a checar no código:
-  - `TiptapEditor` chamando `useEditor` no primeiro render sem guarda de SSR (layout `_authenticated` é `ssr:false`, mas se `immediatelyRender` estiver default, pode disparar warning/erro em React 19 strict).
-  - Import faltante (`@tiptap/extension-image`, `@tiptap/extension-link`) ou versão incompatível.
-  - `getBlogPostAdmin` sendo disparado mesmo com `isNew` (não deveria — `enabled: !isNew`), mas se `postId` chegar como string `"new"` e algum outro efeito tentar validar uuid, quebra.
-  - Rota `/_authenticated/admin/blog/$postId` matcheando "new" corretamente — verificar que não há conflito com outra rota.
+### 3. Endpoints públicos
 
-**Correção esperada (a confirmar após diagnóstico):**
+- Atualizar `GET /api/public/organizations` e `GET /api/public/records` para ler `filters` a partir de query string (`filter.<key>=<valor>`) além do `q`/`category` existentes.
+- Novo `GET /api/public/explore-filters?scope=organization|record&category=<id?>` devolvendo:
+  ```
+  { filters: [{ field_key, filter_type, label, options?: string[] }] }
+  ```
 
-- Passar `immediatelyRender: false` para `useEditor` no `TiptapEditor` (compatibilidade React 19/SSR-safe).
-- Adicionar `errorComponent`/tratamento visível no route file para não deixar tela em branco em caso de exceção do editor.
-- Se o erro for dependência faltando, instalar o pacote correto.
-- Garantir que o botão "Novo post" leva a `/admin/blog/new` e que a página renderiza formulário mesmo sem query carregada.
+### 4. Admin (`/admin`)
 
-### Parte D — CHANGELOG
+Dentro da aba **Campos padrão**, adicionar sub-seção "Filtros públicos" com duas colunas (Organização / Registro) por categoria selecionada:
 
-Registrar Iteração 15 em `CHANGELOG.md` cobrindo A, B e C.
+- Lista os campos disponíveis (built-ins relevantes + campos de categoria daquele escopo).
+- Para cada campo: switch "Incluir na busca", seletor de tipo (`search` / `select` / `city`), rótulo opcional, ordem.
+- Salva via novas server functions em `src/lib/category-filters.functions.ts` (autenticadas + `has_role` super_admin).
+
+### 5. Frontend `/explore`
+
+- Adiciona `filters` ao `searchSchema` (JSON serializável — `Record<string,string>` via `fallback({}, {})`).
+- Ao trocar de categoria/aba, busca `/api/public/explore-filters` e renderiza:
+  - Campo de busca livre (já existe).
+  - `select`/`city` como dropdowns shadcn com "Todos" + opções distintas.
+- Paginação continua independente por aba; filtros resetam offset ao mudar.
+- URL reflete estado (`?tab=records&filters=...`).
+- Rótulos das abas usam `t("organization",…)` / `t("record",…)` no plural (via `useLabels`).
+
+### 6. Landing (`src/routes/index.tsx`)
+
+- Reintroduz o bloco "Registros recentes" (removido na iteração 15), mantendo "Organizações recentes" utilizando as informações dos campos escolhidos no layout público pelo super admin.
+- Títulos usam `useLabels` para respeitar terminologia da instância.
+- Link "Ver todos" leva a `/explore` com `tab` correspondente.
+
+### 7. Migrações & retroatividade
+
+- Categorias existentes ficam sem filtros até o super admin configurar; comportamento atual (busca livre em name/description) é preservado como fallback quando não há filtros definidos.
+- Para o caso "cidade", basta o super admin marcar o campo `city` (dentro do JSON `address`) como filtro `city` — o helper extrai `address.city` automaticamente.
+
+### 8. Verificação
+
+- Playwright:
+  1. `/explore` sem categoria configurada → busca funciona (fallback).
+  2. Configurar filtro `city` no admin → dropdown de cidades aparece em `/explore` e filtra corretamente.
+  3. Landing exibe os dois blocos com rótulos dinâmicos.
+- Registro em `CHANGELOG.md` como Iteração 16.
 
 ### Detalhes técnicos
 
-- `PublicCardBody`: nova lógica de agrupamento — filtrar itens vazios antes de montar as rows, mantendo `width_percent` como span.
-- `listPublicOrganizations`: garantir que `data` inclui sempre `name`, `description`, `logo_url` mesmo se layout referenciar outra chave, e que campos com `type: image` sem valor não geram slot vazio.
-- Explore: remover `zodValidator`/`fallback` da import list se não houver mais search params.
-- Blog editor: reproduzir com Playwright em `/admin/blog/new`, coletar erro exato, aplicar patch mínimo.
+- Nada de `.catch()` nos schemas Zod das search params (usar `fallback`).
+- `category_filter_fields` recebe `GRANT SELECT TO anon` + `GRANT ALL TO service_role` + policies para super admin (write) e público (read).
+- Distinct values agregados em memória a partir do mesmo dataset já lido para paginação (limite 5000 registros/orgs, coerente com o padrão atual).
+- Nenhuma mudança em rotas autenticadas além da aba do admin.
