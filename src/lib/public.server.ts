@@ -355,13 +355,14 @@ export type PublicRecordSummary = {
   layout: PublicLayoutField[];
 };
 
-export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string; slug?: string } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
+export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string; slug?: string; filters?: Record<string, string> } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
   const sb = supabaseAdmin;
   const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
   const offset = Math.max(opts.offset ?? 0, 0);
   const q = (opts.q ?? "").trim().toLowerCase();
   const categoryId = opts.category_id?.trim() || undefined;
   const slug = opts.slug?.trim() || undefined;
+  const filters = opts.filters ?? {};
 
   const { data, error } = await sb.from("records")
     .select("id, data, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(slug, name, category_id))")
@@ -383,9 +384,30 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   }));
   if (categoryId) base = base.filter((i) => i.org_category_id === categoryId);
   if (slug) base = base.filter((i) => i.org_slug === slug);
+
+  for (const [key, val] of Object.entries(filters)) {
+    const target = String(val).trim().toLowerCase();
+    if (!target) continue;
+    base = base.filter((r) => {
+      const v = (r.data ?? {})[key];
+      if (typeof v === "string") return v.trim().toLowerCase() === target;
+      if (Array.isArray(v)) return v.some((x) => typeof x === "string" && x.trim().toLowerCase() === target);
+      return false;
+    });
+  }
+
+  const { loadFilterKeys } = await import("@/lib/explore-filters.server");
+  const { searchKeys } = await loadFilterKeys("record", categoryId);
+
   if (q) {
     base = base.filter((i) => {
       if (i.table_name.toLowerCase().includes(q) || i.org_name.toLowerCase().includes(q)) return true;
+      if (searchKeys.length > 0) {
+        for (const k of searchKeys) {
+          const v = i.data?.[k];
+          if (typeof v === "string" && v.toLowerCase().includes(q)) return true;
+        }
+      }
       for (const v of Object.values(i.data)) {
         if (typeof v === "string" && v.toLowerCase().includes(q)) return true;
       }
