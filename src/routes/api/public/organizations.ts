@@ -1,5 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+function parseFilters(sp: URLSearchParams): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of sp.entries()) {
+    if (k.startsWith("f_") && v) out[k.slice(2)] = v;
+  }
+  return out;
+}
+
 export const Route = createFileRoute("/api/public/organizations")({
   server: {
     handlers: {
@@ -9,6 +17,7 @@ export const Route = createFileRoute("/api/public/organizations")({
         const offset = Number(url.searchParams.get("offset") ?? "0");
         const q = url.searchParams.get("q") ?? undefined;
         const category_id = url.searchParams.get("category") ?? undefined;
+        const filters = parseFilters(url.searchParams);
         const { listPublicOrganizations } = await import("@/lib/public.server");
         try {
           const payload = await listPublicOrganizations({
@@ -16,6 +25,7 @@ export const Route = createFileRoute("/api/public/organizations")({
             offset: Number.isFinite(offset) ? offset : 0,
             q,
             category_id,
+            filters,
           });
           return new Response(JSON.stringify(payload), {
             headers: {
