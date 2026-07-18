@@ -50,6 +50,12 @@ import {
   type CategoryCascadeField,
 } from "@/lib/category-cascade.functions";
 import { listCategoryLayout, saveCategoryLayout, type LayoutField } from "@/lib/category-layouts.functions";
+import {
+  listCategoryFilterFieldsPublic,
+  upsertCategoryFilterField,
+  deleteCategoryFilterField,
+  type CategoryFilterField,
+} from "@/lib/category-filters.functions";
 
 
 export const Route = createFileRoute("/_authenticated/admin/")({
