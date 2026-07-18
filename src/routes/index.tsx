@@ -37,8 +37,11 @@ async function fetchRecords(): Promise<{ items: PublicRecordSummary[] }> {
   return res.json();
 }
 function Landing() {
+  const { t } = useLabels();
+  const orgsPlural = t("organizations", "Organizações");
+  const recordsPlural = t("records", "Registros");
   const orgs = useQuery({ queryKey: ["landing-orgs"], queryFn: fetchOrgs, staleTime: 60_000 });
-const recs = useQuery({ queryKey: ["landing-records"], queryFn: fetchRecords, staleTime: 60_000 });
+  const recs = useQuery({ queryKey: ["landing-records"], queryFn: fetchRecords, staleTime: 60_000 });
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
@@ -70,7 +73,7 @@ const recs = useQuery({ queryKey: ["landing-records"], queryFn: fetchRecords, st
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight sm:text-2xl">
                 <Building2 className="h-5 w-5 text-primary" />
-                Espaços recentes
+                {orgsPlural} recentes
               </h2>
               <Link to="/explore" className="text-sm text-primary hover:underline">
                 Ver todas
