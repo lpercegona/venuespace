@@ -250,12 +250,13 @@ async function loadOrgCategoryFieldsBatch(categoryIds: string[]): Promise<Map<st
   return out;
 }
 
-export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
+export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string; filters?: Record<string, string> } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
   const sb = supabaseAdmin;
   const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
   const offset = Math.max(opts.offset ?? 0, 0);
   const q = (opts.q ?? "").trim().toLowerCase();
   const categoryId = opts.category_id?.trim() || undefined;
+  const filters = opts.filters ?? {};
 
   // Only organizations with ≥1 published record.
   const { data: pubRecs } = await sb.from("records").select("table:tables!inner(organization_id)").eq("status", "published").limit(5000);
@@ -264,22 +265,55 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   if (orgIds.size === 0) return { items: [], total: 0 };
 
   let query = sb.from("organizations")
-    .select("id, slug, name, description, logo_url, category_id, category_data, updated_at")
+    .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at")
     .in("id", Array.from(orgIds))
     .order("updated_at", { ascending: false });
   if (categoryId) query = query.eq("category_id", categoryId);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
+
+  const resolveOrgVal = (o: any, key: string): unknown => {
+    if (key === "name") return o.name;
+    if (key === "slug") return o.slug;
+    if (key === "description") return o.description;
+    if (key.startsWith("address.")) return (o.address ?? {})[key.slice("address.".length)];
+    return (o.category_data ?? {})[key];
+  };
+
+  const { loadFilterKeys } = await import("@/lib/explore-filters.server");
+  const { searchKeys } = await loadFilterKeys("organization", categoryId);
+
   let base = ((data ?? []) as any[]).map((o) => ({
     id: o.id, slug: o.slug, name: o.name,
     description: o.description ?? null, logo_url: o.logo_url ?? null,
     category_id: o.category_id ?? null, category_data: o.category_data ?? {},
+    address: o.address ?? {},
     updated_at: o.updated_at,
   }));
-  if (q) base = base.filter((i) =>
-    i.name.toLowerCase().includes(q) ||
-    (i.description ?? "").toLowerCase().includes(q),
-  );
+
+  for (const [key, val] of Object.entries(filters)) {
+    const target = String(val).trim().toLowerCase();
+    if (!target) continue;
+    base = base.filter((o) => {
+      const v = resolveOrgVal(o, key);
+      if (typeof v === "string") return v.trim().toLowerCase() === target;
+      if (Array.isArray(v)) return v.some((x) => typeof x === "string" && x.trim().toLowerCase() === target);
+      return false;
+    });
+  }
+
+  if (q) base = base.filter((i) => {
+    if (i.name.toLowerCase().includes(q)) return true;
+    if ((i.description ?? "").toLowerCase().includes(q)) return true;
+    for (const k of searchKeys) {
+      const v = resolveOrgVal(i, k);
+      if (typeof v === "string" && v.toLowerCase().includes(q)) return true;
+    }
+    for (const v of Object.values(i.address ?? {})) {
+      if (typeof v === "string" && v.toLowerCase().includes(q)) return true;
+    }
+    return false;
+  });
   const total = base.length;
   const paged = base.slice(offset, offset + limit);
 
@@ -300,7 +334,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
       logo_url: o.logo_url,
       ...o.category_data,
     };
-    return { ...o, data, fields, layout };
+    return { id: o.id, slug: o.slug, name: o.name, description: o.description, logo_url: o.logo_url, category_id: o.category_id, category_data: o.category_data, updated_at: o.updated_at, data, fields, layout };
   });
   await signImagePathsInItems(items);
   return { items, total };
