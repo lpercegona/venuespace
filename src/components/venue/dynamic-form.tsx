@@ -41,7 +41,7 @@ function FilePreview({ path, kind }: { path: string; kind: "image" | "file" }) {
   return <a href={url} target="_blank" rel="noreferrer" className="text-sm text-primary underline">Abrir arquivo</a>;
 }
 
-function UploadField({
+export function UploadField({
   value, kind, disabled, onChange,
 }: { value: string; kind: "image" | "file"; disabled?: boolean; onChange: (v: string) => void }) {
   const [busy, setBusy] = useState(false);
@@ -85,7 +85,7 @@ function UploadField({
   );
 }
 
-function GalleryField({
+export function GalleryField({
   paths, disabled, onChange,
 }: { paths: string[]; disabled?: boolean; onChange: (next: string[]) => void }) {
   const [busy, setBusy] = useState(false);

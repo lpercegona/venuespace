@@ -1,4 +1,11 @@
+## 2026-07-19 — Correção da Iteração 12/13 — Campo `gallery` e uploads em campos de categoria
+- `src/lib/category-cascade.functions.ts`: enum `FIELD_TYPES` do validador Zod passa a incluir `gallery` (o enum do banco `field_type` já tinha desde a migração de 2026-07-15); com isso o super admin consegue criar/editar campos personalizados do tipo galeria em `organization_category_default_fields`, `category_org_fields` e `category_table_fields` sem erro "Invalid enum value".
+- `src/components/venue/dynamic-form.tsx`: `UploadField` e `GalleryField` exportados para reuso.
+- `src/components/venue/category-fields-form.tsx`: passa a renderizar `image`/`file` com `UploadField` e `gallery` com `GalleryField` — antes esses tipos caíam no `Input` de texto genérico, então o usuário via um campo de texto ao invés do uploader.
+- Extensão da Iteração 12 (unificação de "Campos padrão") + Iteração 13 (introdução do tipo `gallery`). Referência preservada — sem iteração paralela.
+
 ## 2026-07-19 — Iteração 17 — Card público de organização reflete configuração do super admin
+
 - `src/lib/public.server.ts`: `ORG_BUILTIN_FIELDS` inclui campos-base de endereço (`address.cep/street/number/complement/neighborhood/city/state`) além de `name`, `slug`, `description`, `logo_url`; `listPublicOrganizations` achata `organizations.address` no payload `data` do card, permitindo que o layout definido pelo super admin renderize esses valores.
 - `src/routes/_authenticated.admin.index.tsx` (`LayoutEditor` no escopo `organization_card`): passa a oferecer campos-base (Nome, Descrição, Logo, Cidade, UF, Bairro, Logradouro, Número, Complemento, CEP) somados aos campos de cascata da categoria.
 - Nota operacional: layouts salvos com chaves inexistentes (ex.: `foto_capa`, `endereco`) continuam ignorados pelo renderer; o super admin deve remover essas linhas em Admin › Layout público › Card de organização e escolher os campos-base agora disponíveis.
