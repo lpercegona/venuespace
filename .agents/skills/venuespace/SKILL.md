@@ -20,6 +20,7 @@ Vale acima de qualquer outra seção. Em caso de conflito entre esta diretriz e 
 - **Validação técnica obrigatória antes de fechar etapa**: build, rotas afetadas em light+dark e mobile+desktop, iterações anteriores continuam funcionando (sem regressão), RLS e permissões nos endpoints tocados.
 - **Sem "melhorias" implícitas**: refactors, renomeações e otimizações fora do escopo só ocorrem por solicitação explícita.
 - **Registro obrigatório de implementações**: toda entrega técnica — iteração completa, correção, migração, nova rota, novo componente compartilhado, novo token — é registrada em `CHANGELOG.md` na raiz do projeto, na mesma edição em que é implementada. Formato: `## YYYY-MM-DD HH:MM (America/Sao_Paulo) — <escopo>` seguido de bullets objetivos do que foi feito. Ordem cronológica decrescente (mais recente no topo). Nenhuma iteração fecha sem entrada correspondente. Sem registro = entrega incompleta (§7, item 8).
+- **Consulta obrigatória a iterações anteriores**: antes de iniciar qualquer nova solicitação, revisar `CHANGELOG.md` e as iterações já registradas neste plano. Se a solicitação estiver direta ou indiretamente relacionada a uma iteração/entrega anterior (mesmo módulo, mesma tela, mesmo componente, mesma tabela, mesma decisão de arquitetura), **referenciar explicitamente** a iteração original e tratar a nova solicitação como correção/extensão dela — nunca criar uma iteração paralela que duplique escopo, reintroduza padrões abandonados ou ignore decisões já tomadas. Só criar iteração nova quando o escopo for genuinamente inédito.
 
 ---
 

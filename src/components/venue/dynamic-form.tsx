@@ -85,7 +85,7 @@ export function UploadField({
   );
 }
 
-function GalleryField({
+export function GalleryField({
   paths, disabled, onChange,
 }: { paths: string[]; disabled?: boolean; onChange: (next: string[]) => void }) {
   const [busy, setBusy] = useState(false);

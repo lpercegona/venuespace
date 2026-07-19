@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UploadField, GalleryField } from "@/components/venue/dynamic-form";
 
 type CascadeField = {
   id: string;
@@ -70,6 +71,23 @@ export function CategoryFieldsForm({ categoryId, scope, value, onChange, title }
             <div key={f.id} className="space-y-2">
               <Label htmlFor={id}>{f.label}{f.required ? <span className="ml-1 text-destructive">*</span> : null}</Label>
               <Textarea id={id} rows={3} required={f.required} value={v} onChange={(e) => set(f.field_key, e.target.value)} />
+            </div>
+          );
+        }
+        if (f.field_type === "image" || f.field_type === "file") {
+          return (
+            <div key={f.id} className="space-y-2">
+              <Label>{f.label}{f.required ? <span className="ml-1 text-destructive">*</span> : null}</Label>
+              <UploadField value={typeof v === "string" ? v : ""} kind={f.field_type as "image" | "file"} onChange={(x) => set(f.field_key, x)} />
+            </div>
+          );
+        }
+        if (f.field_type === "gallery") {
+          const arr = Array.isArray(v) ? (v as string[]) : [];
+          return (
+            <div key={f.id} className="space-y-2">
+              <Label>{f.label}{f.required ? <span className="ml-1 text-destructive">*</span> : null}</Label>
+              <GalleryField paths={arr} onChange={(x) => set(f.field_key, x)} />
             </div>
           );
         }
