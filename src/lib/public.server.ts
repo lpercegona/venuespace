@@ -198,8 +198,15 @@ export type PublicOrganizationSummary = {
 const ORG_BUILTIN_FIELDS: PublicRendererField[] = [
   { key: "name", label: "Nome", type: "text" },
   { key: "slug", label: "Slug", type: "text" },
-  { key: "description", label: "Descrição", type: "text" },
+  { key: "description", label: "Descrição", type: "long_text" },
   { key: "logo_url", label: "Logo", type: "image" },
+  { key: "address.cep", label: "CEP", type: "text" },
+  { key: "address.street", label: "Logradouro", type: "text" },
+  { key: "address.number", label: "Número", type: "text" },
+  { key: "address.complement", label: "Complemento", type: "text" },
+  { key: "address.neighborhood", label: "Bairro", type: "text" },
+  { key: "address.city", label: "Cidade", type: "text" },
+  { key: "address.state", label: "UF", type: "text" },
 ];
 
 async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card"): Promise<Map<string, PublicLayoutField[]>> {
