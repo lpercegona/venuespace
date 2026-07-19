@@ -198,8 +198,15 @@ export type PublicOrganizationSummary = {
 const ORG_BUILTIN_FIELDS: PublicRendererField[] = [
   { key: "name", label: "Nome", type: "text" },
   { key: "slug", label: "Slug", type: "text" },
-  { key: "description", label: "Descrição", type: "text" },
+  { key: "description", label: "Descrição", type: "long_text" },
   { key: "logo_url", label: "Logo", type: "image" },
+  { key: "address.cep", label: "CEP", type: "text" },
+  { key: "address.street", label: "Logradouro", type: "text" },
+  { key: "address.number", label: "Número", type: "text" },
+  { key: "address.complement", label: "Complemento", type: "text" },
+  { key: "address.neighborhood", label: "Bairro", type: "text" },
+  { key: "address.city", label: "Cidade", type: "text" },
+  { key: "address.state", label: "UF", type: "text" },
 ];
 
 async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card"): Promise<Map<string, PublicLayoutField[]>> {
@@ -327,11 +334,19 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     const layout = (o.category_id && layouts.get(o.category_id)) || [];
     const catF = (o.category_id && catFields.get(o.category_id)) || [];
     const fields = [...ORG_BUILTIN_FIELDS, ...catF];
+    const addr = (o.address ?? {}) as Record<string, any>;
     const data: Record<string, any> = {
       name: o.name,
       slug: o.slug,
       description: o.description,
       logo_url: o.logo_url,
+      "address.cep": addr.cep ?? "",
+      "address.street": addr.street ?? "",
+      "address.number": addr.number ?? "",
+      "address.complement": addr.complement ?? "",
+      "address.neighborhood": addr.neighborhood ?? "",
+      "address.city": addr.city ?? "",
+      "address.state": addr.state ?? "",
       ...o.category_data,
     };
     return { id: o.id, slug: o.slug, name: o.name, description: o.description, logo_url: o.logo_url, category_id: o.category_id, category_data: o.category_data, updated_at: o.updated_at, data, fields, layout };

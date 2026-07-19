@@ -1,4 +1,10 @@
+## 2026-07-19 — Iteração 17 — Card público de organização reflete configuração do super admin
+- `src/lib/public.server.ts`: `ORG_BUILTIN_FIELDS` inclui campos-base de endereço (`address.cep/street/number/complement/neighborhood/city/state`) além de `name`, `slug`, `description`, `logo_url`; `listPublicOrganizations` achata `organizations.address` no payload `data` do card, permitindo que o layout definido pelo super admin renderize esses valores.
+- `src/routes/_authenticated.admin.index.tsx` (`LayoutEditor` no escopo `organization_card`): passa a oferecer campos-base (Nome, Descrição, Logo, Cidade, UF, Bairro, Logradouro, Número, Complemento, CEP) somados aos campos de cascata da categoria.
+- Nota operacional: layouts salvos com chaves inexistentes (ex.: `foto_capa`, `endereco`) continuam ignorados pelo renderer; o super admin deve remover essas linhas em Admin › Layout público › Card de organização e escolher os campos-base agora disponíveis.
+
 ## 2026-07-18 — Iteração 16 — Filtros dinâmicos em Explorar
+
 - Nova tabela `category_filter_fields` (categoria + escopo + chave + tipo `search`/`select`) com GRANTs para `anon`/`authenticated`/`service_role` e políticas: leitura pública, escrita restrita a super admin.
 - `src/lib/category-filters.functions.ts`: CRUD (`listCategoryFilterFieldsPublic`, `upsertCategoryFilterField`, `deleteCategoryFilterField`).
 - `src/lib/explore-filters.server.ts` + `src/routes/api/public/explore-filters.ts`: retorna definições de filtro + valores distintos por categoria/escopo.

@@ -819,10 +819,28 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
     queryFn: async () => {
       const layout = await listCategoryLayout({ data: { category_id: categoryId, scope } });
       const scopeArg = scope === "organization_card" ? "org" : "record";
-      const fields = scopeArg === "record"
+      const cascadeFields = scopeArg === "record"
         ? await listCategoryDefaultFields({ data: { category_id: categoryId } })
         : await listCategoryCascadeFields({ data: { category_id: categoryId, scope: "org" } });
-      return { layout: layout.fields as LayoutField[], fields: fields as Array<{ field_key: string; label: string }> };
+      const baseFields: Array<{ field_key: string; label: string }> = scope === "organization_card"
+        ? [
+            { field_key: "name", label: "Nome (base)" },
+            { field_key: "description", label: "Descrição (base)" },
+            { field_key: "logo_url", label: "Logo (base)" },
+            { field_key: "address.city", label: "Cidade (base)" },
+            { field_key: "address.state", label: "UF (base)" },
+            { field_key: "address.neighborhood", label: "Bairro (base)" },
+            { field_key: "address.street", label: "Logradouro (base)" },
+            { field_key: "address.number", label: "Número (base)" },
+            { field_key: "address.complement", label: "Complemento (base)" },
+            { field_key: "address.cep", label: "CEP (base)" },
+          ]
+        : [];
+      const fields = [
+        ...baseFields,
+        ...(cascadeFields as Array<{ field_key: string; label: string }>),
+      ];
+      return { layout: layout.fields as LayoutField[], fields };
     },
   });
 
