@@ -51,6 +51,7 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
   const [catData, setCatData] = useState<Record<string, any>>(initialCat);
   const initialAddr = useMemo(() => (org.address ?? {}) as AddressValue, [org.address]);
   const [address, setAddress] = useState<AddressValue>(initialAddr);
+  const [isPublic, setIsPublic] = useState<boolean>(org.is_public ?? true);
   const [saving, setSaving] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
