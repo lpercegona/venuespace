@@ -129,6 +129,13 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
             <Label htmlFor="o-logo">Logo (URL)</Label>
             <Input id="o-logo" type="url" placeholder="https://…" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
           </div>
+          <div className="flex items-center justify-between rounded-md border border-border p-3">
+            <div>
+              <Label htmlFor="o-public" className="text-sm">Perfil público</Label>
+              <p className="text-xs text-muted-foreground">Quando desativado, a {t("organization", "organização").toLowerCase()} some da landing, /explore e do perfil público.</p>
+            </div>
+            <Switch id="o-public" checked={isPublic} onCheckedChange={setIsPublic} />
+          </div>
           <div className="space-y-2">
             <Label>{t("category", "Categoria")}</Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
