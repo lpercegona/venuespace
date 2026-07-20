@@ -30,6 +30,7 @@ type Props = {
     system_data?: Record<string, any> | null;
     category_data?: Record<string, any> | null;
     address?: AddressValue | null;
+    is_public?: boolean | null;
   };
 };
 
