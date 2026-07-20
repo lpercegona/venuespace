@@ -88,7 +88,7 @@ export const getOrganizationBySlug = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: org, error } = await context.supabase
       .from("organizations")
-      .select("id, slug, name, description, logo_url, category_id, category_data, timezone, currency, currency_display, system_data, address, created_at")
+      .select("id, slug, name, description, logo_url, category_id, category_data, timezone, currency, currency_display, system_data, address, is_public, created_at")
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
