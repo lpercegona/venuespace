@@ -92,8 +92,8 @@ function OrgsPage() {
 
   return (
     <AppShell
-      title={`${organizationsLabel}`}
-      subtitle={`Cada ${organizationLabel} é uma listagem isolada com ${tablesLabel}, membros e páginas públicas.`}
+      title={${organizationsLabel}}
+      subtitle={`Cada item abaixo é uma listagem isolada com ${tablesLabel}, membros e páginas públicas.`}
       actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
