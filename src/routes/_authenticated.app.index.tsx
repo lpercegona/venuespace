@@ -92,7 +92,7 @@ function OrgsPage() {
 
   return (
     <AppShell
-      title={ ${organizationsLabel} }
+      title={"${organizationsLabel}"}
       subtitle={`Cada item abaixo é uma listagem isolada com ${tablesLabel}, membros e páginas públicas.`}
       actions={
         <Dialog open={open} onOpenChange={setOpen}>
