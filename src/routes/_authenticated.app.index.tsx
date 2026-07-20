@@ -22,10 +22,7 @@ import { AddressFields, type AddressValue } from "@/components/venue/address-fie
 
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
-    meta: [
-      { title: "Minhas organizações — Venuespace" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Minhas organizações — Venuespace" }, { name: "robots", content: "noindex" }],
   }),
   component: OrgsPage,
 });
@@ -36,8 +33,8 @@ function OrgsPage() {
   const organizationsLabel = t("organizations", "organizações").toLowerCase();
   const tableLabel = t("table", "tabela").toLowerCase();
   const tablesLabel = t("tables", "tabelas").toLowerCase();
-  const fetchOrgs = (listMyOrganizations);
-  const createOrg = (createOrganization);
+  const fetchOrgs = listMyOrganizations;
+  const createOrg = createOrganization;
   const router = useRouter();
   const navigate = useNavigate();
   const { data, isLoading, refetch } = useQuery({
@@ -67,13 +64,15 @@ function OrgsPage() {
     }
     setSaving(true);
     try {
-      const org = await createOrg({ data: {
-        name,
-        description: description || undefined,
-        category_id: categoryId,
-        category_data: categoryData,
-        address,
-      } });
+      const org = await createOrg({
+        data: {
+          name,
+          description: description || undefined,
+          category_id: categoryId,
+          category_data: categoryData,
+          address,
+        },
+      });
       toast.success("Organização criada");
       setOpen(false);
       setName("");
@@ -91,15 +90,17 @@ function OrgsPage() {
     }
   }
 
-
   return (
     <AppShell
-      title={`Minhas ${organizationsLabel}`}
-      subtitle={`Cada ${organizationLabel} é um espaço isolado com suas próprias ${tablesLabel}, membros e páginas públicas.`}
+      title={`${organizationsLabel}`}
+      subtitle={`Cada ${organizationLabel} é uma listagem isolada com ${tablesLabel}, membros e páginas públicas.`}
       actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4" />Nova {organizationLabel}</Button>
+            <Button>
+              <Plus className="h-4 w-4" />
+              Nova {organizationLabel}
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -108,9 +109,17 @@ function OrgsPage() {
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="org-name">Nome</Label>
-                <Input id="org-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder={`Nome da ${organizationLabel}`} />
+                <Input
+                  id="org-name"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={`Nome da ${organizationLabel}`}
+                />
                 {name ? (
-                  <p className="text-xs text-muted-foreground">URL pública: /public/<span className="font-mono">{slugify(name)}</span></p>
+                  <p className="text-xs text-muted-foreground">
+                    URL pública: /public/<span className="font-mono">{slugify(name)}</span>
+                  </p>
                 ) : null}
               </div>
               <div className="space-y-2">
@@ -119,20 +128,30 @@ function OrgsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Categoria *</Label>
-                <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setCategoryData({}); }}>
-                  <SelectTrigger><SelectValue placeholder="Selecione uma categoria" /></SelectTrigger>
+                <Select
+                  value={categoryId}
+                  onValueChange={(v) => {
+                    setCategoryId(v);
+                    setCategoryData({});
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
                   <SelectContent>
                     {(cats.data ?? []).map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">A categoria define os campos padrão desta {organizationLabel}.</p>
+                <p className="text-xs text-muted-foreground">
+                  A categoria define os campos padrão desta {organizationLabel}.
+                </p>
               </div>
 
               <AddressFields value={address} onChange={setAddress} />
-
-
 
               <CategoryFieldsForm
                 categoryId={categoryId || null}
@@ -142,9 +161,10 @@ function OrgsPage() {
                 title={`Campos da categoria`}
               />
 
-
               <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
                 <Button type="submit" disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}
                 </Button>
@@ -155,13 +175,20 @@ function OrgsPage() {
       }
     >
       {isLoading ? (
-        <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        <div className="flex justify-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
       ) : !data || data.length === 0 ? (
         <EmptyState
           icon={<Building2 className="h-5 w-5" />}
           title={`Você ainda não faz parte de nenhuma ${organizationLabel}`}
           description={`Crie a primeira para começar a modelar suas ${tablesLabel} e páginas.`}
-          action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" />Nova {organizationLabel}</Button>}
+          action={
+            <Button onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Nova {organizationLabel}
+            </Button>
+          }
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -172,7 +199,9 @@ function OrgsPage() {
                   <CardTitle className="font-display text-lg">{org.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">{org.description || "Sem descrição."}</p>
+                  <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
+                    {org.description || "Sem descrição."}
+                  </p>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="font-mono text-xs text-muted-foreground">/{org.slug}</span>
                     <Badge variant="secondary">{org.role}</Badge>
