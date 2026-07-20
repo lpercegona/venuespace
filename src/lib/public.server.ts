@@ -356,6 +356,61 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   return { items, total };
 }
 
+export async function getPublicOrganization(slug: string): Promise<PublicOrganizationSummary & { category_name: string | null; address: Record<string, any> }> {
+  const sb = supabaseAdmin;
+  const { data: o, error } = await sb
+    .from("organizations")
+    .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at, is_public")
+    .eq("slug", slug)
+    .eq("is_public", true)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!o) throw new Error("Organização não encontrada");
+
+  const catId = (o as any).category_id ?? null;
+  const [layouts, catFields, catRow] = await Promise.all([
+    loadLayoutsBatch(catId ? [catId] : [], "organization_card"),
+    loadOrgCategoryFieldsBatch(catId ? [catId] : []),
+    catId ? (sb as any).from("organization_categories").select("name").eq("id", catId).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const layout = (catId && layouts.get(catId)) || [];
+  const catF = (catId && catFields.get(catId)) || [];
+  const fields = [...ORG_BUILTIN_FIELDS, ...catF];
+  const addr = ((o as any).address ?? {}) as Record<string, any>;
+  const data: Record<string, any> = {
+    name: (o as any).name,
+    slug: (o as any).slug,
+    description: (o as any).description,
+    logo_url: (o as any).logo_url,
+    "address.cep": addr.cep ?? "",
+    "address.street": addr.street ?? "",
+    "address.number": addr.number ?? "",
+    "address.complement": addr.complement ?? "",
+    "address.neighborhood": addr.neighborhood ?? "",
+    "address.city": addr.city ?? "",
+    "address.state": addr.state ?? "",
+    ...((o as any).category_data ?? {}),
+  };
+  const item = {
+    id: (o as any).id,
+    slug: (o as any).slug,
+    name: (o as any).name,
+    description: (o as any).description ?? null,
+    logo_url: (o as any).logo_url ?? null,
+    category_id: catId,
+    category_data: ((o as any).category_data ?? {}) as Record<string, any>,
+    updated_at: (o as any).updated_at,
+    data,
+    fields,
+    layout,
+    address: addr,
+    category_name: (catRow as any)?.data?.name ?? null,
+  };
+  await signImagePathsInItems([item as any]);
+  return item as any;
+}
+
+
 export type PublicRecordSummary = {
   record_id: string;
   data: Record<string, any>;
