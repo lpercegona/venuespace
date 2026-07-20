@@ -669,6 +669,7 @@ export type Database = {
           currency_display: Json | null
           description: string | null
           id: string
+          is_public: boolean
           logo_url: string | null
           name: string
           slug: string
@@ -686,6 +687,7 @@ export type Database = {
           currency_display?: Json | null
           description?: string | null
           id?: string
+          is_public?: boolean
           logo_url?: string | null
           name: string
           slug: string
@@ -703,6 +705,7 @@ export type Database = {
           currency_display?: Json | null
           description?: string | null
           id?: string
+          is_public?: boolean
           logo_url?: string | null
           name?: string
           slug?: string

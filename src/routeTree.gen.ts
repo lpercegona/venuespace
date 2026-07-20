@@ -37,6 +37,7 @@ import { Route as PublicSlugCampaignsRecordIdRouteImport } from './routes/public
 import { Route as PublicSlugTableIdFormRouteImport } from './routes/public.$slug.$tableId.form'
 import { Route as PublicSlugTableIdRecordIdRouteImport } from './routes/public.$slug.$tableId.$recordId'
 import { Route as ApiPublicViacepCepRouteImport } from './routes/api/public/viacep.$cep'
+import { Route as ApiPublicOrganizationsSlugRouteImport } from './routes/api/public/organizations.$slug'
 import { Route as ApiPublicLeadTokenRouteImport } from './routes/api/public/lead/$token'
 import { Route as ApiPublicFormSchemaViewIdRouteImport } from './routes/api/public/form-schema/$viewId'
 import { Route as ApiPublicCategorySchemaCategoryIdRouteImport } from './routes/api/public/category-schema.$categoryId'
@@ -199,6 +200,12 @@ const ApiPublicViacepCepRoute = ApiPublicViacepCepRouteImport.update({
   path: '/api/public/viacep/$cep',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicOrganizationsSlugRoute =
+  ApiPublicOrganizationsSlugRouteImport.update({
+    id: '/$slug',
+    path: '/$slug',
+    getParentRoute: () => ApiPublicOrganizationsRoute,
+  } as any)
 const ApiPublicLeadTokenRoute = ApiPublicLeadTokenRouteImport.update({
   id: '/api/public/lead/$token',
   path: '/api/public/lead/$token',
@@ -305,7 +312,7 @@ export interface FileRoutesByFullPath {
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
-  '/api/public/organizations': typeof ApiPublicOrganizationsRoute
+  '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
   '/api/public/records': typeof ApiPublicRecordsRoute
   '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
@@ -325,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
+  '/api/public/organizations/$slug': typeof ApiPublicOrganizationsSlugRoute
   '/api/public/viacep/$cep': typeof ApiPublicViacepCepRoute
   '/public/$slug/$tableId/$recordId': typeof PublicSlugTableIdRecordIdRoute
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
@@ -349,7 +357,7 @@ export interface FileRoutesByTo {
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
-  '/api/public/organizations': typeof ApiPublicOrganizationsRoute
+  '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
   '/api/public/records': typeof ApiPublicRecordsRoute
   '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
@@ -368,6 +376,7 @@ export interface FileRoutesByTo {
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
+  '/api/public/organizations/$slug': typeof ApiPublicOrganizationsSlugRoute
   '/api/public/viacep/$cep': typeof ApiPublicViacepCepRoute
   '/public/$slug/$tableId/$recordId': typeof PublicSlugTableIdRecordIdRoute
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
@@ -395,7 +404,7 @@ export interface FileRoutesById {
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
-  '/api/public/organizations': typeof ApiPublicOrganizationsRoute
+  '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
   '/api/public/records': typeof ApiPublicRecordsRoute
   '/api/public/system-fields': typeof ApiPublicSystemFieldsRoute
@@ -415,6 +424,7 @@ export interface FileRoutesById {
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
+  '/api/public/organizations/$slug': typeof ApiPublicOrganizationsSlugRoute
   '/api/public/viacep/$cep': typeof ApiPublicViacepCepRoute
   '/public/$slug/$tableId/$recordId': typeof PublicSlugTableIdRecordIdRoute
   '/public/$slug/$tableId/form': typeof PublicSlugTableIdFormRoute
@@ -462,6 +472,7 @@ export interface FileRouteTypes {
     | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
     | '/api/public/lead/$token'
+    | '/api/public/organizations/$slug'
     | '/api/public/viacep/$cep'
     | '/public/$slug/$tableId/$recordId'
     | '/public/$slug/$tableId/form'
@@ -505,6 +516,7 @@ export interface FileRouteTypes {
     | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
     | '/api/public/lead/$token'
+    | '/api/public/organizations/$slug'
     | '/api/public/viacep/$cep'
     | '/public/$slug/$tableId/$recordId'
     | '/public/$slug/$tableId/form'
@@ -551,6 +563,7 @@ export interface FileRouteTypes {
     | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
     | '/api/public/lead/$token'
+    | '/api/public/organizations/$slug'
     | '/api/public/viacep/$cep'
     | '/public/$slug/$tableId/$recordId'
     | '/public/$slug/$tableId/form'
@@ -575,7 +588,7 @@ export interface RootRouteChildren {
   ApiPublicExploreFiltersRoute: typeof ApiPublicExploreFiltersRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
   ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
-  ApiPublicOrganizationsRoute: typeof ApiPublicOrganizationsRoute
+  ApiPublicOrganizationsRoute: typeof ApiPublicOrganizationsRouteWithChildren
   ApiPublicPlatformLabelsRoute: typeof ApiPublicPlatformLabelsRoute
   ApiPublicRecordsRoute: typeof ApiPublicRecordsRoute
   ApiPublicSystemFieldsRoute: typeof ApiPublicSystemFieldsRoute
@@ -792,6 +805,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicViacepCepRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/organizations/$slug': {
+      id: '/api/public/organizations/$slug'
+      path: '/$slug'
+      fullPath: '/api/public/organizations/$slug'
+      preLoaderRoute: typeof ApiPublicOrganizationsSlugRouteImport
+      parentRoute: typeof ApiPublicOrganizationsRoute
+    }
     '/api/public/lead/$token': {
       id: '/api/public/lead/$token'
       path: '/api/public/lead/$token'
@@ -967,6 +987,20 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface ApiPublicOrganizationsRouteChildren {
+  ApiPublicOrganizationsSlugRoute: typeof ApiPublicOrganizationsSlugRoute
+}
+
+const ApiPublicOrganizationsRouteChildren: ApiPublicOrganizationsRouteChildren =
+  {
+    ApiPublicOrganizationsSlugRoute: ApiPublicOrganizationsSlugRoute,
+  }
+
+const ApiPublicOrganizationsRouteWithChildren =
+  ApiPublicOrganizationsRoute._addFileChildren(
+    ApiPublicOrganizationsRouteChildren,
+  )
+
 interface PublicSlugTableIdRouteChildren {
   PublicSlugTableIdRecordIdRoute: typeof PublicSlugTableIdRecordIdRoute
   PublicSlugTableIdFormRoute: typeof PublicSlugTableIdFormRoute
@@ -1005,7 +1039,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicExploreFiltersRoute: ApiPublicExploreFiltersRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
   ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,
-  ApiPublicOrganizationsRoute: ApiPublicOrganizationsRoute,
+  ApiPublicOrganizationsRoute: ApiPublicOrganizationsRouteWithChildren,
   ApiPublicPlatformLabelsRoute: ApiPublicPlatformLabelsRoute,
   ApiPublicRecordsRoute: ApiPublicRecordsRoute,
   ApiPublicSystemFieldsRoute: ApiPublicSystemFieldsRoute,
@@ -1028,13 +1062,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

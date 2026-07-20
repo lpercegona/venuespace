@@ -91,11 +91,11 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
 
   const { data: org, error: orgErr } = await sb
     .from("organizations")
-    .select("id, slug, name, description, logo_url, category_id")
+    .select("id, slug, name, description, logo_url, category_id, is_public")
     .eq("slug", slug)
     .maybeSingle();
   if (orgErr) throw new Error(orgErr.message);
-  if (!org) throw new Error("Organização não encontrada");
+  if (!org || (org as any).is_public === false) throw new Error("Organização não encontrada");
 
   const { data: table, error: tErr } = await sb
     .from("tables")
@@ -265,7 +265,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   const categoryId = opts.category_id?.trim() || undefined;
   const filters = opts.filters ?? {};
 
-  // Only organizations with ≥1 published record.
+  // Only organizations that are public AND have ≥1 published record.
   const { data: pubRecs } = await sb.from("records").select("table:tables!inner(organization_id)").eq("status", "published").limit(5000);
   const orgIds = new Set<string>();
   for (const r of (pubRecs ?? []) as any[]) if (r.table?.organization_id) orgIds.add(r.table.organization_id);
@@ -274,6 +274,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   let query = sb.from("organizations")
     .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at")
     .in("id", Array.from(orgIds))
+    .eq("is_public", true)
     .order("updated_at", { ascending: false });
   if (categoryId) query = query.eq("category_id", categoryId);
   const { data, error } = await query;
@@ -355,6 +356,61 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   return { items, total };
 }
 
+export async function getPublicOrganization(slug: string): Promise<PublicOrganizationSummary & { category_name: string | null; address: Record<string, any> }> {
+  const sb = supabaseAdmin;
+  const { data: o, error } = await sb
+    .from("organizations")
+    .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at, is_public")
+    .eq("slug", slug)
+    .eq("is_public", true)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!o) throw new Error("Organização não encontrada");
+
+  const catId = (o as any).category_id ?? null;
+  const [layouts, catFields, catRow] = await Promise.all([
+    loadLayoutsBatch(catId ? [catId] : [], "organization_card"),
+    loadOrgCategoryFieldsBatch(catId ? [catId] : []),
+    catId ? (sb as any).from("organization_categories").select("name").eq("id", catId).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const layout = (catId && layouts.get(catId)) || [];
+  const catF = (catId && catFields.get(catId)) || [];
+  const fields = [...ORG_BUILTIN_FIELDS, ...catF];
+  const addr = ((o as any).address ?? {}) as Record<string, any>;
+  const data: Record<string, any> = {
+    name: (o as any).name,
+    slug: (o as any).slug,
+    description: (o as any).description,
+    logo_url: (o as any).logo_url,
+    "address.cep": addr.cep ?? "",
+    "address.street": addr.street ?? "",
+    "address.number": addr.number ?? "",
+    "address.complement": addr.complement ?? "",
+    "address.neighborhood": addr.neighborhood ?? "",
+    "address.city": addr.city ?? "",
+    "address.state": addr.state ?? "",
+    ...((o as any).category_data ?? {}),
+  };
+  const item = {
+    id: (o as any).id,
+    slug: (o as any).slug,
+    name: (o as any).name,
+    description: (o as any).description ?? null,
+    logo_url: (o as any).logo_url ?? null,
+    category_id: catId,
+    category_data: ((o as any).category_data ?? {}) as Record<string, any>,
+    updated_at: (o as any).updated_at,
+    data,
+    fields,
+    layout,
+    address: addr,
+    category_name: (catRow as any)?.data?.name ?? null,
+  };
+  await signImagePathsInItems([item as any]);
+  return item as any;
+}
+
+
 export type PublicRecordSummary = {
   record_id: string;
   data: Record<string, any>;
@@ -380,23 +436,25 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   const filters = opts.filters ?? {};
 
   const { data, error } = await sb.from("records")
-    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(slug, name, category_id))")
+    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(slug, name, category_id, is_public))")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(2000);
   if (error) throw new Error(error.message);
-  let base = ((data ?? []) as any[]).map((r) => ({
-    record_id: r.id,
-    data: r.data ?? {},
-    created_at: r.created_at,
-    org_slug: r.table.organization.slug,
-    org_name: r.table.organization.name,
-    org_category_id: r.table.organization.category_id ?? null,
-    table_id: r.table.id,
-    table_slug: r.table.slug,
-    table_name: r.table.name,
-    table_icon: r.table.icon ?? null,
-  }));
+  let base = ((data ?? []) as any[])
+    .filter((r) => r.table?.organization?.is_public !== false)
+    .map((r) => ({
+      record_id: r.id,
+      data: r.data ?? {},
+      created_at: r.created_at,
+      org_slug: r.table.organization.slug,
+      org_name: r.table.organization.name,
+      org_category_id: r.table.organization.category_id ?? null,
+      table_id: r.table.id,
+      table_slug: r.table.slug,
+      table_name: r.table.name,
+      table_icon: r.table.icon ?? null,
+    }));
   if (categoryId) base = base.filter((i) => i.org_category_id === categoryId);
   if (slug) base = base.filter((i) => i.org_slug === slug);
 
@@ -469,17 +527,18 @@ async function signImagePathsInItems(items: Array<{ data: Record<string, any>; f
   for (const it of items) {
     for (const f of it.fields) {
       const imageLike = f.type === "image" || f.type === "gallery" || isImageLikeName(f.key, f.label);
-      if (f.type === "image" || imageLike) {
-        const v = it.data?.[f.key];
-        if (typeof v !== "string" || !v || isHttp(v)) continue;
-        if (!imageLike && !hasImageExtension(v)) continue;
-        refs.push({ kind: "single", data: it.data, key: f.key });
-        paths.push(v);
+      const v = it.data?.[f.key];
+      // Single-value image (string path)
+      if ((f.type === "image" || imageLike) && typeof v === "string" && v && !isHttp(v)) {
+        if (imageLike || hasImageExtension(v)) {
+          refs.push({ kind: "single", data: it.data, key: f.key });
+          paths.push(v);
+        }
       }
-      if (f.type === "gallery" || imageLike) {
-        const arr = it.data?.[f.key];
-        if (!Array.isArray(arr)) continue;
-        arr.forEach((p, i) => {
+      // Gallery / array of paths — evaluated independently, so a non-string
+      // value on the single branch never blocks the gallery branch.
+      if ((f.type === "gallery" || imageLike) && Array.isArray(v)) {
+        v.forEach((p, i) => {
           if (typeof p !== "string" || !p) return;
           if (isHttp(p)) return;
           if (!imageLike && !hasImageExtension(p)) return;
@@ -546,10 +605,10 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
 
   const { data: org } = await sb
     .from("organizations")
-    .select("id, slug, name, description, logo_url")
+    .select("id, slug, name, description, logo_url, is_public")
     .eq("slug", slug)
     .maybeSingle();
-  if (!org) throw new Error("Organização não encontrada");
+  if (!org || (org as any).is_public === false) throw new Error("Organização não encontrada");
 
   const { data: table } = await sb
     .from("tables")

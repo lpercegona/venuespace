@@ -1,3 +1,22 @@
+## 2026-07-20 — Iteração 18 — Galeria pública, perfil rico e visibilidade da organização
+
+Extensão explícita das Iterações 13 (galeria/renderer) e 17 (payload público de organização) + novo controle de visibilidade.
+
+- **Correção de galeria em cards públicos** (bug regressivo da Iteração 13): `src/lib/public.server.ts` → `signImagePathsInItems` reescrito para avaliar single-image e gallery independentemente. O `continue` do ramo single interrompia o loop antes do ramo gallery quando o valor era array, e por isso paths crus da galeria voltavam ao frontend e eram exibidos como texto. Verificado no payload de `/api/public/organizations` antes/depois. Propaga para landing, `/explore` e perfil público.
+- **Perfil público enriquecido** (`src/routes/public.$slug.index.tsx`): agora consome novo endpoint `/api/public/organizations/$slug` e mostra logo, nome, categoria, descrição, endereço formatado, campos personalizados via `PublicCardBody` (respeitando layout `organization_card` do super admin) e um fallback tabular para campos personalizados fora do layout. Erro/ausente cai em `EmptyState` "Perfil indisponível". Lista de publicações mantém comportamento anterior.
+- **Novo server helper**: `getPublicOrganization(slug)` em `src/lib/public.server.ts` — reaproveita `signImagePathsInItems`, layout e fields de categoria; resolve `category_name`.
+- **Nova rota pública**: `src/routes/api/public/organizations.$slug.ts` (GET com cache `max-age=30, s-maxage=60, stale-while-revalidate=300`).
+- **Visibilidade da organização** (Iteração 18):
+  - Migration: `organizations.is_public boolean NOT NULL DEFAULT true` + índice parcial. Default `true` preserva organizações existentes.
+  - `listPublicOrganizations`, `listPublicRecords`, `getPublicOrganization`, `loadPublicTable`, `loadPublicRecord` e a rota `/api/public/campaigns/$recordId` filtram `is_public = true` (organizações ocultas somem de landing, `/explore`, perfil público, páginas de tabela/registro/formulário público e campanhas). Membros continuam vendo pelo painel autenticado; tokens de lead direto continuam funcionando (não passam pela listagem).
+  - `src/lib/orgs.functions.ts`: `orgUpdate` aceita `is_public`; `getOrganizationBySlug` devolve `is_public`.
+  - `src/components/venue/edit-org-dialog.tsx`: novo `Switch` "Perfil público" em cada organização.
+  - `src/routes/_authenticated.app.$orgSlug.index.tsx`: passa `is_public` ao dialog.
+- **Auditoria de propagação**: landing, `/explore` (abas de organizações e registros), `/public/$slug/`, `/public/$slug/$tableId/$recordId`, formulário público, `/public/$slug/campaigns/$recordId`, endpoints `/api/public/organizations`, `/api/public/records`, `/api/public/organizations/$slug`, `/api/public/campaigns/$recordId` — todos revisados. Roles: super_admin, owner/editor/viewer (via `is_org_member`), autenticado não-membro, anônimo — visibilidade oculta só afeta as duas últimas.
+- Sem novos tokens, sem componente novo além do bloco de perfil (reutiliza `PublicCardBody`, `Card`, `Switch`).
+
+---
+
 ## 2026-07-19 — Correção da Iteração 12/13 — Campo `gallery` e uploads em campos de categoria
 - `src/lib/category-cascade.functions.ts`: enum `FIELD_TYPES` do validador Zod passa a incluir `gallery` (o enum do banco `field_type` já tinha desde a migração de 2026-07-15); com isso o super admin consegue criar/editar campos personalizados do tipo galeria em `organization_category_default_fields`, `category_org_fields` e `category_table_fields` sem erro "Invalid enum value".
 - `src/components/venue/dynamic-form.tsx`: `UploadField` e `GalleryField` exportados para reuso.

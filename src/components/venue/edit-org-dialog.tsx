@@ -30,6 +30,7 @@ type Props = {
     system_data?: Record<string, any> | null;
     category_data?: Record<string, any> | null;
     address?: AddressValue | null;
+    is_public?: boolean | null;
   };
 };
 
@@ -50,6 +51,7 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
   const [catData, setCatData] = useState<Record<string, any>>(initialCat);
   const initialAddr = useMemo(() => (org.address ?? {}) as AddressValue, [org.address]);
   const [address, setAddress] = useState<AddressValue>(initialAddr);
+  const [isPublic, setIsPublic] = useState<boolean>(org.is_public ?? true);
   const [saving, setSaving] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -79,6 +81,7 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
         system_data: sysData,
         category_data: catData,
         address,
+        is_public: isPublic,
       } });
       toast.success("Organização atualizada");
       await Promise.all([
@@ -125,6 +128,13 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
           <div className="space-y-2">
             <Label htmlFor="o-logo">Logo (URL)</Label>
             <Input id="o-logo" type="url" placeholder="https://…" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
+          </div>
+          <div className="flex items-center justify-between rounded-md border border-border p-3">
+            <div>
+              <Label htmlFor="o-public" className="text-sm">Perfil público</Label>
+              <p className="text-xs text-muted-foreground">Quando desativado, a {t("organization", "organização").toLowerCase()} some da landing, /explore e do perfil público.</p>
+            </div>
+            <Switch id="o-public" checked={isPublic} onCheckedChange={setIsPublic} />
           </div>
           <div className="space-y-2">
             <Label>{t("category", "Categoria")}</Label>
