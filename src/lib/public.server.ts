@@ -265,7 +265,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   const categoryId = opts.category_id?.trim() || undefined;
   const filters = opts.filters ?? {};
 
-  // Only organizations with ≥1 published record.
+  // Only organizations that are public AND have ≥1 published record.
   const { data: pubRecs } = await sb.from("records").select("table:tables!inner(organization_id)").eq("status", "published").limit(5000);
   const orgIds = new Set<string>();
   for (const r of (pubRecs ?? []) as any[]) if (r.table?.organization_id) orgIds.add(r.table.organization_id);
@@ -274,6 +274,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   let query = sb.from("organizations")
     .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at")
     .in("id", Array.from(orgIds))
+    .eq("is_public", true)
     .order("updated_at", { ascending: false });
   if (categoryId) query = query.eq("category_id", categoryId);
   const { data, error } = await query;
