@@ -26,9 +26,12 @@ export const Route = createFileRoute("/api/public/campaigns/$recordId")({
         }
         const { data: org } = await sb
           .from("organizations")
-          .select("id, slug, name")
+          .select("id, slug, name, is_public")
           .eq("id", campaign.organization_id)
           .maybeSingle();
+        if (!org || (org as any).is_public === false) {
+          return Response.json({ error: "Campanha não encontrada" }, { status: 404 });
+        }
         const { data: table } = await sb
           .from("tables")
           .select("id, name")
