@@ -605,10 +605,10 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
 
   const { data: org } = await sb
     .from("organizations")
-    .select("id, slug, name, description, logo_url")
+    .select("id, slug, name, description, logo_url, is_public")
     .eq("slug", slug)
     .maybeSingle();
-  if (!org) throw new Error("Organização não encontrada");
+  if (!org || (org as any).is_public === false) throw new Error("Organização não encontrada");
 
   const { data: table } = await sb
     .from("tables")
