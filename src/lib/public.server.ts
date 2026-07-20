@@ -381,23 +381,25 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   const filters = opts.filters ?? {};
 
   const { data, error } = await sb.from("records")
-    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(slug, name, category_id))")
+    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(slug, name, category_id, is_public))")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(2000);
   if (error) throw new Error(error.message);
-  let base = ((data ?? []) as any[]).map((r) => ({
-    record_id: r.id,
-    data: r.data ?? {},
-    created_at: r.created_at,
-    org_slug: r.table.organization.slug,
-    org_name: r.table.organization.name,
-    org_category_id: r.table.organization.category_id ?? null,
-    table_id: r.table.id,
-    table_slug: r.table.slug,
-    table_name: r.table.name,
-    table_icon: r.table.icon ?? null,
-  }));
+  let base = ((data ?? []) as any[])
+    .filter((r) => r.table?.organization?.is_public !== false)
+    .map((r) => ({
+      record_id: r.id,
+      data: r.data ?? {},
+      created_at: r.created_at,
+      org_slug: r.table.organization.slug,
+      org_name: r.table.organization.name,
+      org_category_id: r.table.organization.category_id ?? null,
+      table_id: r.table.id,
+      table_slug: r.table.slug,
+      table_name: r.table.name,
+      table_icon: r.table.icon ?? null,
+    }));
   if (categoryId) base = base.filter((i) => i.org_category_id === categoryId);
   if (slug) base = base.filter((i) => i.org_slug === slug);
 
