@@ -469,17 +469,18 @@ async function signImagePathsInItems(items: Array<{ data: Record<string, any>; f
   for (const it of items) {
     for (const f of it.fields) {
       const imageLike = f.type === "image" || f.type === "gallery" || isImageLikeName(f.key, f.label);
-      if (f.type === "image" || imageLike) {
-        const v = it.data?.[f.key];
-        if (typeof v !== "string" || !v || isHttp(v)) continue;
-        if (!imageLike && !hasImageExtension(v)) continue;
-        refs.push({ kind: "single", data: it.data, key: f.key });
-        paths.push(v);
+      const v = it.data?.[f.key];
+      // Single-value image (string path)
+      if ((f.type === "image" || imageLike) && typeof v === "string" && v && !isHttp(v)) {
+        if (imageLike || hasImageExtension(v)) {
+          refs.push({ kind: "single", data: it.data, key: f.key });
+          paths.push(v);
+        }
       }
-      if (f.type === "gallery" || imageLike) {
-        const arr = it.data?.[f.key];
-        if (!Array.isArray(arr)) continue;
-        arr.forEach((p, i) => {
+      // Gallery / array of paths — evaluated independently, so a non-string
+      // value on the single branch never blocks the gallery branch.
+      if ((f.type === "gallery" || imageLike) && Array.isArray(v)) {
+        v.forEach((p, i) => {
           if (typeof p !== "string" || !p) return;
           if (isHttp(p)) return;
           if (!imageLike && !hasImageExtension(p)) return;
