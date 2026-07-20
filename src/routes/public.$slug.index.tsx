@@ -5,7 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 import { EmptyState } from "@/components/venue/empty-state";
-import type { PublicRecordSummary, PublicOrganizationSummary, PublicLayoutField, PublicRendererField } from "@/lib/public.server";
+
+type PublicLayoutField = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
+type PublicRendererField = { key: string; label: string; type: string };
+type PublicRecordSummary = { record_id: string; table_id: string; data: Record<string, any>; layout?: PublicLayoutField[]; fields?: PublicRendererField[] };
+type PublicOrganizationSummary = {
+  id: string; slug: string; name: string; description: string | null; logo_url: string | null;
+  category_id: string | null; data: Record<string, any>; layout: PublicLayoutField[]; fields: PublicRendererField[];
+};
 
 export const Route = createFileRoute("/public/$slug/")({
   head: ({ params }) => ({
