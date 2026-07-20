@@ -1,0 +1,2 @@
+ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS is_public boolean NOT NULL DEFAULT true;
+CREATE INDEX IF NOT EXISTS organizations_is_public_idx ON public.organizations (is_public) WHERE is_public = true;
