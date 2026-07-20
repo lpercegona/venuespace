@@ -81,6 +81,7 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
         system_data: sysData,
         category_data: catData,
         address,
+        is_public: isPublic,
       } });
       toast.success("Organização atualizada");
       await Promise.all([
