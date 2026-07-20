@@ -91,11 +91,11 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
 
   const { data: org, error: orgErr } = await sb
     .from("organizations")
-    .select("id, slug, name, description, logo_url, category_id")
+    .select("id, slug, name, description, logo_url, category_id, is_public")
     .eq("slug", slug)
     .maybeSingle();
   if (orgErr) throw new Error(orgErr.message);
-  if (!org) throw new Error("Organização não encontrada");
+  if (!org || (org as any).is_public === false) throw new Error("Organização não encontrada");
 
   const { data: table, error: tErr } = await sb
     .from("tables")
