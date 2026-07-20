@@ -147,7 +147,7 @@ function PublicOrgPage() {
         </div>
       </header>
       <main className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6">
-        {(layout.length > 0 || Object.keys(org.category_data ?? {}).length > 0) ? (
+        {(layout.length > 0 || Object.keys(org.data ?? {}).length > 0) ? (
           <section className="space-y-4">
             <h2 className="font-display text-lg font-semibold">Informações</h2>
             {layout.length > 0 ? (
