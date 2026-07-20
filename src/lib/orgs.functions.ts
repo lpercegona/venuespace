@@ -116,6 +116,7 @@ const orgUpdate = z.object({
   system_data: z.record(z.string(), z.any()).optional(),
   category_data: z.record(z.string(), z.any()).optional(),
   address: addressSchema.optional(),
+  is_public: z.boolean().optional(),
 });
 
 export const updateOrganization = createServerFn({ method: "POST" })
@@ -146,6 +147,7 @@ export const updateOrganization = createServerFn({ method: "POST" })
     if (data.system_data !== undefined) patch.system_data = data.system_data;
     if (data.category_data !== undefined) patch.category_data = data.category_data;
     if (data.address !== undefined) patch.address = data.address;
+    if (data.is_public !== undefined) patch.is_public = data.is_public;
     const { error } = await context.supabase.from("organizations").update(patch as any).eq("id", data.id);
     if (error) throw new Error(error.message);
 
