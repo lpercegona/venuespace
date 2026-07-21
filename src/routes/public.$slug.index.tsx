@@ -129,9 +129,10 @@ function PublicOrgPage() {
               <img src={logoUrl} alt={`Logo ${org.name}`} loading="lazy" className="h-20 w-20 shrink-0 rounded-lg border border-border object-cover" />
             ) : null}
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">/{slug}</p>
+              {org.category_name ? (
+                <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{org.category_name}</p>
+              ) : null}
               <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{org.name}</h1>
-              {org.category_name ? <p className="mt-1 text-sm text-muted-foreground">{org.category_name}</p> : null}
               {org.description ? <p className="mt-3 max-w-2xl text-sm text-foreground/90">{org.description}</p> : null}
               {addr ? (
                 <div className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
