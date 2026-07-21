@@ -1,5 +1,6 @@
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { GalleryCarousel } from "@/components/venue/gallery-carousel";
 
 export type LayoutItem = {
   id: string;
