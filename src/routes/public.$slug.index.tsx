@@ -160,6 +160,26 @@ function PublicOrgPage() {
           </section>
         ) : null}
 
+        {addr ? (() => {
+          const q = [org.address?.street, org.address?.number, org.address?.neighborhood, org.address?.city, org.address?.state, org.address?.cep]
+            .filter(Boolean).join(", ");
+          const src = `https://www.google.com/maps?q=${encodeURIComponent(q)}&z=15&output=embed`;
+          return (
+            <section className="space-y-4">
+              <h2 className="font-display text-lg font-semibold">Localização</h2>
+              <div className="overflow-hidden rounded-xl border border-border">
+                <iframe
+                  title={`Mapa de ${org.name}`}
+                  src={src}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="h-72 w-full border-0"
+                />
+              </div>
+            </section>
+          );
+        })() : null}
+
         <section className="space-y-4">
           <h2 className="font-display text-lg font-semibold">Publicações</h2>
           {records.length === 0 ? (
