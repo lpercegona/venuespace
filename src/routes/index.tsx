@@ -94,16 +94,19 @@ function Landing() {
                   >
                     <Card className="h-full transition-shadow hover:shadow-elegant">
                       <CardHeader className="pb-2">
-                        <CardTitle className="font-display text-base">{o.name}</CardTitle>
+                        <div className="flex items-center gap-3">
+                          {o.logo_url ? (
+                            <img src={o.logo_url} alt={`Logo ${o.name}`} loading="lazy" className="h-10 w-10 shrink-0 rounded-md border border-border object-cover" />
+                          ) : null}
+                          <CardTitle className="font-display text-base line-clamp-2">{o.name}</CardTitle>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         {o.layout && o.layout.length > 0 ? (
                           <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} />
                         ) : o.description ? (
                           <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">/{o.slug}</p>
-                        )}
+                        ) : null}
                       </CardContent>
                     </Card>
                   </Link>
