@@ -232,11 +232,12 @@ function ExplorePage() {
                   >
                     <Card className="h-full transition-shadow hover:shadow-elegant">
                       <CardHeader className="pb-2">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Building2 className="h-3.5 w-3.5" />
-                          <span className="truncate">/{o.slug}</span>
+                        <div className="flex items-center gap-3">
+                          {(o as any).logo_url ? (
+                            <img src={(o as any).logo_url} alt={`Logo ${o.name}`} loading="lazy" className="h-10 w-10 shrink-0 rounded-md border border-border object-cover" />
+                          ) : null}
+                          <CardTitle className="font-display text-lg line-clamp-2">{o.name}</CardTitle>
                         </div>
-                        <CardTitle className="font-display text-lg">{o.name}</CardTitle>
                       </CardHeader>
                       <CardContent>
                         {o.layout && o.layout.length > 0 ? (

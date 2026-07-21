@@ -107,7 +107,7 @@ export const countOrganizationsByCategory = createServerFn({ method: "GET" })
 // -------- Category default fields --------
 
 const FIELD_TYPES = [
-  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","file","relation","computed",
+  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file","relation","computed",
 ] as const;
 
 export const listCategoryDefaultFields = createServerFn({ method: "GET" })

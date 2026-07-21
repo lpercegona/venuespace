@@ -55,9 +55,7 @@ export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenCha
             {section === "notifications" ? (
               <SectionPlaceholder title="Notificações" description="Em breve você poderá ajustar preferências de notificações in-app." />
             ) : null}
-            {section === "security" ? (
-              <SectionPlaceholder title="Segurança" description="Alterações de senha e sessões ativas estarão disponíveis em breve." />
-            ) : null}
+            {section === "security" ? <SecuritySection /> : null}
           </div>
         </div>
       </DialogContent>
@@ -159,6 +157,45 @@ function ProfileSection() {
       </div>
       <div className="flex justify-end">
         <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}</Button>
+      </div>
+    </form>
+  );
+}
+
+function SecuritySection() {
+  const [pass, setPass] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (pass.length < 8) return toast.error("A senha deve ter ao menos 8 caracteres.");
+    if (pass !== confirm) return toast.error("As senhas não conferem.");
+    setSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: pass });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Senha atualizada");
+    setPass("");
+    setConfirm("");
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <h2 className="font-display text-lg font-semibold text-foreground">Segurança</h2>
+        <p className="text-sm text-muted-foreground">Defina uma nova senha para sua conta.</p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="s-pass">Nova senha</Label>
+        <Input id="s-pass" type="password" minLength={8} required value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="new-password" />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="s-pass2">Confirmar senha</Label>
+        <Input id="s-pass2" type="password" minLength={8} required value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
+      </div>
+      <div className="flex justify-end">
+        <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Atualizar senha"}</Button>
       </div>
     </form>
   );

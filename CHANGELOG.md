@@ -1,3 +1,14 @@
+## 2026-07-21 — Iteração 19 — Carrossel de galeria, perfil enriquecido, senha e correção de galeria em record fields
+
+Extensão explícita das Iterações 11/12 (cascata de campos), 13 (galeria/renderer) e 18 (perfil público).
+
+- **Bug (Iteração 12) — galeria em record fields**: `src/lib/organization-categories.functions.ts` → `FIELD_TYPES` inclui `gallery`. O painel do super admin em "Campos padrão → Registro" usa `upsertCategoryDefaultField`, cujo Zod ainda vetava `gallery` mesmo após a Iteração 12 ter incluído o tipo no cadastro dos outros escopos.
+- **Galeria como carrossel** (extensão da Iteração 13): novo `src/components/venue/gallery-carousel.tsx` reutilizando shadcn/embla (`Carousel*`). `src/components/venue/public-card-renderer.tsx` renderiza `gallery` via `GalleryCarousel` (aspect-video 100%, aspect-square nas larguras menores) com contador e navegação prev/next. Propaga para landing, `/explore`, cards internos de organização e ambientes, e perfil público.
+- **Perfil público de organização** (`src/routes/public.$slug.index.tsx`): removido `/{slug}` do cabeçalho; categoria agora ocupa esse espaço acima do nome. Nova seção "Localização" com iframe do Google Maps (`https://www.google.com/maps?q=<endereço>&output=embed`, sem chave de API) baseada nos campos de endereço cadastrados.
+- **Cards públicos de organização** (`src/routes/index.tsx`, `src/routes/explore.tsx`): logo (`o.logo_url`) renderizada ao lado do nome quando presente; `/{slug}` removido em ambos os pontos.
+- **Alteração de senha no modal de Configurações** (`src/components/venue/settings-modal.tsx`): aba "Segurança" agora contém formulário com nova senha + confirmação, com validação de comprimento (≥ 8), match e feedback via `sonner`; grava via `supabase.auth.updateUser({ password })`.
+- **Login Google no site publicado**: `supabase--configure_social_auth` executado — provedor já estava habilitado. A implementação atual (`src/routes/auth.tsx` usando `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`) está de acordo com a integração gerenciada; nenhuma mudança de código foi necessária.
+
 ## 2026-07-20 — Iteração 18 — Galeria pública, perfil rico e visibilidade da organização
 
 Extensão explícita das Iterações 13 (galeria/renderer) e 17 (payload público de organização) + novo controle de visibilidade.

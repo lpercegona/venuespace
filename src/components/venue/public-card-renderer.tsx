@@ -1,5 +1,6 @@
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { GalleryCarousel } from "@/components/venue/gallery-carousel";
 
 export type LayoutItem = {
   id: string;
@@ -186,13 +187,10 @@ export function PublicCardBody({
               );
             }
             if (c.kind === "gallery") {
+              const aspect = c.width_percent === 100 ? "aspect-video" : "aspect-square";
               return (
                 <div key={c.id} className={`${c.span} min-w-0`}>
-                  <div className="grid grid-cols-3 gap-1">
-                    {c.urls!.slice(0, 3).map((u, idx) => (
-                      <img key={idx} src={u} alt={`${c.label} ${idx + 1}`} loading="lazy" decoding="async" className="aspect-square w-full rounded-sm object-cover" />
-                    ))}
-                  </div>
+                  <GalleryCarousel urls={c.urls!} alt={c.label} aspectClassName={aspect} />
                 </div>
               );
             }
