@@ -55,9 +55,7 @@ export function SettingsModal({ open, onOpenChange }: { open: boolean; onOpenCha
             {section === "notifications" ? (
               <SectionPlaceholder title="Notificações" description="Em breve você poderá ajustar preferências de notificações in-app." />
             ) : null}
-            {section === "security" ? (
-              <SectionPlaceholder title="Segurança" description="Alterações de senha e sessões ativas estarão disponíveis em breve." />
-            ) : null}
+            {section === "security" ? <SecuritySection /> : null}
           </div>
         </div>
       </DialogContent>
