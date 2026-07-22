@@ -113,7 +113,8 @@ function SchemaPage() {
   return (
     <AppShell
       title={table.data?.name ?? t("table", "Tabela")}
-      subtitle={table.data?.description ?? `Defina os ${fieldsLabel} desta ${tableLabel}.`}
+      subtitle={isLocked ? `Estrutura padrão da categoria — travada para edição.` : (table.data?.description ?? `Defina os ${fieldsLabel} desta ${tableLabel}.`)}
+
       actions={
         <div className="flex items-center gap-2">
           <Link to="/app/$orgSlug" params={{ orgSlug }}>
