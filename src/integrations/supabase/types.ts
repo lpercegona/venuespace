@@ -226,6 +226,97 @@ export type Database = {
           },
         ]
       }
+      category_standard_table_fields: {
+        Row: {
+          config: Json
+          created_at: string
+          field_key: string
+          field_type: string
+          id: string
+          label: string
+          order_index: number
+          required: boolean
+          standard_table_id: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          field_key: string
+          field_type: string
+          id?: string
+          label: string
+          order_index?: number
+          required?: boolean
+          standard_table_id: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          field_key?: string
+          field_type?: string
+          id?: string
+          label?: string
+          order_index?: number
+          required?: boolean
+          standard_table_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_standard_table_fields_standard_table_id_fkey"
+            columns: ["standard_table_id"]
+            isOneToOne: false
+            referencedRelation: "category_standard_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_standard_tables: {
+        Row: {
+          category_id: string
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          order_index: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          order_index?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          order_index?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_standard_tables_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_table_fields: {
         Row: {
           category_id: string
@@ -980,9 +1071,11 @@ export type Database = {
           description: string | null
           icon: string | null
           id: string
+          is_locked: boolean
           is_system: boolean
           name: string
           organization_id: string
+          origin_standard_table_id: string | null
           slug: string
           system_data: Json
           updated_at: string
@@ -994,9 +1087,11 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          is_locked?: boolean
           is_system?: boolean
           name: string
           organization_id: string
+          origin_standard_table_id?: string | null
           slug: string
           system_data?: Json
           updated_at?: string
@@ -1008,9 +1103,11 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          is_locked?: boolean
           is_system?: boolean
           name?: string
           organization_id?: string
+          origin_standard_table_id?: string | null
           slug?: string
           system_data?: Json
           updated_at?: string
@@ -1021,6 +1118,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tables_origin_standard_table_id_fkey"
+            columns: ["origin_standard_table_id"]
+            isOneToOne: false
+            referencedRelation: "category_standard_tables"
             referencedColumns: ["id"]
           },
         ]
