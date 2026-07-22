@@ -295,8 +295,12 @@ function OrgDashboard() {
 }
 
 function TableCard({
-  t, orgSlug, orgCategoryId, canEdit, isOwner, onSaved,
-}: { t: any; orgSlug: string; orgCategoryId: string | null; canEdit: boolean; isOwner: boolean; onSaved: () => void }) {
+  t, orgSlug, orgCategoryId, canEdit, isOwner, isSA, onSaved,
+}: { t: any; orgSlug: string; orgCategoryId: string | null; canEdit: boolean; isOwner: boolean; isSA: boolean; onSaved: () => void }) {
+  const isLocked = !!t.is_locked;
+  const canStruct = (canEdit && (!isLocked || isSA));
+  const canDeleteStruct = (isOwner && (!isLocked || isSA));
+
   const { t: label } = useLabels();
   const tableLabel = label("table", "tabela").toLowerCase();
   const recordsLabel = label("records", "registros").toLowerCase();
