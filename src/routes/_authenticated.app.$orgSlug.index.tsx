@@ -205,8 +205,10 @@ function OrgDashboard() {
                 orgCategoryId={(org.data as any).category_id ?? null}
                 canEdit={canEdit}
                 isOwner={isOwner}
+                isSA={isSA}
                 onSaved={() => tables.refetch()}
               />
+
             ))}
           </div>
 
