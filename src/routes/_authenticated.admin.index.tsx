@@ -49,6 +49,16 @@ import {
   reconcileCategoryAllOrganizations,
   type CategoryCascadeField,
 } from "@/lib/category-cascade.functions";
+import {
+  listCategoryStandardTables,
+  upsertCategoryStandardTable,
+  deleteCategoryStandardTable,
+  listCategoryStandardTableFields,
+  upsertCategoryStandardTableField,
+  deleteCategoryStandardTableField,
+  type CategoryStandardTable,
+  type CategoryStandardTableField,
+} from "@/lib/category-standard-tables.functions";
 import { listCategoryLayout, saveCategoryLayout, type LayoutField } from "@/lib/category-layouts.functions";
 import {
   listCategoryFilterFieldsPublic,
