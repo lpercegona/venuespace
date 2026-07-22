@@ -120,6 +120,8 @@ function SchemaPage() {
           <Link to="/app/$orgSlug" params={{ orgSlug }}>
             <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" />Voltar</Button>
           </Link>
+          {isLocked ? <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" />Travada</Badge> : null}
+
           {canEdit ? (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
