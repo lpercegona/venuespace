@@ -59,6 +59,9 @@ function OrgDashboard() {
 
   const canEdit = org.data?.myRole === "owner" || org.data?.myRole === "editor";
   const isOwner = org.data?.myRole === "owner";
+  const saGate = useQuery({ queryKey: ["is-super-admin"], queryFn: () => amISuperAdmin() });
+  const isSA = !!saGate.data?.is_super_admin;
+
 
   const [openTable, setOpenTable] = useState(false);
   const [openEditOrg, setOpenEditOrg] = useState(false);
