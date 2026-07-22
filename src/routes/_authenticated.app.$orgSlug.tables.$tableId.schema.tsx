@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getTable, listFields, createField, updateField, deleteField, getOrganizationBySlug } from "@/lib/orgs.functions";
+import { amISuperAdmin } from "@/lib/instance-settings.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,13 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Columns3, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Columns3, Loader2, Lock, Plus, Trash2 } from "lucide-react";
 import { useLabels } from "@/hooks/use-instance-context";
 
 const FIELD_TYPES = [
-  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","file","relation","computed",
+  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file","relation","computed",
 ] as const;
+
 
 export const Route = createFileRoute("/_authenticated/app/$orgSlug/tables/$tableId/schema")({
   head: () => ({ meta: [{ title: "Esquema — Venuespace" }, { name: "robots", content: "noindex" }] }),
