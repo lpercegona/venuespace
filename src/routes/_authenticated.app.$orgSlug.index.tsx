@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getOrganizationBySlug, listTables, createTable, updateTable, deleteTable, listMembers, addMemberByEmail } from "@/lib/orgs.functions";
+import { amISuperAdmin } from "@/lib/instance-settings.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
 import { EditOrgDialog } from "@/components/venue/edit-org-dialog";
