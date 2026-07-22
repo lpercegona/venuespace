@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table as TableIcon, Plus, Loader2, UserPlus, Users, Pencil, Trash2 } from "lucide-react";
+import { Table as TableIcon, Plus, Loader2, Lock, UserPlus, Users, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
