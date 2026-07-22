@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getOrganizationBySlug, listTables, createTable, updateTable, deleteTable, listMembers, addMemberByEmail } from "@/lib/orgs.functions";
+import { amISuperAdmin } from "@/lib/instance-settings.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
 import { EditOrgDialog } from "@/components/venue/edit-org-dialog";
@@ -16,7 +17,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table as TableIcon, Plus, Loader2, UserPlus, Users, Pencil, Trash2 } from "lucide-react";
+import { Table as TableIcon, Plus, Loader2, Lock, UserPlus, Users, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
@@ -58,6 +59,9 @@ function OrgDashboard() {
 
   const canEdit = org.data?.myRole === "owner" || org.data?.myRole === "editor";
   const isOwner = org.data?.myRole === "owner";
+  const saGate = useQuery({ queryKey: ["is-super-admin"], queryFn: () => amISuperAdmin() });
+  const isSA = !!saGate.data?.is_super_admin;
+
 
   const [openTable, setOpenTable] = useState(false);
   const [openEditOrg, setOpenEditOrg] = useState(false);
@@ -201,8 +205,10 @@ function OrgDashboard() {
                 orgCategoryId={(org.data as any).category_id ?? null}
                 canEdit={canEdit}
                 isOwner={isOwner}
+                isSA={isSA}
                 onSaved={() => tables.refetch()}
               />
+
             ))}
           </div>
 
@@ -289,8 +295,12 @@ function OrgDashboard() {
 }
 
 function TableCard({
-  t, orgSlug, orgCategoryId, canEdit, isOwner, onSaved,
-}: { t: any; orgSlug: string; orgCategoryId: string | null; canEdit: boolean; isOwner: boolean; onSaved: () => void }) {
+  t, orgSlug, orgCategoryId, canEdit, isOwner, isSA, onSaved,
+}: { t: any; orgSlug: string; orgCategoryId: string | null; canEdit: boolean; isOwner: boolean; isSA: boolean; onSaved: () => void }) {
+  const isLocked = !!t.is_locked;
+  const canStruct = (canEdit && (!isLocked || isSA));
+  const canDeleteStruct = (isOwner && (!isLocked || isSA));
+
   const { t: label } = useLabels();
   const tableLabel = label("table", "tabela").toLowerCase();
   const recordsLabel = label("records", "registros").toLowerCase();
@@ -325,14 +335,16 @@ function TableCard({
           </CardHeader>
           <CardContent>
             <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">{t.description || "Sem descrição."}</p>
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="font-mono">/{t.slug}</Badge>
               {t.bookable ? <Badge>reservas</Badge> : null}
+              {isLocked ? <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" />padrão</Badge> : null}
             </div>
+
           </CardContent>
         </Card>
       </Link>
-      {canEdit ? (
+      {canStruct ? (
         <>
           <div className="absolute right-2 top-2 flex gap-1">
             <Button
@@ -340,7 +352,7 @@ function TableCard({
               aria-label={`Editar ${tableLabel}`}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); }}
             ><Pencil className="h-4 w-4" /></Button>
-            {isOwner ? (
+            {canDeleteStruct ? (
               <Button
                 type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
                 aria-label={`Excluir ${tableLabel}`}
@@ -348,6 +360,7 @@ function TableCard({
               ><Trash2 className="h-4 w-4" /></Button>
             ) : null}
           </div>
+
           <Dialog open={editing} onOpenChange={setEditing}>
             <DialogContent>
               <DialogHeader><DialogTitle className="font-display">Editar {tableLabel}</DialogTitle></DialogHeader>
@@ -378,7 +391,7 @@ function TableCard({
               </form>
             </DialogContent>
           </Dialog>
-          {isOwner ? (
+          {canDeleteStruct ? (
             <AlertDialog open={confirmDel} onOpenChange={setConfirmDel}>
               <AlertDialogContent>
                 <AlertDialogHeader>

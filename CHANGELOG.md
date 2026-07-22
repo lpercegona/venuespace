@@ -1,4 +1,24 @@
+## 2026-07-22 — Iteração 20 — Tabelas Padrão por Categoria + correção de gallery em records
+
+Novo mecanismo, paralelo aos `organization_category_default_fields` (Iteração 9) — que segue valendo para campos pré-sugeridos em tabelas criadas livremente pelo admin comum. Esta iteração introduz **tabelas inteiras** definidas pelo super admin e travadas para o usuário. Não retroage a organizações existentes.
+
+- **Migração**: novas tabelas `category_standard_tables` e `category_standard_table_fields` (leitura pública, escrita restrita a `is_super_admin`, GRANTs incluídos). Novas colunas em `tables`: `origin_standard_table_id` (FK) e `is_locked` (default false). Políticas RLS de `tables` (UPDATE/DELETE) e `fields` (INSERT/UPDATE/DELETE) reescritas para exigir `NOT is_locked OR is_super_admin`. RPC `create_organization` estendida: ao criar organização com categoria, instancia automaticamente as tabelas-modelo da categoria e seus campos, marcando `is_locked=true` e `origin_standard_table_id` preenchido (colisão de slug resolvida com sufixo `-N`).
+- **Server fns**: `src/lib/category-standard-tables.functions.ts` com CRUD de tabelas-modelo e campos (todos gated por `is_super_admin`).
+- **Correção paralela — gallery em records** (extensão da Iteração 13): `src/lib/records.functions.ts` → `zodForField` agora aceita `gallery` como array de strings (antes caía no default `string`, bloqueando publicação de galeria em qualquer record).
+- **Admin panel** (`src/routes/_authenticated.admin.index.tsx`): nova aba "Tabelas padrão" com seletor de categoria, CRUD das tabelas-modelo e editor de campos por tabela (mesmos 17 tipos, incluindo `gallery`).
+- **Schema da tabela** (`src/routes/_authenticated.app.$orgSlug.tables.$tableId.schema.tsx`): quando `is_locked=true` e usuário não é super admin, ocultamos criar/editar/excluir campo; badge "Travada" e subtítulo explicando a origem; incluímos `gallery` no seletor de tipo (paridade com Iteração 13).
+- **Grid de tabelas da organização** (`src/routes/_authenticated.app.$orgSlug.index.tsx`): `listTables` agora expõe `is_locked` e `origin_standard_table_id`; badge "padrão" com ícone de cadeado nos cards travados; botões de renomear/excluir tabela ocultos para não-super-admin quando travada. CRUD de registros dentro da tabela travada segue por role (owner/editor/viewer), como especificado.
+
+### Auditoria de propagação (§7)
+- **Roles**: `super_admin` gerencia tabelas-modelo e edita estrutura de tabelas travadas em qualquer organização. `owner`/`editor`/`viewer` — CRUD de registros em tabelas travadas segue normalmente; estrutura é somente-leitura (RLS + UI). Autenticado não-membro e anônimo — sem acesso a esquema; leitura pública de registros continua governada por `views` publicadas.
+- **Superfícies públicas**: nenhuma nova superfície `/api/public/*`. `listPublicRecords`/`listPublicOrganizations`/`loadPublicTable` não filtram por `is_locked` (correto: publicação continua sendo por `views.status`, não por origem estrutural).
+- **Componentes genéricos**: `DynamicGrid` e `DynamicForm` não precisam mudar — leem `fields` da tabela instanciada como sempre; campos `gallery` já eram tratados no formulário (Iteração 13) e agora validam no servidor (`zodForField`).
+- **Não tocados / justificativa**: `deleteTable`/`updateTable` no `orgs.functions.ts` — a política RLS de `tables` já bloqueia UPDATE/DELETE em tabela travada para não-super-admin (erro chega ao cliente via `toast.error`); guarda dedicada de aplicação seria redundante. `createField`/`updateField`/`deleteField` — mesma justificativa via RLS de `fields`. Reconciliação retroativa fora de escopo por design (documentado no pedido).
+
+---
+
 ## 2026-07-21 — Iteração 19 — Carrossel de galeria, perfil enriquecido, senha e correção de galeria em record fields
+
 
 Extensão explícita das Iterações 11/12 (cascata de campos), 13 (galeria/renderer) e 18 (perfil público).
 

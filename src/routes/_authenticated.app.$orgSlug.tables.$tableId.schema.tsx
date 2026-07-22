@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getTable, listFields, createField, updateField, deleteField, getOrganizationBySlug } from "@/lib/orgs.functions";
+import { amISuperAdmin } from "@/lib/instance-settings.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,13 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Columns3, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Columns3, Loader2, Lock, Plus, Trash2 } from "lucide-react";
 import { useLabels } from "@/hooks/use-instance-context";
 
 const FIELD_TYPES = [
-  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","file","relation","computed",
+  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file","relation","computed",
 ] as const;
+
 
 export const Route = createFileRoute("/_authenticated/app/$orgSlug/tables/$tableId/schema")({
   head: () => ({ meta: [{ title: "Esquema — Venuespace" }, { name: "robots", content: "noindex" }] }),
@@ -43,8 +45,12 @@ function SchemaPage() {
   const org = useQuery({ queryKey: ["org", orgSlug], queryFn: () => fetchOrg({ data: { slug: orgSlug } }) });
   const table = useQuery({ queryKey: ["table", tableId], queryFn: () => fetchTable({ data: { id: tableId } }) });
   const fields = useQuery({ queryKey: ["fields", tableId], queryFn: () => fetchFields({ data: { table_id: tableId } }) });
+  const saGate = useQuery({ queryKey: ["is-super-admin"], queryFn: () => amISuperAdmin() });
 
-  const canEdit = org.data?.myRole === "owner" || org.data?.myRole === "editor";
+  const isSA = !!saGate.data?.is_super_admin;
+  const isLocked = !!(table.data as any)?.is_locked;
+  const canEdit = (org.data?.myRole === "owner" || org.data?.myRole === "editor") && (!isLocked || isSA);
+
 
   const [open, setOpen] = useState(false);
   const [fLabel, setFLabel] = useState("");
@@ -107,12 +113,15 @@ function SchemaPage() {
   return (
     <AppShell
       title={table.data?.name ?? t("table", "Tabela")}
-      subtitle={table.data?.description ?? `Defina os ${fieldsLabel} desta ${tableLabel}.`}
+      subtitle={isLocked ? `Estrutura padrão da categoria — travada para edição.` : (table.data?.description ?? `Defina os ${fieldsLabel} desta ${tableLabel}.`)}
+
       actions={
         <div className="flex items-center gap-2">
           <Link to="/app/$orgSlug" params={{ orgSlug }}>
             <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" />Voltar</Button>
           </Link>
+          {isLocked ? <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" />Travada</Badge> : null}
+
           {canEdit ? (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>

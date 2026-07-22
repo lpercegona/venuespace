@@ -49,6 +49,16 @@ import {
   reconcileCategoryAllOrganizations,
   type CategoryCascadeField,
 } from "@/lib/category-cascade.functions";
+import {
+  listCategoryStandardTables,
+  upsertCategoryStandardTable,
+  deleteCategoryStandardTable,
+  listCategoryStandardTableFields,
+  upsertCategoryStandardTableField,
+  deleteCategoryStandardTableField,
+  type CategoryStandardTable,
+  type CategoryStandardTableField,
+} from "@/lib/category-standard-tables.functions";
 import { listCategoryLayout, saveCategoryLayout, type LayoutField } from "@/lib/category-layouts.functions";
 import {
   listCategoryFilterFieldsPublic,
@@ -102,6 +112,7 @@ function AdminPage() {
           <TabsTrigger value="labels">Rótulos</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
+          <TabsTrigger value="standard-tables">Tabelas padrão</TabsTrigger>
           <TabsTrigger value="filters">Filtros públicos</TabsTrigger>
           <TabsTrigger value="layouts">Layout público</TabsTrigger>
           <TabsTrigger value="blog">Blog</TabsTrigger>
@@ -110,10 +121,12 @@ function AdminPage() {
         <TabsContent value="labels"><LabelsSection /></TabsContent>
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
+        <TabsContent value="standard-tables"><StandardTablesSection /></TabsContent>
         <TabsContent value="filters"><FilterFieldsSection /></TabsContent>
         <TabsContent value="layouts"><LayoutsSection /></TabsContent>
         <TabsContent value="blog"><BlogSection /></TabsContent>
       </Tabs>
+
 
     </AppShell>
   );
@@ -1237,6 +1250,314 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
           </TableBody>
         </Table>
       </div>
+    </div>
+  );
+}
+
+// ---------- Standard tables per category ----------
+
+const ST_FIELD_TYPES = [
+  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file","relation","computed",
+] as const;
+
+function stSnake(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60);
+}
+function stSlug(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+}
+
+function StandardTablesSection() {
+  const qc = useQueryClient();
+  const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
+  const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selectedCat && cats.data && cats.data.length > 0) setSelectedCat(cats.data[0].id);
+  }, [cats.data, selectedCat]);
+
+  const tables = useQuery({
+    queryKey: ["admin-std-tables", selectedCat],
+    queryFn: () => selectedCat ? listCategoryStandardTables({ data: { category_id: selectedCat } }) : Promise.resolve([] as CategoryStandardTable[]),
+    enabled: !!selectedCat,
+  });
+
+  const [openTable, setOpenTable] = useState(false);
+  const [editingTable, setEditingTable] = useState<CategoryStandardTable | null>(null);
+  const [tName, setTName] = useState(""); const [tSlugV, setTSlugV] = useState("");
+  const [tIcon, setTIcon] = useState(""); const [tDesc, setTDesc] = useState(""); const [tOrder, setTOrder] = useState(0);
+  const [tBusy, setTBusy] = useState(false);
+
+  function openNewTable() {
+    setEditingTable(null); setTName(""); setTSlugV(""); setTIcon(""); setTDesc("");
+    setTOrder((tables.data ?? []).length); setOpenTable(true);
+  }
+  function openEditTable(t: CategoryStandardTable) {
+    setEditingTable(t); setTName(t.name); setTSlugV(t.slug); setTIcon(t.icon ?? "");
+    setTDesc(t.description ?? ""); setTOrder(t.order_index); setOpenTable(true);
+  }
+  async function saveTable(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedCat) return;
+    setTBusy(true);
+    try {
+      await upsertCategoryStandardTable({ data: {
+        id: editingTable?.id, category_id: selectedCat,
+        name: tName, slug: tSlugV || stSlug(tName),
+        icon: tIcon || null, description: tDesc || null, order_index: tOrder,
+      } });
+      toast.success(editingTable ? "Tabela atualizada" : "Tabela criada");
+      setOpenTable(false);
+      qc.invalidateQueries({ queryKey: ["admin-std-tables", selectedCat] });
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setTBusy(false); }
+  }
+  async function removeTable(id: string) {
+    try {
+      await deleteCategoryStandardTable({ data: { id } });
+      toast.success("Tabela removida");
+      qc.invalidateQueries({ queryKey: ["admin-std-tables", selectedCat] });
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  useEffect(() => {
+    const list = tables.data ?? [];
+    if (list.length === 0) { setSelectedTable(null); return; }
+    if (!selectedTable || !list.find((t) => t.id === selectedTable)) setSelectedTable(list[0].id);
+  }, [tables.data, selectedTable]);
+
+  return (
+    <Card>
+      <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle className="font-display">Tabelas padrão por categoria</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Estruturas de tabela criadas automaticamente em cada nova organização da categoria. As tabelas nascem travadas — só o super admin edita a estrutura. Não retroage a organizações já existentes.
+          </p>
+        </div>
+        <Select value={selectedCat ?? ""} onValueChange={setSelectedCat}>
+          <SelectTrigger className="w-64"><SelectValue placeholder="Selecione categoria" /></SelectTrigger>
+          <SelectContent>
+            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!selectedCat ? <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p> : (
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Tabelas-modelo</p>
+              <Dialog open={openTable} onOpenChange={(v) => { setOpenTable(v); }}>
+                <DialogTrigger asChild><Button size="sm" onClick={openNewTable}><Plus className="h-4 w-4" />Nova tabela</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle className="font-display">{editingTable ? "Editar tabela" : "Nova tabela"}</DialogTitle></DialogHeader>
+                  <form onSubmit={saveTable} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Nome</Label>
+                      <Input required value={tName} onChange={(e) => { setTName(e.target.value); if (!editingTable && !tSlugV) setTSlugV(stSlug(e.target.value)); }} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Slug</Label>
+                      <Input required pattern="^[a-z0-9-]+$" value={tSlugV} onChange={(e) => setTSlugV(e.target.value)} />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2"><Label>Ícone (lucide)</Label><Input value={tIcon} onChange={(e) => setTIcon(e.target.value)} placeholder="Home" /></div>
+                      <div className="space-y-2"><Label>Ordem</Label><Input type="number" min={0} value={tOrder} onChange={(e) => setTOrder(Number(e.target.value))} /></div>
+                    </div>
+                    <div className="space-y-2"><Label>Descrição</Label><Textarea rows={3} value={tDesc} onChange={(e) => setTDesc(e.target.value)} /></div>
+                    <DialogFooter>
+                      <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>Cancelar</Button>
+                      <Button type="submit" disabled={tBusy}>{tBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : (editingTable ? "Salvar" : "Criar")}</Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {(tables.data ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma tabela-modelo definida.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Ordem</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Slug</TableHead>
+                      <TableHead>Ícone</TableHead>
+                      <TableHead className="w-32"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(tables.data ?? []).map((t) => (
+                      <TableRow key={t.id} className={selectedTable === t.id ? "bg-muted/40" : ""}>
+                        <TableCell>{t.order_index}</TableCell>
+                        <TableCell className="font-medium">{t.name}</TableCell>
+                        <TableCell className="font-mono text-xs">{t.slug}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{t.icon ?? "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => setSelectedTable(t.id)}>Campos</Button>
+                            <Button size="icon" variant="ghost" onClick={() => openEditTable(t)}><Pencil className="h-4 w-4" /></Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild><Button size="icon" variant="ghost" className="text-destructive"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remover tabela-modelo?</AlertDialogTitle>
+                                  <AlertDialogDescription>Novas organizações da categoria deixarão de receber esta tabela. Organizações já criadas não são afetadas.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => removeTable(t.id)}>Remover</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {selectedTable ? <StandardTableFieldsEditor standardTableId={selectedTable} /> : null}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function StandardTableFieldsEditor({ standardTableId }: { standardTableId: string }) {
+  const qc = useQueryClient();
+  const list = useQuery({
+    queryKey: ["admin-std-fields", standardTableId],
+    queryFn: () => listCategoryStandardTableFields({ data: { standard_table_id: standardTableId } }),
+  });
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<CategoryStandardTableField | null>(null);
+  const [label, setLabel] = useState("");
+  const [key, setKey] = useState("");
+  const [type, setType] = useState<(typeof ST_FIELD_TYPES)[number]>("text");
+  const [required, setRequired] = useState(false);
+  const [order, setOrder] = useState(0);
+  const [optionsText, setOptionsText] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  function reset() { setEditing(null); setLabel(""); setKey(""); setType("text"); setRequired(false); setOrder(0); setOptionsText(""); }
+  function openNew() { reset(); setOrder((list.data ?? []).length); setOpen(true); }
+  function openEdit(f: CategoryStandardTableField) {
+    setEditing(f); setLabel(f.label); setKey(f.field_key); setType(f.field_type as any);
+    setRequired(f.required); setOrder(f.order_index);
+    const opts = (f.config?.options as string[] | undefined) ?? [];
+    setOptionsText(opts.join("\n"));
+    setOpen(true);
+  }
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const config: Record<string, any> = {};
+      if (type === "select" || type === "multiselect") {
+        const opts = optionsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
+        if (opts.length > 0) config.options = opts;
+      }
+      await upsertCategoryStandardTableField({ data: {
+        id: editing?.id, standard_table_id: standardTableId,
+        field_key: editing ? key : (key || stSnake(label)),
+        label, field_type: type, required, order_index: order, config,
+      } });
+      toast.success(editing ? "Campo atualizado" : "Campo criado");
+      setOpen(false); reset();
+      qc.invalidateQueries({ queryKey: ["admin-std-fields", standardTableId] });
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setBusy(false); }
+  }
+  async function remove(id: string) {
+    try {
+      await deleteCategoryStandardTableField({ data: { id } });
+      qc.invalidateQueries({ queryKey: ["admin-std-fields", standardTableId] });
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm font-medium">Campos da tabela-modelo</p>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+          <DialogTrigger asChild><Button size="sm" onClick={openNew}><Plus className="h-4 w-4" />Novo campo</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo"}</DialogTitle></DialogHeader>
+            <form onSubmit={submit} className="space-y-4">
+              <div className="space-y-2"><Label>Rótulo</Label><Input required value={label} onChange={(e) => { setLabel(e.target.value); if (!editing && !key) setKey(stSnake(e.target.value)); }} /></div>
+              <div className="space-y-2"><Label>Chave</Label><Input required pattern="^[a-z][a-z0-9_]*$" value={key} readOnly={!!editing} disabled={!!editing} onChange={(e) => setKey(e.target.value)} /></div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Select value={type} onValueChange={(v) => setType(v as any)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{ST_FIELD_TYPES.map((tp) => <SelectItem key={tp} value={tp}>{tp}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2"><Label>Ordem</Label><Input type="number" min={0} value={order} onChange={(e) => setOrder(Number(e.target.value))} /></div>
+                <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
+                  <Label className="text-sm">Obrigatório</Label>
+                  <Switch checked={required} onCheckedChange={setRequired} />
+                </div>
+                {(type === "select" || type === "multiselect") ? (
+                  <div className="sm:col-span-2 space-y-2">
+                    <Label>Opções (uma por linha)</Label>
+                    <Textarea rows={4} value={optionsText} onChange={(e) => setOptionsText(e.target.value)} />
+                  </div>
+                ) : null}
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : (editing ? "Salvar" : "Criar")}</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+      {(list.data ?? []).length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum campo definido.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-16">Ordem</TableHead>
+                <TableHead>Chave</TableHead>
+                <TableHead>Rótulo</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Obrigatório</TableHead>
+                <TableHead className="w-32"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(list.data ?? []).map((f) => (
+                <TableRow key={f.id}>
+                  <TableCell>{f.order_index}</TableCell>
+                  <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
+                  <TableCell>{f.label}</TableCell>
+                  <TableCell><Badge variant="secondary">{f.field_type}</Badge></TableCell>
+                  <TableCell>{f.required ? <Badge>sim</Badge> : "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(f.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
