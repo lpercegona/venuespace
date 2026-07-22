@@ -1,65 +1,73 @@
-## Iteração 18 — Galeria pública, perfil rico e visibilidade da organização
+## Iteração 20 — Tabelas Padrão por Categoria (bloqueadas)
 
-Extensão explícita das Iterações 13 (galeria/renderer) e 17 (payload público de organização). Não cria fluxo paralelo.
+Mecanismo paralelo a `organization_category_default_fields` (Iteração 9/11), sem substituí-lo. Super admin define tabelas-modelo por categoria; toda nova organização recebe cópias instanciadas travadas para edição de estrutura.
 
-### 1. Bug: galeria mostra URL em vez de imagens (landing, /explore, perfil)
+### 1. Migração de banco
 
-Causa confirmada em `src/lib/public.server.ts` → `signImagePathsInItems`:
+Novas tabelas (com GRANTs + RLS):
 
-```
-if (f.type === "image" || imageLike) {
-  const v = it.data?.[f.key];
-  if (typeof v !== "string" || !v || isHttp(v)) continue; // <- pula para o PRÓXIMO campo
-  ...
-}
-if (f.type === "gallery" || imageLike) { ... }
-```
+- `category_standard_tables` (id, category_id FK, name, icon, description, order_index, timestamps).
+  - RLS: SELECT anon+authenticated (leitura pública, igual a `organization_categories`); INSERT/UPDATE/DELETE apenas `is_super_admin(auth.uid())`.
+- `category_standard_table_fields` (id, standard_table_id FK, field_key, label, type, config jsonb, order_index, required boolean, timestamps).
+  - Enum `type` alinhado ao usado em `fields.type` (17 tipos, incluindo `gallery`).
+  - RLS idêntica.
 
-Para um campo `gallery` (array), o `continue` do primeiro `if` interrompe o loop antes do segundo bloco, então os paths do array nunca vão para `createSignedUrls`. Verificado no payload real de `/api/public/organizations`: `galeria` (image) volta assinada; `galeria_2` (gallery) volta como paths crus. O `PublicCardBody` então filtra por `isUrl` e cai no ramo de texto, exibindo a string do path.
+Alterações em `public.tables`:
 
-**Correção**: substituir os `continue` por early-return do bloco atual (usar função interna, IIFE, ou `else if` invertendo a lógica) para que o mesmo campo seja avaliado nos dois ramos. Sem mudança de comportamento em image/file — apenas garantir que gallery seja processado.
+- `origin_standard_table_id uuid null` FK → `category_standard_tables(id) ON DELETE SET NULL`.
+- `is_locked boolean not null default false`.
+- Novas policies de UPDATE/DELETE em `tables` e de INSERT/UPDATE/DELETE em `fields`: bloqueiam quando `tables.is_locked = true` para quem não for super admin. Registros (`records`) permanecem inalterados.
 
-Isso propaga sozinho para landing, `/explore` e `/public/$slug` (mesma função `listPublicOrganizations` / `listPublicRecords`).
+### 2. Instanciação na criação de organização
 
-### 2. Perfil público da organização mostra tudo do cadastro
+Atualizar `public.create_organization` (RPC SECURITY DEFINER): após inserir a organização, iterar `category_standard_tables` da categoria e:
 
-Hoje `src/routes/public.$slug.index.tsx` só renderiza a lista de registros. Adicionar antes da lista um cabeçalho de perfil com:
+- inserir uma linha em `tables` copiando `name/icon/description`, com `origin_standard_table_id` preenchido e `is_locked = true`;
+- inserir linhas em `fields` copiadas de `category_standard_table_fields` (com `source = 'category'`).
 
-- Logo (quando `logo_url` existe).
-- Nome + descrição.
-- Endereço formatado (linha 1: `street, number — complement`; linha 2: `neighborhood — city/UF — CEP`), respeitando o mesmo formato usado em `AddressFields`.
-- Categoria (nome resolvido via categoria).
-- Campos personalizados da categoria (o mesmo motor de `PublicCardBody` já cobre isso — reutilizar `fields` + `data` da organização), respeitando ícones/largura definidos no layout `organization_card` do super admin. Se algum campo estiver fora do layout, cair num render sequencial padrão (label + valor) para não esconder informação.
+Sem reconciliação retroativa — vale só para organizações criadas depois desta iteração.
 
-Fonte de dados: novo server-fn `getPublicOrganization({ slug })` em `src/lib/public.server.ts` que devolve o mesmo shape usado em `listPublicOrganizations` (item único: `data`, `fields`, `layout`, `address`, `category_id`, `category_name`), passando por `signImagePathsInItems`. Endpoint público `GET /api/public/organizations/$slug` para a rota consumir via query.
+### 3. Server functions (`src/lib/category-standard-tables.functions.ts`)
 
-A rota `/public/$slug/` faz uma query paralela para org + records. 404 quando org não existe ou está oculta.
+- `listStandardTables({ category_id })` — público (SELECT via publishable client não necessário; usa `requireSupabaseAuth` + policy anon-friendly, ou server publishable). Usar `requireSupabaseAuth` para o painel admin.
+- `createStandardTable`, `updateStandardTable`, `deleteStandardTable` — checam `is_super_admin`.
+- `listStandardTableFields({ standard_table_id })`, `upsertStandardTableField`, `deleteStandardTableField`, `reorderStandardTableFields` — checam `is_super_admin`.
 
-### 3. Visibilidade da organização (público / oculto)
+Em `src/lib/orgs.functions.ts`:
 
-Novo campo booleano `organizations.is_public` (default `true` para não quebrar organizações existentes — retroativo conforme diretriz §0).
+- `updateTable` / `deleteTable` / `createField` / `updateField` / `deleteField`: adicionar verificação — se `tables.is_locked` e usuário não é super admin, lançar erro claro ("Tabela padrão da categoria; estrutura só pode ser alterada pelo super admin.").
+- `listTables` retorna `is_locked` e `origin_standard_table_id`.
 
-Migration:
+### 4. Painel admin (`src/routes/_authenticated.admin.index.tsx`)
 
-- `ALTER TABLE public.organizations ADD COLUMN is_public boolean NOT NULL DEFAULT true;`
-- Ajustar a policy pública de SELECT em `organizations` para exigir `is_public = true` (mantém owner/editor/viewer com acesso via `is_org_member`).
-- `listPublicOrganizations`, `listPublicRecords` e `getPublicOrganization` filtram `is_public = true`.
-- Rotas públicas (`/public/$slug/…`, `/public/$slug/campaigns/$recordId`, formulário público) retornam 404 quando a org está oculta. Tokens de lead continuam funcionando (não passam pela listagem).
+Nova sub-aba "Tabelas Padrão" dentro do editor de categoria (ao lado de "Campos padrão", "Layout público", etc.):
 
-UI no painel do usuário: em `src/components/venue/edit-org-dialog.tsx`, adicionar `Switch` "Perfil público" no topo do formulário, ligado a `is_public`. `updateOrganization` recebe o campo (Zod `boolean().optional()`); persistência via `context.supabase.from('organizations').update({ is_public })`, autorizado pela policy de owner/editor já existente.
+- Lista tabelas-modelo da categoria com nome/ícone/descrição/ordem, botões editar/excluir/nova.
+- Editor por tabela reaproveita o mesmo componente de definição de campos usado em Campos Padrão (extraído como componente reutilizável se ainda estiver acoplado — ex.: `<CategoryFieldEditor scope="standard-table" parentId={standardTableId} />`).
 
-### 4. Governança (§0 e §7)
+### 5. UI da organização
 
-- CHANGELOG: nova entrada datada cobrindo a correção da galeria (Iteração 13), o perfil enriquecido (Iteração 17) e o toggle de visibilidade.
-- Auditoria de propagação: landing (`/`), `/explore` (abas de organizações e registros), `/public/$slug/`, `/public/$slug/$tableId/$recordId`, endpoints `/api/public/organizations`, `/api/public/records`, `/api/public/campaigns/$recordId`, formulário público — todos revisados quanto ao filtro `is_public` e à assinatura de galeria.
-- Roles verificadas: super_admin (mantém acesso via `is_super_admin`), owner/editor/viewer (mantêm acesso via `is_org_member`), anônimo (não vê orgs ocultas), autenticado não-membro (idem).
-- Sem novos tokens, sem componente novo além do bloco de perfil (reutiliza `PublicCardBody`, `Card`, `Switch`).
-- Build + smoke em 360/768/1280, light+dark, antes de fechar.
+- `src/routes/_authenticated.app.$orgSlug.tables.$tableId.schema.tsx`: quando `is_locked === true` e usuário não é super admin, esconder botões "Novo campo / editar / excluir / renomear tabela / excluir tabela" e exibir aviso com ícone de cadeado (`Lock` do lucide) + texto "Estrutura definida pela categoria".
+- `src/routes/_authenticated.app.$orgSlug.index.tsx` e listagens de tabelas: exibir ícone de cadeado ao lado do nome quando `is_locked`.
+- Grid e formulário de registros continuam funcionando por role normal.  
 
-### Detalhes técnicos
 
-- Refactor de `signImagePathsInItems`: extrair `signSingle(f, it)` e `signGallery(f, it)`; loop chama ambos por campo sem `continue` cruzado.
-- `getPublicOrganization`: query única em `organizations` por slug (RLS via admin client, mas com filtro `is_public=true` explícito), junta layout + fields de categoria como já feito no batch, passa por `signImagePathsInItems` reaproveitando o array `[item]`.
-- Novo route file `src/routes/api/public/organizations.$slug.ts` (GET) — não confundir com o `organizations.ts` de listagem existente.
-- `EditOrgDialog` já usa `useQueryClient` e invalida `["org", slug]` / `["my-orgs"]` no save; nada a acrescentar além do campo.
-- Sem mudanças em `records`, `permissions`, chat, campanhas, reservas, /admin, categorias, blog.
+### 6. Funcionamento galeria registros
+
+- `Verificar e corrigir o que impede que usuários admins normais consigam publicar galerias de imagens para registros.` 
+
+### 7. CHANGELOG
+
+Adicionar Iteração 20 referenciando explicitamente Iterações 9 e 11 (mecanismo paralelo, não substitui).
+
+### Fora de escopo (confirmado no pedido)
+
+- Relações pré-definidas entre tabelas padrão.
+- Marcação padrão pública/interna.
+- Comportamento automático por tipo de tabela.
+- Reconciliação retroativa.
+
+### Pontos a confirmar antes de codar
+
+1. Nome exato da sub-aba no painel — proponho **"Tabelas Padrão"** dentro do editor de categoria (mesmo nível de "Campos padrão"). OK? A princípio sim, deixe para organizarmos depois a estrutura de menus. 
+2. Ícone de cadeado usando `Lock` do lucide-react com tooltip "Tabela padrão da categoria" — OK? Não precisa de ícone, apenas desabilite as funções de edição. 
