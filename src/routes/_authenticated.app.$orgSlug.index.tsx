@@ -391,7 +391,7 @@ function TableCard({
               </form>
             </DialogContent>
           </Dialog>
-          {isOwner ? (
+          {canDeleteStruct ? (
             <AlertDialog open={confirmDel} onOpenChange={setConfirmDel}>
               <AlertDialogContent>
                 <AlertDialogHeader>
