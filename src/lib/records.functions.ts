@@ -37,8 +37,10 @@ function zodForField(f: FieldRow): z.ZodTypeAny {
       base = z.union([z.string().url(), z.literal("")]).nullable();
       break;
     case "multiselect":
+    case "gallery":
       base = z.array(z.string()).nullable();
       break;
+
     case "relation":
       base = z.union([z.string().uuid(), z.array(z.string().uuid())]).nullable();
       break;
