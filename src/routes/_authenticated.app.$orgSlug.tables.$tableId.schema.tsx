@@ -45,8 +45,12 @@ function SchemaPage() {
   const org = useQuery({ queryKey: ["org", orgSlug], queryFn: () => fetchOrg({ data: { slug: orgSlug } }) });
   const table = useQuery({ queryKey: ["table", tableId], queryFn: () => fetchTable({ data: { id: tableId } }) });
   const fields = useQuery({ queryKey: ["fields", tableId], queryFn: () => fetchFields({ data: { table_id: tableId } }) });
+  const saGate = useQuery({ queryKey: ["is-super-admin"], queryFn: () => amISuperAdmin() });
 
-  const canEdit = org.data?.myRole === "owner" || org.data?.myRole === "editor";
+  const isSA = !!saGate.data?.is_super_admin;
+  const isLocked = !!(table.data as any)?.is_locked;
+  const canEdit = (org.data?.myRole === "owner" || org.data?.myRole === "editor") && (!isLocked || isSA);
+
 
   const [open, setOpen] = useState(false);
   const [fLabel, setFLabel] = useState("");
