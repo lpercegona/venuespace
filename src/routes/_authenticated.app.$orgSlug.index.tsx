@@ -344,7 +344,7 @@ function TableCard({
           </CardContent>
         </Card>
       </Link>
-      {canEdit ? (
+      {canStruct ? (
         <>
           <div className="absolute right-2 top-2 flex gap-1">
             <Button
@@ -352,7 +352,7 @@ function TableCard({
               aria-label={`Editar ${tableLabel}`}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); }}
             ><Pencil className="h-4 w-4" /></Button>
-            {isOwner ? (
+            {canDeleteStruct ? (
               <Button
                 type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
                 aria-label={`Excluir ${tableLabel}`}
@@ -360,6 +360,7 @@ function TableCard({
               ><Trash2 className="h-4 w-4" /></Button>
             ) : null}
           </div>
+
           <Dialog open={editing} onOpenChange={setEditing}>
             <DialogContent>
               <DialogHeader><DialogTitle className="font-display">Editar {tableLabel}</DialogTitle></DialogHeader>
