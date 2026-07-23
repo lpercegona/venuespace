@@ -1307,6 +1307,7 @@ function StandardTablesSection() {
         id: editingTable?.id, category_id: selectedCat,
         name: tName, slug: tSlugV || stSlug(tName),
         icon: tIcon || null, description: tDesc || null, order_index: tOrder,
+        is_public: tPub,
       } });
       toast.success(editingTable ? "Tabela atualizada" : "Tabela criada");
       setOpenTable(false);
