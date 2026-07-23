@@ -68,6 +68,7 @@ function OrgDashboard() {
   const [tName, setTName] = useState("");
   const [tDesc, setTDesc] = useState("");
   const [tBookable, setTBookable] = useState(false);
+  const [tIsPublic, setTIsPublic] = useState(false);
   const [tCatData, setTCatData] = useState<Record<string, any>>({});
   const [savingT, setSavingT] = useState(false);
 
