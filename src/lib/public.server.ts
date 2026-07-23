@@ -50,8 +50,6 @@ export async function listPublicTables(opts: { limit?: number; offset?: number; 
     .from("records")
     .select("table_id, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(id, slug, name, category_id, is_public))")
     .eq("status", "published")
-    .eq("table.is_public", true)
-    .eq("table.organization.is_public", true)
     .order("created_at", { ascending: false })
     .limit(1000);
   const { data, error } = await query;
