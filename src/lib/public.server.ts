@@ -101,11 +101,12 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
 
   const { data: table, error: tErr } = await sb
     .from("tables")
-    .select("id, slug, name, description, icon, bookable, organization_id")
+    .select("id, slug, name, description, icon, bookable, is_public, organization_id")
     .eq("id", tableId)
     .maybeSingle();
   if (tErr) throw new Error(tErr.message);
   if (!table || table.organization_id !== org.id) throw new Error("Tabela não encontrada");
+  if ((table as any).is_public === false) throw new Error("Tabela não pública");
 
   const { data: fields, error: fErr } = await sb
     .from("fields")
