@@ -59,6 +59,8 @@ export async function listPublicTables(opts: { limit?: number; offset?: number; 
   for (const r of (data ?? []) as any[]) {
     const t = r.table;
     if (!t?.organization) continue;
+    if (t.is_public === false) continue;
+    if (t.organization.is_public === false) continue;
     const key = t.id;
     const existing = map.get(key);
     if (existing) {
