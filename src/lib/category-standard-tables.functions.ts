@@ -15,6 +15,7 @@ export type CategoryStandardTable = {
   icon: string | null;
   description: string | null;
   order_index: number;
+  is_public: boolean;
 };
 
 export type CategoryStandardTableField = {
