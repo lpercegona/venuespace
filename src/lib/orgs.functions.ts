@@ -306,6 +306,7 @@ export const updateTable = createServerFn({ method: "POST" })
     if (rest.description !== undefined) patch.description = rest.description;
     if (rest.icon !== undefined) patch.icon = rest.icon;
     if (rest.bookable !== undefined) patch.bookable = rest.bookable;
+    if (rest.is_public !== undefined) patch.is_public = rest.is_public;
     if (rest.category_data !== undefined) patch.category_data = rest.category_data;
     const { error } = await context.supabase.from("tables").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
