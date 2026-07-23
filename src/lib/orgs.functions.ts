@@ -292,6 +292,7 @@ const tableUpdate = z.object({
   description: z.string().max(500).nullable().optional(),
   icon: z.string().max(40).nullable().optional(),
   bookable: z.boolean().optional(),
+  is_public: z.boolean().optional(),
   category_data: z.record(z.string(), z.any()).optional(),
 });
 
