@@ -165,6 +165,13 @@ function OrgDashboard() {
                     </div>
                     <Switch id="t-book" checked={tBookable} onCheckedChange={setTBookable} />
                   </div>
+                  <div className="flex items-center justify-between rounded-md border border-border p-3">
+                    <div>
+                      <Label htmlFor="t-pub" className="text-sm">{t("table", "Tabela")} pública</Label>
+                      <p className="text-xs text-muted-foreground">Se ativa, aparece nas listagens públicas.</p>
+                    </div>
+                    <Switch id="t-pub" checked={tIsPublic} onCheckedChange={setTIsPublic} />
+                  </div>
                   <CategoryFieldsForm
                     categoryId={(org.data as any).category_id ?? null}
                     scope="table"
