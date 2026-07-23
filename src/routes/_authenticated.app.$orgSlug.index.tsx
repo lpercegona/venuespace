@@ -320,6 +320,7 @@ function TableCard({
   const [name, setName] = useState(t.name);
   const [desc, setDesc] = useState(t.description ?? "");
   const [bookable, setBookable] = useState(!!t.bookable);
+  const [isPublic, setIsPublic] = useState(!!t.is_public);
   const [catData, setCatData] = useState<Record<string, any>>((t.category_data ?? {}) as Record<string, any>);
   const [saving, setSaving] = useState(false);
 
