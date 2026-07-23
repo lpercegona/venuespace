@@ -237,6 +237,7 @@ export const createTable = createServerFn({ method: "POST" })
         description: data.description ?? null,
         icon: data.icon ?? null,
         bookable: data.bookable ?? false,
+        is_public: data.is_public ?? false,
         category_data: (data.category_data ?? {}) as any,
       } as any)
       .select("id, slug, name")
