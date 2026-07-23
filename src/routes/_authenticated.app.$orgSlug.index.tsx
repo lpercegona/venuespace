@@ -348,6 +348,7 @@ function TableCard({
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="font-mono">/{t.slug}</Badge>
               {t.bookable ? <Badge>reservas</Badge> : null}
+              {t.is_public ? <Badge variant="outline">pública</Badge> : null}
               {isLocked ? <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" />padrão</Badge> : null}
             </div>
 
