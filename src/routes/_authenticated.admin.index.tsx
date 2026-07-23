@@ -1287,15 +1287,16 @@ function StandardTablesSection() {
   const [editingTable, setEditingTable] = useState<CategoryStandardTable | null>(null);
   const [tName, setTName] = useState(""); const [tSlugV, setTSlugV] = useState("");
   const [tIcon, setTIcon] = useState(""); const [tDesc, setTDesc] = useState(""); const [tOrder, setTOrder] = useState(0);
+  const [tPub, setTPub] = useState(false);
   const [tBusy, setTBusy] = useState(false);
 
   function openNewTable() {
     setEditingTable(null); setTName(""); setTSlugV(""); setTIcon(""); setTDesc("");
-    setTOrder((tables.data ?? []).length); setOpenTable(true);
+    setTOrder((tables.data ?? []).length); setTPub(false); setOpenTable(true);
   }
   function openEditTable(t: CategoryStandardTable) {
     setEditingTable(t); setTName(t.name); setTSlugV(t.slug); setTIcon(t.icon ?? "");
-    setTDesc(t.description ?? ""); setTOrder(t.order_index); setOpenTable(true);
+    setTDesc(t.description ?? ""); setTOrder(t.order_index); setTPub(!!t.is_public); setOpenTable(true);
   }
   async function saveTable(e: React.FormEvent) {
     e.preventDefault();
