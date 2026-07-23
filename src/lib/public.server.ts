@@ -615,10 +615,11 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
 
   const { data: table } = await sb
     .from("tables")
-    .select("id, slug, name, description, icon, bookable, organization_id")
+    .select("id, slug, name, description, icon, bookable, is_public, organization_id")
     .eq("id", tableId)
     .maybeSingle();
   if (!table || table.organization_id !== org.id) throw new Error("Tabela não encontrada");
+  if ((table as any).is_public === false) throw new Error("Tabela não pública");
 
   const { data: record } = await sb
     .from("records")
