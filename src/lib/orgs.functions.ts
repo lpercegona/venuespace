@@ -203,6 +203,7 @@ const tableCreate = z.object({
   description: z.string().max(500).optional(),
   icon: z.string().max(40).optional(),
   bookable: z.boolean().optional(),
+  is_public: z.boolean().optional(),
   category_data: z.record(z.string(), z.any()).optional(),
 });
 
@@ -213,7 +214,7 @@ export const listTables = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("tables")
-      .select("id, slug, name, description, icon, bookable, category_data, updated_at, is_locked, origin_standard_table_id")
+      .select("id, slug, name, description, icon, bookable, is_public, category_data, updated_at, is_locked, origin_standard_table_id")
       .eq("organization_id", data.organization_id)
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -236,6 +237,7 @@ export const createTable = createServerFn({ method: "POST" })
         description: data.description ?? null,
         icon: data.icon ?? null,
         bookable: data.bookable ?? false,
+        is_public: data.is_public ?? false,
         category_data: (data.category_data ?? {}) as any,
       } as any)
       .select("id, slug, name")
@@ -290,6 +292,7 @@ const tableUpdate = z.object({
   description: z.string().max(500).nullable().optional(),
   icon: z.string().max(40).nullable().optional(),
   bookable: z.boolean().optional(),
+  is_public: z.boolean().optional(),
   category_data: z.record(z.string(), z.any()).optional(),
 });
 
@@ -303,6 +306,7 @@ export const updateTable = createServerFn({ method: "POST" })
     if (rest.description !== undefined) patch.description = rest.description;
     if (rest.icon !== undefined) patch.icon = rest.icon;
     if (rest.bookable !== undefined) patch.bookable = rest.bookable;
+    if (rest.is_public !== undefined) patch.is_public = rest.is_public;
     if (rest.category_data !== undefined) patch.category_data = rest.category_data;
     const { error } = await context.supabase.from("tables").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
@@ -315,7 +319,7 @@ export const getTable = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("tables")
-      .select("id, slug, name, description, icon, bookable, category_data, organization_id, is_locked, origin_standard_table_id")
+      .select("id, slug, name, description, icon, bookable, is_public, category_data, organization_id, is_locked, origin_standard_table_id")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);

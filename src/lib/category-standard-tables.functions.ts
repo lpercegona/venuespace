@@ -15,6 +15,7 @@ export type CategoryStandardTable = {
   icon: string | null;
   description: string | null;
   order_index: number;
+  is_public: boolean;
 };
 
 export type CategoryStandardTableField = {
@@ -42,7 +43,7 @@ export const listCategoryStandardTables = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("category_standard_tables")
-      .select("id, category_id, name, slug, icon, description, order_index")
+      .select("id, category_id, name, slug, icon, description, order_index, is_public")
       .eq("category_id", data.category_id)
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
@@ -57,6 +58,7 @@ const upsertTable = z.object({
   icon: z.string().max(40).nullable().optional(),
   description: z.string().max(500).nullable().optional(),
   order_index: z.number().int().min(0),
+  is_public: z.boolean().optional(),
 });
 
 export const upsertCategoryStandardTable = createServerFn({ method: "POST" })
@@ -74,6 +76,7 @@ export const upsertCategoryStandardTable = createServerFn({ method: "POST" })
       icon: data.icon ?? null,
       description: data.description ?? null,
       order_index: data.order_index,
+      is_public: data.is_public ?? false,
     };
     if (data.id) {
       const { error } = await (supabaseAdmin as any)

@@ -48,7 +48,7 @@ export async function listPublicTables(opts: { limit?: number; offset?: number; 
   // Fetch published records with joined table + org; aggregate in code.
   const query = sb
     .from("records")
-    .select("table_id, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(id, slug, name, category_id))")
+    .select("table_id, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(id, slug, name, category_id, is_public))")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(1000);
@@ -59,6 +59,8 @@ export async function listPublicTables(opts: { limit?: number; offset?: number; 
   for (const r of (data ?? []) as any[]) {
     const t = r.table;
     if (!t?.organization) continue;
+    if (t.is_public === false) continue;
+    if (t.organization.is_public === false) continue;
     const key = t.id;
     const existing = map.get(key);
     if (existing) {
@@ -99,11 +101,12 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
 
   const { data: table, error: tErr } = await sb
     .from("tables")
-    .select("id, slug, name, description, icon, bookable, organization_id")
+    .select("id, slug, name, description, icon, bookable, is_public, organization_id")
     .eq("id", tableId)
     .maybeSingle();
   if (tErr) throw new Error(tErr.message);
   if (!table || table.organization_id !== org.id) throw new Error("Tabela não encontrada");
+  if ((table as any).is_public === false) throw new Error("Tabela não pública");
 
   const { data: fields, error: fErr } = await sb
     .from("fields")
@@ -436,13 +439,13 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   const filters = opts.filters ?? {};
 
   const { data, error } = await sb.from("records")
-    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(slug, name, category_id, is_public))")
+    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(slug, name, category_id, is_public))")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(2000);
   if (error) throw new Error(error.message);
   let base = ((data ?? []) as any[])
-    .filter((r) => r.table?.organization?.is_public !== false)
+    .filter((r) => r.table?.organization?.is_public !== false && r.table?.is_public !== false)
     .map((r) => ({
       record_id: r.id,
       data: r.data ?? {},
@@ -612,10 +615,11 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
 
   const { data: table } = await sb
     .from("tables")
-    .select("id, slug, name, description, icon, bookable, organization_id")
+    .select("id, slug, name, description, icon, bookable, is_public, organization_id")
     .eq("id", tableId)
     .maybeSingle();
   if (!table || table.organization_id !== org.id) throw new Error("Tabela não encontrada");
+  if ((table as any).is_public === false) throw new Error("Tabela não pública");
 
   const { data: record } = await sb
     .from("records")

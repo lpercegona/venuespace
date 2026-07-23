@@ -1287,15 +1287,16 @@ function StandardTablesSection() {
   const [editingTable, setEditingTable] = useState<CategoryStandardTable | null>(null);
   const [tName, setTName] = useState(""); const [tSlugV, setTSlugV] = useState("");
   const [tIcon, setTIcon] = useState(""); const [tDesc, setTDesc] = useState(""); const [tOrder, setTOrder] = useState(0);
+  const [tPub, setTPub] = useState(false);
   const [tBusy, setTBusy] = useState(false);
 
   function openNewTable() {
     setEditingTable(null); setTName(""); setTSlugV(""); setTIcon(""); setTDesc("");
-    setTOrder((tables.data ?? []).length); setOpenTable(true);
+    setTOrder((tables.data ?? []).length); setTPub(false); setOpenTable(true);
   }
   function openEditTable(t: CategoryStandardTable) {
     setEditingTable(t); setTName(t.name); setTSlugV(t.slug); setTIcon(t.icon ?? "");
-    setTDesc(t.description ?? ""); setTOrder(t.order_index); setOpenTable(true);
+    setTDesc(t.description ?? ""); setTOrder(t.order_index); setTPub(!!t.is_public); setOpenTable(true);
   }
   async function saveTable(e: React.FormEvent) {
     e.preventDefault();
@@ -1306,6 +1307,7 @@ function StandardTablesSection() {
         id: editingTable?.id, category_id: selectedCat,
         name: tName, slug: tSlugV || stSlug(tName),
         icon: tIcon || null, description: tDesc || null, order_index: tOrder,
+        is_public: tPub,
       } });
       toast.success(editingTable ? "Tabela atualizada" : "Tabela criada");
       setOpenTable(false);
@@ -1367,6 +1369,13 @@ function StandardTablesSection() {
                       <div className="space-y-2"><Label>Ordem</Label><Input type="number" min={0} value={tOrder} onChange={(e) => setTOrder(Number(e.target.value))} /></div>
                     </div>
                     <div className="space-y-2"><Label>Descrição</Label><Textarea rows={3} value={tDesc} onChange={(e) => setTDesc(e.target.value)} /></div>
+                    <div className="flex items-center justify-between rounded-md border border-border p-3">
+                      <div>
+                        <Label className="text-sm">Pública por padrão</Label>
+                        <p className="text-xs text-muted-foreground">Novas organizações desta categoria criam esta tabela já pública.</p>
+                      </div>
+                      <Switch checked={tPub} onCheckedChange={setTPub} />
+                    </div>
                     <DialogFooter>
                       <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>Cancelar</Button>
                       <Button type="submit" disabled={tBusy}>{tBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : (editingTable ? "Salvar" : "Criar")}</Button>

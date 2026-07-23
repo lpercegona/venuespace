@@ -551,3 +551,10 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
   - `/app/$orgSlug` — dashboard da organização (tabelas + membros).
   - `/app/$orgSlug/tables/$tableId/schema` — schema builder de campos.
 - **Meta tags globais** atualizadas para "Venuespace".
+
+## Iteração 21 — Visibilidade pública de tabelas
+- Migração: colunas `is_public` em `tables` e `category_standard_tables` (padrão `false`); RPC `create_organization` propaga o valor definido nas tabelas-modelo ao instanciar novas organizações.
+- Backend: `orgs.functions.ts` (create/update/get/list `tables`) e `category-standard-tables.functions.ts` aceitam `is_public`.
+- Filtros públicos: `listPublicTables`, `loadPublicTable`, `listPublicRecords` e `loadPublicRecord` em `src/lib/public.server.ts` passam a exigir `tables.is_public = true`.
+- UI organização: diálogos "Nova tabela" e "Editar tabela" ganharam toggle "Tabela pública". Badge "pública" aparece no card. Em tabelas travadas (padrão), toggle de visibilidade fica editável mesmo com estrutura bloqueada.
+- UI super admin: diálogo de tabela-modelo ganhou toggle "Pública por padrão".

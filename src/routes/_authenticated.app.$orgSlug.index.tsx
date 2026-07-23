@@ -68,6 +68,7 @@ function OrgDashboard() {
   const [tName, setTName] = useState("");
   const [tDesc, setTDesc] = useState("");
   const [tBookable, setTBookable] = useState(false);
+  const [tIsPublic, setTIsPublic] = useState(false);
   const [tCatData, setTCatData] = useState<Record<string, any>>({});
   const [savingT, setSavingT] = useState(false);
 
@@ -82,12 +83,13 @@ function OrgDashboard() {
           name: tName,
           description: tDesc || undefined,
           bookable: tBookable,
+          is_public: tIsPublic,
           category_data: tCatData,
         },
       });
       toast.success(`${t("table", "Tabela")} criada`);
       setOpenTable(false);
-      setTName(""); setTDesc(""); setTBookable(false); setTCatData({});
+      setTName(""); setTDesc(""); setTBookable(false); setTIsPublic(false); setTCatData({});
       await tables.refetch();
       navigate({ to: "/app/$orgSlug/tables/$tableId/schema", params: { orgSlug, tableId: row.id } });
     } catch (err) {
@@ -162,6 +164,13 @@ function OrgDashboard() {
                       <p className="text-xs text-muted-foreground">Ative para recursos com data de início e fim.</p>
                     </div>
                     <Switch id="t-book" checked={tBookable} onCheckedChange={setTBookable} />
+                  </div>
+                  <div className="flex items-center justify-between rounded-md border border-border p-3">
+                    <div>
+                      <Label htmlFor="t-pub" className="text-sm">{t("table", "Tabela")} pública</Label>
+                      <p className="text-xs text-muted-foreground">Se ativa, aparece nas listagens públicas.</p>
+                    </div>
+                    <Switch id="t-pub" checked={tIsPublic} onCheckedChange={setTIsPublic} />
                   </div>
                   <CategoryFieldsForm
                     categoryId={(org.data as any).category_id ?? null}
@@ -311,6 +320,7 @@ function TableCard({
   const [name, setName] = useState(t.name);
   const [desc, setDesc] = useState(t.description ?? "");
   const [bookable, setBookable] = useState(!!t.bookable);
+  const [isPublic, setIsPublic] = useState(!!t.is_public);
   const [catData, setCatData] = useState<Record<string, any>>((t.category_data ?? {}) as Record<string, any>);
   const [saving, setSaving] = useState(false);
 
@@ -318,7 +328,7 @@ function TableCard({
     e.preventDefault();
     setSaving(true);
     try {
-      await updateTable({ data: { id: t.id, name, description: desc || null, bookable, category_data: catData } });
+      await updateTable({ data: { id: t.id, name, description: desc || null, bookable, is_public: isPublic, category_data: catData } });
       toast.success(`${label("table", "Tabela")} atualizada`);
       setEditing(false);
       onSaved();
@@ -338,13 +348,14 @@ function TableCard({
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="font-mono">/{t.slug}</Badge>
               {t.bookable ? <Badge>reservas</Badge> : null}
+              {t.is_public ? <Badge variant="outline">pública</Badge> : null}
               {isLocked ? <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" />padrão</Badge> : null}
             </div>
 
           </CardContent>
         </Card>
       </Link>
-      {canStruct ? (
+      {canEdit ? (
         <>
           <div className="absolute right-2 top-2 flex gap-1">
             <Button
@@ -367,15 +378,22 @@ function TableCard({
               <form onSubmit={handleSave} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor={`e-n-${t.id}`}>Nome</Label>
-                  <Input id={`e-n-${t.id}`} required value={name} onChange={(e) => setName(e.target.value)} />
+                  <Input id={`e-n-${t.id}`} required value={name} onChange={(e) => setName(e.target.value)} disabled={!canStruct} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={`e-d-${t.id}`}>Descrição</Label>
-                  <Textarea id={`e-d-${t.id}`} rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} />
+                  <Textarea id={`e-d-${t.id}`} rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} disabled={!canStruct} />
                 </div>
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <Label htmlFor={`e-b-${t.id}`} className="text-sm">{label("table", "Tabela")} com reservas</Label>
-                  <Switch id={`e-b-${t.id}`} checked={bookable} onCheckedChange={setBookable} />
+                  <Switch id={`e-b-${t.id}`} checked={bookable} onCheckedChange={setBookable} disabled={!canStruct} />
+                </div>
+                <div className="flex items-center justify-between rounded-md border border-border p-3">
+                  <div>
+                    <Label htmlFor={`e-p-${t.id}`} className="text-sm">{label("table", "Tabela")} pública</Label>
+                    <p className="text-xs text-muted-foreground">Se ativa, aparece nas listagens públicas.</p>
+                  </div>
+                  <Switch id={`e-p-${t.id}`} checked={isPublic} onCheckedChange={setIsPublic} />
                 </div>
                 <CategoryFieldsForm
                   categoryId={orgCategoryId}
@@ -384,6 +402,7 @@ function TableCard({
                   onChange={setCatData}
                   title="Campos da categoria"
                 />
+
                 <DialogFooter>
                   <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
                   <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}</Button>
