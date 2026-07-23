@@ -83,12 +83,13 @@ function OrgDashboard() {
           name: tName,
           description: tDesc || undefined,
           bookable: tBookable,
+          is_public: tIsPublic,
           category_data: tCatData,
         },
       });
       toast.success(`${t("table", "Tabela")} criada`);
       setOpenTable(false);
-      setTName(""); setTDesc(""); setTBookable(false); setTCatData({});
+      setTName(""); setTDesc(""); setTBookable(false); setTIsPublic(false); setTCatData({});
       await tables.refetch();
       navigate({ to: "/app/$orgSlug/tables/$tableId/schema", params: { orgSlug, tableId: row.id } });
     } catch (err) {
