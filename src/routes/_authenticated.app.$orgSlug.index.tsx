@@ -328,7 +328,7 @@ function TableCard({
     e.preventDefault();
     setSaving(true);
     try {
-      await updateTable({ data: { id: t.id, name, description: desc || null, bookable, category_data: catData } });
+      await updateTable({ data: { id: t.id, name, description: desc || null, bookable, is_public: isPublic, category_data: catData } });
       toast.success(`${label("table", "Tabela")} atualizada`);
       setEditing(false);
       onSaved();
