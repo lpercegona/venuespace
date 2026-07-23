@@ -319,7 +319,7 @@ export const getTable = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("tables")
-      .select("id, slug, name, description, icon, bookable, category_data, organization_id, is_locked, origin_standard_table_id")
+      .select("id, slug, name, description, icon, bookable, is_public, category_data, organization_id, is_locked, origin_standard_table_id")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
