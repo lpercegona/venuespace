@@ -203,6 +203,7 @@ const tableCreate = z.object({
   description: z.string().max(500).optional(),
   icon: z.string().max(40).optional(),
   bookable: z.boolean().optional(),
+  is_public: z.boolean().optional(),
   category_data: z.record(z.string(), z.any()).optional(),
 });
 
