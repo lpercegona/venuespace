@@ -439,13 +439,13 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   const filters = opts.filters ?? {};
 
   const { data, error } = await sb.from("records")
-    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, organization:organizations!inner(slug, name, category_id, is_public))")
+    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(slug, name, category_id, is_public))")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(2000);
   if (error) throw new Error(error.message);
   let base = ((data ?? []) as any[])
-    .filter((r) => r.table?.organization?.is_public !== false)
+    .filter((r) => r.table?.organization?.is_public !== false && r.table?.is_public !== false)
     .map((r) => ({
       record_id: r.id,
       data: r.data ?? {},
