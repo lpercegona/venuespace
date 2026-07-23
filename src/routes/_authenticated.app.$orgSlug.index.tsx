@@ -378,15 +378,22 @@ function TableCard({
               <form onSubmit={handleSave} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor={`e-n-${t.id}`}>Nome</Label>
-                  <Input id={`e-n-${t.id}`} required value={name} onChange={(e) => setName(e.target.value)} />
+                  <Input id={`e-n-${t.id}`} required value={name} onChange={(e) => setName(e.target.value)} disabled={!canStruct} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={`e-d-${t.id}`}>Descrição</Label>
-                  <Textarea id={`e-d-${t.id}`} rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} />
+                  <Textarea id={`e-d-${t.id}`} rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} disabled={!canStruct} />
                 </div>
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <Label htmlFor={`e-b-${t.id}`} className="text-sm">{label("table", "Tabela")} com reservas</Label>
-                  <Switch id={`e-b-${t.id}`} checked={bookable} onCheckedChange={setBookable} />
+                  <Switch id={`e-b-${t.id}`} checked={bookable} onCheckedChange={setBookable} disabled={!canStruct} />
+                </div>
+                <div className="flex items-center justify-between rounded-md border border-border p-3">
+                  <div>
+                    <Label htmlFor={`e-p-${t.id}`} className="text-sm">{label("table", "Tabela")} pública</Label>
+                    <p className="text-xs text-muted-foreground">Se ativa, aparece nas listagens públicas.</p>
+                  </div>
+                  <Switch id={`e-p-${t.id}`} checked={isPublic} onCheckedChange={setIsPublic} />
                 </div>
                 <CategoryFieldsForm
                   categoryId={orgCategoryId}
@@ -395,6 +402,7 @@ function TableCard({
                   onChange={setCatData}
                   title="Campos da categoria"
                 />
+
                 <DialogFooter>
                   <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
                   <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}</Button>
