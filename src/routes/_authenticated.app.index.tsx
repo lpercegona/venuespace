@@ -102,7 +102,7 @@ function OrgsPage() {
               Nova {organizationLabel}
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-display">Nova {organizationLabel}</DialogTitle>
             </DialogHeader>
