@@ -1369,6 +1369,13 @@ function StandardTablesSection() {
                       <div className="space-y-2"><Label>Ordem</Label><Input type="number" min={0} value={tOrder} onChange={(e) => setTOrder(Number(e.target.value))} /></div>
                     </div>
                     <div className="space-y-2"><Label>Descrição</Label><Textarea rows={3} value={tDesc} onChange={(e) => setTDesc(e.target.value)} /></div>
+                    <div className="flex items-center justify-between rounded-md border border-border p-3">
+                      <div>
+                        <Label className="text-sm">Pública por padrão</Label>
+                        <p className="text-xs text-muted-foreground">Novas organizações desta categoria criam esta tabela já pública.</p>
+                      </div>
+                      <Switch checked={tPub} onCheckedChange={setTPub} />
+                    </div>
                     <DialogFooter>
                       <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>Cancelar</Button>
                       <Button type="submit" disabled={tBusy}>{tBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : (editingTable ? "Salvar" : "Criar")}</Button>
