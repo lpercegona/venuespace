@@ -82,7 +82,7 @@ function Landing() {
               </Link>
             </div>
             {orgs.isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <PublicCardSkeletonGrid count={4} withLogo />
             ) : (orgs.data?.items ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum espaço publicado ainda.</p>
             ) : (
@@ -97,9 +97,7 @@ function Landing() {
                     <Card className="h-full transition-shadow hover:shadow-elegant">
                       <CardHeader className="pb-2">
                         <div className="flex items-center gap-3">
-                          {o.logo_url ? (
-                            <img src={o.logo_url} alt={`Logo ${o.name}`} loading="lazy" className="h-10 w-10 shrink-0 rounded-md border border-border object-cover" />
-                          ) : null}
+                          <OrgLogo src={o.logo_url} alt={`Logo ${o.name}`} className="h-10 w-10" />
                           <CardTitle className="font-display text-base line-clamp-2">{o.name}</CardTitle>
                         </div>
                       </CardHeader>
@@ -127,7 +125,7 @@ function Landing() {
               </Link>
             </div>
             {recs.isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <PublicCardSkeletonGrid count={4} />
             ) : (recs.data?.items ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum ambiente publicado ainda.</p>
             ) : (
