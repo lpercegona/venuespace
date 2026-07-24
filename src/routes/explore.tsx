@@ -9,10 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Search, Building2, FileText, X } from "lucide-react";
+import { Search, Building2, FileText, X } from "lucide-react";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
+import { OrgLogo } from "@/components/venue/org-logo";
+import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 
 import { useLabels } from "@/hooks/use-instance-context";
 
@@ -216,9 +218,7 @@ function ExplorePage() {
 
           <TabsContent value="orgs" className="mt-6">
             {orgsQ.isLoading ? (
-              <div className="flex justify-center py-16">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
+              <PublicCardSkeletonGrid count={6} withLogo className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
             ) : (orgsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
             ) : (
@@ -233,9 +233,7 @@ function ExplorePage() {
                     <Card className="h-full transition-shadow hover:shadow-elegant">
                       <CardHeader className="pb-2">
                         <div className="flex items-center gap-3">
-                          {(o as any).logo_url ? (
-                            <img src={(o as any).logo_url} alt={`Logo ${o.name}`} loading="lazy" className="h-10 w-10 shrink-0 rounded-md border border-border object-cover" />
-                          ) : null}
+                          <OrgLogo src={(o as any).logo_url} alt={`Logo ${o.name}`} className="h-10 w-10" />
                           <CardTitle className="font-display text-lg line-clamp-2">{o.name}</CardTitle>
                         </div>
                       </CardHeader>
@@ -255,9 +253,7 @@ function ExplorePage() {
 
           <TabsContent value="records" className="mt-6">
             {recsQ.isLoading ? (
-              <div className="flex justify-center py-16">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
+              <PublicCardSkeletonGrid count={6} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
             ) : (recsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
             ) : (

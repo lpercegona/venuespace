@@ -2,10 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Database, MessageSquare, Sparkles, Loader2, Building2, FileText } from "lucide-react";
+import { ArrowRight, Database, MessageSquare, Sparkles, Building2, FileText } from "lucide-react";
 import { useLabels } from "@/hooks/use-instance-context";
 import { PublicHeader } from "@/components/venue/public-header";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
+import { OrgLogo } from "@/components/venue/org-logo";
+import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 
 export const Route = createFileRoute("/")({
@@ -80,7 +82,7 @@ function Landing() {
               </Link>
             </div>
             {orgs.isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <PublicCardSkeletonGrid count={4} withLogo />
             ) : (orgs.data?.items ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum espaço publicado ainda.</p>
             ) : (
@@ -95,9 +97,7 @@ function Landing() {
                     <Card className="h-full transition-shadow hover:shadow-elegant">
                       <CardHeader className="pb-2">
                         <div className="flex items-center gap-3">
-                          {o.logo_url ? (
-                            <img src={o.logo_url} alt={`Logo ${o.name}`} loading="lazy" className="h-10 w-10 shrink-0 rounded-md border border-border object-cover" />
-                          ) : null}
+                          <OrgLogo src={o.logo_url} alt={`Logo ${o.name}`} className="h-10 w-10" />
                           <CardTitle className="font-display text-base line-clamp-2">{o.name}</CardTitle>
                         </div>
                       </CardHeader>
@@ -125,7 +125,7 @@ function Landing() {
               </Link>
             </div>
             {recs.isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <PublicCardSkeletonGrid count={4} />
             ) : (recs.data?.items ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum ambiente publicado ainda.</p>
             ) : (

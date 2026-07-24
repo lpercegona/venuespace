@@ -1,10 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
+import { OrgLogo } from "@/components/venue/org-logo";
+import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { EmptyState } from "@/components/venue/empty-state";
+
 
 type PublicLayoutField = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
 type PublicRendererField = { key: string; label: string; type: string };
@@ -96,7 +100,27 @@ function PublicOrgPage() {
   const recordsQ = useQuery({ queryKey: ["public-org-records", slug], queryFn: () => fetchRecords(slug) });
 
   if (orgQ.isLoading) {
-    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="min-h-screen bg-background">
+        <PublicHeader />
+        <header className="border-b border-border/60 bg-surface">
+          <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <Skeleton className="h-20 w-20 shrink-0 rounded-lg" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-8 w-2/3" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6">
+          <PublicCardSkeletonGrid count={6} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+        </main>
+      </div>
+    );
   }
   if (orgQ.error || !orgQ.data) {
     return (
@@ -125,9 +149,7 @@ function PublicOrgPage() {
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <BackLink to="/" label="Início" />
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
-            {logoUrl ? (
-              <img src={logoUrl} alt={`Logo ${org.name}`} loading="lazy" className="h-20 w-20 shrink-0 rounded-lg border border-border object-cover" />
-            ) : null}
+            <OrgLogo src={logoUrl} alt={`Logo ${org.name}`} className="h-20 w-20 rounded-lg" iconClassName="h-10 w-10" />
             <div className="min-w-0 flex-1">
               {org.category_name ? (
                 <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{org.category_name}</p>
