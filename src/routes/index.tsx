@@ -2,10 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Database, MessageSquare, Sparkles, Loader2, Building2, FileText } from "lucide-react";
+import { ArrowRight, Database, MessageSquare, Sparkles, Building2, FileText } from "lucide-react";
 import { useLabels } from "@/hooks/use-instance-context";
 import { PublicHeader } from "@/components/venue/public-header";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
+import { OrgLogo } from "@/components/venue/org-logo";
+import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 
 export const Route = createFileRoute("/")({
