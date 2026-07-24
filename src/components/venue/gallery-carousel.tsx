@@ -1,4 +1,5 @@
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { LazyImage } from "@/components/venue/lazy-image";
 
 type Props = {
   urls: string[];
@@ -11,12 +12,11 @@ export function GalleryCarousel({ urls, alt, aspectClassName = "aspect-video", c
   if (!urls || urls.length === 0) return null;
   if (urls.length === 1) {
     return (
-      <img
+      <LazyImage
         src={urls[0]}
         alt={alt}
-        loading="lazy"
-        decoding="async"
-        className={`${aspectClassName} w-full rounded-md object-cover ${className ?? ""}`.trim()}
+        containerClassName={`${aspectClassName} w-full rounded-md ${className ?? ""}`.trim()}
+        className="h-full w-full object-cover"
       />
     );
   }
@@ -25,12 +25,11 @@ export function GalleryCarousel({ urls, alt, aspectClassName = "aspect-video", c
       <CarouselContent>
         {urls.map((u, i) => (
           <CarouselItem key={i}>
-            <img
+            <LazyImage
               src={u}
               alt={`${alt} ${i + 1}`}
-              loading="lazy"
-              decoding="async"
-              className={`${aspectClassName} w-full rounded-md object-cover`}
+              containerClassName={`${aspectClassName} w-full rounded-md`}
+              className="h-full w-full object-cover"
             />
           </CarouselItem>
         ))}

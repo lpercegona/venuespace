@@ -1,6 +1,8 @@
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { GalleryCarousel } from "@/components/venue/gallery-carousel";
+import { LazyImage } from "@/components/venue/lazy-image";
+
 
 export type LayoutItem = {
   id: string;
@@ -176,12 +178,11 @@ export function PublicCardBody({
             if (c.kind === "single-image") {
               return (
                 <div key={c.id} className={`${c.span} min-w-0`}>
-                  <img
+                  <LazyImage
                     src={c.urls![0]}
                     alt={c.label}
-                    loading="lazy"
-                    decoding="async"
-                    className={`${c.imgAspect} w-full rounded-md object-cover`}
+                    containerClassName={`${c.imgAspect} w-full rounded-md`}
+                    className="h-full w-full object-cover"
                   />
                 </div>
               );
