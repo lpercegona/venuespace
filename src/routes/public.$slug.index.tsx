@@ -100,7 +100,27 @@ function PublicOrgPage() {
   const recordsQ = useQuery({ queryKey: ["public-org-records", slug], queryFn: () => fetchRecords(slug) });
 
   if (orgQ.isLoading) {
-    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="min-h-screen bg-background">
+        <PublicHeader />
+        <header className="border-b border-border/60 bg-surface">
+          <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <Skeleton className="h-20 w-20 shrink-0 rounded-lg" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-8 w-2/3" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6">
+          <PublicCardSkeletonGrid count={6} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+        </main>
+      </div>
+    );
   }
   if (orgQ.error || !orgQ.data) {
     return (
