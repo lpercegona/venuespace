@@ -149,9 +149,7 @@ function PublicOrgPage() {
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <BackLink to="/" label="Início" />
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
-            {logoUrl ? (
-              <img src={logoUrl} alt={`Logo ${org.name}`} loading="lazy" className="h-20 w-20 shrink-0 rounded-lg border border-border object-cover" />
-            ) : null}
+            <OrgLogo src={logoUrl} alt={`Logo ${org.name}`} className="h-20 w-20 rounded-lg" iconClassName="h-10 w-10" />
             <div className="min-w-0 flex-1">
               {org.category_name ? (
                 <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{org.category_name}</p>
