@@ -109,6 +109,17 @@ export const setProposalStatus = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    // Prevent self-acceptance: acceptor must differ from original sender.
+    const { data: msg, error: mErr } = await context.supabase
+      .from("messages")
+      .select("sender_user_id, type")
+      .eq("id", data.message_id)
+      .maybeSingle();
+    if (mErr) throw new Error(mErr.message);
+    if (!msg || msg.type !== "proposal") throw new Error("Proposta não encontrada");
+    if (msg.sender_user_id && msg.sender_user_id === context.userId) {
+      throw new Error("Você não pode aceitar ou recusar a sua própria proposta.");
+    }
     const { error } = await context.supabase
       .from("messages")
       .update({ proposal_status: data.status })
