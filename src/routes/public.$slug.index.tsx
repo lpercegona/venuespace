@@ -174,8 +174,10 @@ function PublicOrgPage() {
           <section className="space-y-4">
             <h2 className="font-display text-lg font-semibold">Informações</h2>
             {layout.length > 0 ? (
-              <div className="rounded-xl border border-border bg-card p-4">
-                <PublicCardBody layout={layout as any} fields={org.fields as any} data={org.data} />
+              <div className="overflow-hidden rounded-xl border border-border bg-card">
+                <div className="p-6">
+                  <PublicCardBody layout={layout as any} fields={org.fields as any} data={org.data} orgName={org.name} />
+                </div>
               </div>
             ) : null}
             <OrgDetailsFallback fields={org.fields} data={org.data} layoutKeys={layoutKeys} />

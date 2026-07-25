@@ -108,7 +108,7 @@ const orgUpdate = z.object({
   id: z.string().uuid(),
   name: z.string().min(2).max(80).optional(),
   description: z.string().max(500).nullable().optional(),
-  logo_url: z.string().url().max(2000).nullable().optional(),
+  logo_url: z.string().max(500).nullable().optional(),
   category_id: z.string().uuid().optional(),
   timezone: z.string().max(64).nullable().optional(),
   currency: z.string().max(8).nullable().optional(),

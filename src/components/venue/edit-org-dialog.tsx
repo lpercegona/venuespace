@@ -17,6 +17,7 @@ import { useSystemFields } from "@/hooks/use-system-fields";
 import { useLabels } from "@/hooks/use-instance-context";
 import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
 import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
+import { UploadField } from "@/components/venue/dynamic-form";
 
 type Props = {
   open: boolean;
@@ -126,8 +127,9 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
             <Textarea id="o-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="o-logo">Logo (URL)</Label>
-            <Input id="o-logo" type="url" placeholder="https://…" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
+            <Label htmlFor="o-logo">Logo</Label>
+            <UploadField value={logoUrl} kind="image" onChange={setLogoUrl} />
+            <p className="text-xs text-muted-foreground">Envie um arquivo de imagem para exibir como logo pública.</p>
           </div>
           <div className="flex items-center justify-between rounded-md border border-border p-3">
             <div>

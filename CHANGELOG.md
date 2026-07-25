@@ -1,4 +1,19 @@
-## 2026-07-22 — Iteração 20 — Tabelas Padrão por Categoria + correção de gallery em records
+## 2026-07-25 — Iteração 22 — Layout público de organização: nome/logo controlados pelo super admin, imagens com bleed e upload de logo
+
+- **Renderer (`src/components/venue/public-card-renderer.tsx`)**: `PublicCardBody` passa a tratar dois `field_key` especiais quando adicionados ao layout — `name` renderiza como `<h3>` (font-display, semibold, `line-clamp-2`) sem label/ícone; `logo_url` renderiza via `OrgLogo`, com fallback de ícone genérico quando a organização não tem logo. Nova prop opcional `orgName` alimenta o `alt` do logo (default: `data.name`).
+- **Opção "sem margens"** (`config.bleed: true`): itens de layout de largura 100% do tipo imagem/galeria/logo podem ignorar o padding lateral e as margens de topo/base do card. O renderer aplica `-mx-6 -mt-6 -mb-6` conforme a célula seja primeira, última ou intermediária; para larguras < 100% a flag é ignorada por design.
+- **Editor do super admin** (`src/routes/_authenticated.admin.index.tsx`, `LayoutEditor`): nova coluna "Sem margens" na tabela do layout, disponível apenas quando o campo é de mídia (`logo_url` ou nomes tipo `image/gallery/foto/logo/...`) **e** ocupa 100% de largura; persistido em `config.bleed`. O schema Zod em `saveCategoryLayout` (`src/lib/category-layouts.functions.ts`) já aceita `config: z.record(...)`, sem migração.
+- **Cards públicos** (`src/routes/index.tsx`, `src/routes/explore.tsx`, `src/routes/public.$slug.index.tsx`): removidos os `CardHeader` fixos com logo + título hardcoded — quando a categoria tem layout definido, o card inteiro é renderizado por `PublicCardBody` (respeitando a ordem escolhida pelo super admin). Sem layout definido, mantém-se o fallback anterior (logo + nome + descrição). Wrapper `overflow-hidden` + `<div className="p-6">` interno para permitir bleed sem quebrar o `rounded-xl` do `Card`.
+- **Logo por upload** (`src/components/venue/edit-org-dialog.tsx`): campo "Logo (URL)" substituído por `UploadField` (padrão já usado em `src/components/venue/dynamic-form.tsx`) — armazena o path no bucket `venue-uploads` e passa o path direto para `organizations.logo_url`. Zod de `updateOrganization` (`src/lib/orgs.functions.ts`) relaxado de `.url()` para `.max(500)` para aceitar path de storage. `OrgLogo` (`src/components/venue/org-logo.tsx`) resolve path em URL assinada no cliente via `supabase.storage.createSignedUrl` quando o valor não é http; para as listagens públicas o `signImagePathsInItems` de `src/lib/public.server.ts` continua assinando `data.logo_url` server-side (sem mudança).
+
+### Auditoria de propagação (§7)
+- **Roles**: apenas `super_admin` altera o layout (RLS em `category_public_layouts*`, preservada); `owner` faz upload da logo pelo dialog de edição (RLS do bucket `venue-uploads` `owner = auth.uid()` já cobre); `editor`/`viewer`/anônimo — apenas leitura. Sem alteração em RLS.
+- **Superfícies públicas**: `/api/public/organizations`, `/api/public/organizations/:slug`, `/api/public/category-layout/:categoryId` já devolvem `config` livre; passam a incluir `bleed` sem alteração. `signImagePathsInItems` já assinava `data.logo_url` (tipo `image`) — cards públicos recebem URL http válida.
+- **Não tocados / justificativa**: cards de **registro** (record cards) reusam o mesmo `PublicCardBody`, então nome-como-H3 é aproveitável se o super admin incluir `name` no card de registro (não é regressão — é extensão). Formulário de **criação** de organização não recebe upload de logo — não tinha esse campo antes; alteração fora do escopo do pedido. `getPublicOrganization` continua expondo `org.logo_url` cru como fallback do header do perfil; `OrgLogo` agora resolve isso client-side para o owner autenticado (perfil público continua funcionando via `data.logo_url` já assinado).
+
+---
+
+
 
 Novo mecanismo, paralelo aos `organization_category_default_fields` (Iteração 9) — que segue valendo para campos pré-sugeridos em tabelas criadas livremente pelo admin comum. Esta iteração introduz **tabelas inteiras** definidas pelo super admin e travadas para o usuário. Não retroage a organizações existentes.
 

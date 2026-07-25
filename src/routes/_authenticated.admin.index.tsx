@@ -784,7 +784,12 @@ type EditorRow = {
   order_index: number;
   label_override?: string;
   icon?: string;
+  bleed?: boolean;
 };
+
+function isMediaFieldKey(key: string) {
+  return key === "logo_url" || /(avatar|capa|cover|foto|galeria|gallery|imagem|image|logo|photo|picture)/i.test(key);
+}
 
 function LayoutsSection() {
   const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
@@ -867,6 +872,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
         order_index: r.order_index,
         label_override: (r.config?.label_override as string) ?? "",
         icon: (r.config?.icon as string) ?? "",
+        bleed: (r.config?.bleed as boolean) ?? false,
       })));
     }
   }, [src.data]);
@@ -901,6 +907,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
           config: {
             ...(r.label_override ? { label_override: r.label_override } : {}),
             ...(r.icon ? { icon: r.icon } : {}),
+            ...(r.bleed && r.width_percent === 100 ? { bleed: true } : {}),
           },
         })),
       } });
@@ -923,13 +930,16 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
               <TableHead>Rótulo (override)</TableHead>
               <TableHead>Ícone (lucide)</TableHead>
               <TableHead className="w-32">Largura</TableHead>
+              <TableHead className="w-32">Sem margens</TableHead>
               <TableHead className="w-20"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
-            ) : rows.map((r, i) => (
+              <TableRow><TableCell colSpan={7} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
+            ) : rows.map((r, i) => {
+              const bleedable = isMediaFieldKey(r.field_key) && r.width_percent === 100;
+              return (
               <TableRow key={i}>
                 <TableCell>
                   <div className="flex gap-1">
@@ -952,10 +962,26 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
                   </Select>
                 </TableCell>
                 <TableCell>
+                  {bleedable ? (
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-border accent-primary"
+                        checked={!!r.bleed}
+                        onChange={(e) => updateRow(i, { bleed: e.target.checked })}
+                      />
+                      Ignorar padding
+                    </label>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   <Button size="sm" variant="outline" onClick={() => removeRow(i)}><Trash2 className="h-4 w-4" /></Button>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </div>
