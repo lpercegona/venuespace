@@ -230,20 +230,26 @@ function ExplorePage() {
                     params={{ slug: o.slug }}
                     className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
-                    <Card className="h-full transition-shadow hover:shadow-elegant">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-3">
-                          <OrgLogo src={(o as any).logo_url} alt={`Logo ${o.name}`} className="h-10 w-10" />
-                          <CardTitle className="font-display text-lg line-clamp-2">{o.name}</CardTitle>
+                    <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
+                      {o.layout && o.layout.length > 0 ? (
+                        <div className="p-6">
+                          <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} orgName={o.name} />
                         </div>
-                      </CardHeader>
-                      <CardContent>
-                        {o.layout && o.layout.length > 0 ? (
-                          <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} />
-                        ) : o.description ? (
-                          <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
-                        ) : null}
-                      </CardContent>
+                      ) : (
+                        <>
+                          <CardHeader className="pb-2">
+                            <div className="flex items-center gap-3">
+                              <OrgLogo src={(o as any).logo_url} alt={`Logo ${o.name}`} className="h-10 w-10" />
+                              <CardTitle className="font-display text-lg line-clamp-2">{o.name}</CardTitle>
+                            </div>
+                          </CardHeader>
+                          {o.description ? (
+                            <CardContent>
+                              <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
+                            </CardContent>
+                          ) : null}
+                        </>
+                      )}
                     </Card>
                   </Link>
                 ))}

@@ -784,7 +784,12 @@ type EditorRow = {
   order_index: number;
   label_override?: string;
   icon?: string;
+  bleed?: boolean;
 };
+
+function isMediaFieldKey(key: string) {
+  return key === "logo_url" || /(avatar|capa|cover|foto|galeria|gallery|imagem|image|logo|photo|picture)/i.test(key);
+}
 
 function LayoutsSection() {
   const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
@@ -867,6 +872,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
         order_index: r.order_index,
         label_override: (r.config?.label_override as string) ?? "",
         icon: (r.config?.icon as string) ?? "",
+        bleed: (r.config?.bleed as boolean) ?? false,
       })));
     }
   }, [src.data]);
