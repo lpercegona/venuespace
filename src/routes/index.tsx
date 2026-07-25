@@ -97,7 +97,7 @@ function Landing() {
                   >
                     <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
                       {o.layout && o.layout.length > 0 ? (
-                        <div className="p-6">
+                        <div className="p-4">
                           <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} orgName={o.name} />
                         </div>
                       ) : (
@@ -190,7 +190,7 @@ function Landing() {
               body: "Visitantes enviam solicitações e a conversa continua vinculada ao ambiente.",
             },
           ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-xl bg-card p-6">
+            <div key={title} className="rounded-xl bg-card p-4">
               <Icon className="h-5 w-5 text-primary" />
               <h3 className="mt-4 font-display text-lg font-semibold">{title}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{body}</p>
