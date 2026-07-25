@@ -40,9 +40,11 @@ export const getSignedUploadUrl = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({ path: z.string().min(1).max(500), expires_in: z.number().int().min(60).max(60 * 60 * 24).optional() }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: signed, error } = await supabaseAdmin
+  .handler(async ({ data, context }) => {
+    // Use the user-scoped Supabase client so the bucket's owner-only RLS policy
+    // is enforced. This prevents any signed-in user from minting a signed URL
+    // for a path they do not own.
+    const { data: signed, error } = await context.supabase
       .storage
       .from("venue-uploads")
       .createSignedUrl(data.path, data.expires_in ?? 60 * 60);
