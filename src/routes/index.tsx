@@ -190,7 +190,7 @@ function Landing() {
               body: "Visitantes enviam solicitações e a conversa continua vinculada ao ambiente.",
             },
           ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-xl border border-border bg-card p-6">
+            <div key={title} className="rounded-xl bg-card p-6">
               <Icon className="h-5 w-5 text-primary" />
               <h3 className="mt-4 font-display text-lg font-semibold">{title}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{body}</p>
