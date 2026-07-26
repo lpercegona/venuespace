@@ -176,7 +176,7 @@ function PublicOrgPage() {
             {layout.length > 0 ? (
               <div className="overflow-hidden rounded-xl border border-border bg-card">
                 <div className="p-6">
-                  <PublicCardBody layout={layout as any} fields={org.fields as any} data={org.data} orgName={org.name} />
+                  <PublicCardBody layout={layout as any} fields={org.fields as any} data={org.data} orgName={org.name} padding={6} />
                 </div>
               </div>
             ) : null}
