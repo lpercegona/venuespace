@@ -95,17 +95,28 @@ export function getPublicCardTitle({
   return fallback;
 }
 
+type CellStyle = "title" | "subtitle" | "normal";
+
+function styleFor(it: LayoutItem): CellStyle {
+  const s = it.config?.style;
+  if (s === "title" || s === "subtitle" || s === "normal") return s;
+  return it.field_key === "name" ? "title" : "normal";
+}
+
 export function PublicCardBody({
   layout,
   fields,
   data,
   orgName,
+  padding = 4,
 }: {
   layout: LayoutItem[];
   fields: RendererField[];
   data: Record<string, any>;
   /** Used as `alt` for the `logo_url` special field. Defaults to data.name or "Logo". */
   orgName?: string;
+  /** Padding (in Tailwind spacing units) of the card container, used for bleed offsets. */
+  padding?: 4 | 6;
 }) {
   const byKey = new Map(fields.map((f) => [f.key, f]));
   if (!layout || layout.length === 0) return null;
@@ -118,7 +129,8 @@ export function PublicCardBody({
     iconName: string | null;
     imgAspect: string;
     bleed: boolean;
-    kind: "single-image" | "gallery" | "text" | "name" | "logo";
+    style: CellStyle;
+    kind: "single-image" | "gallery" | "text" | "logo";
     urls?: string[];
     text?: string;
   };
@@ -136,80 +148,81 @@ export function PublicCardBody({
       width === 75 ? "col-span-3" : "col-span-4";
     const imgAspect = width === 100 ? "aspect-video" : "aspect-square";
     const bleed = width === 100 && it.config?.bleed === true;
+    const style = styleFor(it);
 
-    // Special: name → H3
-    if (it.field_key === "name") {
-      const text = formatValue(f, raw);
-      if (!text) continue;
-      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, kind: "name", text });
-      continue;
-    }
     // Special: logo_url → OrgLogo (with fallback icon when empty)
     if (it.field_key === "logo_url") {
       const url = typeof raw === "string" && isUrl(raw) ? raw : null;
-      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed, kind: "logo", urls: url ? [url] : [] });
+      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed, style, kind: "logo", urls: url ? [url] : [] });
       continue;
     }
 
     const mediaUrls = mediaUrlsFor(f, it.field_key, label, raw);
     if (mediaUrls.length === 1) {
-      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed, kind: "single-image", urls: mediaUrls });
+      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed, style, kind: "single-image", urls: mediaUrls });
       continue;
     }
     if (mediaUrls.length > 1) {
-      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed, kind: "gallery", urls: mediaUrls });
+      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed, style, kind: "gallery", urls: mediaUrls });
       continue;
     }
     const text = formatValue(f, raw);
     if (!text) continue;
-    cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, kind: "text", text });
+    cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, style, kind: "text", text });
   }
 
   if (cells.length === 0) return null;
 
-  // Group into rows summing to 100%.
+  // Pack cells into rows without ever exceeding 100% (4 columns) per row.
+  // A bleed cell always occupies a row of its own.
   const rows: Cell[][] = [];
   let current: Cell[] = [];
   let acc = 0;
+  const flush = () => { if (current.length) { rows.push(current); current = []; acc = 0; } };
   for (const c of cells) {
+    if (c.bleed) { flush(); rows.push([c]); continue; }
+    if (acc + c.width_percent > 100) flush();
     current.push(c);
     acc += c.width_percent;
-    if (acc >= 100) { rows.push(current); current = []; acc = 0; }
+    if (acc >= 100) flush();
   }
-  if (current.length) rows.push(current);
+  flush();
 
   const logoAlt = orgName ?? (typeof data?.name === "string" ? data.name : "Logo");
+  const mx = padding === 6 ? "-mx-6" : "-mx-4";
+  const mt = padding === 6 ? "-mt-6" : "-mt-4";
+  const mb = padding === 6 ? "-mb-6" : "-mb-4";
 
   return (
     <div className="space-y-3">
       {rows.map((row, i) => {
         // Bleed rows are always single-cell 100% width.
-        if (row.length === 1 && row[0].bleed && (row[0].kind === "single-image" || row[0].kind === "gallery" || row[0].kind === "logo")) {
+        if (row.length === 1 && row[0].bleed && row[0].kind !== "text") {
           const c = row[0];
           const isFirst = i === 0;
           const isLast = i === rows.length - 1;
           const bleedCls = [
-            "-mx-6",
-            isFirst ? "-mt-6" : "",
-            isLast ? "-mb-6" : "",
+            mx,
+            isFirst ? mt : "",
+            isLast ? mb : "",
             isFirst ? "rounded-t-xl" : "",
             isLast ? "rounded-b-xl" : "",
           ].filter(Boolean).join(" ");
           if (c.kind === "single-image") {
             return (
               <div key={c.id} className={`${bleedCls} overflow-hidden`}>
-                <LazyImage src={c.urls![0]} alt={c.label} containerClassName={`aspect-video w-full`} className="h-full w-full object-cover" />
+                <LazyImage src={c.urls![0]} alt={c.label} containerClassName="aspect-video w-full" className="h-full w-full object-cover" />
               </div>
             );
           }
           if (c.kind === "gallery") {
             return (
               <div key={c.id} className={`${bleedCls} overflow-hidden`}>
-                <GalleryCarousel urls={c.urls!} alt={c.label} aspectClassName="aspect-video" />
+                <GalleryCarousel urls={c.urls!} alt={c.label} aspectClassName="aspect-video" roundedClassName="" />
               </div>
             );
           }
-          // logo bleed → still use OrgLogo (with fallback) at full width, square-ish
+          // logo bleed → still use OrgLogo (with fallback) at full width
           return (
             <div key={c.id} className={`${bleedCls} overflow-hidden`}>
               <OrgLogo src={c.urls && c.urls[0] ? c.urls[0] : null} alt={logoAlt} className="aspect-video w-full rounded-none border-0" iconClassName="h-16 w-16" />
@@ -220,15 +233,6 @@ export function PublicCardBody({
         return (
           <div key={i} className="grid grid-cols-4 gap-3">
             {row.map((c) => {
-              if (c.kind === "name") {
-                return (
-                  <div key={c.id} className={`${c.span} min-w-0`}>
-                    <h3 className="font-display text-lg font-semibold tracking-tight text-foreground line-clamp-2">
-                      {c.text}
-                    </h3>
-                  </div>
-                );
-              }
               if (c.kind === "logo") {
                 const size = c.width_percent === 25 ? "h-12 w-12" : c.width_percent === 50 ? "h-16 w-16" : "h-20 w-20";
                 return (
@@ -257,6 +261,25 @@ export function PublicCardBody({
                   </div>
                 );
               }
+              if (c.style === "title") {
+                return (
+                  <div key={c.id} className={`${c.span} min-w-0`}>
+                    <h3 className="font-display text-lg font-semibold tracking-tight text-foreground line-clamp-2">
+                      {c.text}
+                    </h3>
+                  </div>
+                );
+              }
+              if (c.style === "subtitle") {
+                return (
+                  <div key={c.id} className={`${c.span} min-w-0`}>
+                    <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                      <IconByName name={c.iconName} className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{c.text}</span>
+                    </p>
+                  </div>
+                );
+              }
               return (
                 <div key={c.id} className={`${c.span} min-w-0`}>
                   <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -273,3 +296,4 @@ export function PublicCardBody({
     </div>
   );
 }
+
