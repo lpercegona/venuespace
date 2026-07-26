@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, MessageCircle, type LucideIcon } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,14 +20,6 @@ type Payload = {
   public_form_view: { id: string; auto_relation_field_id: string | null } | null;
   record_card_layout: LayoutItem[];
 };
-
-function IconByName({ name, className }: { name: string | null; className?: string }) {
-  if (!name) return null;
-  const Cmp = (LucideIcons as any)[name] as LucideIcon | undefined;
-  if (!Cmp) return null;
-  return <Cmp className={className ?? "h-4 w-4"} />;
-}
-
 
 async function fetchPublic(slug: string, tableId: string): Promise<Payload> {
   const res = await fetch(`/api/public/${encodeURIComponent(slug)}/${encodeURIComponent(tableId)}`);
@@ -63,7 +54,6 @@ function PublicListPage() {
   }
 
   const { organization, table, fields, records, public_form_view, record_card_layout } = q.data;
-  const fieldByKey = new Map(fields.map((f) => [f.key, f]));
 
   const layout = record_card_layout ?? [];
   const useLayout = layout.length > 0;
