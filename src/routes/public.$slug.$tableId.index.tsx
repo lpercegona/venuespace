@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader } from "@/components/venue/public-header";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
+import { PublicCardBody } from "@/components/venue/public-card-renderer";
 
 type LayoutItem = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
 
@@ -67,6 +68,12 @@ function PublicListPage() {
   const layout = record_card_layout ?? [];
   const useLayout = layout.length > 0;
   const fallbackFields = fields.filter((f) => f.type !== "computed" && f.type !== "relation").slice(0, 4);
+  const rendererFields = [
+    { key: "org_name", label: "Organização", type: "text" },
+    { key: "table_name", label: "Tabela", type: "text" },
+    { key: "deal_status", label: "Status", type: "text" },
+    ...fields.map((f) => ({ key: f.key, label: f.label, type: f.type })),
+  ];
 
   return (
     <div className="min-h-screen bg-background">
