@@ -510,9 +510,12 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
 
   const items: PublicRecordSummary[] = paged.map((r) => ({
     ...r,
-    fields: fieldsByTable.get(r.table_id) ?? [],
+    // Expose the previously hardcoded card header values as regular layout fields.
+    data: { ...r.data, org_name: r.org_name, table_name: r.table_name, deal_status: (r as any).deal_status ?? null },
+    fields: [...RECORD_BUILTIN_FIELDS, ...(fieldsByTable.get(r.table_id) ?? [])],
     layout: (r.org_category_id && layouts.get(r.org_category_id)) || [],
   }));
+
   await signImagePathsInItems(items);
   return { items, total };
 }
