@@ -265,6 +265,7 @@ function ExplorePage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(recsQ.data?.items ?? []).map((r) => {
+                  const hasLayout = (r.layout ?? []).length > 0;
                   const title = getPublicCardTitle({
                     layout: r.layout ?? [],
                     fields: r.fields ?? [],
@@ -278,28 +279,31 @@ function ExplorePage() {
                       params={{ slug: r.org_slug, tableId: r.table_id, recordId: r.record_id }}
                       className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
-                      <Card className="h-full transition-shadow hover:shadow-elegant">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <FileText className="h-3.5 w-3.5" />
-                            <span className="truncate">{r.org_name}</span>
-                          </div>
-                          <CardTitle className="font-display text-lg line-clamp-2">{title || "Ambiente"}</CardTitle>
-                        </CardHeader>
-                        {(r.layout ?? []).length > 0 ? (
-                          <CardContent>
+                      <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
+                        {hasLayout ? (
+                          <div className="p-4">
                             <PublicCardBody layout={r.layout as any} fields={r.fields as any} data={r.data} />
-                          </CardContent>
+                          </div>
                         ) : (
-                          <CardContent>
-                            <Badge variant="secondary">{new Date(r.created_at).toLocaleDateString("pt-BR")}</Badge>
-                          </CardContent>
+                          <>
+                            <CardHeader className="pb-2">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <FileText className="h-3.5 w-3.5" />
+                                <span className="truncate">{r.org_name}</span>
+                              </div>
+                              <CardTitle className="font-display text-lg line-clamp-2">{title || "Ambiente"}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <Badge variant="secondary">{new Date(r.created_at).toLocaleDateString("pt-BR")}</Badge>
+                            </CardContent>
+                          </>
                         )}
                       </Card>
                     </Link>
                   );
                 })}
               </div>
+
             )}
           </TabsContent>
         </Tabs>
