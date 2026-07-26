@@ -138,6 +138,7 @@ function Landing() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {(recs.data?.items ?? []).map((r) => {
+                  const hasLayout = (r.layout ?? []).length > 0;
                   const title = getPublicCardTitle({
                     layout: r.layout ?? [],
                     fields: r.fields ?? [],
@@ -151,23 +152,25 @@ function Landing() {
                       params={{ slug: r.org_slug, tableId: r.table_id, recordId: r.record_id }}
                       className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
-                      <Card className="h-full transition-shadow hover:shadow-elegant">
-                        <CardHeader className="pb-2">
-                          <p className="text-xs text-muted-foreground truncate">
-                            {r.org_name} · {r.table_name}
-                          </p>
-                          <CardTitle className="font-display text-base line-clamp-2">{title || "Ambiente"}</CardTitle>
-                        </CardHeader>
-                        {(r.layout ?? []).length > 0 ? (
-                          <CardContent>
+                      <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
+                        {hasLayout ? (
+                          <div className="p-4">
                             <PublicCardBody layout={r.layout as any} fields={r.fields as any} data={r.data} />
-                          </CardContent>
-                        ) : null}
+                          </div>
+                        ) : (
+                          <CardHeader className="pb-2">
+                            <p className="text-xs text-muted-foreground truncate">
+                              {r.org_name} · {r.table_name}
+                            </p>
+                            <CardTitle className="font-display text-base line-clamp-2">{title || "Ambiente"}</CardTitle>
+                          </CardHeader>
+                        )}
                       </Card>
                     </Link>
                   );
                 })}
               </div>
+
             )}
           </section>
         </div>
