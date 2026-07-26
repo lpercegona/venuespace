@@ -6,39 +6,69 @@ type Props = {
   alt: string;
   aspectClassName?: string;
   className?: string;
+  /** Rounding applied to each slide/image. Use "" for bleed (edge-to-edge) cells. */
+  roundedClassName?: string;
 };
 
-export function GalleryCarousel({ urls, alt, aspectClassName = "aspect-video", className }: Props) {
+/** Keeps carousel interaction from triggering a wrapping <Link>. */
+function stop(e: React.SyntheticEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+export function GalleryCarousel({
+  urls,
+  alt,
+  aspectClassName = "aspect-video",
+  className,
+  roundedClassName = "rounded-md",
+}: Props) {
   if (!urls || urls.length === 0) return null;
   if (urls.length === 1) {
     return (
       <LazyImage
         src={urls[0]}
         alt={alt}
-        containerClassName={`${aspectClassName} w-full rounded-md ${className ?? ""}`.trim()}
+        containerClassName={`${aspectClassName} w-full ${roundedClassName} ${className ?? ""}`.trim()}
         className="h-full w-full object-cover"
       />
     );
   }
   return (
-    <Carousel opts={{ loop: true }} className={`relative w-full ${className ?? ""}`.trim()}>
-      <CarouselContent>
-        {urls.map((u, i) => (
-          <CarouselItem key={i}>
-            <LazyImage
-              src={u}
-              alt={`${alt} ${i + 1}`}
-              containerClassName={`${aspectClassName} w-full rounded-md`}
-              className="h-full w-full object-cover"
-            />
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-      <CarouselPrevious className="left-2" />
-      <CarouselNext className="right-2" />
-      <div className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm backdrop-blur">
-        {urls.length}
-      </div>
-    </Carousel>
+    <div
+      className={`group/carousel relative w-full ${className ?? ""}`.trim()}
+      onClick={stop}
+      onPointerDown={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+      role="presentation"
+    >
+      <Carousel opts={{ loop: true }} className="relative w-full">
+        <CarouselContent>
+          {urls.map((u, i) => (
+            <CarouselItem key={i}>
+              <LazyImage
+                src={u}
+                alt={`${alt} ${i + 1}`}
+                containerClassName={`${aspectClassName} w-full ${roundedClassName}`.trim()}
+                className="h-full w-full object-cover"
+              />
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious
+          type="button"
+          onClick={stop}
+          className="left-2 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover/carousel:opacity-100 [@media(hover:hover)]:opacity-0"
+        />
+        <CarouselNext
+          type="button"
+          onClick={stop}
+          className="right-2 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover/carousel:opacity-100 [@media(hover:hover)]:opacity-0"
+        />
+        <div className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm backdrop-blur transition-opacity group-hover/carousel:opacity-100 [@media(hover:hover)]:opacity-0">
+          {urls.length}
+        </div>
+      </Carousel>
+    </div>
   );
 }
