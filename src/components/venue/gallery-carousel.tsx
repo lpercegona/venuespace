@@ -10,6 +10,9 @@ type Props = {
   roundedClassName?: string;
 };
 
+const ARROW_CLS =
+  "opacity-100 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/carousel:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100";
+
 /** Keeps carousel interaction from triggering a wrapping <Link>. */
 function stop(e: React.SyntheticEvent) {
   e.preventDefault();
@@ -55,17 +58,9 @@ export function GalleryCarousel({
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious
-          type="button"
-          onClick={stop}
-          className="left-2 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover/carousel:opacity-100 [@media(hover:hover)]:opacity-0"
-        />
-        <CarouselNext
-          type="button"
-          onClick={stop}
-          className="right-2 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover/carousel:opacity-100 [@media(hover:hover)]:opacity-0"
-        />
-        <div className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm backdrop-blur transition-opacity group-hover/carousel:opacity-100 [@media(hover:hover)]:opacity-0">
+        <CarouselPrevious type="button" className={`left-2 ${ARROW_CLS}`} />
+        <CarouselNext type="button" className={`right-2 ${ARROW_CLS}`} />
+        <div className={`pointer-events-none absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm backdrop-blur ${ARROW_CLS}`}>
           {urls.length}
         </div>
       </Carousel>
