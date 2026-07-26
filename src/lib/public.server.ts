@@ -212,6 +212,13 @@ const ORG_BUILTIN_FIELDS: PublicRendererField[] = [
   { key: "address.state", label: "UF", type: "text" },
 ];
 
+const RECORD_BUILTIN_FIELDS: PublicRendererField[] = [
+  { key: "org_name", label: "Organização", type: "text" },
+  { key: "table_name", label: "Tabela", type: "text" },
+  { key: "deal_status", label: "Status", type: "text" },
+];
+
+
 async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card"): Promise<Map<string, PublicLayoutField[]>> {
   const out = new Map<string, PublicLayoutField[]>();
   if (categoryIds.length === 0) return out;
@@ -439,7 +446,7 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   const filters = opts.filters ?? {};
 
   const { data, error } = await sb.from("records")
-    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(slug, name, category_id, is_public))")
+    .select("id, data, deal_status, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(slug, name, category_id, is_public))")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(2000);
@@ -449,6 +456,7 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     .map((r) => ({
       record_id: r.id,
       data: r.data ?? {},
+      deal_status: r.deal_status ?? null,
       created_at: r.created_at,
       org_slug: r.table.organization.slug,
       org_name: r.table.organization.name,
@@ -510,9 +518,12 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
 
   const items: PublicRecordSummary[] = paged.map((r) => ({
     ...r,
-    fields: fieldsByTable.get(r.table_id) ?? [],
+    // Expose the previously hardcoded card header values as regular layout fields.
+    data: { ...r.data, org_name: r.org_name, table_name: r.table_name, deal_status: (r as any).deal_status ?? null },
+    fields: [...RECORD_BUILTIN_FIELDS, ...(fieldsByTable.get(r.table_id) ?? [])],
     layout: (r.org_category_id && layouts.get(r.org_category_id)) || [],
   }));
+
   await signImagePathsInItems(items);
   return { items, total };
 }

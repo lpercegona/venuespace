@@ -1240,6 +1240,15 @@ export type Database = {
           tables_touched: number
         }[]
       }
+      sync_category_standard_tables: {
+        Args: { _category_id: string }
+        Returns: {
+          fields_added: number
+          fields_removed: number
+          orgs_touched: number
+          tables_created: number
+        }[]
+      }
     }
     Enums: {
       app_role: "owner" | "editor" | "viewer"

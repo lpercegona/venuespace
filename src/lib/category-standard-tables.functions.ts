@@ -29,6 +29,19 @@ export type CategoryStandardTableField = {
   order_index: number;
 };
 
+/** Mirrors category standard tables/fields onto every existing org of the category. */
+async function syncCategory(supabase: any, category_id: string) {
+  const { error } = await supabase.rpc("sync_category_standard_tables", { _category_id: category_id });
+  if (error) throw new Error(error.message);
+}
+
+async function resolveCategoryIdByTable(admin: any, standard_table_id: string) {
+  const { data, error } = await admin
+    .from("category_standard_tables").select("category_id").eq("id", standard_table_id).single();
+  if (error) throw new Error(error.message);
+  return (data as any).category_id as string;
+}
+
 async function requireSA(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("is_super_admin", { _user_id: userId });
   if (error) throw new Error(error.message);
@@ -82,11 +95,13 @@ export const upsertCategoryStandardTable = createServerFn({ method: "POST" })
       const { error } = await (supabaseAdmin as any)
         .from("category_standard_tables").update(payload).eq("id", data.id);
       if (error) throw new Error(error.message);
+      await syncCategory(context.supabase, data.category_id);
       return { id: data.id };
     } else {
       const { data: row, error } = await (supabaseAdmin as any)
         .from("category_standard_tables").insert(payload).select("id").single();
       if (error) throw new Error(error.message);
+      await syncCategory(context.supabase, data.category_id);
       return { id: (row as any).id };
     }
   });
@@ -97,9 +112,11 @@ export const deleteCategoryStandardTable = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSA(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const category_id = await resolveCategoryIdByTable(supabaseAdmin, data.id);
     const { error } = await (supabaseAdmin as any)
       .from("category_standard_tables").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await syncCategory(context.supabase, category_id);
     return { ok: true };
   });
 
@@ -148,11 +165,13 @@ export const upsertCategoryStandardTableField = createServerFn({ method: "POST" 
       const { error } = await (supabaseAdmin as any)
         .from("category_standard_table_fields").update(payload).eq("id", data.id);
       if (error) throw new Error(error.message);
+      await syncCategory(context.supabase, await resolveCategoryIdByTable(supabaseAdmin, data.standard_table_id));
       return { id: data.id };
     } else {
       const { data: row, error } = await (supabaseAdmin as any)
         .from("category_standard_table_fields").insert(payload).select("id").single();
       if (error) throw new Error(error.message);
+      await syncCategory(context.supabase, await resolveCategoryIdByTable(supabaseAdmin, data.standard_table_id));
       return { id: (row as any).id };
     }
   });
@@ -163,8 +182,13 @@ export const deleteCategoryStandardTableField = createServerFn({ method: "POST" 
   .handler(async ({ data, context }) => {
     await requireSA(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error: selErr } = await (supabaseAdmin as any)
+      .from("category_standard_table_fields").select("standard_table_id").eq("id", data.id).single();
+    if (selErr) throw new Error(selErr.message);
+    const category_id = await resolveCategoryIdByTable(supabaseAdmin, (row as any).standard_table_id);
     const { error } = await (supabaseAdmin as any)
       .from("category_standard_table_fields").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await syncCategory(context.supabase, category_id);
     return { ok: true };
   });

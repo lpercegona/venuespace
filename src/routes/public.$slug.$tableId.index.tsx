@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, MessageCircle, type LucideIcon } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader } from "@/components/venue/public-header";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
+import { PublicCardBody } from "@/components/venue/public-card-renderer";
 
 type LayoutItem = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
 
@@ -20,14 +20,6 @@ type Payload = {
   public_form_view: { id: string; auto_relation_field_id: string | null } | null;
   record_card_layout: LayoutItem[];
 };
-
-function IconByName({ name, className }: { name: string | null; className?: string }) {
-  if (!name) return null;
-  const Cmp = (LucideIcons as any)[name] as LucideIcon | undefined;
-  if (!Cmp) return null;
-  return <Cmp className={className ?? "h-4 w-4"} />;
-}
-
 
 async function fetchPublic(slug: string, tableId: string): Promise<Payload> {
   const res = await fetch(`/api/public/${encodeURIComponent(slug)}/${encodeURIComponent(tableId)}`);
@@ -62,11 +54,16 @@ function PublicListPage() {
   }
 
   const { organization, table, fields, records, public_form_view, record_card_layout } = q.data;
-  const fieldByKey = new Map(fields.map((f) => [f.key, f]));
 
   const layout = record_card_layout ?? [];
   const useLayout = layout.length > 0;
   const fallbackFields = fields.filter((f) => f.type !== "computed" && f.type !== "relation").slice(0, 4);
+  const rendererFields = [
+    { key: "org_name", label: "Organização", type: "text" },
+    { key: "table_name", label: "Tabela", type: "text" },
+    { key: "deal_status", label: "Status", type: "text" },
+    ...fields.map((f) => ({ key: f.key, label: f.label, type: f.type })),
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,41 +83,43 @@ function PublicListPage() {
             {records.map((r) => {
               const titleKey = useLayout ? layout[0].field_key : fallbackFields[0]?.key;
               const title = titleKey ? String(r.data?.[titleKey] ?? "Sem título") : "Sem título";
+              const cardData = {
+                ...r.data,
+                org_name: organization.name,
+                table_name: table.name,
+                deal_status: r.deal_status ?? null,
+              };
               return (
                 <li key={r.id}>
-                  <Card className="h-full">
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-2">
-                        <Link
-                          to="/public/$slug/$tableId/$recordId"
-                          params={{ slug, tableId, recordId: r.id }}
-                          className="min-w-0 flex-1 hover:underline"
-                        >
-                          <CardTitle className="line-clamp-2 font-display text-lg">{title}</CardTitle>
-                        </Link>
-                        {r.deal_status && r.deal_status !== "negotiating" ? (
-                          <Badge variant="secondary">{r.deal_status}</Badge>
-                        ) : null}
+                  <Card className="h-full overflow-hidden">
+                    {useLayout ? (
+                      <div className="p-4">
+                        <PublicCardBody
+                          layout={layout as any}
+                          fields={rendererFields as any}
+                          data={cardData}
+                          orgName={organization.name}
+                        />
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <dl className="space-y-1 text-sm">
-                        {useLayout
-                          ? layout.slice(1).map((it) => {
-                              const f = fieldByKey.get(it.field_key);
-                              const v = r.data?.[it.field_key];
-                              if (v == null || v === "") return null;
-                              return (
-                                <div key={it.id} className="flex items-center justify-between gap-2">
-                                  <dt className="flex items-center gap-1.5 text-muted-foreground">
-                                    <IconByName name={(it.config?.icon as string) ?? null} className="h-3.5 w-3.5" />
-                                    {(it.config?.label_override as string) ?? f?.label ?? it.field_key}
-                                  </dt>
-                                  <dd className="truncate text-right text-foreground">{String(v)}</dd>
-                                </div>
-                              );
-                            })
-                          : fallbackFields.slice(1).map((f) => {
+                    ) : (
+                      <>
+                        <CardHeader>
+                          <div className="flex items-start justify-between gap-2">
+                            <Link
+                              to="/public/$slug/$tableId/$recordId"
+                              params={{ slug, tableId, recordId: r.id }}
+                              className="min-w-0 flex-1 hover:underline"
+                            >
+                              <CardTitle className="line-clamp-2 font-display text-lg">{title}</CardTitle>
+                            </Link>
+                            {r.deal_status && r.deal_status !== "negotiating" ? (
+                              <Badge variant="secondary">{r.deal_status}</Badge>
+                            ) : null}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <dl className="space-y-1 text-sm">
+                            {fallbackFields.slice(1).map((f) => {
                               const v = r.data?.[f.key];
                               if (v == null || v === "") return null;
                               return (
@@ -130,7 +129,12 @@ function PublicListPage() {
                                 </div>
                               );
                             })}
-                      </dl>
+                          </dl>
+                        </CardContent>
+                      </>
+                    )}
+                    <CardContent className="space-y-3">
+
                       <div className="flex flex-col gap-2">
                         <Link to="/public/$slug/$tableId/$recordId" params={{ slug, tableId, recordId: r.id }}>
                           <Button variant="outline" size="sm" className="w-full">Ver detalhes</Button>

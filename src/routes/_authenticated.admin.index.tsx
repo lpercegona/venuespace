@@ -107,7 +107,7 @@ function AdminPage() {
       }
     >
       <Tabs defaultValue="general">
-        <TabsList className="mb-6 flex-wrap">
+        <TabsList className="mb-6 w-full max-w-full flex-nowrap justify-start overflow-x-auto">
           <TabsTrigger value="general">Geral</TabsTrigger>
           <TabsTrigger value="labels">Rótulos</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
@@ -785,6 +785,7 @@ type EditorRow = {
   label_override?: string;
   icon?: string;
   bleed?: boolean;
+  style?: "title" | "subtitle" | "normal";
 };
 
 function isMediaFieldKey(key: string) {
@@ -853,7 +854,11 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
             { field_key: "address.complement", label: "Complemento (base)" },
             { field_key: "address.cep", label: "CEP (base)" },
           ]
-        : [];
+        : [
+            { field_key: "org_name", label: "Organização (base)" },
+            { field_key: "table_name", label: "Tabela (base)" },
+            { field_key: "deal_status", label: "Status (base)" },
+          ];
       const fields = [
         ...baseFields,
         ...(cascadeFields as Array<{ field_key: string; label: string }>),
@@ -873,6 +878,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
         label_override: (r.config?.label_override as string) ?? "",
         icon: (r.config?.icon as string) ?? "",
         bleed: (r.config?.bleed as boolean) ?? false,
+        style: ((r.config?.style as EditorRow["style"]) ?? (r.field_key === "name" ? "title" : "normal")),
       })));
     }
   }, [src.data]);
@@ -908,6 +914,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
             ...(r.label_override ? { label_override: r.label_override } : {}),
             ...(r.icon ? { icon: r.icon } : {}),
             ...(r.bleed && r.width_percent === 100 ? { bleed: true } : {}),
+            ...(r.style ? { style: r.style } : {}),
           },
         })),
       } });
@@ -929,6 +936,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
               <TableHead>Campo</TableHead>
               <TableHead>Rótulo (override)</TableHead>
               <TableHead>Ícone (lucide)</TableHead>
+              <TableHead className="w-36">Estilo</TableHead>
               <TableHead className="w-32">Largura</TableHead>
               <TableHead className="w-32">Sem margens</TableHead>
               <TableHead className="w-20"></TableHead>
@@ -936,7 +944,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
             ) : rows.map((r, i) => {
               const bleedable = isMediaFieldKey(r.field_key) && r.width_percent === 100;
               return (
@@ -950,6 +958,16 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
                 <TableCell className="font-mono text-xs">{r.field_key}</TableCell>
                 <TableCell><Input value={r.label_override ?? ""} onChange={(e) => updateRow(i, { label_override: e.target.value })} placeholder="—" /></TableCell>
                 <TableCell><Input value={r.icon ?? ""} onChange={(e) => updateRow(i, { icon: e.target.value })} placeholder="Home, MapPin..." /></TableCell>
+                <TableCell>
+                  <Select value={r.style ?? "normal"} onValueChange={(v) => updateRow(i, { style: v as EditorRow["style"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="title">Título (H3)</SelectItem>
+                      <SelectItem value="subtitle">Subtítulo</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
                 <TableCell>
                   <Select value={String(r.width_percent)} onValueChange={(v) => updateRow(i, { width_percent: Number(v) as any })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
