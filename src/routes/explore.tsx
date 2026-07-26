@@ -232,7 +232,7 @@ function ExplorePage() {
                   >
                     <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
                       {o.layout && o.layout.length > 0 ? (
-                        <div className="p-6">
+                        <div className="p-4">
                           <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} orgName={o.name} />
                         </div>
                       ) : (
