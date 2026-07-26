@@ -446,7 +446,7 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   const filters = opts.filters ?? {};
 
   const { data, error } = await sb.from("records")
-    .select("id, data, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(slug, name, category_id, is_public))")
+    .select("id, data, deal_status, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(slug, name, category_id, is_public))")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(2000);
@@ -456,6 +456,7 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     .map((r) => ({
       record_id: r.id,
       data: r.data ?? {},
+      deal_status: r.deal_status ?? null,
       created_at: r.created_at,
       org_slug: r.table.organization.slug,
       org_name: r.table.organization.name,
