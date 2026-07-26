@@ -212,6 +212,13 @@ const ORG_BUILTIN_FIELDS: PublicRendererField[] = [
   { key: "address.state", label: "UF", type: "text" },
 ];
 
+const RECORD_BUILTIN_FIELDS: PublicRendererField[] = [
+  { key: "org_name", label: "Organização", type: "text" },
+  { key: "table_name", label: "Tabela", type: "text" },
+  { key: "deal_status", label: "Status", type: "text" },
+];
+
+
 async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card"): Promise<Map<string, PublicLayoutField[]>> {
   const out = new Map<string, PublicLayoutField[]>();
   if (categoryIds.length === 0) return out;
