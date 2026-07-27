@@ -756,7 +756,17 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                 <TableRow key={f.id}>
                   <TableCell>{f.order_index}</TableCell>
                   <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
-                  <TableCell>{f.label}</TableCell>
+                  <TableCell>
+                    <span>{f.label}</span>
+                    {Array.isArray(f.config?.options) && f.config.options.length > 0 ? (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {f.config.options.length} opções: {(f.config.options as any[]).slice(0, 4).join(", ")}
+                        {f.config.options.length > 4 ? "…" : ""}
+                      </span>
+                    ) : (f.field_type === "select" || f.field_type === "multiselect") ? (
+                      <span className="block text-xs text-destructive">sem opções configuradas</span>
+                    ) : null}
+                  </TableCell>
                   <TableCell><Badge variant="secondary">{f.field_type}</Badge></TableCell>
                   <TableCell>{f.required ? "sim" : "—"}</TableCell>
                   <TableCell>
