@@ -12,6 +12,7 @@ export type FieldRow = {
 
 export const FIELD_TYPES = [
   "text",
+  "long_text",
   "textarea",
   "number",
   "currency",
@@ -19,11 +20,13 @@ export const FIELD_TYPES = [
   "date",
   "datetime",
   "email",
+  "phone",
   "url",
   "select",
   "multiselect",
   "relation",
   "image",
+  "gallery",
   "file",
   "computed",
 ] as const;
@@ -51,6 +54,7 @@ export function zodForField(f: FieldRow): z.ZodTypeAny {
       base = z.union([z.string().url(), z.literal("")]).nullable();
       break;
     case "multiselect":
+    case "gallery":
       base = z.array(z.string()).nullable();
       break;
     case "relation":

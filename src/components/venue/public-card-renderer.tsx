@@ -44,6 +44,7 @@ function formatValue(field: RendererField | undefined, raw: any): string {
   if (field.type === "date") return new Date(raw).toLocaleDateString("pt-BR");
   if (field.type === "datetime") return new Date(raw).toLocaleString("pt-BR");
   if (field.type === "multiselect" && Array.isArray(raw)) return raw.join(", ");
+  if (Array.isArray(raw)) return raw.filter((x) => x != null && x !== "").join(", ");
   return String(raw);
 }
 

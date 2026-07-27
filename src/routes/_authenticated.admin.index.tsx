@@ -430,6 +430,7 @@ type UnifiedField = {
   field_type: string;
   required: boolean;
   order_index: number;
+  config: Record<string, any>;
 };
 
 const BASE_FIELDS: Record<DefaultsScope, Array<{ key: string; label: string; type: string; required: boolean }>> = {
@@ -548,13 +549,13 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
         const rows = await listCategoryDefaultFields({ data: { category_id: categoryId } });
         return (rows as CategoryDefaultField[]).map((r) => ({
           id: r.id, field_key: r.field_key, label: r.label, field_type: r.field_type,
-          required: r.required, order_index: r.order_index,
+          required: r.required, order_index: r.order_index, config: (r.config ?? {}) as Record<string, any>,
         }));
       }
       const rows = await listCategoryCascadeFields({ data: { category_id: categoryId, scope } });
       return (rows as CategoryCascadeField[]).map((r) => ({
         id: r.id, field_key: r.field_key, label: r.label, field_type: r.field_type,
-        required: r.required, order_index: r.order_index,
+        required: r.required, order_index: r.order_index, config: (r.config ?? {}) as Record<string, any>,
       }));
     },
   });
@@ -597,6 +598,10 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
   function openEdit(f: UnifiedField) {
     setEditing(f); setLabel(f.label); setKey(f.field_key); setKeyTouched(true);
     setType(f.field_type as any); setRequired(f.required); setOrder(f.order_index);
+    const cfg = f.config ?? {};
+    const opts = Array.isArray(cfg.options) ? (cfg.options as any[]).map(String) : [];
+    setOptionsText(opts.join("\n"));
+    setCepRole(cfg.role === "cep");
     setOpen(true);
   }
 
@@ -605,12 +610,18 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setSaving(true);
     try {
       const finalKey = editing ? key : uniqueKey(toSnake(key || label));
-      const config: Record<string, any> = {};
+      // Merge com o config existente: preserva chaves desconhecidas e limpa as
+      // que não se aplicam mais ao tipo escolhido.
+      const config: Record<string, any> = { ...(editing?.config ?? {}) };
       if (type === "select" || type === "multiselect") {
         const opts = optionsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
         if (opts.length > 0) config.options = opts;
+        else delete config.options;
+      } else {
+        delete config.options;
       }
       if (type === "text" && cepRole) config.role = "cep";
+      else if (config.role === "cep") delete config.role;
       if (scope === "record") {
         await upsertCategoryDefaultField({ data: {
           id: editing?.id, category_id: categoryId,
@@ -745,7 +756,17 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                 <TableRow key={f.id}>
                   <TableCell>{f.order_index}</TableCell>
                   <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
-                  <TableCell>{f.label}</TableCell>
+                  <TableCell>
+                    <span>{f.label}</span>
+                    {Array.isArray(f.config?.options) && f.config.options.length > 0 ? (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {f.config.options.length} opções: {(f.config.options as any[]).slice(0, 4).join(", ")}
+                        {f.config.options.length > 4 ? "…" : ""}
+                      </span>
+                    ) : (f.field_type === "select" || f.field_type === "multiselect") ? (
+                      <span className="block text-xs text-destructive">sem opções configuradas</span>
+                    ) : null}
+                  </TableCell>
                   <TableCell><Badge variant="secondary">{f.field_type}</Badge></TableCell>
                   <TableCell>{f.required ? "sim" : "—"}</TableCell>
                   <TableCell>
