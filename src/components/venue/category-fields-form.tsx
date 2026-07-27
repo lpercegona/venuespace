@@ -96,12 +96,50 @@ export function CategoryFieldsForm({ categoryId, scope, value, onChange, title }
           return (
             <div key={f.id} className="space-y-2">
               <Label>{f.label}{f.required ? <span className="ml-1 text-destructive">*</span> : null}</Label>
-              <Select value={typeof v === "string" ? v : ""} onValueChange={(x) => set(f.field_key, x)}>
-                <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                <SelectContent>
-                  {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {opts.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Sem opções configuradas.</p>
+              ) : (
+                <Select value={typeof v === "string" ? v : ""} onValueChange={(x) => set(f.field_key, x)}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <SelectContent>
+                    {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          );
+        }
+        if (f.field_type === "multiselect") {
+          const opts: string[] = ((f.config ?? {}).options as string[]) ?? [];
+          const arr: string[] = Array.isArray(v) ? (v as string[]) : [];
+          return (
+            <div key={f.id} className="space-y-2">
+              <Label>{f.label}{f.required ? <span className="ml-1 text-destructive">*</span> : null}</Label>
+              <div className="flex flex-wrap gap-2">
+                {opts.map((o) => {
+                  const active = arr.includes(o);
+                  return (
+                    <button
+                      key={o}
+                      type="button"
+                      onClick={() => set(f.field_key, active ? arr.filter((x) => x !== o) : [...arr, o])}
+                      className={`min-h-9 rounded-full border px-3 py-1 text-xs transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background hover:bg-accent"}`}
+                      aria-pressed={active}
+                    >{o}</button>
+                  );
+                })}
+                {opts.length === 0 ? <span className="text-xs text-muted-foreground">Sem opções configuradas.</span> : null}
+              </div>
+            </div>
+          );
+        }
+        if (f.field_type === "relation") {
+          return (
+            <div key={f.id} className="space-y-2">
+              <Label htmlFor={id}>{f.label}{f.required ? <span className="ml-1 text-destructive">*</span> : null}</Label>
+              <Input id={id} required={f.required} value={typeof v === "string" ? v : ""}
+                placeholder="UUID do registro relacionado"
+                onChange={(e) => set(f.field_key, e.target.value)} />
             </div>
           );
         }
