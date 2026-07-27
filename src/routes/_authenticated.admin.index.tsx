@@ -430,6 +430,7 @@ type UnifiedField = {
   field_type: string;
   required: boolean;
   order_index: number;
+  config: Record<string, any>;
 };
 
 const BASE_FIELDS: Record<DefaultsScope, Array<{ key: string; label: string; type: string; required: boolean }>> = {
