@@ -598,6 +598,10 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
   function openEdit(f: UnifiedField) {
     setEditing(f); setLabel(f.label); setKey(f.field_key); setKeyTouched(true);
     setType(f.field_type as any); setRequired(f.required); setOrder(f.order_index);
+    const cfg = f.config ?? {};
+    const opts = Array.isArray(cfg.options) ? (cfg.options as any[]).map(String) : [];
+    setOptionsText(opts.join("\n"));
+    setCepRole(cfg.role === "cep");
     setOpen(true);
   }
 
@@ -606,12 +610,18 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setSaving(true);
     try {
       const finalKey = editing ? key : uniqueKey(toSnake(key || label));
-      const config: Record<string, any> = {};
+      // Merge com o config existente: preserva chaves desconhecidas e limpa as
+      // que não se aplicam mais ao tipo escolhido.
+      const config: Record<string, any> = { ...(editing?.config ?? {}) };
       if (type === "select" || type === "multiselect") {
         const opts = optionsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
         if (opts.length > 0) config.options = opts;
+        else delete config.options;
+      } else {
+        delete config.options;
       }
       if (type === "text" && cepRole) config.role = "cep";
+      else if (config.role === "cep") delete config.role;
       if (scope === "record") {
         await upsertCategoryDefaultField({ data: {
           id: editing?.id, category_id: categoryId,
