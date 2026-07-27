@@ -39,22 +39,26 @@ export const Route = createFileRoute("/public/$slug/$tableId/$recordId")({
 function formatValue(field: Payload["fields"][number], raw: any, relations: Payload["relations"]): string {
   if (raw == null || raw === "") return "—";
   if (field.type === "boolean") return raw ? "Sim" : "Não";
-  if (field.type === "currency" || field.type === "computed") {
+  if (field.type === "currency" || (field.type === "computed" && (field.config ?? {}).kind !== "count")) {
     const n = Number(raw); if (Number.isNaN(n)) return String(raw);
     return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
-  if (field.type === "number") {
+  if (field.type === "number" || field.type === "computed") {
     const n = Number(raw); if (Number.isNaN(n)) return String(raw);
     return n.toLocaleString("pt-BR");
   }
   if (field.type === "date") return new Date(raw).toLocaleDateString("pt-BR");
   if (field.type === "datetime") return new Date(raw).toLocaleString("pt-BR");
-  if (field.type === "multiselect" && Array.isArray(raw)) return raw.join(", ");
+  if (field.type === "multiselect") {
+    if (Array.isArray(raw)) return raw.length ? raw.join(", ") : "—";
+    return String(raw);
+  }
   if (field.type === "relation") {
     const map = relations[field.id] ?? {};
     if (Array.isArray(raw)) return raw.map((id) => map[id]?.label ?? id).join(", ");
     return map[raw]?.label ?? String(raw);
   }
+  if (Array.isArray(raw)) return raw.join(", ");
   return String(raw);
 }
 
