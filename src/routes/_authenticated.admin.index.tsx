@@ -549,13 +549,13 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
         const rows = await listCategoryDefaultFields({ data: { category_id: categoryId } });
         return (rows as CategoryDefaultField[]).map((r) => ({
           id: r.id, field_key: r.field_key, label: r.label, field_type: r.field_type,
-          required: r.required, order_index: r.order_index,
+          required: r.required, order_index: r.order_index, config: (r.config ?? {}) as Record<string, any>,
         }));
       }
       const rows = await listCategoryCascadeFields({ data: { category_id: categoryId, scope } });
       return (rows as CategoryCascadeField[]).map((r) => ({
         id: r.id, field_key: r.field_key, label: r.label, field_type: r.field_type,
-        required: r.required, order_index: r.order_index,
+        required: r.required, order_index: r.order_index, config: (r.config ?? {}) as Record<string, any>,
       }));
     },
   });
