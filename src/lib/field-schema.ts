@@ -12,6 +12,7 @@ export type FieldRow = {
 
 export const FIELD_TYPES = [
   "text",
+  "long_text",
   "textarea",
   "number",
   "currency",
@@ -19,11 +20,13 @@ export const FIELD_TYPES = [
   "date",
   "datetime",
   "email",
+  "phone",
   "url",
   "select",
   "multiselect",
   "relation",
   "image",
+  "gallery",
   "file",
   "computed",
 ] as const;
