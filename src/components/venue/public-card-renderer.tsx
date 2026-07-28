@@ -195,7 +195,8 @@ export function PublicCardBody({
   const mb = padding === 6 ? "-mb-6" : "-mb-4";
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
+
       {rows.map((row, i) => {
         // Bleed rows are always single-cell 100% width.
         if (row.length === 1 && row[0].bleed && row[0].kind !== "text") {
@@ -232,7 +233,8 @@ export function PublicCardBody({
         }
 
         return (
-          <div key={i} className="grid grid-cols-4 gap-3">
+          <div key={i} className="grid grid-cols-4 gap-2">
+
             {row.map((c) => {
               if (c.kind === "logo") {
                 const size = c.width_percent === 25 ? "h-12 w-12" : c.width_percent === 50 ? "h-16 w-16" : "h-20 w-20";
@@ -274,13 +276,14 @@ export function PublicCardBody({
               if (c.style === "subtitle") {
                 return (
                   <div key={c.id} className={`${c.span} min-w-0`}>
-                    <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                    <p className="mb-0 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
                       <IconByName name={c.iconName} className="h-3.5 w-3.5 shrink-0" />
                       <span className="truncate">{c.text}</span>
                     </p>
                   </div>
                 );
               }
+
               return (
                 <div key={c.id} className={`${c.span} min-w-0`}>
                   <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">

@@ -117,7 +117,8 @@ function PublicListPage() {
                             ) : null}
                           </div>
                         </CardHeader>
-                        <CardContent className="space-y-3">
+                        <CardContent className="space-y-2">
+
                           <dl className="space-y-1 text-sm">
                             {fallbackFields.slice(1).map((f) => {
                               const v = r.data?.[f.key];
@@ -133,7 +134,7 @@ function PublicListPage() {
                         </CardContent>
                       </>
                     )}
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-2">
 
                       <div className="flex flex-col gap-2">
                         <Link to="/public/$slug/$tableId/$recordId" params={{ slug, tableId, recordId: r.id }}>
