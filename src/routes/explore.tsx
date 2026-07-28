@@ -238,7 +238,7 @@ function ExplorePage() {
                       ) : (
                         <>
                           <CardHeader className="pb-2">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                               <OrgLogo src={(o as any).logo_url} alt={`Logo ${o.name}`} className="h-10 w-10" />
                               <CardTitle className="font-display text-lg line-clamp-2">{o.name}</CardTitle>
                             </div>
