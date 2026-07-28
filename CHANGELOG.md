@@ -1,3 +1,35 @@
+## 2026-07-27 03:25 (America/Sao_Paulo) — Correção das Iterações 11/12 e 2 — select/multiselect: persistência de opções e plotagem
+
+Correção de escopo já entregue — **não abre iteração nova** (norma §0 "Correções não abrem iteração", incluída na skill nesta mesma edição).
+
+**Iterações corrigidas**
+- **Iterações 11/12 (cascata de campos por categoria + consolidação em "Campos padrão")**: origem do bug de perda de `config.options`.
+- **Iteração 2 (Records + Grid/Form dinâmicos)**: paridade de renderização por tipo de campo nos componentes genéricos.
+- **Iterações 20/21 (tabelas padrão)**: apenas referência — o editor de tabelas padrão já preservava `config` e serviu de baseline.
+
+**Causa raiz verificada**
+`ScopeEditor` (`src/routes/_authenticated.admin.index.tsx`) mapeava as linhas dos três escopos descartando `config`. Em consequência, `openEdit()` não repovoava as opções e o salvamento regravava `config` vazio, apagando `options`. Confirmado no banco: `category_org_fields.tipos_de_eventos` e `organization_category_default_fields.tipos_de_layout` com `config = {}`, contra `category_standard_table_fields.tipos_de_layout` com `config.options` íntegro.
+
+**Correções**
+- **Persistência (`_authenticated.admin.index.tsx`)**: `UnifiedField` passa a carregar `config`; os três mapeamentos de query o propagam; `openEdit()` repovoa `optionsText` e o papel `cep`; o salvamento faz **merge** com o `config` existente, gravando `options` apenas para `select`/`multiselect` e limpando `options`/`role` na troca de tipo. A listagem exibe a contagem/preview das opções e sinaliza "sem opções configuradas".
+- **Plotagem (`src/components/venue/category-fields-form.tsx`)**: `multiselect` renderiza chips toggle (valor como array, alvo ≥ 36px, `aria-pressed`) no mesmo padrão do `DynamicForm`; `select` exibe aviso quando não há opções em vez de combo vazio; `relation` ganha campo dedicado; `phone` usa `type="tel"`.
+- **Tipos compartilhados (`src/lib/field-schema.ts`)**: `FIELD_TYPES` alinhado à lista canônica (`long_text`, `phone`, `gallery`); `zodForField` valida `gallery` como array de strings.
+- **Detalhe público (`src/routes/public.$slug.$tableId.$recordId.tsx`)**: `computed` com `kind = "count"` deixa de ser formatado como moeda; `multiselect` vazio mostra "—"; arrays genéricos deixam de cair em `String(raw)`.
+- **Card público (`src/components/venue/public-card-renderer.tsx`)**: fallback para valores array em qualquer tipo, evitando `[object Object]`/JSON cru.
+- **Migração de reparo**: restaura `config.options` de `tipos_de_layout` (escopo registro) a partir do campo homônimo da tabela padrão da categoria e propaga para os campos já instanciados nas tabelas das organizações que estavam sem opções.
+
+**Auditoria de propagação (§7)**
+- `DynamicForm` / `DynamicGrid`: (b) não precisavam mudar — já tratavam `multiselect` e `gallery` corretamente; o bug estava no editor de categoria e no `CategoryFieldsForm`.
+- `CategoryFieldsForm` (usado em criação/edição de organização e tabela): (a) atualizado.
+- Painel super admin, escopos organização/tabela/registro: (a) atualizado — persistência corrigida nos três.
+- `public-card-renderer` / `/explore` / landing / `/api/public/*`: (a) revisados; apenas formatação de leitura, sem mudança de payload nem exposição de PII.
+- Detalhe público de registro e página de campanha: (a) formatação de `computed`/`multiselect` corrigida.
+- Roles: super_admin (edita os campos padrão), owner/editor (preenchem via `CategoryFieldsForm`), viewer/autenticado não-membro/anônimo (somente leitura, coberta pelas correções de formatação).
+- Sem mudança de esquema; sem alteração de RLS/GRANTs.
+
+**Pendência declarada (§0, ambiguidade = parada)**
+As opções do campo `tipos_de_eventos` (escopo organização) foram perdidas pelo bug e não há fonte equivalente no banco para restaurá-las. Aguardando a lista de opções desejada para aplicar a migração de reparo correspondente.
+
 ## 2026-07-26 — Iteração 23 — Cards públicos: padding p-4, estilos por item, packing de colunas, carrossel isolado e propagação retroativa
 
 - **Padding/bleed (`src/components/venue/public-card-renderer.tsx`)**: nova prop `padding` (4 | 6, default 4). As margens negativas de bleed passam a acompanhar o padding real do card (`-mx-4/-mt-4/-mb-4`), corrigindo o encaixe do carrossel e das imagens 100%. `src/routes/public.$slug.index.tsx` usa `padding={6}` no bloco de informações da organização (container `p-6`); os demais cards usam `p-4`.
