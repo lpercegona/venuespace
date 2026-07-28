@@ -1,4 +1,23 @@
+## 2026-07-28 (America/Sao_Paulo) — Correção das Iterações 22/23 — cards públicos: espaçamento do subtítulo e gap entre campos
+
+Correção visual de escopo já entregue — **não abre iteração nova** (norma §0 "Correções não abrem iteração").
+
+**Iterações corrigidas**
+- **Iteração 22 (layout público de organização: nome/logo controlados pelo super admin, imagens com bleed e upload de logo)**
+- **Iteração 23 (cards públicos: padding p-4, estilos por item, packing de colunas, carrossel isolado e propagação retroativa)**
+
+**Correções**
+- **Espaçamento entre linhas do card (`src/components/venue/public-card-renderer.tsx`)**: `space-y-3` → `space-y-2` entre rows do renderer; `gap-3` → `gap-2` entre células da grid interna.
+- **Margem do subtítulo (`src/components/venue/public-card-renderer.tsx`)**: células com `style = "subtitle"` passam a usar `mb-0`, eliminando a margem inferior que separava o subtítulo dos elementos seguintes.
+- **Fallbacks de lista (`src/routes/index.tsx`, `src/routes/explore.tsx`)**: `gap-3` entre logo e título nos cards sem layout reduzido para `gap-2`.
+- **Fallback de registros (`src/routes/public.$slug.$tableId.index.tsx`)**: `space-y-3` nos `CardContent` de fallback e de ações reduzido para `space-y-2`.
+
+**Auditoria de propagação (§7)**
+- Apenas classes utilitárias de espaçamento foram alteradas; nenhuma mudança de payload, RLS, esquema ou lógica de negócio.
+- Roles: sem impacto em permissões.
+
 ## 2026-07-27 03:25 (America/Sao_Paulo) — Correção das Iterações 11/12 e 2 — select/multiselect: persistência de opções e plotagem
+
 
 Correção de escopo já entregue — **não abre iteração nova** (norma §0 "Correções não abrem iteração", incluída na skill nesta mesma edição).
 
