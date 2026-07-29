@@ -386,7 +386,7 @@ function TableCard({
                 </div>
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <Label htmlFor={`e-b-${t.id}`} className="text-sm">{label("table", "Tabela")} com reservas</Label>
-                  <Switch id={`e-b-${t.id}`} checked={bookable} onCheckedChange={setBookable} disabled={!canStruct} />
+                  <Switch id={`e-b-${t.id}`} checked={bookable} onCheckedChange={setBookable} disabled={!canStruct || (t as any).bookable_master === false} />
                 </div>
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
