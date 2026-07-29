@@ -226,6 +226,107 @@ export type Database = {
           },
         ]
       }
+      category_standard_form_fields: {
+        Row: {
+          config: Json
+          created_at: string
+          field_key: string
+          field_type: string
+          form_id: string
+          id: string
+          label: string
+          order_index: number
+          required: boolean
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          field_key: string
+          field_type: string
+          form_id: string
+          id?: string
+          label: string
+          order_index?: number
+          required?: boolean
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          field_key?: string
+          field_type?: string
+          form_id?: string
+          id?: string
+          label?: string
+          order_index?: number
+          required?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_standard_form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "category_standard_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_standard_forms: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          scope: string
+          standard_table_id: string | null
+          submit_label: string
+          target_table_name: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          scope: string
+          standard_table_id?: string | null
+          submit_label?: string
+          target_table_name?: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          scope?: string
+          standard_table_id?: string | null
+          submit_label?: string
+          target_table_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_standard_forms_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_standard_forms_standard_table_id_fkey"
+            columns: ["standard_table_id"]
+            isOneToOne: false
+            referencedRelation: "category_standard_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_standard_table_fields: {
         Row: {
           config: Json
@@ -275,6 +376,7 @@ export type Database = {
       }
       category_standard_tables: {
         Row: {
+          bookable: boolean
           category_id: string
           created_at: string
           description: string | null
@@ -287,6 +389,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bookable?: boolean
           category_id: string
           created_at?: string
           description?: string | null
@@ -299,6 +402,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bookable?: boolean
           category_id?: string
           created_at?: string
           description?: string | null
@@ -1079,6 +1183,7 @@ export type Database = {
           is_system: boolean
           name: string
           organization_id: string
+          origin_standard_form_id: string | null
           origin_standard_table_id: string | null
           slug: string
           system_data: Json
@@ -1096,6 +1201,7 @@ export type Database = {
           is_system?: boolean
           name: string
           organization_id: string
+          origin_standard_form_id?: string | null
           origin_standard_table_id?: string | null
           slug: string
           system_data?: Json
@@ -1113,6 +1219,7 @@ export type Database = {
           is_system?: boolean
           name?: string
           organization_id?: string
+          origin_standard_form_id?: string | null
           origin_standard_table_id?: string | null
           slug?: string
           system_data?: Json
@@ -1143,6 +1250,7 @@ export type Database = {
           id: string
           name: string
           organization_id: string
+          origin_standard_form_id: string | null
           submissions_table_id: string | null
           table_id: string
           type: Database["public"]["Enums"]["view_type"]
@@ -1155,6 +1263,7 @@ export type Database = {
           id?: string
           name: string
           organization_id: string
+          origin_standard_form_id?: string | null
           submissions_table_id?: string | null
           table_id: string
           type?: Database["public"]["Enums"]["view_type"]
@@ -1167,6 +1276,7 @@ export type Database = {
           id?: string
           name?: string
           organization_id?: string
+          origin_standard_form_id?: string | null
           submissions_table_id?: string | null
           table_id?: string
           type?: Database["public"]["Enums"]["view_type"]
@@ -1201,6 +1311,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_standard_forms_to_org: {
+        Args: { _category_id: string; _org_id: string }
+        Returns: undefined
+      }
       can_edit_org: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -1238,6 +1352,12 @@ export type Database = {
         Returns: {
           fields_added: number
           tables_touched: number
+        }[]
+      }
+      sync_category_standard_forms: {
+        Args: { _category_id: string }
+        Returns: {
+          orgs_touched: number
         }[]
       }
       sync_category_standard_tables: {
