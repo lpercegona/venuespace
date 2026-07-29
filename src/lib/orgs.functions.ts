@@ -218,7 +218,20 @@ export const listTables = createServerFn({ method: "GET" })
       .eq("organization_id", data.organization_id)
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    const list = (rows ?? []) as any[];
+    // Master de reservas definido pelo super admin na tabela padrão de origem (Iteração 24).
+    const originIds = Array.from(new Set(list.map((t) => t.origin_standard_table_id).filter(Boolean))) as string[];
+    let masters: Record<string, boolean> = {};
+    if (originIds.length > 0) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: std } = await (supabaseAdmin as any)
+        .from("category_standard_tables").select("id, bookable").in("id", originIds);
+      for (const s of ((std ?? []) as any[])) masters[s.id] = !!s.bookable;
+    }
+    return list.map((t) => ({
+      ...t,
+      bookable_master: t.origin_standard_table_id ? (masters[t.origin_standard_table_id] ?? false) : true,
+    }));
   });
 
 
@@ -305,7 +318,22 @@ export const updateTable = createServerFn({ method: "POST" })
     if (rest.name !== undefined) patch.name = rest.name;
     if (rest.description !== undefined) patch.description = rest.description;
     if (rest.icon !== undefined) patch.icon = rest.icon;
-    if (rest.bookable !== undefined) patch.bookable = rest.bookable;
+    if (rest.bookable !== undefined) {
+      if (rest.bookable === true) {
+        const { data: cur } = await context.supabase
+          .from("tables").select("origin_standard_table_id").eq("id", id).maybeSingle();
+        const originId = (cur as any)?.origin_standard_table_id as string | null;
+        if (originId) {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { data: std } = await (supabaseAdmin as any)
+            .from("category_standard_tables").select("bookable").eq("id", originId).maybeSingle();
+          if (!(std as any)?.bookable) {
+            throw new Error("Reservas desabilitadas pelo administrador da plataforma para esta tabela.");
+          }
+        }
+      }
+      patch.bookable = rest.bookable;
+    }
     if (rest.is_public !== undefined) patch.is_public = rest.is_public;
     if (rest.category_data !== undefined) patch.category_data = rest.category_data;
     const { error } = await context.supabase.from("tables").update(patch as any).eq("id", id);

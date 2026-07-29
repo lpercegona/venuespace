@@ -1,3 +1,11 @@
+## 2026-07-29 13:55 (America/Sao_Paulo) — Iteração 24
+
+- Tabelas padrão: novo controle mestre "recebe reservas" (`category_standard_tables.bookable`); quando desligado, força `tables.bookable = false` em todas as orgs da categoria e o backend (`updateTable`) rejeita habilitação; switch da tabela do usuário fica desabilitado (`bookable_master` em `listTables`).
+- Nova área "Formulários padrão" no painel do super admin: tabelas `category_standard_forms` e `category_standard_form_fields` (RLS + GRANTs), server fns em `src/lib/category-standard-forms.functions.ts`, seções `StandardFormsSection`/`StandardFormFieldsEditor`.
+- Instanciação retroativa via `apply_standard_forms_to_org` / `sync_category_standard_forms`, também chamada em `create_organization` e `sync_category_standard_tables`: cria a tabela de destino das submissões (bloqueada), espelha campos e cria/atualiza a view `public_form` (com `auto_relation_field_id` no escopo registro).
+- Campos de contato base para todas as organizações (`organization_fields`): telefone, WhatsApp, e-mail e site.
+- Página pública da organização em 2 colunas (mesmo formato da página de registro), com novo componente `ContactActions` (botão "Acessar o site" + ícones de e-mail, WhatsApp e telefone) e botão do formulário público de organização no `aside`.
+
 ## 2026-07-28 (America/Sao_Paulo) — Correção das Iterações 22/23 — cards públicos: espaçamento do subtítulo e gap entre campos
 
 Correção visual de escopo já entregue — **não abre iteração nova** (norma §0 "Correções não abrem iteração").

@@ -366,11 +366,11 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   return { items, total };
 }
 
-export async function getPublicOrganization(slug: string): Promise<PublicOrganizationSummary & { category_name: string | null; address: Record<string, any> }> {
+export async function getPublicOrganization(slug: string): Promise<any> {
   const sb = supabaseAdmin;
   const { data: o, error } = await sb
     .from("organizations")
-    .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at, is_public")
+    .select("id, slug, name, description, logo_url, category_id, category_data, system_data, address, updated_at, is_public")
     .eq("slug", slug)
     .eq("is_public", true)
     .maybeSingle();
@@ -399,7 +399,23 @@ export async function getPublicOrganization(slug: string): Promise<PublicOrganiz
     "address.neighborhood": addr.neighborhood ?? "",
     "address.city": addr.city ?? "",
     "address.state": addr.state ?? "",
+    ...((o as any).system_data ?? {}),
     ...((o as any).category_data ?? {}),
+  };
+  // Formulário público padrão de escopo organização (Iteração 24).
+  const { data: orgForm } = await (sb as any)
+    .from("views")
+    .select("id, config, submissions_table_id, table_id")
+    .eq("organization_id", (o as any).id)
+    .eq("type", "public_form")
+    .not("origin_standard_form_id", "is", null)
+    .limit(20);
+  const orgFormView = ((orgForm ?? []) as any[]).find((v) => v.table_id === v.submissions_table_id) ?? null;
+  const contact = {
+    phone: (o as any).system_data?.phone ?? null,
+    whatsapp: (o as any).system_data?.whatsapp ?? null,
+    email: (o as any).system_data?.email ?? null,
+    website: (o as any).system_data?.website ?? null,
   };
   const item = {
     id: (o as any).id,
@@ -415,6 +431,10 @@ export async function getPublicOrganization(slug: string): Promise<PublicOrganiz
     layout,
     address: addr,
     category_name: (catRow as any)?.data?.name ?? null,
+    contact,
+    public_form_view: orgFormView
+      ? { id: orgFormView.id as string, table_id: orgFormView.table_id as string, submit_label: (orgFormView.config ?? {}).submit_label ?? "Enviar" }
+      : null,
   };
   await signImagePathsInItems([item as any]);
   return item as any;
