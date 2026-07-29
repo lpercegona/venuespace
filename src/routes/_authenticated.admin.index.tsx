@@ -113,6 +113,7 @@ function AdminPage() {
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
           <TabsTrigger value="standard-tables">Tabelas padrão</TabsTrigger>
+          <TabsTrigger value="standard-forms">Formulários padrão</TabsTrigger>
           <TabsTrigger value="filters">Filtros públicos</TabsTrigger>
           <TabsTrigger value="layouts">Layout público</TabsTrigger>
           <TabsTrigger value="blog">Blog</TabsTrigger>
@@ -122,6 +123,7 @@ function AdminPage() {
         <TabsContent value="categories"><CategoriesSection /></TabsContent>
         <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
         <TabsContent value="standard-tables"><StandardTablesSection /></TabsContent>
+        <TabsContent value="standard-forms"><StandardFormsSection /></TabsContent>
         <TabsContent value="filters"><FilterFieldsSection /></TabsContent>
         <TabsContent value="layouts"><LayoutsSection /></TabsContent>
         <TabsContent value="blog"><BlogSection /></TabsContent>
@@ -1353,15 +1355,16 @@ function StandardTablesSection() {
   const [tName, setTName] = useState(""); const [tSlugV, setTSlugV] = useState("");
   const [tIcon, setTIcon] = useState(""); const [tDesc, setTDesc] = useState(""); const [tOrder, setTOrder] = useState(0);
   const [tPub, setTPub] = useState(false);
+  const [tBook, setTBook] = useState(false);
   const [tBusy, setTBusy] = useState(false);
 
   function openNewTable() {
     setEditingTable(null); setTName(""); setTSlugV(""); setTIcon(""); setTDesc("");
-    setTOrder((tables.data ?? []).length); setTPub(false); setOpenTable(true);
+    setTOrder((tables.data ?? []).length); setTPub(false); setTBook(false); setOpenTable(true);
   }
   function openEditTable(t: CategoryStandardTable) {
     setEditingTable(t); setTName(t.name); setTSlugV(t.slug); setTIcon(t.icon ?? "");
-    setTDesc(t.description ?? ""); setTOrder(t.order_index); setTPub(!!t.is_public); setOpenTable(true);
+    setTDesc(t.description ?? ""); setTOrder(t.order_index); setTPub(!!t.is_public); setTBook(!!(t as any).bookable); setOpenTable(true);
   }
   async function saveTable(e: React.FormEvent) {
     e.preventDefault();
@@ -1373,6 +1376,7 @@ function StandardTablesSection() {
         name: tName, slug: tSlugV || stSlug(tName),
         icon: tIcon || null, description: tDesc || null, order_index: tOrder,
         is_public: tPub,
+        bookable: tBook,
       } });
       toast.success(editingTable ? "Tabela atualizada" : "Tabela criada");
       setOpenTable(false);
@@ -1440,6 +1444,13 @@ function StandardTablesSection() {
                         <p className="text-xs text-muted-foreground">Novas organizações desta categoria criam esta tabela já pública.</p>
                       </div>
                       <Switch checked={tPub} onCheckedChange={setTPub} />
+                    </div>
+                    <div className="flex items-center justify-between rounded-md border border-border p-3">
+                      <div>
+                        <Label className="text-sm">Recebe reservas</Label>
+                        <p className="text-xs text-muted-foreground">Controle mestre: quando desligado, nenhuma organização da categoria pode habilitar reservas nesta tabela.</p>
+                      </div>
+                      <Switch checked={tBook} onCheckedChange={setTBook} />
                     </div>
                     <DialogFooter>
                       <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>Cancelar</Button>
