@@ -59,6 +59,16 @@ import {
   type CategoryStandardTable,
   type CategoryStandardTableField,
 } from "@/lib/category-standard-tables.functions";
+import {
+  listCategoryStandardForms,
+  upsertCategoryStandardForm,
+  deleteCategoryStandardForm,
+  listCategoryStandardFormFields,
+  upsertCategoryStandardFormField,
+  deleteCategoryStandardFormField,
+  type CategoryStandardForm,
+  type CategoryStandardFormField,
+} from "@/lib/category-standard-forms.functions";
 import { listCategoryLayout, saveCategoryLayout, type LayoutField } from "@/lib/category-layouts.functions";
 import {
   listCategoryFilterFieldsPublic,
@@ -1647,3 +1657,356 @@ function StandardTableFieldsEditor({ standardTableId }: { standardTableId: strin
   );
 }
 
+
+// ---------- Iteração 24: formulários padrão por categoria ----------
+
+const FORM_FIELD_TYPES = [
+  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file",
+] as const;
+
+function StandardFormsSection() {
+  const qc = useQueryClient();
+  const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
+  const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selectedCat && cats.data && cats.data.length > 0) setSelectedCat(cats.data[0].id);
+  }, [cats.data, selectedCat]);
+
+  const stdTables = useQuery({
+    queryKey: ["admin-std-tables", selectedCat],
+    queryFn: () => selectedCat ? listCategoryStandardTables({ data: { category_id: selectedCat } }) : Promise.resolve([] as CategoryStandardTable[]),
+    enabled: !!selectedCat,
+  });
+
+  const forms = useQuery({
+    queryKey: ["admin-std-forms", selectedCat],
+    queryFn: () => selectedCat ? listCategoryStandardForms({ data: { category_id: selectedCat } }) : Promise.resolve([] as CategoryStandardForm[]),
+    enabled: !!selectedCat,
+  });
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<CategoryStandardForm | null>(null);
+  const [scope, setScope] = useState<"organization" | "record">("organization");
+  const [stdTableId, setStdTableId] = useState<string>("");
+  const [name, setName] = useState("");
+  const [submitLabel, setSubmitLabel] = useState("Enviar");
+  const [targetName, setTargetName] = useState("Contatos");
+  const [active, setActive] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  function openNew() {
+    setEditing(null); setScope("organization"); setStdTableId("");
+    setName("Fale com a organização"); setSubmitLabel("Enviar"); setTargetName("Contatos"); setActive(true);
+    setOpen(true);
+  }
+  function openEdit(f: CategoryStandardForm) {
+    setEditing(f); setScope(f.scope); setStdTableId(f.standard_table_id ?? "");
+    setName(f.name); setSubmitLabel(f.submit_label); setTargetName(f.target_table_name); setActive(f.is_active);
+    setOpen(true);
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedCat) return;
+    setBusy(true);
+    try {
+      await upsertCategoryStandardForm({ data: {
+        id: editing?.id, category_id: selectedCat, scope,
+        standard_table_id: scope === "record" ? (stdTableId || null) : null,
+        name, submit_label: submitLabel, target_table_name: targetName, is_active: active,
+      } });
+      toast.success(editing ? "Formulário atualizado" : "Formulário criado");
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["admin-std-forms", selectedCat] });
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  async function remove(id: string) {
+    try {
+      await deleteCategoryStandardForm({ data: { id } });
+      toast.success("Formulário removido");
+      qc.invalidateQueries({ queryKey: ["admin-std-forms", selectedCat] });
+      if (selectedForm === id) setSelectedForm(null);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  const [selectedForm, setSelectedForm] = useState<string | null>(null);
+  useEffect(() => {
+    const list = forms.data ?? [];
+    if (list.length === 0) { setSelectedForm(null); return; }
+    if (!selectedForm || !list.find((f) => f.id === selectedForm)) setSelectedForm(list[0].id);
+  }, [forms.data, selectedForm]);
+
+  const tableName = (id: string | null) => (stdTables.data ?? []).find((t) => t.id === id)?.name ?? "—";
+
+  return (
+    <Card>
+      <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle className="font-display">Formulários padrão por categoria</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Formulários públicos de contato/interesse criados automaticamente nas páginas públicas de organização e de registro. Alterações são aplicadas retroativamente a todas as organizações da categoria.
+          </p>
+        </div>
+        <Select value={selectedCat ?? ""} onValueChange={setSelectedCat}>
+          <SelectTrigger className="w-64"><SelectValue placeholder="Selecione categoria" /></SelectTrigger>
+          <SelectContent>
+            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!selectedCat ? <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p> : (
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Formulários</p>
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild><Button size="sm" onClick={openNew}><Plus className="h-4 w-4" />Novo formulário</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle className="font-display">{editing ? "Editar formulário" : "Novo formulário"}</DialogTitle></DialogHeader>
+                  <form onSubmit={save} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Escopo</Label>
+                      <Select value={scope} onValueChange={(v) => setScope(v as "organization" | "record")}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="organization">Página pública da organização</SelectItem>
+                          <SelectItem value="record">Página pública de registro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {scope === "record" ? (
+                      <div className="space-y-2">
+                        <Label>Tabela padrão de origem</Label>
+                        <Select value={stdTableId} onValueChange={setStdTableId}>
+                          <SelectTrigger><SelectValue placeholder="Selecione a tabela padrão" /></SelectTrigger>
+                          <SelectContent>
+                            {(stdTables.data ?? []).map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : null}
+                    <div className="space-y-2"><Label>Nome do formulário</Label><Input required value={name} onChange={(e) => setName(e.target.value)} /></div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2"><Label>Texto do botão</Label><Input required value={submitLabel} onChange={(e) => setSubmitLabel(e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Tabela de destino</Label><Input required value={targetName} onChange={(e) => setTargetName(e.target.value)} /></div>
+                    </div>
+                    <div className="flex items-center justify-between rounded-md border border-border p-3">
+                      <div>
+                        <Label className="text-sm">Ativo</Label>
+                        <p className="text-xs text-muted-foreground">Desativar remove o formulário das páginas públicas das organizações.</p>
+                      </div>
+                      <Switch checked={active} onCheckedChange={setActive} />
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                      <Button type="submit" disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : (editing ? "Salvar" : "Criar")}</Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {(forms.data ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum formulário padrão definido.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Escopo</TableHead>
+                      <TableHead>Origem</TableHead>
+                      <TableHead>Destino</TableHead>
+                      <TableHead className="w-40"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(forms.data ?? []).map((f) => (
+                      <TableRow key={f.id} className={selectedForm === f.id ? "bg-muted/40" : ""}>
+                        <TableCell className="font-medium">
+                          <span className="flex items-center gap-2">
+                            {f.name}
+                            {f.is_active ? null : <Badge variant="secondary">inativo</Badge>}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{f.scope === "organization" ? "Organização" : "Registro"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{f.scope === "record" ? tableName(f.standard_table_id) : "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{f.target_table_name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => setSelectedForm(f.id)}>Campos</Button>
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild><Button size="icon" variant="ghost" className="text-destructive"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remover formulário padrão?</AlertDialogTitle>
+                                  <AlertDialogDescription>O formulário deixa de aparecer nas páginas públicas das organizações desta categoria. As submissões já recebidas são preservadas.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => remove(f.id)}>Remover</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {selectedForm ? <StandardFormFieldsEditor formId={selectedForm} /> : null}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function StandardFormFieldsEditor({ formId }: { formId: string }) {
+  const qc = useQueryClient();
+  const list = useQuery({
+    queryKey: ["admin-std-form-fields", formId],
+    queryFn: () => listCategoryStandardFormFields({ data: { form_id: formId } }),
+  });
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<CategoryStandardFormField | null>(null);
+  const [label, setLabel] = useState("");
+  const [key, setKey] = useState("");
+  const [type, setType] = useState<string>("text");
+  const [required, setRequired] = useState(false);
+  const [optionsText, setOptionsText] = useState("");
+  const [order, setOrder] = useState(0);
+  const [busy, setBusy] = useState(false);
+
+  function openNew() {
+    setEditing(null); setLabel(""); setKey(""); setType("text"); setRequired(false);
+    setOptionsText(""); setOrder((list.data ?? []).length); setOpen(true);
+  }
+  function openEdit(f: CategoryStandardFormField) {
+    setEditing(f); setLabel(f.label); setKey(f.field_key); setType(f.field_type); setRequired(f.required);
+    setOptionsText(Array.isArray((f.config ?? {}).options) ? ((f.config as any).options as string[]).join("\n") : "");
+    setOrder(f.order_index); setOpen(true);
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const options = optionsText.split("\n").map((o) => o.trim()).filter(Boolean);
+      const config: Record<string, any> = { ...(editing?.config ?? {}) };
+      if (type === "select" || type === "multiselect") config.options = options;
+      else delete config.options;
+      await upsertCategoryStandardFormField({ data: {
+        id: editing?.id, form_id: formId, field_key: key || toSnake(label), label,
+        field_type: type as any, required, config, order_index: order,
+      } });
+      toast.success(editing ? "Campo atualizado" : "Campo criado");
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["admin-std-form-fields", formId] });
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  async function remove(id: string) {
+    try {
+      await deleteCategoryStandardFormField({ data: { id } });
+      toast.success("Campo removido");
+      qc.invalidateQueries({ queryKey: ["admin-std-form-fields", formId] });
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">Campos do formulário</p>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button size="sm" variant="outline" onClick={openNew}><Plus className="h-4 w-4" />Novo campo</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo"}</DialogTitle></DialogHeader>
+            <form onSubmit={save} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Rótulo</Label>
+                <Input required value={label} onChange={(e) => { setLabel(e.target.value); if (!editing && !key) setKey(toSnake(e.target.value)); }} />
+              </div>
+              <div className="space-y-2">
+                <Label>Chave</Label>
+                <Input required pattern="^[a-z][a-z0-9_]*$" value={key} onChange={(e) => setKey(e.target.value)} />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Select value={type} onValueChange={setType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {FORM_FIELD_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2"><Label>Ordem</Label><Input type="number" min={0} value={order} onChange={(e) => setOrder(Number(e.target.value))} /></div>
+              </div>
+              {type === "select" || type === "multiselect" ? (
+                <div className="space-y-2">
+                  <Label>Opções (uma por linha)</Label>
+                  <Textarea rows={4} value={optionsText} onChange={(e) => setOptionsText(e.target.value)} />
+                </div>
+              ) : null}
+              <div className="flex items-center justify-between rounded-md border border-border p-3">
+                <Label className="text-sm">Obrigatório</Label>
+                <Switch checked={required} onCheckedChange={setRequired} />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : (editing ? "Salvar" : "Criar")}</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {list.isLoading ? (
+        <p className="text-sm text-muted-foreground">Carregando…</p>
+      ) : (list.data ?? []).length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum campo definido.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-16">Ordem</TableHead>
+                <TableHead>Rótulo</TableHead>
+                <TableHead>Chave</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead className="w-24">Obrig.</TableHead>
+                <TableHead className="w-24"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(list.data ?? []).map((f) => (
+                <TableRow key={f.id}>
+                  <TableCell>{f.order_index}</TableCell>
+                  <TableCell className="font-medium">{f.label}</TableCell>
+                  <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{f.field_type}</TableCell>
+                  <TableCell>{f.required ? "Sim" : "Não"}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(f.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}
