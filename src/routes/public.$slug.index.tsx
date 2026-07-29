@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin } from "lucide-react";
+import { MapPin, MessageCircle } from "lucide-react";
+import { useState } from "react";
+import { ContactActions } from "@/components/venue/contact-actions";
+import { InterestFormModal } from "@/components/venue/interest-form-modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
@@ -38,7 +42,12 @@ export const Route = createFileRoute("/public/$slug/")({
   ),
 });
 
-type PublicOrg = PublicOrganizationSummary & { category_name: string | null; address: Record<string, any> };
+type PublicOrg = PublicOrganizationSummary & {
+  category_name: string | null;
+  address: Record<string, any>;
+  contact?: { phone: string | null; whatsapp: string | null; email: string | null; website: string | null };
+  public_form_view?: { id: string; table_id: string; submit_label: string } | null;
+};
 
 async function fetchOrg(slug: string): Promise<PublicOrg> {
   const res = await fetch(`/api/public/organizations/${encodeURIComponent(slug)}`);
@@ -97,6 +106,7 @@ function OrgDetailsFallback({
 function PublicOrgPage() {
   const { slug } = Route.useParams();
   const orgQ = useQuery({ queryKey: ["public-org", slug], queryFn: () => fetchOrg(slug) });
+  const [contactOpen, setContactOpen] = useState(false);
   const recordsQ = useQuery({ queryKey: ["public-org-records", slug], queryFn: () => fetchRecords(slug) });
 
   if (orgQ.isLoading) {
@@ -169,7 +179,8 @@ function PublicOrgPage() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6">
+      <main className="mx-auto grid max-w-5xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-3">
+        <div className="space-y-10 lg:col-span-2 lg:order-1">
         {(layout.length > 0 || Object.keys(org.data ?? {}).length > 0) ? (
           <section className="space-y-4">
             <h2 className="font-display text-lg font-semibold">Informações</h2>
@@ -239,7 +250,27 @@ function PublicOrgPage() {
 
           )}
         </section>
+        </div>
+        <aside className="space-y-3 lg:order-2">
+          <ContactActions contact={org.contact} orgName={org.name} />
+          {org.public_form_view ? (
+            <Button size="lg" className="min-h-11 w-full" onClick={() => setContactOpen(true)}>
+              <MessageCircle className="h-4 w-4" />
+              {org.public_form_view.submit_label || "Entrar em contato"}
+            </Button>
+          ) : null}
+        </aside>
       </main>
+      {org.public_form_view ? (
+        <InterestFormModal
+          open={contactOpen}
+          onOpenChange={setContactOpen}
+          slug={slug}
+          tableId={org.public_form_view.table_id}
+          viewId={org.public_form_view.id}
+          tableName={org.name}
+        />
+      ) : null}
     </div>
   );
 }
