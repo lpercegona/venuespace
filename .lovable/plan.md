@@ -1,56 +1,48 @@
-## Enquadramento (sem nova iteração)
+## Iteração 24 — Reservas master, Formulários padrão, Contato base e Perfil público em 2 colunas
 
-Esta entrega é registrada como **Correção**, não como Iteração 24.
+Escopo fechado, 4 blocos. Estende as Iterações 7 (motor de reserva), 20/21 (tabelas padrão), 12 (campos de categoria) e 18/19 (perfil público).
 
-Iterações corrigidas, conforme o CHANGELOG:
-- **Iteração 11 / 12 — Cascata de campos por categoria e consolidação em "Campos padrão"**: origem do bug de persistência de `config.options`.
-- **Iteração 2 — Records + Grid/Form dinâmicos**: paridade de renderização por tipo de campo nos componentes genéricos.
-- **Iteração 20/21 — Tabelas padrão**: apenas referência comparativa (o editor de tabelas padrão já grava corretamente; serve de baseline).
+---
 
-Entrada no `CHANGELOG.md` no formato já usado no projeto:
-`## YYYY-MM-DD HH:MM (America/Sao_Paulo) — Correção das Iterações 11/12 e 2 — select/multiselect: persistência de opções e plotagem`
+### Bloco A — Controle master de reservas na tabela padrão
 
-## Diagnóstico (verificado no banco e no código)
+- Nova coluna `bookable boolean not null default false` em `category_standard_tables`.
+- Modal de edição de tabela padrão (Admin → Tabelas padrão) ganha switch "Permitir recebimento de reservas", ao lado do switch de visibilidade pública.
+- `sync_category_standard_tables` e `create_organization` propagam o master:
+  - master ligado → tabela da org mantém o valor escolhido pelo usuário (default `false` na criação);
+  - master desligado → `tables.bookable = false` forçado em todas as orgs da categoria (retroativo no sync).
+- Camada de usuário (Iteração 7 / modal de edição de tabela em `/app/$orgSlug`): o switch "reservas" continua existindo, mas fica desabilitado com texto explicativo quando o master estiver desligado; o backend (`updateTable`) rejeita `bookable = true` se o master da tabela de origem estiver desligado.
 
-```text
-category_org_fields.tipos_de_eventos (multiselect) → config = {}
-organization_category_default_fields.tipos_de_layout (multiselect) → config = {}
-category_standard_table_fields.tipos_de_layout (multiselect) → config = {options:[...]}  ← único correto
-```
+### Bloco B — Formulários padrão por categoria (nova aba no Admin)
 
-1. **Opções não persistem** — em `src/routes/_authenticated.admin.index.tsx`, o `ScopeEditor` (l. 542-560) mapeia as linhas dos três escopos **descartando `config`**. Assim `openEdit()` não repovoa `optionsText` e o salvamento grava `config` vazio, apagando as opções. O editor de Tabelas padrão (l. ~1501) restaura o `config` e por isso funciona.
-2. **Campo renderizado como texto** — `src/components/venue/category-fields-form.tsx` trata `boolean`, `long_text`, `image/file`, `gallery` e `select`, mas **não trata `multiselect`** (cai no `<Input type="text">`) nem `relation`.
-3. **Validação compartilhada desatualizada** — `src/lib/field-schema.ts`: `FIELD_TYPES` sem `long_text`, `gallery`, `phone`; `zodForField` sem o caso `gallery` (array validado como string). `records.functions.ts` já foi corrigido na Iteração 20.
+- Duas tabelas novas: `category_standard_forms` (categoria, escopo `organization` | `record`, `standard_table_id` para escopo registro, título, texto do botão, ativo) e `category_standard_form_fields` (chave, rótulo, tipo, obrigatório, ordem, config) — com GRANTs e RLS (leitura pública apenas do necessário; escrita só super admin).
+- Nova aba "Formulários padrão" no painel de administração, com seletor de categoria e sub-abas "Organização" e "Registro" (por tabela padrão), reutilizando o editor de campos já usado em "Campos padrão" (mesmo componente de linhas: chave, rótulo, tipo, obrigatório, opções, ordem).
+- Sincronização retroativa (mesmo padrão da Iteração 23): ao salvar, uma função no banco instancia/atualiza, em todas as organizações da categoria:
+  - a tabela de destino das submissões (criada como tabela de sistema bloqueada, ex.: "Contatos" / "Interessados") com os campos do formulário;
+  - a `view` `public_form` correspondente (`submissions_table_id` e `config.auto_relation_field_id` preenchidos), para escopo registro na tabela padrão correspondente e para escopo organização na tabela de contatos da org.
+- Campos obrigatórios de lead existentes (`contact_email`) continuam garantidos pelo fluxo de submissão anônima.
 
-## Escopo da correção
+### Bloco C — Campos de contato base
 
-### 1. Painel super admin — persistência
-- Incluir `config` em `UnifiedField` e nos três mapeamentos de query (org, tabela, registro).
-- `openEdit()` repovoa `optionsText` de `config.options` e o papel `cep` de `config.role`.
-- Ao salvar, fazer **merge** com o `config` existente; gravar `options` só para `select`/`multiselect` e limpá-las na troca de tipo.
-- Listagem exibe as opções cadastradas (contagem/preview) para conferência.
+- Adicionar como campos de sistema de organização (tabela `organization_fields`, válidos para todas as categorias): `phone` (telefone), `whatsapp`, `email`, `website` (site).
+- Aparecem automaticamente no cadastro/edição da organização (`EditOrgDialog` já renderiza campos de sistema) com máscaras/validações por tipo (`phone`, `email`, `url`).
+- Expostos no payload público da organização (`getPublicOrganization`) e ignorados na lista genérica de "Informações" para não duplicar com os botões de contato.
 
-### 2. `CategoryFieldsForm` — plotagem
-- Implementar `multiselect` (checkboxes a partir de `config.options`, valor como array), no mesmo padrão de `dynamic-form.tsx` (l. 240-262).
-- Implementar `relation` com rótulo explícito; manter `computed` fora do formulário.
-- Conferir tipos de input de `phone`, `email`, `url`, `number`, `currency`, `date`, `datetime`.
+### Bloco D — Página pública da organização em 2 colunas
 
-### 3. Alinhamento de tipos
-- `src/lib/field-schema.ts`: `FIELD_TYPES` e `zodForField` alinhados à lista canônica (`long_text`, `gallery`, `phone`).
+- Reestruturar `/public/$slug` no mesmo formato de `/public/$slug/$tableId/$recordId`: header + `main` em grid `lg:grid-cols-3`, conteúdo principal (Informações, mapa, publicações) em `lg:col-span-2` e `aside` lateral.
+- No `aside`, quando os campos estiverem preenchidos:
+  - botão largo "Acessar o site" (link externo);
+  - linha de botões somente-ícone: e-mail (`mailto:`), WhatsApp (`https://wa.me/...`), telefone (`tel:`) — todos com `aria-label` e alvo mínimo de 44px em mobile;
+  - abaixo, o botão de contato/interesse quando existir formulário padrão de organização (Bloco B).
+- Mobile: `aside` empilha acima das publicações; botões em largura total.
 
-### 4. Auditoria de propagação (§0)
-Declarar item a item o estado de cada superfície que lê/exibe campos: `DynamicGrid`, `DynamicForm`, `public-card-renderer.tsx`, `public.$slug.$tableId.$recordId.tsx`, `/api/public/*`, `/explore`, landing — corrigindo `multiselect`/`select`/`url`/`phone` onde a formatação estiver inconsistente.
+---
 
-### 5. Reparo dos dados existentes
-Migração pontual para restaurar as opções perdidas de `tipos_de_eventos` (escopo organização) e `tipos_de_layout` (escopo registro). Para `tipos_de_layout` reutilizo as opções já existentes no campo homônimo de tabela padrão; para `tipos_de_eventos` preciso da lista de opções desejada — **confirmar antes de aplicar** (ambiguidade = parada, §0).
+### Detalhes técnicos
 
-### 6. Skill — nova norma em §0
-Adicionar à Diretriz de Desenvolvimento, na seção de registro obrigatório:
-
-> **Correções não abrem iteração**: quando a entrega corrige comportamento de escopo já entregue, ela é registrada como `Correção`, identificando explicitamente as iterações corrigidas (`Correção da Iteração N` / `Correção das Iterações N/M`). Nova numeração de iteração é reservada a escopo novo aprovado. A entrada do `CHANGELOG.md` deve citar a iteração de origem do bug e a auditoria de propagação correspondente.
-
-## Detalhes técnicos
-
-- Arquivos: `src/routes/_authenticated.admin.index.tsx`, `src/components/venue/category-fields-form.tsx`, `src/lib/field-schema.ts`, possivelmente `dynamic-grid.tsx` / `public-card-renderer.tsx` / rota pública de detalhe, `CHANGELOG.md`, e a skill do projeto.
-- Sem mudança de esquema; apenas conteúdo `jsonb` de `config` e código de UI.
-- Validação: build/typecheck, 360/768/1280 em light+dark, e verificação com Playwright de criação/edição de um campo `multiselect` em cada escopo com persistência das opções.
+- Migrations: coluna `bookable` em `category_standard_tables`; tabelas `category_standard_forms` e `category_standard_form_fields` (CREATE → GRANT → RLS → POLICY); atualização de `sync_category_standard_tables` e `create_organization`; nova função `sync_category_standard_forms(_category_id)` com verificação de super admin; inserção dos 4 campos base em `organization_fields`.
+- Frontend: `src/routes/_authenticated.admin.index.tsx` (nova aba + switch de reservas), `src/routes/_authenticated.app.$orgSlug.index.tsx` (switch bloqueado), `src/routes/public.$slug.index.tsx` (layout 2 colunas + botões), novo `src/components/venue/contact-actions.tsx`.
+- Backend: `src/lib/category-standard-tables.functions.ts` (campo `bookable`), novo `src/lib/category-standard-forms.functions.ts`, `src/lib/orgs.functions.ts` (guarda do master), `src/lib/public.server.ts` (campos de contato + form de organização).
+- Sem cores hardcoded; apenas tokens semânticos e primitives shadcn existentes (`Button`, `Switch`, `Tabs`, `Card`, `Tooltip`).
+- Validação antes de fechar: build/typecheck, rotas em 360/768/1280, light+dark, RLS/GRANTs revisados, entrada em `CHANGELOG.md` como **Iteração 24**.
