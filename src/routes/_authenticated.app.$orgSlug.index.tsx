@@ -323,12 +323,14 @@ function TableCard({
   const [isPublic, setIsPublic] = useState(!!t.is_public);
   const [catData, setCatData] = useState<Record<string, any>>((t.category_data ?? {}) as Record<string, any>);
   const [saving, setSaving] = useState(false);
+  const isContacts = ((t as any).system_data ?? {}).kind === "contacts";
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await updateTable({ data: { id: t.id, name, description: desc || null, bookable, is_public: isPublic, category_data: catData } });
+      await updateTable({ data: { id: t.id, name, description: desc || null, bookable, is_public: isContacts ? false : isPublic, category_data: catData } });
+
       toast.success(`${label("table", "Tabela")} atualizada`);
       setEditing(false);
       onSaved();
