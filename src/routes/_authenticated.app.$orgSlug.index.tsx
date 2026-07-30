@@ -391,10 +391,15 @@ function TableCard({
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
                     <Label htmlFor={`e-p-${t.id}`} className="text-sm">{label("table", "Tabela")} pública</Label>
-                    <p className="text-xs text-muted-foreground">Se ativa, aparece nas listagens públicas.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isContacts
+                        ? "A tabela de contatos é sempre privada."
+                        : "Se ativa, aparece nas listagens públicas."}
+                    </p>
                   </div>
-                  <Switch id={`e-p-${t.id}`} checked={isPublic} onCheckedChange={setIsPublic} />
+                  <Switch id={`e-p-${t.id}`} checked={isContacts ? false : isPublic} onCheckedChange={setIsPublic} disabled={isContacts} />
                 </div>
+
                 <CategoryFieldsForm
                   categoryId={orgCategoryId}
                   scope="table"
