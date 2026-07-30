@@ -1333,6 +1333,7 @@ export type Database = {
           slug: string
         }[]
       }
+      ensure_contacts_table: { Args: { _org_id: string }; Returns: string }
       has_role: {
         Args: {
           _org_id: string
