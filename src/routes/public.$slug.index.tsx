@@ -252,14 +252,20 @@ function PublicOrgPage() {
         </section>
         </div>
         <aside className="space-y-3 lg:order-2">
-          <ContactActions contact={org.contact} orgName={org.name} />
-          {org.public_form_view ? (
-            <Button size="lg" className="min-h-11 w-full" onClick={() => setContactOpen(true)}>
-              <MessageCircle className="h-4 w-4" />
-              {org.public_form_view.submit_label || "Entrar em contato"}
-            </Button>
-          ) : null}
+          <ContactActions
+            contact={org.contact}
+            orgName={org.name}
+            formSlot={
+              org.public_form_view ? (
+                <Button size="lg" className="min-h-11 w-full" onClick={() => setContactOpen(true)}>
+                  <MessageCircle className="h-4 w-4" />
+                  {org.public_form_view.submit_label || "Entrar em contato"}
+                </Button>
+              ) : null
+            }
+          />
         </aside>
+
       </main>
       {org.public_form_view ? (
         <InterestFormModal
