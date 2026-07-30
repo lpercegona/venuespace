@@ -1,3 +1,13 @@
+## 2026-07-30 (America/Sao_Paulo) — Correção da Iteração 24 — contatos unificados, gating por usuário atribuído e botões de contato
+
+Correção/extensão de escopo já entregue na Iteração 24 — **não abre iteração nova** (norma §0 "Correções não abrem iteração").
+
+- Perfil público da organização: `ContactActions` passa a receber o botão do formulário (`formSlot`) e renderiza ao lado dele os botões somente ícone de WhatsApp, telefone e e-mail (`aria-label`, alvo 44px); "Acessar o site" segue como botão largo.
+- Contato pela plataforma exige organização atribuída: novo helper `orgHasAssignedUser` (membro que não é super admin) em `src/lib/public.server.ts`; quando não há usuário atribuído, `public_form_view` retorna `null` em `getPublicOrganization`, `loadPublicTable` e `loadPublicRecord`, e `POST /api/public/$slug/$tableId/submit` responde 403.
+- Tabela única de contatos por organização: nova função `public.ensure_contacts_table` (tabela de sistema "Contatos", `is_locked`, sempre privada, marcada por `system_data.kind = 'contacts'`); `apply_standard_forms_to_org` reescrita para apontar os dois formulários padrão (organização e registro) para a mesma tabela, mesclando campos por `field_key`, mantendo um único `__origem` e gravando `config.form_field_ids` por formulário.
+- Migração de dados: respostas das tabelas antigas de submissão movidas para a tabela "Contatos" da mesma organização (campos ausentes copiados, views reapontadas) e tabelas antigas removidas; rotina reaplicada a todas as organizações existentes.
+- Tabela de contatos nunca pública: trigger `trg_contacts_table_private` força `is_public = false`, `updateTable` rejeita a ativação e o switch "Tabela pública" aparece desabilitado com texto explicativo no painel da organização.
+
 ## 2026-07-29 13:55 (America/Sao_Paulo) — Iteração 24
 
 - Tabelas padrão: novo controle mestre "recebe reservas" (`category_standard_tables.bookable`); quando desligado, força `tables.bookable = false` em todas as orgs da categoria e o backend (`updateTable`) rejeita habilitação; switch da tabela do usuário fica desabilitado (`bookable_master` em `listTables`).

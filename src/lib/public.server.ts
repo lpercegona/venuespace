@@ -88,6 +88,20 @@ export async function listPublicTables(opts: { limit?: number; offset?: number; 
   return { items: items.slice(offset, offset + limit), total };
 }
 
+/** Organização "atribuída": possui membro que não é super admin (Correção Iteração 24). */
+export async function orgHasAssignedUser(orgId: string): Promise<boolean> {
+  const sb = supabaseAdmin;
+  const { data: members } = await sb
+    .from("memberships")
+    .select("user_id")
+    .eq("organization_id", orgId);
+  const ids = Array.from(new Set(((members ?? []) as any[]).map((m) => m.user_id)));
+  if (ids.length === 0) return false;
+  const { data: sa } = await (sb as any).from("super_admins").select("user_id").in("user_id", ids);
+  const saIds = new Set(((sa ?? []) as any[]).map((r) => r.user_id));
+  return ids.some((id) => !saIds.has(id));
+}
+
 export async function loadPublicTable(slug: string, tableId: string): Promise<PublicTablePayload> {
   const sb = supabaseAdmin;
 
@@ -139,6 +153,8 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
       }
     : null;
 
+  const hasAssignedUser = await orgHasAssignedUser(org.id);
+
   const record_card_layout = await loadPublicLayout((org as any).category_id ?? null, "record_card");
 
   return {
@@ -153,7 +169,7 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
     },
     fields: (fields ?? []) as any,
     records: (records ?? []) as any,
-    public_form_view,
+    public_form_view: hasAssignedUser ? public_form_view : null,
     record_card_layout,
   };
 }
@@ -410,7 +426,10 @@ export async function getPublicOrganization(slug: string): Promise<any> {
     .eq("type", "public_form")
     .not("origin_standard_form_id", "is", null)
     .limit(20);
-  const orgFormView = ((orgForm ?? []) as any[]).find((v) => v.table_id === v.submissions_table_id) ?? null;
+  const hasAssignedUser = await orgHasAssignedUser((o as any).id);
+  const orgFormView = hasAssignedUser
+    ? (((orgForm ?? []) as any[]).find((v) => v.table_id === v.submissions_table_id) ?? null)
+    : null;
   const contact = {
     phone: (o as any).system_data?.phone ?? null,
     whatsapp: (o as any).system_data?.whatsapp ?? null,
@@ -431,6 +450,7 @@ export async function getPublicOrganization(slug: string): Promise<any> {
     layout,
     address: addr,
     category_name: (catRow as any)?.data?.name ?? null,
+    has_assigned_user: hasAssignedUser,
     contact,
     public_form_view: orgFormView
       ? { id: orgFormView.id as string, table_id: orgFormView.table_id as string, submit_label: (orgFormView.config ?? {}).submit_label ?? "Enviar" }
@@ -674,7 +694,8 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
     .eq("type", "public_form")
     .limit(1);
   const v = views?.[0] as any;
-  const public_form_view = v
+  const hasAssignedUser = await orgHasAssignedUser((org as any).id);
+  const public_form_view = v && hasAssignedUser
     ? { id: v.id, auto_relation_field_id: (v.config ?? {}).auto_relation_field_id ?? null }
     : null;
 

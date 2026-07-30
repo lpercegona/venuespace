@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/public/$slug/$tableId/submit")({
         }
         const { view_id, source_record_id, contact_email, contact_name, data } = parsed.data;
 
-        const { loadPublicFormSchema } = await import("@/lib/public.server");
+        const { loadPublicFormSchema, orgHasAssignedUser } = await import("@/lib/public.server");
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         // Load view + submissions schema
@@ -40,6 +40,10 @@ export const Route = createFileRoute("/api/public/$slug/$tableId/submit")({
           .maybeSingle();
         if (!org || org.slug !== params.slug) {
           return Response.json({ error: "Organização não corresponde" }, { status: 400 });
+        }
+        // Contato pela plataforma exige usuário atribuído à organização (Correção Iteração 24).
+        if (!(await orgHasAssignedUser(view.organization_id))) {
+          return Response.json({ error: "Esta organização não recebe contatos pela plataforma." }, { status: 403 });
         }
         // Verify source table matches path (or view.table_id)
         if (view.source_table_id !== params.tableId) {

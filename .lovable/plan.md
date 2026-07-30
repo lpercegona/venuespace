@@ -1,48 +1,40 @@
-## Iteração 24 — Reservas master, Formulários padrão, Contato base e Perfil público em 2 colunas
+## Escopo
 
-Escopo fechado, 4 blocos. Estende as Iterações 7 (motor de reserva), 20/21 (tabelas padrão), 12 (campos de categoria) e 18/19 (perfil público).
+Correção/extensão da **Iteração 24** (master de reservas, formulários padrão, campos de contato base, layout público em 2 colunas). Não abre nova iteração — será registrada no `CHANGELOG.md` como `Correção da Iteração 24`.
 
----
+## 1. Botões de contato ao lado do botão de formulário
 
-### Bloco A — Controle master de reservas na tabela padrão
+Na página pública da organização (`src/routes/public.$slug.index.tsx` + `src/components/venue/contact-actions.tsx`):
 
-- Nova coluna `bookable boolean not null default false` em `category_standard_tables`.
-- Modal de edição de tabela padrão (Admin → Tabelas padrão) ganha switch "Permitir recebimento de reservas", ao lado do switch de visibilidade pública.
-- `sync_category_standard_tables` e `create_organization` propagam o master:
-  - master ligado → tabela da org mantém o valor escolhido pelo usuário (default `false` na criação);
-  - master desligado → `tables.bookable = false` forçado em todas as orgs da categoria (retroativo no sync).
-- Camada de usuário (Iteração 7 / modal de edição de tabela em `/app/$orgSlug`): o switch "reservas" continua existindo, mas fica desabilitado com texto explicativo quando o master estiver desligado; o backend (`updateTable`) rejeita `bookable = true` se o master da tabela de origem estiver desligado.
+- O bloco lateral passa a agrupar, na mesma área: botão primário do formulário (quando disponível) e, logo abaixo/ao lado, os botões **somente ícone** de WhatsApp, telefone e e-mail, alimentados por `system_data.whatsapp / phone / email`.
+- "Acessar o site" permanece como botão largo com rótulo.
+- Cada ícone só aparece se o campo estiver preenchido; `aria-label` obrigatório; alvo de toque `h-11 w-11`.
 
-### Bloco B — Formulários padrão por categoria (nova aba no Admin)
+## 2. Contato pela plataforma só com usuário atribuído
 
-- Duas tabelas novas: `category_standard_forms` (categoria, escopo `organization` | `record`, `standard_table_id` para escopo registro, título, texto do botão, ativo) e `category_standard_form_fields` (chave, rótulo, tipo, obrigatório, ordem, config) — com GRANTs e RLS (leitura pública apenas do necessário; escrita só super admin).
-- Nova aba "Formulários padrão" no painel de administração, com seletor de categoria e sub-abas "Organização" e "Registro" (por tabela padrão), reutilizando o editor de campos já usado em "Campos padrão" (mesmo componente de linhas: chave, rótulo, tipo, obrigatório, opções, ordem).
-- Sincronização retroativa (mesmo padrão da Iteração 23): ao salvar, uma função no banco instancia/atualiza, em todas as organizações da categoria:
-  - a tabela de destino das submissões (criada como tabela de sistema bloqueada, ex.: "Contatos" / "Interessados") com os campos do formulário;
-  - a `view` `public_form` correspondente (`submissions_table_id` e `config.auto_relation_field_id` preenchidos), para escopo registro na tabela padrão correspondente e para escopo organização na tabela de contatos da org.
-- Campos obrigatórios de lead existentes (`contact_email`) continuam garantidos pelo fluxo de submissão anônima.
+- `getPublicOrganization` e `loadPublicTable` (`src/lib/public.server.ts`) passam a calcular `has_assigned_user`: existe `memberships` da organização cujo `user_id` **não** está em `super_admins`.
+- Quando `false`: `public_form_view` retorna `null` nas páginas públicas de organização e de registro, o chat/lead por token não é oferecido, e a lateral exibe apenas os contatos diretos (site/WhatsApp/telefone/e-mail).
+- O endpoint de submissão (`src/routes/api/public/$slug/$tableId.submit.ts`) rejeita a submissão quando a organização não tem usuário atribuído (proteção server-side, não só de UI).
 
-### Bloco C — Campos de contato base
+## 3. Tabela única de contatos por organização
 
-- Adicionar como campos de sistema de organização (tabela `organization_fields`, válidos para todas as categorias): `phone` (telefone), `whatsapp`, `email`, `website` (site).
-- Aparecem automaticamente no cadastro/edição da organização (`EditOrgDialog` já renderiza campos de sistema) com máscaras/validações por tipo (`phone`, `email`, `url`).
-- Expostos no payload público da organização (`getPublicOrganization`) e ignorados na lista genérica de "Informações" para não duplicar com os botões de contato.
+Hoje `apply_standard_forms_to_org` cria **uma tabela de submissões por formulário**. Passa a existir **uma única tabela "Contatos" por organização**, com os dois formulários (organização e registro) gravando nela.
 
-### Bloco D — Página pública da organização em 2 colunas
+Migração:
+- Nova tabela de sistema `Contatos` por organização (`is_system = true`, `is_locked = true`, `is_public = false`), identificada por marcador em `system_data` (ex.: `kind = 'contacts'`), independente de categoria.
+- `apply_standard_forms_to_org` reescrita para: garantir a tabela `Contatos`, espelhar nela a união dos campos de todos os formulários padrão ativos da categoria (mesclando por `field_key`), manter um único campo `__origem` (relation) preenchido apenas pelas submissões de escopo registro, e apontar `views.submissions_table_id` de ambos os formulários para essa tabela.
+- Limpeza de campos `source='category'` passa a considerar a união dos campos de todos os formulários (não apagar campos do outro formulário).
+- **Migração de dados**: registros existentes nas tabelas de submissão antigas são movidos para a tabela `Contatos` da mesma organização; conversas e `lead_access_tokens` seguem vinculados aos mesmos `record_id`; as tabelas antigas vazias são removidas.
+- `apply_standard_forms_to_org` passa a ser executada também na criação de organização mesmo sem formulários padrão, garantindo a tabela `Contatos` para todos.
 
-- Reestruturar `/public/$slug` no mesmo formato de `/public/$slug/$tableId/$recordId`: header + `main` em grid `lg:grid-cols-3`, conteúdo principal (Informações, mapa, publicações) em `lg:col-span-2` e `aside` lateral.
-- No `aside`, quando os campos estiverem preenchidos:
-  - botão largo "Acessar o site" (link externo);
-  - linha de botões somente-ícone: e-mail (`mailto:`), WhatsApp (`https://wa.me/...`), telefone (`tel:`) — todos com `aria-label` e alvo mínimo de 44px em mobile;
-  - abaixo, o botão de contato/interesse quando existir formulário padrão de organização (Bloco B).
-- Mobile: `aside` empilha acima das publicações; botões em largura total.
+## 4. Tabela de contatos nunca pública
 
----
+- Backend: `updateTable` (`src/lib/orgs.functions.ts`) rejeita `is_public = true` para a tabela de contatos; migração garante `is_public = false`.
+- Frontend: no painel da organização, o switch "pública" dessa tabela aparece desabilitado com texto explicativo; a tabela também é excluída das listagens públicas (`listPublicTables`, `listPublicRecords`) por já ser `is_public = false`.
 
-### Detalhes técnicos
+## Detalhes técnicos
 
-- Migrations: coluna `bookable` em `category_standard_tables`; tabelas `category_standard_forms` e `category_standard_form_fields` (CREATE → GRANT → RLS → POLICY); atualização de `sync_category_standard_tables` e `create_organization`; nova função `sync_category_standard_forms(_category_id)` com verificação de super admin; inserção dos 4 campos base em `organization_fields`.
-- Frontend: `src/routes/_authenticated.admin.index.tsx` (nova aba + switch de reservas), `src/routes/_authenticated.app.$orgSlug.index.tsx` (switch bloqueado), `src/routes/public.$slug.index.tsx` (layout 2 colunas + botões), novo `src/components/venue/contact-actions.tsx`.
-- Backend: `src/lib/category-standard-tables.functions.ts` (campo `bookable`), novo `src/lib/category-standard-forms.functions.ts`, `src/lib/orgs.functions.ts` (guarda do master), `src/lib/public.server.ts` (campos de contato + form de organização).
-- Sem cores hardcoded; apenas tokens semânticos e primitives shadcn existentes (`Button`, `Switch`, `Tabs`, `Card`, `Tooltip`).
-- Validação antes de fechar: build/typecheck, rotas em 360/768/1280, light+dark, RLS/GRANTs revisados, entrada em `CHANGELOG.md` como **Iteração 24**.
+- Migrações SQL: coluna/marcador de identificação da tabela de contatos, reescrita de `public.apply_standard_forms_to_org`, backfill de dados e execução retroativa para todas as organizações existentes.
+- Arquivos tocados: `src/lib/public.server.ts`, `src/lib/orgs.functions.ts`, `src/routes/api/public/$slug/$tableId.submit.ts`, `src/routes/public.$slug.index.tsx`, `src/routes/public.$slug.$tableId.$recordId.tsx`, `src/routes/public.$slug.$tableId.index.tsx`, `src/components/venue/contact-actions.tsx`, `src/routes/_authenticated.app.$orgSlug.index.tsx`.
+- Sem novos tokens de cor; apenas primitives shadcn já existentes (Button, Switch, Tooltip).
+- Validação: build/typecheck, rotas públicas em 360/768/1280 em light+dark, submissão de formulário de organização e de registro caindo na mesma tabela, organização sem usuário atribuído sem formulário/chat.

@@ -323,12 +323,14 @@ function TableCard({
   const [isPublic, setIsPublic] = useState(!!t.is_public);
   const [catData, setCatData] = useState<Record<string, any>>((t.category_data ?? {}) as Record<string, any>);
   const [saving, setSaving] = useState(false);
+  const isContacts = ((t as any).system_data ?? {}).kind === "contacts";
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await updateTable({ data: { id: t.id, name, description: desc || null, bookable, is_public: isPublic, category_data: catData } });
+      await updateTable({ data: { id: t.id, name, description: desc || null, bookable, is_public: isContacts ? false : isPublic, category_data: catData } });
+
       toast.success(`${label("table", "Tabela")} atualizada`);
       setEditing(false);
       onSaved();
@@ -391,10 +393,15 @@ function TableCard({
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
                     <Label htmlFor={`e-p-${t.id}`} className="text-sm">{label("table", "Tabela")} pública</Label>
-                    <p className="text-xs text-muted-foreground">Se ativa, aparece nas listagens públicas.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isContacts
+                        ? "A tabela de contatos é sempre privada."
+                        : "Se ativa, aparece nas listagens públicas."}
+                    </p>
                   </div>
-                  <Switch id={`e-p-${t.id}`} checked={isPublic} onCheckedChange={setIsPublic} />
+                  <Switch id={`e-p-${t.id}`} checked={isContacts ? false : isPublic} onCheckedChange={setIsPublic} disabled={isContacts} />
                 </div>
+
                 <CategoryFieldsForm
                   categoryId={orgCategoryId}
                   scope="table"
