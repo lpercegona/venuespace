@@ -214,7 +214,7 @@ export const listTables = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("tables")
-      .select("id, slug, name, description, icon, bookable, is_public, category_data, updated_at, is_locked, origin_standard_table_id")
+      .select("id, slug, name, description, icon, bookable, is_public, category_data, updated_at, is_locked, origin_standard_table_id, system_data")
       .eq("organization_id", data.organization_id)
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -334,7 +334,16 @@ export const updateTable = createServerFn({ method: "POST" })
       }
       patch.bookable = rest.bookable;
     }
-    if (rest.is_public !== undefined) patch.is_public = rest.is_public;
+    if (rest.is_public !== undefined) {
+      if (rest.is_public === true) {
+        const { data: cur } = await context.supabase
+          .from("tables").select("system_data").eq("id", id).maybeSingle();
+        if (((cur as any)?.system_data ?? {}).kind === "contacts") {
+          throw new Error("A tabela de contatos não pode ser pública.");
+        }
+      }
+      patch.is_public = rest.is_public;
+    }
     if (rest.category_data !== undefined) patch.category_data = rest.category_data;
     const { error } = await context.supabase.from("tables").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
@@ -347,7 +356,7 @@ export const getTable = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("tables")
-      .select("id, slug, name, description, icon, bookable, is_public, category_data, organization_id, is_locked, origin_standard_table_id")
+      .select("id, slug, name, description, icon, bookable, is_public, category_data, organization_id, is_locked, origin_standard_table_id, system_data")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
