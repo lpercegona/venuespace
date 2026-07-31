@@ -1,40 +1,41 @@
-## Escopo
+# Iteração 25 — Acesso total do super admin e limpeza de UI em tabelas padrão
 
-Correção/extensão da **Iteração 24** (master de reservas, formulários padrão, campos de contato base, layout público em 2 colunas). Não abre nova iteração — será registrada no `CHANGELOG.md` como `Correção da Iteração 24`.
+Extensão das Iterações 1 (fundação/RLS), 8 (membros) e 20/24 (tabelas padrão e bloqueio).
 
-## 1. Botões de contato ao lado do botão de formulário
+## 1. Super admin enxerga todas as organizações
 
-Na página pública da organização (`src/routes/public.$slug.index.tsx` + `src/components/venue/contact-actions.tsx`):
+- A lista em `/app` passa a incluir todas as organizações da instância quando o usuário for super admin; usuários normais continuam vendo apenas as suas.
+- Organizações onde o super admin não é membro aparecem com selo "super admin" no card, para deixar claro que é acesso administrativo, não vínculo.
+- O acesso continua invisível para usuários normais: nada muda na visão deles.
+- Dentro de uma organização, o super admin navega normalmente (tabelas, registros, conversas, membros) mesmo sem membership.
 
-- O bloco lateral passa a agrupar, na mesma área: botão primário do formulário (quando disponível) e, logo abaixo/ao lado, os botões **somente ícone** de WhatsApp, telefone e e-mail, alimentados por `system_data.whatsapp / phone / email`.
-- "Acessar o site" permanece como botão largo com rótulo.
-- Cada ícone só aparece se o campo estiver preenchido; `aria-label` obrigatório; alvo de toque `h-11 w-11`.
+## 2. Gestão de usuários da organização pelo super admin
 
-## 2. Contato pela plataforma só com usuário atribuído
+- No fluxo de edição da organização, o super admin ganha uma seção "Membros": listar, adicionar por e-mail, alterar papel (proprietário/editor/leitor) e remover.
+- Definir proprietário: alterar o papel de um membro para "proprietário" é permitido ao super admin em qualquer organização.
+- Regra de integridade: a organização não pode ficar sem nenhum proprietário — remoção/rebaixamento do último proprietário é bloqueada com mensagem clara.
+- Proprietários comuns mantêm o comportamento atual (a página de Membros existente segue igual para eles).
 
-- `getPublicOrganization` e `loadPublicTable` (`src/lib/public.server.ts`) passam a calcular `has_assigned_user`: existe `memberships` da organização cujo `user_id` **não** está em `super_admins`.
-- Quando `false`: `public_form_view` retorna `null` nas páginas públicas de organização e de registro, o chat/lead por token não é oferecido, e a lateral exibe apenas os contatos diretos (site/WhatsApp/telefone/e-mail).
-- O endpoint de submissão (`src/routes/api/public/$slug/$tableId.submit.ts`) rejeita a submissão quando a organização não tem usuário atribuído (proteção server-side, não só de UI).
+## 3. Usuário normal — tabelas padrão (bloqueadas)
 
-## 3. Tabela única de contatos por organização
+Somente para tabelas padrão (`is_locked`), e somente para quem não é super admin:
 
-Hoje `apply_standard_forms_to_org` cria **uma tabela de submissões por formulário**. Passa a existir **uma única tabela "Contatos" por organização**, com os dois formulários (organização e registro) gravando nela.
+- Painel da organização: remover o ícone de edição da tabela.
+- Página de registros da tabela: remover o botão "Campos".
+- Página de registros da tabela: remover o botão "Novo formulário" e a seção que lista os formulários públicos existentes.
 
-Migração:
-- Nova tabela de sistema `Contatos` por organização (`is_system = true`, `is_locked = true`, `is_public = false`), identificada por marcador em `system_data` (ex.: `kind = 'contacts'`), independente de categoria.
-- `apply_standard_forms_to_org` reescrita para: garantir a tabela `Contatos`, espelhar nela a união dos campos de todos os formulários padrão ativos da categoria (mesclando por `field_key`), manter um único campo `__origem` (relation) preenchido apenas pelas submissões de escopo registro, e apontar `views.submissions_table_id` de ambos os formulários para essa tabela.
-- Limpeza de campos `source='category'` passa a considerar a união dos campos de todos os formulários (não apagar campos do outro formulário).
-- **Migração de dados**: registros existentes nas tabelas de submissão antigas são movidos para a tabela `Contatos` da mesma organização; conversas e `lead_access_tokens` seguem vinculados aos mesmos `record_id`; as tabelas antigas vazias são removidas.
-- `apply_standard_forms_to_org` passa a ser executada também na criação de organização mesmo sem formulários padrão, garantindo a tabela `Contatos` para todos.
-
-## 4. Tabela de contatos nunca pública
-
-- Backend: `updateTable` (`src/lib/orgs.functions.ts`) rejeita `is_public = true` para a tabela de contatos; migração garante `is_public = false`.
-- Frontend: no painel da organização, o switch "pública" dessa tabela aparece desabilitado com texto explicativo; a tabela também é excluída das listagens públicas (`listPublicTables`, `listPublicRecords`) por já ser `is_public = false`.
+Tabelas criadas pelo próprio usuário continuam com todos os controles. Super admin continua vendo tudo.
 
 ## Detalhes técnicos
 
-- Migrações SQL: coluna/marcador de identificação da tabela de contatos, reescrita de `public.apply_standard_forms_to_org`, backfill de dados e execução retroativa para todas as organizações existentes.
-- Arquivos tocados: `src/lib/public.server.ts`, `src/lib/orgs.functions.ts`, `src/routes/api/public/$slug/$tableId.submit.ts`, `src/routes/public.$slug.index.tsx`, `src/routes/public.$slug.$tableId.$recordId.tsx`, `src/routes/public.$slug.$tableId.index.tsx`, `src/components/venue/contact-actions.tsx`, `src/routes/_authenticated.app.$orgSlug.index.tsx`.
-- Sem novos tokens de cor; apenas primitives shadcn já existentes (Button, Switch, Tooltip).
-- Validação: build/typecheck, rotas públicas em 360/768/1280 em light+dark, submissão de formulário de organização e de registro caindo na mesma tabela, organização sem usuário atribuído sem formulário/chat.
+- **Migração (RLS)**: adicionar `OR public.is_super_admin(auth.uid())` às políticas de SELECT/UPDATE/DELETE de `organizations`, `memberships`, `tables`, `fields`, `records`, `views`, `conversations`, `messages`, e ao `WITH CHECK` de INSERT em `memberships`. Sem novas tabelas, sem novos GRANTs.
+- **`src/lib/orgs.functions.ts`**:
+  - `listMyOrganizations`: se `is_super_admin`, consultar `organizations` diretamente (todas), marcando `role: 'super_admin'` quando não houver membership.
+  - `getOrganizationBySlug`: retornar `myRole: 'owner'` efetivo para super admin (ou flag `isSuperAdmin`) para liberar as ações de dono na UI.
+  - `updateOrganization` e guardas de membros (`addMemberByEmail`, `updateMembershipRole`, `removeMembership` em `applications.functions.ts`): aceitar super admin além de `has_role(owner)`; validar "último proprietário".
+- **UI**:
+  - `src/routes/_authenticated.app.index.tsx`: selo para orgs sem vínculo.
+  - `src/components/venue/edit-org-dialog.tsx`: nova seção de membros, visível só para super admin, reaproveitando `listMembers`/`addMemberByEmail`/`updateMembershipRole`/`removeMembership`.
+  - `src/routes/_authenticated.app.$orgSlug.index.tsx`: esconder o botão de edição da tabela quando `is_locked && !isSA`.
+  - `src/routes/_authenticated.app.$orgSlug.tables.$tableId.index.tsx`: buscar `is_super_admin` + `is_locked` da tabela e ocultar botão "Campos", criação e listagem de formulários públicos nesse caso.
+- **Fechamento**: typecheck, verificação em light/dark e 360/768/1280, e entrada em `CHANGELOG.md` como Iteração 25.
