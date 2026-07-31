@@ -1,3 +1,11 @@
+## 2026-07-31 (America/Sao_Paulo) — Iteração 25 — acesso nativo do super admin, membros na edição da organização e limpeza de tabelas padrão
+
+- RLS: políticas permissivas "super admin full access" (via `public.is_super_admin`) em `organizations`, `memberships`, `tables`, `fields`, `records`, `views`, `permissions`, `conversations`, `messages`.
+- `src/lib/orgs.functions.ts`: helpers `isSuperAdmin` e `canManageOrg`; `listMyOrganizations` retorna todas as organizações da instância para o super admin (marcadas com `is_super_admin_access`); `getOrganizationBySlug` devolve `myRole: 'owner'` e `isSuperAdmin`; `updateOrganization`, `deleteOrganization` e `addMemberByEmail` passam a usar `canManageOrg`.
+- `src/lib/applications.functions.ts`: `updateMembershipRole` e `removeMembership` protegidos por `assertNotLastOwner` (organização não pode ficar sem proprietário).
+- Novo componente `src/components/venue/org-members-manager.tsx` (listar, adicionar por e-mail, alterar papel, remover), exibido dentro de `EditOrgDialog` apenas para super admin (`canManageMembers`).
+- `/app`: organizações acessadas por super admin exibem badge "super admin" em vez do papel de membro.
+- Tabelas padrão (`is_locked`) para usuário comum: ícone de edição da tabela oculto (`canStruct`), botão "Campos" oculto e seção "Formulários públicos" (criação e listagem) oculta na página de registros; super admin mantém acesso total.
 ## 2026-07-30 (America/Sao_Paulo) — Correção da Iteração 24 — contatos unificados, gating por usuário atribuído e botões de contato
 
 Correção/extensão de escopo já entregue na Iteração 24 — **não abre iteração nova** (norma §0 "Correções não abrem iteração").
