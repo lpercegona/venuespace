@@ -22,6 +22,8 @@ import { UploadField } from "@/components/venue/dynamic-form";
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** Super admins may manage the organization's members from this dialog. */
+  canManageMembers?: boolean;
   org: {
     id: string; slug: string; name: string;
     description: string | null; logo_url: string | null;
@@ -35,7 +37,7 @@ type Props = {
   };
 };
 
-export function EditOrgDialog({ open, onOpenChange, org }: Props) {
+export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = false }: Props) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { t } = useLabels();
