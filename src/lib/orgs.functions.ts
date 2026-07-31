@@ -194,10 +194,8 @@ export const deleteOrganization = createServerFn({ method: "POST" })
     if (gErr) throw new Error(gErr.message);
     if (!org) throw new Error("Organização não encontrada");
     if (org.slug !== data.confirm_slug) throw new Error("Confirmação não confere.");
-    const { data: isOwner, error: rErr } = await context.supabase
-      .rpc("has_role", { _user_id: context.userId, _org_id: data.id, _role: "owner" });
-    if (rErr) throw new Error(rErr.message);
-    if (!isOwner) throw new Error("Sem permissão para excluir esta organização.");
+    const allowedDelete = await canManageOrg(context.supabase, context.userId, data.id);
+    if (!allowedDelete) throw new Error("Sem permissão para excluir esta organização.");
     const { error } = await context.supabase.from("organizations").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -532,9 +530,7 @@ export const addMemberByEmail = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: canManage, error: chkErr } = await context.supabase
-      .rpc("has_role", { _user_id: context.userId, _org_id: data.organization_id, _role: "owner" });
-    if (chkErr) throw new Error(chkErr.message);
+    const canManage = await canManageOrg(context.supabase, context.userId, data.organization_id);
     if (!canManage) throw new Error("Sem permissão para adicionar membros.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
