@@ -129,7 +129,8 @@ export const getOrganizationBySlug = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .maybeSingle();
     if (meErr) throw new Error(meErr.message);
-    return { ...org, myRole: me?.role ?? null };
+    const isSA = await isSuperAdmin(context.supabase, context.userId);
+    return { ...org, myRole: me?.role ?? (isSA ? "owner" : null), isSuperAdmin: isSA };
   });
 
 const orgUpdate = z.object({
@@ -151,10 +152,8 @@ export const updateOrganization = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => orgUpdate.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: isOwner, error: rErr } = await context.supabase
-      .rpc("has_role", { _user_id: context.userId, _org_id: data.id, _role: "owner" });
-    if (rErr) throw new Error(rErr.message);
-    if (!isOwner) throw new Error("Sem permissão para editar esta organização.");
+    const allowed = await canManageOrg(context.supabase, context.userId, data.id);
+    if (!allowed) throw new Error("Sem permissão para editar esta organização.");
 
     // Track category change to reconcile fields retroactively.
     let categoryChanged = false;
