@@ -297,7 +297,6 @@ function OrgDashboard() {
           category_data: (org.data as any).category_data ?? null,
           address: (org.data as any).address ?? null,
           is_public: (org.data as any).is_public ?? true,
-          is_public: (org.data as any).is_public ?? true,
         }} canManageMembers={isSA} />
       ) : null}
     </AppShell>
