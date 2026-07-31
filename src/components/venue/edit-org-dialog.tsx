@@ -18,10 +18,13 @@ import { useLabels } from "@/hooks/use-instance-context";
 import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
 import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
 import { UploadField } from "@/components/venue/dynamic-form";
+import { OrgMembersManager } from "@/components/venue/org-members-manager";
 
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** Super admins may manage the organization's members from this dialog. */
+  canManageMembers?: boolean;
   org: {
     id: string; slug: string; name: string;
     description: string | null; logo_url: string | null;
@@ -35,7 +38,7 @@ type Props = {
   };
 };
 
-export function EditOrgDialog({ open, onOpenChange, org }: Props) {
+export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = false }: Props) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { t } = useLabels();
@@ -173,6 +176,8 @@ export function EditOrgDialog({ open, onOpenChange, org }: Props) {
             onChange={setCatData}
             title="Campos da categoria"
           />
+
+          {canManageMembers ? <OrgMembersManager organizationId={org.id} /> : null}
 
 
           {sysFields.length > 0 ? (

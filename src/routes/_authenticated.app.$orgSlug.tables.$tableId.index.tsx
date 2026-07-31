@@ -46,6 +46,9 @@ function RecordsPage() {
   const records = useQuery({ queryKey: ["records", tableId], queryFn: () => listRecords({ data: { table_id: tableId } }) });
 
   const canEdit = org.data?.myRole === "owner" || org.data?.myRole === "editor";
+  const isSA = !!(org.data as any)?.isSuperAdmin;
+  // Standard (locked) tables hide structural surfaces from regular users.
+  const showStructure = isSA || !(table.data as any)?.is_locked;
   const fields = records.data?.fields ?? [];
   const rows: RecordRow[] = (records.data?.records ?? []) as RecordRow[];
   const relations = records.data?.relations ?? {};
@@ -154,9 +157,11 @@ function RecordsPage() {
           <Link to="/app/$orgSlug" params={{ orgSlug }}>
             <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" />Voltar</Button>
           </Link>
-          <Link to="/app/$orgSlug/tables/$tableId/schema" params={{ orgSlug, tableId }}>
-            <Button variant="outline" size="sm"><Settings2 className="h-4 w-4" />{t("fields", "Campos")}</Button>
-          </Link>
+          {showStructure ? (
+            <Link to="/app/$orgSlug/tables/$tableId/schema" params={{ orgSlug, tableId }}>
+              <Button variant="outline" size="sm"><Settings2 className="h-4 w-4" />{t("fields", "Campos")}</Button>
+            </Link>
+          ) : null}
           {publicUrl ? (
             <a href={publicUrl} target="_blank" rel="noreferrer">
               <Button variant="outline" size="sm"><ExternalLink className="h-4 w-4" />Ver público</Button>
@@ -201,6 +206,7 @@ function RecordsPage() {
       )}
 
       {/* Views panel */}
+      {showStructure ? (
       <section className="mt-10">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -252,6 +258,7 @@ function RecordsPage() {
           </ul>
         )}
       </section>
+      ) : null}
 
       <Dialog open={openForm2} onOpenChange={setOpenForm2}>
         <DialogContent>

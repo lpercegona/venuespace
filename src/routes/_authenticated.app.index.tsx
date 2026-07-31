@@ -204,7 +204,11 @@ function OrgsPage() {
                   </p>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="font-mono text-xs text-muted-foreground">/{org.slug}</span>
-                    <Badge variant="secondary">{org.role}</Badge>
+                    {org.is_super_admin_access ? (
+                      <Badge>super admin</Badge>
+                    ) : (
+                      <Badge variant="secondary">{org.role}</Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -297,7 +297,7 @@ function OrgDashboard() {
           category_data: (org.data as any).category_data ?? null,
           address: (org.data as any).address ?? null,
           is_public: (org.data as any).is_public ?? true,
-        }} />
+        }} canManageMembers={isSA} />
       ) : null}
     </AppShell>
   );
@@ -357,7 +357,7 @@ function TableCard({
           </CardContent>
         </Card>
       </Link>
-      {canEdit ? (
+      {canStruct ? (
         <>
           <div className="absolute right-2 top-2 flex gap-1">
             <Button
