@@ -357,7 +357,7 @@ function TableCard({
           </CardContent>
         </Card>
       </Link>
-      {canEdit ? (
+      {canStruct ? (
         <>
           <div className="absolute right-2 top-2 flex gap-1">
             <Button
