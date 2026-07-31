@@ -18,6 +18,7 @@ import { useLabels } from "@/hooks/use-instance-context";
 import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
 import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
 import { UploadField } from "@/components/venue/dynamic-form";
+import { OrgMembersManager } from "@/components/venue/org-members-manager";
 
 type Props = {
   open: boolean;
@@ -175,6 +176,8 @@ export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = fals
             onChange={setCatData}
             title="Campos da categoria"
           />
+
+          {canManageMembers ? <OrgMembersManager organizationId={org.id} /> : null}
 
 
           {sysFields.length > 0 ? (
