@@ -36,18 +36,46 @@ const orgCreate = z.object({
   address: addressSchema.optional(),
 });
 
+const ORG_LIST_COLUMNS =
+  "id, slug, name, description, logo_url, category_id, timezone, currency, currency_display, system_data, created_at";
+
+/** True when the caller is a platform super admin. */
+async function isSuperAdmin(supabase: any, userId: string) {
+  const { data } = await supabase.rpc("is_super_admin", { _user_id: userId });
+  return !!data;
+}
+
+/** Owner of the org OR super admin. */
+async function canManageOrg(supabase: any, userId: string, orgId: string) {
+  const { data: isOwner, error } = await supabase
+    .rpc("has_role", { _user_id: userId, _org_id: orgId, _role: "owner" });
+  if (error) throw new Error(error.message);
+  if (isOwner) return true;
+  return isSuperAdmin(supabase, userId);
+}
 
 export const listMyOrganizations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("memberships")
-      .select("role, organization:organizations(id, slug, name, description, logo_url, category_id, timezone, currency, currency_display, system_data, created_at)")
+      .select(`role, organization:organizations(${ORG_LIST_COLUMNS})`)
       .eq("user_id", context.userId)
       .order("created_at", { referencedTable: "organizations", ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((m) => ({ role: m.role, ...(m.organization as any) }));
+    const mine = (data ?? []).map((m) => ({ role: m.role, ...(m.organization as any) }));
+
+    if (!(await isSuperAdmin(context.supabase, context.userId))) return mine;
+
+    const { data: all, error: aErr } = await context.supabase
+      .from("organizations")
+      .select(ORG_LIST_COLUMNS)
+      .order("created_at", { ascending: false });
+    if (aErr) throw new Error(aErr.message);
+    const byId = new Map(mine.map((o: any) => [o.id, o]));
+    return (all ?? []).map((o: any) => byId.get(o.id) ?? { ...o, role: "super_admin", is_super_admin_access: true });
   });
+
 
 export const createOrganization = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
