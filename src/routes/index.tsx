@@ -91,7 +91,7 @@ function Landing() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/explore">
+            <Link to="/explore" search={{ tab: "orgs", categoria: search.categoria || undefined } as any}>
               <Button size="lg" variant="outline" className="h-12 px-6">
                 Explorar espaços
               </Button>
@@ -99,17 +99,30 @@ function Landing() {
           </div>
         </div>
 
-        <div className="mt-16 space-y-12">
+        <CategoryTabs
+          className="mt-12"
+          categories={catsQ.data}
+          isLoading={catsQ.isLoading}
+          activeSlug={search.categoria || undefined}
+          onSelect={(s) => navigate({ search: { categoria: s } })}
+        />
+
+        <div className="mt-8 space-y-12">
           <section>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight sm:text-2xl">
                 <Building2 className="h-5 w-5 text-primary" />
                 {orgsPlural} recentes
               </h2>
-              <Link to="/explore" className="text-sm text-primary hover:underline">
+              <Link
+                to="/explore"
+                search={{ tab: "orgs", categoria: search.categoria || undefined } as any}
+                className="text-sm text-primary hover:underline"
+              >
                 Ver todas
               </Link>
             </div>
+
             {orgs.isLoading ? (
               <PublicCardSkeletonGrid count={4} withLogo />
             ) : (orgs.data?.items ?? []).length === 0 ? (
