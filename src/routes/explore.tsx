@@ -15,12 +15,14 @@ import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
+import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
 
 import { useLabels } from "@/hooks/use-instance-context";
 
 // Filter values are encoded in the URL as f_<key>=value.
 const searchSchema = z.object({
   tab: fallback(z.string(), "orgs").default("orgs"),
+  categoria: fallback(z.string(), "").default(""),
   q: fallback(z.string(), "").default(""),
   page: fallback(z.number().int(), 1).default(1),
 }).catchall(fallback(z.string(), "").default(""));
@@ -59,18 +61,18 @@ function buildQuery(opts: {
   return p.toString();
 }
 
-async function fetchOrgs(q: string, offset: number, filters: Record<string, string>): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
-  const res = await fetch(`/api/public/organizations?${buildQuery({ q, offset, filters })}`);
+async function fetchOrgs(q: string, offset: number, filters: Record<string, string>, categoryId?: string): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
+  const res = await fetch(`/api/public/organizations?${buildQuery({ q, offset, filters, extra: { category: categoryId ?? "" } })}`);
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
-async function fetchRecords(q: string, offset: number, filters: Record<string, string>): Promise<{ items: PublicRecordSummary[]; total: number }> {
-  const res = await fetch(`/api/public/records?${buildQuery({ q, offset, filters })}`);
+async function fetchRecords(q: string, offset: number, filters: Record<string, string>, categoryId?: string): Promise<{ items: PublicRecordSummary[]; total: number }> {
+  const res = await fetch(`/api/public/records?${buildQuery({ q, offset, filters, extra: { category: categoryId ?? "" } })}`);
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
-async function fetchFilters(scope: "organization" | "record"): Promise<{ filters: FilterDef[] }> {
-  const res = await fetch(`/api/public/explore-filters?scope=${scope}`);
+async function fetchFilters(scope: "organization" | "record", categoryId?: string): Promise<{ filters: FilterDef[] }> {
+  const res = await fetch(`/api/public/explore-filters?scope=${scope}${categoryId ? `&category=${encodeURIComponent(categoryId)}` : ""}`);
   if (!res.ok) return { filters: [] };
   return res.json();
 }
@@ -100,21 +102,25 @@ function ExplorePage() {
 
   const [term, setTerm] = useState(q);
 
+  const catsQ = usePublicCategories();
+  const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
+  const catId = activeCat?.id;
+
   const filtersQ = useQuery({
-    queryKey: ["explore-filters", scope],
-    queryFn: () => fetchFilters(scope),
+    queryKey: ["explore-filters", scope, catId],
+    queryFn: () => fetchFilters(scope, catId),
     staleTime: 5 * 60_000,
   });
 
   const orgsQ = useQuery({
-    queryKey: ["explore-orgs", q, offset, currentFilters],
-    queryFn: () => fetchOrgs(q, offset, currentFilters),
+    queryKey: ["explore-orgs", q, offset, currentFilters, catId],
+    queryFn: () => fetchOrgs(q, offset, currentFilters, catId),
     enabled: activeTab === "orgs",
     staleTime: 30_000,
   });
   const recsQ = useQuery({
-    queryKey: ["explore-records", q, offset, currentFilters],
-    queryFn: () => fetchRecords(q, offset, currentFilters),
+    queryKey: ["explore-records", q, offset, currentFilters, catId],
+    queryFn: () => fetchRecords(q, offset, currentFilters, catId),
     enabled: activeTab === "records",
     staleTime: 30_000,
   });
@@ -135,6 +141,7 @@ function ExplorePage() {
     // Reset page + free-text + filters when switching tabs (filters are scope-specific).
     const next: Record<string, any> = { tab: v };
     if (search.q) next.q = search.q;
+    if (search.categoria) next.categoria = search.categoria;
     navigate({ search: next as any });
   }
 
@@ -147,6 +154,7 @@ function ExplorePage() {
 
   function clearFilters() {
     const next: Record<string, any> = { tab: activeTab };
+    if (search.categoria) next.categoria = search.categoria;
     navigate({ search: next as any });
     setTerm("");
   }
@@ -163,7 +171,15 @@ function ExplorePage() {
         <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">Explorar</h1>
         <p className="mt-2 text-sm text-muted-foreground">Navegue por espaços de eventos e ambientes publicados.</p>
 
-        <Tabs value={activeTab} onValueChange={setTab} className="mt-6">
+        <CategoryTabs
+          className="mt-6"
+          categories={catsQ.data}
+          isLoading={catsQ.isLoading}
+          activeSlug={search.categoria || undefined}
+          onSelect={(s) => navigate({ search: { tab: activeTab, categoria: s } as any })}
+        />
+
+        <Tabs value={activeTab} onValueChange={setTab} className="mt-4">
           <TabsList>
             <TabsTrigger value="orgs" className="gap-1">
               <Building2 className="h-4 w-4" /> {orgsPlural}
