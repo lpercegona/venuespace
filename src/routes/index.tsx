@@ -168,9 +168,14 @@ function Landing() {
                 <FileText className="h-5 w-5 text-primary" />
                 {recordsPlural} recentes
               </h2>
-              <Link to="/explore" search={{ tab: "records" }} className="text-sm text-primary hover:underline">
+              <Link
+                to="/explore"
+                search={{ tab: "records", categoria: search.categoria || undefined } as any}
+                className="text-sm text-primary hover:underline"
+              >
                 Ver todos
               </Link>
+
             </div>
             {recs.isLoading ? (
               <PublicCardSkeletonGrid count={4} />
