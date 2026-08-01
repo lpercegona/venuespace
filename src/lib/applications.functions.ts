@@ -66,26 +66,21 @@ export const listContributionsForCampaign = createServerFn({ method: "GET" })
 
 // =========== Iteration 8: Membership management ===========
 
-/** Throws when the change would leave the organization without any owner. */
-async function assertNotLastOwner(supabase: any, membershipId: string, nextRole: string | null) {
+/**
+ * Organizações podem ficar sem proprietário (correção da Iteração 25): nesse
+ * estado a página pública mantém apenas contato direto, sem formulários/chat.
+ * Mantido apenas para checar a existência do membro alvo.
+ */
+async function assertMembershipExists(supabase: any, membershipId: string) {
   const { data: m, error } = await supabase
     .from("memberships")
-    .select("id, role, organization_id")
+    .select("id")
     .eq("id", membershipId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!m) throw new Error("Membro não encontrado.");
-  if (m.role !== "owner" || nextRole === "owner") return;
-  const { count, error: cErr } = await supabase
-    .from("memberships")
-    .select("id", { count: "exact", head: true })
-    .eq("organization_id", m.organization_id)
-    .eq("role", "owner");
-  if (cErr) throw new Error(cErr.message);
-  if ((count ?? 0) <= 1) {
-    throw new Error("A organização precisa ter ao menos um proprietário.");
-  }
 }
+
 
 export const updateMembershipRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -96,7 +91,7 @@ export const updateMembershipRole = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertNotLastOwner(context.supabase, data.id, data.role);
+    await assertMembershipExists(context.supabase, data.id);
     const { error } = await context.supabase
       .from("memberships")
       .update({ role: data.role })
@@ -109,7 +104,7 @@ export const removeMembership = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertNotLastOwner(context.supabase, data.id, null);
+    await assertMembershipExists(context.supabase, data.id);
     const { error } = await context.supabase.from("memberships").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

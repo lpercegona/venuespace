@@ -89,18 +89,22 @@ export async function listPublicTables(opts: { limit?: number; offset?: number; 
 }
 
 /** Organização "atribuída": possui membro que não é super admin (Correção Iteração 24). */
+// Organização "atribuída" = possui ao menos um membro proprietário (owner)
+// que não seja super admin. Sem owner, formulários e chat ficam desativados.
 export async function orgHasAssignedUser(orgId: string): Promise<boolean> {
   const sb = supabaseAdmin;
   const { data: members } = await sb
     .from("memberships")
     .select("user_id")
-    .eq("organization_id", orgId);
+    .eq("organization_id", orgId)
+    .eq("role", "owner");
   const ids = Array.from(new Set(((members ?? []) as any[]).map((m) => m.user_id)));
   if (ids.length === 0) return false;
   const { data: sa } = await (sb as any).from("super_admins").select("user_id").in("user_id", ids);
   const saIds = new Set(((sa ?? []) as any[]).map((r) => r.user_id));
   return ids.some((id) => !saIds.has(id));
 }
+
 
 export async function loadPublicTable(slug: string, tableId: string): Promise<PublicTablePayload> {
   const sb = supabaseAdmin;
@@ -291,17 +295,12 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   const categoryId = opts.category_id?.trim() || undefined;
   const filters = opts.filters ?? {};
 
-  // Only organizations that are public AND have ≥1 published record.
-  const { data: pubRecs } = await sb.from("records").select("table:tables!inner(organization_id)").eq("status", "published").limit(5000);
-  const orgIds = new Set<string>();
-  for (const r of (pubRecs ?? []) as any[]) if (r.table?.organization_id) orgIds.add(r.table.organization_id);
-  if (orgIds.size === 0) return { items: [], total: 0 };
-
+  // Toda organização pública é listada, mesmo sem registros publicados.
   let query = sb.from("organizations")
     .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at")
-    .in("id", Array.from(orgIds))
     .eq("is_public", true)
     .order("updated_at", { ascending: false });
+
   if (categoryId) query = query.eq("category_id", categoryId);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
