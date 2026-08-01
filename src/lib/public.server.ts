@@ -89,18 +89,22 @@ export async function listPublicTables(opts: { limit?: number; offset?: number; 
 }
 
 /** Organização "atribuída": possui membro que não é super admin (Correção Iteração 24). */
+// Organização "atribuída" = possui ao menos um membro proprietário (owner)
+// que não seja super admin. Sem owner, formulários e chat ficam desativados.
 export async function orgHasAssignedUser(orgId: string): Promise<boolean> {
   const sb = supabaseAdmin;
   const { data: members } = await sb
     .from("memberships")
     .select("user_id")
-    .eq("organization_id", orgId);
+    .eq("organization_id", orgId)
+    .eq("role", "owner");
   const ids = Array.from(new Set(((members ?? []) as any[]).map((m) => m.user_id)));
   if (ids.length === 0) return false;
   const { data: sa } = await (sb as any).from("super_admins").select("user_id").in("user_id", ids);
   const saIds = new Set(((sa ?? []) as any[]).map((r) => r.user_id));
   return ids.some((id) => !saIds.has(id));
 }
+
 
 export async function loadPublicTable(slug: string, tableId: string): Promise<PublicTablePayload> {
   const sb = supabaseAdmin;
