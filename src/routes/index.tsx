@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
+import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Database, MessageSquare, Sparkles, Building2, FileText } from "lucide-react";
@@ -8,10 +10,16 @@ import { PublicHeader } from "@/components/venue/public-header";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
+import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 
 
+const searchSchema = z.object({
+  categoria: fallback(z.string(), "").default(""),
+});
+
 export const Route = createFileRoute("/")({
+  validateSearch: zodValidator(searchSchema),
   head: () => ({
     meta: [
       { title: "Venuespace — espaços para eventos" },
@@ -29,22 +37,42 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-async function fetchOrgs(): Promise<{ items: PublicOrganizationSummary[] }> {
-  const res = await fetch("/api/public/organizations?limit=8");
+async function fetchOrgs(categoryId?: string): Promise<{ items: PublicOrganizationSummary[] }> {
+  const p = new URLSearchParams({ limit: "8" });
+  if (categoryId) p.set("category", categoryId);
+  const res = await fetch(`/api/public/organizations?${p.toString()}`);
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
-async function fetchRecords(): Promise<{ items: PublicRecordSummary[] }> {
-  const res = await fetch("/api/public/records?limit=8");
+async function fetchRecords(categoryId?: string): Promise<{ items: PublicRecordSummary[] }> {
+  const p = new URLSearchParams({ limit: "8" });
+  if (categoryId) p.set("category", categoryId);
+  const res = await fetch(`/api/public/records?${p.toString()}`);
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
 function Landing() {
   const { t } = useLabels();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const orgsPlural = t("organizations", "Organizações");
   const recordsPlural = t("records", "Registros");
-  const orgs = useQuery({ queryKey: ["landing-orgs"], queryFn: fetchOrgs, staleTime: 60_000 });
-  const recs = useQuery({ queryKey: ["landing-records"], queryFn: fetchRecords, staleTime: 60_000 });
+  const catsQ = usePublicCategories();
+  const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
+  const catId = activeCat?.id;
+  const orgs = useQuery({
+    queryKey: ["landing-orgs", catId],
+    queryFn: () => fetchOrgs(catId),
+    enabled: !!catId || !catsQ.isLoading,
+    staleTime: 60_000,
+  });
+  const recs = useQuery({
+    queryKey: ["landing-records", catId],
+    queryFn: () => fetchRecords(catId),
+    enabled: !!catId || !catsQ.isLoading,
+    staleTime: 60_000,
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
