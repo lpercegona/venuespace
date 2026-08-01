@@ -1,3 +1,14 @@
+## 2026-08-01 (America/Sao_Paulo) — Correção das Iterações 22/24/25 + Iteração 26 — categorias na navegação pública
+
+Correções de escopo já entregue (norma §0 "Correções não abrem iteração") + Iteração 26.
+
+- Correção da Iteração 24/25: `orgHasAssignedUser` (`src/lib/public.server.ts`) passa a exigir membro com papel **proprietário (owner)** não super admin. Sem owner, formulário público e chat ficam desativados na página da organização e dos registros, restando apenas ícones de contato e site.
+- Correção da Iteração 25: removida a trava `assertNotLastOwner` em `src/lib/applications.functions.ts` — organizações podem ficar sem proprietário (substituída por `assertMembershipExists`).
+- Correção da Iteração 22: `listPublicOrganizations` não exige mais ≥1 registro publicado; toda organização pública é listada em `/` e `/explore` (caso "Ópera Arte").
+- Iteração 26: novo componente `src/components/venue/category-tabs.tsx` (tabs de categoria com scroll lateral, alvo ≥44px, tokens semânticos).
+- Iteração 26: `/` e `/explore` ganham tabs de categoria sincronizadas com a search param `categoria` (slug da categoria); no explore ficam acima das tabs Organizações/Ambientes, que continuam funcionando e preservam a categoria ao trocar de aba, filtro ou página.
+- Iteração 26: listagens de organizações, registros e filtros dinâmicos passam a receber a categoria ativa; links "Ver todas/Ver todos" propagam a categoria.
+
 ## 2026-07-31 (America/Sao_Paulo) — Iteração 25 — acesso nativo do super admin, membros na edição da organização e limpeza de tabelas padrão
 
 - RLS: políticas permissivas "super admin full access" (via `public.is_super_admin`) em `organizations`, `memberships`, `tables`, `fields`, `records`, `views`, `permissions`, `conversations`, `messages`.
