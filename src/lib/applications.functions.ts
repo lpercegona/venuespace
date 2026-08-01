@@ -91,7 +91,7 @@ export const updateMembershipRole = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertNotLastOwner(context.supabase, data.id, data.role);
+    await assertMembershipExists(context.supabase, data.id);
     const { error } = await context.supabase
       .from("memberships")
       .update({ role: data.role })
@@ -104,7 +104,7 @@ export const removeMembership = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertNotLastOwner(context.supabase, data.id, null);
+    await assertMembershipExists(context.supabase, data.id);
     const { error } = await context.supabase.from("memberships").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
