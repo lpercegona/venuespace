@@ -1055,8 +1055,27 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
 
   if (src.isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
 
+  const immersive = cardStyle === "immersive";
+
   return (
     <div className="mt-4 space-y-4">
+      <div className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium">Estilo do card</p>
+          <p className="text-xs text-muted-foreground">
+            {immersive
+              ? "Imersivo: imagem de fundo com posições fixas. Escolha qual campo ocupa cada posição."
+              : "Padrão: campos empilhados em linhas, com largura configurável."}
+          </p>
+        </div>
+        <Select value={cardStyle} onValueChange={(v) => setCardStyle(v as "standard" | "immersive")}>
+          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="standard">Padrão</SelectItem>
+            <SelectItem value="immersive">Imersivo (imagem de fundo)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <div className="rounded-lg border border-border">
         <Table>
           <TableHeader>
@@ -1065,9 +1084,18 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
               <TableHead>Campo</TableHead>
               <TableHead>Rótulo (override)</TableHead>
               <TableHead>Ícone (lucide)</TableHead>
-              <TableHead className="w-36">Estilo</TableHead>
-              <TableHead className="w-32">Largura</TableHead>
-              <TableHead className="w-32">Sem margens</TableHead>
+              {immersive ? (
+                <>
+                  <TableHead className="w-52">Posição</TableHead>
+                  <TableHead className="w-36">Exibição</TableHead>
+                </>
+              ) : (
+                <>
+                  <TableHead className="w-36">Estilo</TableHead>
+                  <TableHead className="w-32">Largura</TableHead>
+                  <TableHead className="w-32">Sem margens</TableHead>
+                </>
+              )}
               <TableHead className="w-20"></TableHead>
             </TableRow>
           </TableHeader>
@@ -1087,6 +1115,31 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
                 <TableCell className="font-mono text-xs">{r.field_key}</TableCell>
                 <TableCell><Input value={r.label_override ?? ""} onChange={(e) => updateRow(i, { label_override: e.target.value })} placeholder="—" /></TableCell>
                 <TableCell><Input value={r.icon ?? ""} onChange={(e) => updateRow(i, { icon: e.target.value })} placeholder="Home, MapPin..." /></TableCell>
+                {immersive ? (
+                  <>
+                    <TableCell>
+                      <Select value={r.slot ?? "title"} onValueChange={(v) => updateRow(i, { slot: v as EditorRow["slot"] })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {IMMERSIVE_SLOTS.map((sl) => <SelectItem key={sl.value} value={sl.value}>{sl.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      {r.slot === "features" ? (
+                        <Select value={r.display ?? "icons"} onValueChange={(v) => updateRow(i, { display: v as EditorRow["display"] })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="icons">Somente ícones</SelectItem>
+                            <SelectItem value="text">Texto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  </>
+                ) : (
                 <TableCell>
                   <Select value={r.style ?? "normal"} onValueChange={(v) => updateRow(i, { style: v as EditorRow["style"] })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1097,6 +1150,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
                     </SelectContent>
                   </Select>
                 </TableCell>
+                )}
                 <TableCell>
                   <Select value={String(r.width_percent)} onValueChange={(v) => updateRow(i, { width_percent: Number(v) as any })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
