@@ -433,11 +433,19 @@ export async function getPublicOrganization(slug: string): Promise<any> {
   const orgFormView = hasAssignedUser
     ? (((orgForm ?? []) as any[]).find((v) => v.table_id === v.submissions_table_id) ?? null)
     : null;
+  // Contatos: campos-base (system_data) com fallback para campos de categoria.
+  const pickContact = (...keys: string[]) => {
+    for (const k of keys) {
+      const v = data[k];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    return null;
+  };
   const contact = {
-    phone: (o as any).system_data?.phone ?? null,
-    whatsapp: (o as any).system_data?.whatsapp ?? null,
-    email: (o as any).system_data?.email ?? null,
-    website: (o as any).system_data?.website ?? null,
+    phone: pickContact("phone", "telefone", "telephone", "tel"),
+    whatsapp: pickContact("whatsapp", "whats_app", "whatsapp_number", "zap"),
+    email: pickContact("email", "e_mail", "contact_email"),
+    website: pickContact("website", "site", "url", "web_site"),
   };
   const item = {
     id: (o as any).id,
