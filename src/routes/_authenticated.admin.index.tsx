@@ -897,7 +897,19 @@ type EditorRow = {
   icon?: string;
   bleed?: boolean;
   style?: "title" | "subtitle" | "normal";
+  slot?: "background" | "badge" | "top_right" | "rating" | "title" | "features" | "location";
+  display?: "text" | "icons";
 };
+
+const IMMERSIVE_SLOTS: Array<{ value: NonNullable<EditorRow["slot"]>; label: string }> = [
+  { value: "background", label: "Imagem de fundo" },
+  { value: "badge", label: "Selo (topo esquerda)" },
+  { value: "top_right", label: "Texto (topo direita)" },
+  { value: "rating", label: "Avaliação (topo direita)" },
+  { value: "title", label: "Título (rodapé esquerda)" },
+  { value: "features", label: "Comodidades (rodapé esquerda)" },
+  { value: "location", label: "Localização (rodapé direita)" },
+];
 
 function isMediaFieldKey(key: string) {
   return key === "logo_url" || /(avatar|capa|cover|foto|galeria|gallery|imagem|image|logo|photo|picture)/i.test(key);
@@ -974,14 +986,16 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
         ...baseFields,
         ...(cascadeFields as Array<{ field_key: string; label: string }>),
       ];
-      return { layout: layout.fields as LayoutField[], fields };
+      return { layout: layout.fields as LayoutField[], card_style: layout.card_style ?? "standard", fields };
     },
   });
 
   const [rows, setRows] = useState<EditorRow[]>([]);
+  const [cardStyle, setCardStyle] = useState<"standard" | "immersive">("standard");
   const [saving, setSaving] = useState(false);
   useEffect(() => {
     if (src.data) {
+      setCardStyle((src.data.card_style as "standard" | "immersive") ?? "standard");
       setRows(src.data.layout.map((r) => ({
         field_key: r.field_key,
         width_percent: r.width_percent,
@@ -990,6 +1004,8 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
         icon: (r.config?.icon as string) ?? "",
         bleed: (r.config?.bleed as boolean) ?? false,
         style: ((r.config?.style as EditorRow["style"]) ?? (r.field_key === "name" ? "title" : "normal")),
+        slot: ((r.config?.slot as EditorRow["slot"]) ?? undefined),
+        display: ((r.config?.display as EditorRow["display"]) ?? "icons"),
       })));
     }
   }, [src.data]);
@@ -1018,7 +1034,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
     setSaving(true);
     try {
       await saveCategoryLayout({ data: {
-        category_id: categoryId, scope,
+        category_id: categoryId, scope, card_style: cardStyle,
         fields: rows.map((r, i) => ({
           field_key: r.field_key, width_percent: r.width_percent, order_index: i,
           config: {
@@ -1026,6 +1042,8 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
             ...(r.icon ? { icon: r.icon } : {}),
             ...(r.bleed && r.width_percent === 100 ? { bleed: true } : {}),
             ...(r.style ? { style: r.style } : {}),
+            ...(cardStyle === "immersive" && r.slot ? { slot: r.slot } : {}),
+            ...(cardStyle === "immersive" && r.slot === "features" && r.display ? { display: r.display } : {}),
           },
         })),
       } });
