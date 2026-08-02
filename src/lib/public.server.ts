@@ -247,11 +247,12 @@ async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card
   const sb = supabaseAdmin;
   const { data: parents } = await (sb as any)
     .from("category_public_layouts")
-    .select("id, category_id")
+    .select("id, category_id, card_style")
     .in("category_id", categoryIds)
     .eq("scope", scope);
-  const parentList = (parents ?? []) as Array<{ id: string; category_id: string }>;
+  const parentList = (parents ?? []) as Array<{ id: string; category_id: string; card_style?: string | null }>;
   if (parentList.length === 0) return out;
+  const styleByLayout = new Map(parentList.map((p) => [p.id, p.card_style ?? "standard"]));
   const { data: rows } = await (sb as any)
     .from("category_public_layout_fields")
     .select("id, layout_id, field_key, width_percent, order_index, config")
@@ -265,7 +266,7 @@ async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card
       field_key: r.field_key,
       width_percent: r.width_percent,
       order_index: r.order_index,
-      config: r.config ?? {},
+      config: { ...(r.config ?? {}), __card_style: styleByLayout.get(r.layout_id) ?? "standard" },
     });
     byLayout.set(r.layout_id, arr);
   }
@@ -278,16 +279,17 @@ async function loadOrgCategoryFieldsBatch(categoryIds: string[]): Promise<Map<st
   if (categoryIds.length === 0) return out;
   const { data } = await (supabaseAdmin as any)
     .from("category_org_fields")
-    .select("category_id, field_key, label, field_type, order_index")
+    .select("category_id, field_key, label, field_type, config, order_index")
     .in("category_id", categoryIds)
     .order("order_index", { ascending: true });
   for (const r of ((data ?? []) as any[])) {
     const arr = out.get(r.category_id) ?? [];
-    arr.push({ key: r.field_key, label: r.label, type: r.field_type });
+    arr.push({ key: r.field_key, label: r.label, type: r.field_type, config: r.config ?? {} });
     out.set(r.category_id, arr);
   }
   return out;
 }
+
 
 export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string; filters?: Record<string, string> } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
   const sb = supabaseAdmin;
