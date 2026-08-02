@@ -1,3 +1,11 @@
+## 2026-08-02 10:00 (America/Sao_Paulo) — Iteração 27: rótulos por categoria, card imersivo e ícones por opção
+
+- Rótulos por categoria (`category_labels`): server fns `listCategoryLabelsPublic`/`upsertCategoryLabel`/`deleteCategoryLabel`, rota `/api/public/category-labels` e cascata no `useLabels(categoryId)` (fallback → global → categoria). Admin > Rótulos ganhou seletor Global/Categoria com remoção do override.
+- Novo estilo de card público "imersivo" (`category_public_layouts.card_style`): imagem de fundo com posições fixas (selo, topo-direita, avaliação, título, comodidades, localização). Editor de layout do super admin alterna entre Padrão e Imersivo e define a posição de cada campo.
+- Comodidades podem ser exibidas somente como ícones: opções de `select`/`multiselect` aceitam a sintaxe "Opção | Icone", persistida em `config.option_icons` (editores de campos de categoria e de tabelas padrão).
+- Correção da Iteração 24: contatos públicos (telefone, whatsapp, e-mail, site) agora fazem fallback para os campos de categoria, exibindo os ícones na coluna direita do perfil mesmo sem proprietário.
+- Correção da Iteração 26: tabs de categoria na home passam a usar o componente Tabs do shadcn (estilo botão).
+
 ## 2026-08-01 (America/Sao_Paulo) — Correção das Iterações 22/24/25 + Iteração 26 — categorias na navegação pública
 
 Correções de escopo já entregue (norma §0 "Correções não abrem iteração") + Iteração 26.

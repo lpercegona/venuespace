@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { slugify } from "@/lib/slug";
 
@@ -56,33 +57,19 @@ export function CategoryTabs({
   if (list.length < 2) return null;
   const active = resolveCategory(list, activeSlug);
   return (
-    <div
-      role="tablist"
-      aria-label="Categorias"
-      className={cn("-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0", className)}
+    <Tabs
+      value={active ? categorySlug(active) : undefined}
+      onValueChange={onSelect}
+      className={cn("-mx-4 w-auto px-4 sm:mx-0 sm:px-0", className)}
     >
-      {list.map((c) => {
-        const s = categorySlug(c);
-        const isActive = active?.id === c.id;
-        return (
-          <button
-            key={c.id}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => onSelect(s)}
-            className={cn(
-              "min-h-11 shrink-0 rounded-lg border border-border px-4 text-sm font-medium transition-colors",
-              "outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              isActive
-                ? "bg-primary text-primary-foreground border-transparent"
-                : "bg-card text-muted-foreground hover:text-foreground",
-            )}
-          >
+      <TabsList aria-label="Categorias" className="h-auto flex-wrap justify-start gap-1 p-1">
+        {list.map((c) => (
+          <TabsTrigger key={c.id} value={categorySlug(c)} className="min-h-9 px-4 text-sm font-medium">
             {c.name}
-          </button>
-        );
-      })}
-    </div>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   );
 }
+

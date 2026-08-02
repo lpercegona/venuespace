@@ -29,11 +29,11 @@ export const listCategoryLayout = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: parent } = await (supabaseAdmin as any)
       .from("category_public_layouts")
-      .select("id")
+      .select("id, card_style")
       .eq("category_id", data.category_id)
       .eq("scope", data.scope)
       .maybeSingle();
-    if (!parent) return { layout_id: null, fields: [] as LayoutField[] };
+    if (!parent) return { layout_id: null, card_style: "standard" as const, fields: [] as LayoutField[] };
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("category_public_layout_fields")
       .select("id, field_key, width_percent, order_index, config")
@@ -42,6 +42,7 @@ export const listCategoryLayout = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return {
       layout_id: (parent as any).id as string,
+      card_style: ((parent as any).card_style ?? "standard") as "standard" | "immersive",
       fields: ((rows ?? []) as any[]).map((r) => ({
         id: r.id,
         field_key: r.field_key,
@@ -51,6 +52,7 @@ export const listCategoryLayout = createServerFn({ method: "GET" })
       })) as LayoutField[],
     };
   });
+
 
 const rowSchema = z.object({
   field_key: z.string().min(1).max(120),
@@ -65,19 +67,24 @@ export const saveCategoryLayout = createServerFn({ method: "POST" })
     z.object({
       category_id: z.string().uuid(),
       scope: z.enum(["organization_card", "record_card"]),
+      card_style: z.enum(["standard", "immersive"]).optional(),
       fields: z.array(rowSchema),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await requireSA(context.supabase, context.userId);
 
-    // Validate width_percent sums per row (fields are consecutive; group by cumulative until 100).
-    let acc = 0;
-    for (const f of data.fields) {
-      acc += f.width_percent;
-      if (acc > 100) throw new Error("Uma linha excede 100% de largura.");
-      if (acc === 100) acc = 0;
+    const cardStyle = data.card_style ?? "standard";
+    if (cardStyle === "standard") {
+      // Validate width_percent sums per row (fields are consecutive; group by cumulative until 100).
+      let acc = 0;
+      for (const f of data.fields) {
+        acc += f.width_percent;
+        if (acc > 100) throw new Error("Uma linha excede 100% de largura.");
+        if (acc === 100) acc = 0;
+      }
     }
+
 
     // Upsert parent
     const { data: existing } = await (context.supabase as any)
@@ -89,11 +96,12 @@ export const saveCategoryLayout = createServerFn({ method: "POST" })
     let layoutId: string;
     if (existing) {
       layoutId = (existing as any).id;
-      await (context.supabase as any).from("category_public_layouts").update({ updated_at: new Date().toISOString() }).eq("id", layoutId);
+      await (context.supabase as any).from("category_public_layouts").update({ updated_at: new Date().toISOString(), card_style: cardStyle }).eq("id", layoutId);
     } else {
       const { data: created, error: cErr } = await (context.supabase as any)
         .from("category_public_layouts")
-        .insert({ category_id: data.category_id, scope: data.scope })
+        .insert({ category_id: data.category_id, scope: data.scope, card_style: cardStyle })
+
         .select("id")
         .single();
       if (cErr) throw new Error(cErr.message);

@@ -29,6 +29,7 @@ import { Route as ApiPublicOrganizationsRouteImport } from './routes/api/public/
 import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/api/public/organization-categories'
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
 import { Route as ApiPublicExploreFiltersRouteImport } from './routes/api/public/explore-filters'
+import { Route as ApiPublicCategoryLabelsRouteImport } from './routes/api/public/category-labels'
 import { Route as AuthenticatedMeApplicationsRouteImport } from './routes/_authenticated.me.applications'
 import { Route as PublicSlugTableIdIndexRouteImport } from './routes/public.$slug.$tableId.index'
 import { Route as ApiPublicBlogIndexRouteImport } from './routes/api/public/blog/index'
@@ -154,6 +155,11 @@ const ApiPublicInstanceSettingsRoute =
 const ApiPublicExploreFiltersRoute = ApiPublicExploreFiltersRouteImport.update({
   id: '/api/public/explore-filters',
   path: '/api/public/explore-filters',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCategoryLabelsRoute = ApiPublicCategoryLabelsRouteImport.update({
+  id: '/api/public/category-labels',
+  path: '/api/public/category-labels',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedMeApplicationsRoute =
@@ -309,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/lead/$token': typeof LeadTokenRoute
   '/blog/': typeof BlogIndexRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
+  '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -354,6 +361,7 @@ export interface FileRoutesByTo {
   '/lead/$token': typeof LeadTokenRoute
   '/blog': typeof BlogIndexRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
+  '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -401,6 +409,7 @@ export interface FileRoutesById {
   '/lead/$token': typeof LeadTokenRoute
   '/blog/': typeof BlogIndexRoute
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
+  '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -449,6 +458,7 @@ export interface FileRouteTypes {
     | '/lead/$token'
     | '/blog/'
     | '/me/applications'
+    | '/api/public/category-labels'
     | '/api/public/explore-filters'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
@@ -494,6 +504,7 @@ export interface FileRouteTypes {
     | '/lead/$token'
     | '/blog'
     | '/me/applications'
+    | '/api/public/category-labels'
     | '/api/public/explore-filters'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
@@ -540,6 +551,7 @@ export interface FileRouteTypes {
     | '/lead/$token'
     | '/blog/'
     | '/_authenticated/me/applications'
+    | '/api/public/category-labels'
     | '/api/public/explore-filters'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
@@ -585,6 +597,7 @@ export interface RootRouteChildren {
   BlogRoute: typeof BlogRouteWithChildren
   ExploreRoute: typeof ExploreRoute
   LeadTokenRoute: typeof LeadTokenRoute
+  ApiPublicCategoryLabelsRoute: typeof ApiPublicCategoryLabelsRoute
   ApiPublicExploreFiltersRoute: typeof ApiPublicExploreFiltersRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
   ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
@@ -747,6 +760,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/explore-filters'
       fullPath: '/api/public/explore-filters'
       preLoaderRoute: typeof ApiPublicExploreFiltersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/category-labels': {
+      id: '/api/public/category-labels'
+      path: '/api/public/category-labels'
+      fullPath: '/api/public/category-labels'
+      preLoaderRoute: typeof ApiPublicCategoryLabelsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/me/applications': {
@@ -1036,6 +1056,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRoute: BlogRouteWithChildren,
   ExploreRoute: ExploreRoute,
   LeadTokenRoute: LeadTokenRoute,
+  ApiPublicCategoryLabelsRoute: ApiPublicCategoryLabelsRoute,
   ApiPublicExploreFiltersRoute: ApiPublicExploreFiltersRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
   ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,
@@ -1062,13 +1083,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

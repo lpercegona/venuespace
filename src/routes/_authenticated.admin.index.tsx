@@ -29,6 +29,9 @@ import {
 import {
   listPlatformLabelsPublic,
   upsertPlatformLabel,
+  listCategoryLabelsPublic,
+  upsertCategoryLabel,
+  deleteCategoryLabel,
 } from "@/lib/platform-labels.functions";
 import {
   countOrganizationsByCategory,
@@ -248,55 +251,126 @@ function GeneralSection() {
   );
 }
 
+/** "Opção | Icone" por linha → { options, option_icons }. */
+function parseOptionLines(text: string) {
+  const options: string[] = [];
+  const option_icons: Record<string, string> = {};
+  for (const line of text.split(/\n/)) {
+    const raw = line.trim();
+    if (!raw) continue;
+    const [labelPart, iconPart] = raw.split("|").map((x) => x.trim());
+    if (!labelPart) continue;
+    options.push(labelPart);
+    if (iconPart) option_icons[labelPart] = iconPart;
+  }
+  return { options, option_icons };
+}
+
+/** Inverso de parseOptionLines, para preencher o textarea de edição. */
+function formatOptionLines(options: string[], icons: Record<string, string> | undefined) {
+  return options.map((o) => (icons?.[o] ? `${o} | ${icons[o]}` : o)).join("\n");
+}
+
 // ---------- Labels ----------
 
 function LabelsSection() {
   const qc = useQueryClient();
   const labels = useQuery({ queryKey: ["admin-platform-labels"], queryFn: () => listPlatformLabelsPublic() });
-  
+  const catLabels = useQuery({ queryKey: ["admin-category-labels"], queryFn: () => listCategoryLabelsPublic() });
+  const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
+  const [scope, setScope] = useState<string>("global");
+  const isGlobal = scope === "global";
 
   const [drafts, setDrafts] = useState<Record<string, { label: string; icon: string }>>({});
   useEffect(() => {
     if (!labels.data) return;
-    const d: typeof drafts = {};
-    for (const l of labels.data) d[l.key] = { label: l.label, icon: l.icon ?? "" };
+    const overrides = new Map(
+      (catLabels.data ?? []).filter((c) => c.category_id === scope).map((c) => [c.key, c]),
+    );
+    const d: Record<string, { label: string; icon: string }> = {};
+    for (const l of labels.data) {
+      const o = isGlobal ? undefined : overrides.get(l.key);
+      d[l.key] = { label: o?.label ?? l.label, icon: (o?.icon ?? l.icon) ?? "" };
+    }
     setDrafts(d);
-  }, [labels.data]);
+  }, [labels.data, catLabels.data, scope, isGlobal]);
+
+  async function refresh() {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["admin-platform-labels"] }),
+      qc.invalidateQueries({ queryKey: ["admin-category-labels"] }),
+      qc.invalidateQueries({ queryKey: ["platform-labels"] }),
+      qc.invalidateQueries({ queryKey: ["category-labels"] }),
+    ]);
+  }
 
   async function saveLabel(key: string) {
     const d = drafts[key];
     if (!d) return;
     try {
-      await upsertPlatformLabel({ data: { key, label: d.label, icon: d.icon || null } });
+      if (isGlobal) await upsertPlatformLabel({ data: { key, label: d.label, icon: d.icon || null } });
+      else await upsertCategoryLabel({ data: { category_id: scope, key, label: d.label, icon: d.icon || null } });
       toast.success("Rótulo salvo");
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["admin-platform-labels"] }),
-        qc.invalidateQueries({ queryKey: ["platform-labels"] }),
-      ]);
+      await refresh();
     } catch (err) { toast.error((err as Error).message); }
   }
 
+  async function resetLabel(key: string) {
+    if (isGlobal) return;
+    try {
+      await deleteCategoryLabel({ data: { category_id: scope, key } });
+      toast.success("Rótulo da categoria removido");
+      await refresh();
+    } catch (err) { toast.error((err as Error).message); }
+  }
 
-
+  const overriddenKeys = new Set(
+    (catLabels.data ?? []).filter((c) => c.category_id === scope).map((c) => c.key),
+  );
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="font-display">Termos-núcleo</CardTitle>
-        <p className="text-sm text-muted-foreground">Aplicados em toda a plataforma. Alterações salvas são revalidadas imediatamente nesta sessão.</p>
+      <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle className="font-display">Termos-núcleo</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Globais valem para toda a plataforma. Ao escolher uma categoria, os rótulos definidos sobrepõem os globais apenas nela.
+          </p>
+        </div>
+        <Select value={scope} onValueChange={setScope}>
+          <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="global">Global (todas as categorias)</SelectItem>
+            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent>
         {labels.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : (
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader><TableRow><TableHead>Chave</TableHead><TableHead>Rótulo</TableHead><TableHead>Ícone (lucide)</TableHead><TableHead className="w-24"></TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Chave</TableHead><TableHead>Rótulo</TableHead><TableHead>Ícone (lucide)</TableHead><TableHead className="w-32"></TableHead></TableRow></TableHeader>
               <TableBody>
                 {(labels.data ?? []).map((l) => (
                   <TableRow key={l.key}>
-                    <TableCell className="font-mono text-xs">{l.key}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      <span className="flex items-center gap-2">
+                        {l.key}
+                        {!isGlobal && overriddenKeys.has(l.key) ? <Badge variant="secondary">categoria</Badge> : null}
+                      </span>
+                    </TableCell>
                     <TableCell><Input value={drafts[l.key]?.label ?? ""} onChange={(e) => setDrafts((s) => ({ ...s, [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), label: e.target.value } }))} /></TableCell>
                     <TableCell><Input value={drafts[l.key]?.icon ?? ""} onChange={(e) => setDrafts((s) => ({ ...s, [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), icon: e.target.value } }))} placeholder="Building2" /></TableCell>
-                    <TableCell><Button size="sm" variant="outline" onClick={() => saveLabel(l.key)}><Save className="h-4 w-4" /></Button></TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="outline" onClick={() => saveLabel(l.key)}><Save className="h-4 w-4" /></Button>
+                        {!isGlobal && overriddenKeys.has(l.key) ? (
+                          <Button size="sm" variant="outline" onClick={() => resetLabel(l.key)} aria-label="Remover rótulo da categoria">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        ) : null}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -307,6 +381,7 @@ function LabelsSection() {
     </Card>
   );
 }
+
 
 // ---------- Categories ----------
 
@@ -612,7 +687,7 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setType(f.field_type as any); setRequired(f.required); setOrder(f.order_index);
     const cfg = f.config ?? {};
     const opts = Array.isArray(cfg.options) ? (cfg.options as any[]).map(String) : [];
-    setOptionsText(opts.join("\n"));
+    setOptionsText(formatOptionLines(opts, cfg.option_icons as Record<string, string> | undefined));
     setCepRole(cfg.role === "cep");
     setOpen(true);
   }
@@ -626,11 +701,14 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
       // que não se aplicam mais ao tipo escolhido.
       const config: Record<string, any> = { ...(editing?.config ?? {}) };
       if (type === "select" || type === "multiselect") {
-        const opts = optionsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
-        if (opts.length > 0) config.options = opts;
+        const parsed = parseOptionLines(optionsText);
+        if (parsed.options.length > 0) config.options = parsed.options;
         else delete config.options;
+        if (Object.keys(parsed.option_icons).length > 0) config.option_icons = parsed.option_icons;
+        else delete config.option_icons;
       } else {
         delete config.options;
+        delete config.option_icons;
       }
       if (type === "text" && cepRole) config.role = "cep";
       else if (config.role === "cep") delete config.role;
@@ -711,7 +789,7 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                 </div>
                 {(type === "select" || type === "multiselect") ? (
                   <div className="sm:col-span-2 space-y-2">
-                    <Label htmlFor="df-options">Opções (uma por linha)</Label>
+                    <Label htmlFor="df-options">Opções (uma por linha — use "Opção | Icone" para ícone)</Label>
                     <Textarea id="df-options" rows={4} value={optionsText}
                       onChange={(e) => setOptionsText(e.target.value)}
                       placeholder="Ex: Aluguel&#10;Venda&#10;Temporada" />
@@ -819,7 +897,19 @@ type EditorRow = {
   icon?: string;
   bleed?: boolean;
   style?: "title" | "subtitle" | "normal";
+  slot?: "background" | "badge" | "top_right" | "rating" | "title" | "features" | "location";
+  display?: "text" | "icons";
 };
+
+const IMMERSIVE_SLOTS: Array<{ value: NonNullable<EditorRow["slot"]>; label: string }> = [
+  { value: "background", label: "Imagem de fundo" },
+  { value: "badge", label: "Selo (topo esquerda)" },
+  { value: "top_right", label: "Texto (topo direita)" },
+  { value: "rating", label: "Avaliação (topo direita)" },
+  { value: "title", label: "Título (rodapé esquerda)" },
+  { value: "features", label: "Comodidades (rodapé esquerda)" },
+  { value: "location", label: "Localização (rodapé direita)" },
+];
 
 function isMediaFieldKey(key: string) {
   return key === "logo_url" || /(avatar|capa|cover|foto|galeria|gallery|imagem|image|logo|photo|picture)/i.test(key);
@@ -896,14 +986,16 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
         ...baseFields,
         ...(cascadeFields as Array<{ field_key: string; label: string }>),
       ];
-      return { layout: layout.fields as LayoutField[], fields };
+      return { layout: layout.fields as LayoutField[], card_style: layout.card_style ?? "standard", fields };
     },
   });
 
   const [rows, setRows] = useState<EditorRow[]>([]);
+  const [cardStyle, setCardStyle] = useState<"standard" | "immersive">("standard");
   const [saving, setSaving] = useState(false);
   useEffect(() => {
     if (src.data) {
+      setCardStyle((src.data.card_style as "standard" | "immersive") ?? "standard");
       setRows(src.data.layout.map((r) => ({
         field_key: r.field_key,
         width_percent: r.width_percent,
@@ -912,6 +1004,8 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
         icon: (r.config?.icon as string) ?? "",
         bleed: (r.config?.bleed as boolean) ?? false,
         style: ((r.config?.style as EditorRow["style"]) ?? (r.field_key === "name" ? "title" : "normal")),
+        slot: ((r.config?.slot as EditorRow["slot"]) ?? undefined),
+        display: ((r.config?.display as EditorRow["display"]) ?? "icons"),
       })));
     }
   }, [src.data]);
@@ -940,7 +1034,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
     setSaving(true);
     try {
       await saveCategoryLayout({ data: {
-        category_id: categoryId, scope,
+        category_id: categoryId, scope, card_style: cardStyle,
         fields: rows.map((r, i) => ({
           field_key: r.field_key, width_percent: r.width_percent, order_index: i,
           config: {
@@ -948,6 +1042,8 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
             ...(r.icon ? { icon: r.icon } : {}),
             ...(r.bleed && r.width_percent === 100 ? { bleed: true } : {}),
             ...(r.style ? { style: r.style } : {}),
+            ...(cardStyle === "immersive" && r.slot ? { slot: r.slot } : {}),
+            ...(cardStyle === "immersive" && r.slot === "features" && r.display ? { display: r.display } : {}),
           },
         })),
       } });
@@ -959,8 +1055,27 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
 
   if (src.isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
 
+  const immersive = cardStyle === "immersive";
+
   return (
     <div className="mt-4 space-y-4">
+      <div className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium">Estilo do card</p>
+          <p className="text-xs text-muted-foreground">
+            {immersive
+              ? "Imersivo: imagem de fundo com posições fixas. Escolha qual campo ocupa cada posição."
+              : "Padrão: campos empilhados em linhas, com largura configurável."}
+          </p>
+        </div>
+        <Select value={cardStyle} onValueChange={(v) => setCardStyle(v as "standard" | "immersive")}>
+          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="standard">Padrão</SelectItem>
+            <SelectItem value="immersive">Imersivo (imagem de fundo)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <div className="rounded-lg border border-border">
         <Table>
           <TableHeader>
@@ -969,15 +1084,24 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
               <TableHead>Campo</TableHead>
               <TableHead>Rótulo (override)</TableHead>
               <TableHead>Ícone (lucide)</TableHead>
-              <TableHead className="w-36">Estilo</TableHead>
-              <TableHead className="w-32">Largura</TableHead>
-              <TableHead className="w-32">Sem margens</TableHead>
+              {immersive ? (
+                <>
+                  <TableHead className="w-52">Posição</TableHead>
+                  <TableHead className="w-36">Exibição</TableHead>
+                </>
+              ) : (
+                <>
+                  <TableHead className="w-36">Estilo</TableHead>
+                  <TableHead className="w-32">Largura</TableHead>
+                  <TableHead className="w-32">Sem margens</TableHead>
+                </>
+              )}
               <TableHead className="w-20"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={immersive ? 7 : 8} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
             ) : rows.map((r, i) => {
               const bleedable = isMediaFieldKey(r.field_key) && r.width_percent === 100;
               return (
@@ -991,6 +1115,31 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
                 <TableCell className="font-mono text-xs">{r.field_key}</TableCell>
                 <TableCell><Input value={r.label_override ?? ""} onChange={(e) => updateRow(i, { label_override: e.target.value })} placeholder="—" /></TableCell>
                 <TableCell><Input value={r.icon ?? ""} onChange={(e) => updateRow(i, { icon: e.target.value })} placeholder="Home, MapPin..." /></TableCell>
+                {immersive ? (
+                  <>
+                    <TableCell>
+                      <Select value={r.slot ?? "title"} onValueChange={(v) => updateRow(i, { slot: v as EditorRow["slot"] })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {IMMERSIVE_SLOTS.map((sl) => <SelectItem key={sl.value} value={sl.value}>{sl.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      {r.slot === "features" ? (
+                        <Select value={r.display ?? "icons"} onValueChange={(v) => updateRow(i, { display: v as EditorRow["display"] })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="icons">Somente ícones</SelectItem>
+                            <SelectItem value="text">Texto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  </>
+                ) : (
                 <TableCell>
                   <Select value={r.style ?? "normal"} onValueChange={(v) => updateRow(i, { style: v as EditorRow["style"] })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1001,6 +1150,9 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
                     </SelectContent>
                   </Select>
                 </TableCell>
+                )}
+                {immersive ? null : (
+                <>
                 <TableCell>
                   <Select value={String(r.width_percent)} onValueChange={(v) => updateRow(i, { width_percent: Number(v) as any })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1027,6 +1179,8 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
                     <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </TableCell>
+                </>
+                )}
                 <TableCell>
                   <Button size="sm" variant="outline" onClick={() => removeRow(i)}><Trash2 className="h-4 w-4" /></Button>
                 </TableCell>
@@ -1052,7 +1206,9 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        As larguras devem somar 100% por linha (25+75, 50+50, 25+25+50, ou 100). O motor agrupa os campos em linhas automaticamente.
+        {immersive
+          ? "No estilo imersivo a largura é ignorada: cada campo é posicionado pela posição escolhida. Comodidades usam os ícones definidos nas opções do campo (\"Opção | Icone\")."
+          : "As larguras devem somar 100% por linha (25+75, 50+50, 25+25+50, ou 100). O motor agrupa os campos em linhas automaticamente."}
       </p>
     </div>
   );
@@ -1549,17 +1705,23 @@ function StandardTableFieldsEditor({ standardTableId }: { standardTableId: strin
     setEditing(f); setLabel(f.label); setKey(f.field_key); setType(f.field_type as any);
     setRequired(f.required); setOrder(f.order_index);
     const opts = (f.config?.options as string[] | undefined) ?? [];
-    setOptionsText(opts.join("\n"));
+    setOptionsText(formatOptionLines(opts, f.config?.option_icons as Record<string, string> | undefined));
     setOpen(true);
   }
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
-      const config: Record<string, any> = {};
+      const config: Record<string, any> = { ...(editing?.config ?? {}) };
       if (type === "select" || type === "multiselect") {
-        const opts = optionsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
-        if (opts.length > 0) config.options = opts;
+        const parsed = parseOptionLines(optionsText);
+        if (parsed.options.length > 0) config.options = parsed.options;
+        else delete config.options;
+        if (Object.keys(parsed.option_icons).length > 0) config.option_icons = parsed.option_icons;
+        else delete config.option_icons;
+      } else {
+        delete config.options;
+        delete config.option_icons;
       }
       await upsertCategoryStandardTableField({ data: {
         id: editing?.id, standard_table_id: standardTableId,

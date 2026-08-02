@@ -183,7 +183,7 @@ export async function loadPublicLayout(categoryId: string | null, scope: "organi
   const sb = supabaseAdmin;
   const { data: parent } = await (sb as any)
     .from("category_public_layouts")
-    .select("id")
+    .select("id, card_style")
     .eq("category_id", categoryId)
     .eq("scope", scope)
     .maybeSingle();
@@ -193,16 +193,18 @@ export async function loadPublicLayout(categoryId: string | null, scope: "organi
     .select("id, field_key, width_percent, order_index, config")
     .eq("layout_id", (parent as any).id)
     .order("order_index", { ascending: true });
+  const cardStyle = (parent as any).card_style ?? "standard";
   return ((rows ?? []) as any[]).map((r) => ({
     id: r.id,
     field_key: r.field_key,
     width_percent: r.width_percent,
     order_index: r.order_index,
-    config: r.config ?? {},
+    config: { ...(r.config ?? {}), __card_style: cardStyle },
   }));
 }
 
-export type PublicRendererField = { key: string; label: string; type: string };
+export type PublicRendererField = { key: string; label: string; type: string; config?: Record<string, any> };
+
 
 export type PublicOrganizationSummary = {
   id: string;
@@ -245,11 +247,12 @@ async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card
   const sb = supabaseAdmin;
   const { data: parents } = await (sb as any)
     .from("category_public_layouts")
-    .select("id, category_id")
+    .select("id, category_id, card_style")
     .in("category_id", categoryIds)
     .eq("scope", scope);
-  const parentList = (parents ?? []) as Array<{ id: string; category_id: string }>;
+  const parentList = (parents ?? []) as Array<{ id: string; category_id: string; card_style?: string | null }>;
   if (parentList.length === 0) return out;
+  const styleByLayout = new Map(parentList.map((p) => [p.id, p.card_style ?? "standard"]));
   const { data: rows } = await (sb as any)
     .from("category_public_layout_fields")
     .select("id, layout_id, field_key, width_percent, order_index, config")
@@ -263,7 +266,7 @@ async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card
       field_key: r.field_key,
       width_percent: r.width_percent,
       order_index: r.order_index,
-      config: r.config ?? {},
+      config: { ...(r.config ?? {}), __card_style: styleByLayout.get(r.layout_id) ?? "standard" },
     });
     byLayout.set(r.layout_id, arr);
   }
@@ -276,16 +279,17 @@ async function loadOrgCategoryFieldsBatch(categoryIds: string[]): Promise<Map<st
   if (categoryIds.length === 0) return out;
   const { data } = await (supabaseAdmin as any)
     .from("category_org_fields")
-    .select("category_id, field_key, label, field_type, order_index")
+    .select("category_id, field_key, label, field_type, config, order_index")
     .in("category_id", categoryIds)
     .order("order_index", { ascending: true });
   for (const r of ((data ?? []) as any[])) {
     const arr = out.get(r.category_id) ?? [];
-    arr.push({ key: r.field_key, label: r.label, type: r.field_type });
+    arr.push({ key: r.field_key, label: r.label, type: r.field_type, config: r.config ?? {} });
     out.set(r.category_id, arr);
   }
   return out;
 }
+
 
 export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string; filters?: Record<string, string> } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
   const sb = supabaseAdmin;
@@ -429,11 +433,19 @@ export async function getPublicOrganization(slug: string): Promise<any> {
   const orgFormView = hasAssignedUser
     ? (((orgForm ?? []) as any[]).find((v) => v.table_id === v.submissions_table_id) ?? null)
     : null;
+  // Contatos: campos-base (system_data) com fallback para campos de categoria.
+  const pickContact = (...keys: string[]) => {
+    for (const k of keys) {
+      const v = data[k];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    return null;
+  };
   const contact = {
-    phone: (o as any).system_data?.phone ?? null,
-    whatsapp: (o as any).system_data?.whatsapp ?? null,
-    email: (o as any).system_data?.email ?? null,
-    website: (o as any).system_data?.website ?? null,
+    phone: pickContact("phone", "telefone", "telephone", "tel"),
+    whatsapp: pickContact("whatsapp", "whats_app", "whatsapp_number", "zap"),
+    email: pickContact("email", "e_mail", "contact_email"),
+    website: pickContact("website", "site", "url", "web_site"),
   };
   const item = {
     id: (o as any).id,
@@ -544,14 +556,14 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   const catIds = Array.from(new Set(paged.map((r) => r.org_category_id).filter(Boolean))) as string[];
   const [fieldsRes, layouts] = await Promise.all([
     tableIds.length
-      ? sb.from("fields").select("table_id, key, label, type, position").in("table_id", tableIds).order("position", { ascending: true })
+      ? sb.from("fields").select("table_id, key, label, type, position, config").in("table_id", tableIds).order("position", { ascending: true })
       : Promise.resolve({ data: [] as any[] } as any),
     loadLayoutsBatch(catIds, "record_card"),
   ]);
   const fieldsByTable = new Map<string, PublicRendererField[]>();
   for (const f of (((fieldsRes as any).data ?? []) as any[])) {
     const arr = fieldsByTable.get(f.table_id) ?? [];
-    arr.push({ key: f.key, label: f.label, type: f.type });
+    arr.push({ key: f.key, label: f.label, type: f.type, config: (f as any).config ?? {} });
     fieldsByTable.set(f.table_id, arr);
   }
 
