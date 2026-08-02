@@ -96,11 +96,12 @@ export const saveCategoryLayout = createServerFn({ method: "POST" })
     let layoutId: string;
     if (existing) {
       layoutId = (existing as any).id;
-      await (context.supabase as any).from("category_public_layouts").update({ updated_at: new Date().toISOString() }).eq("id", layoutId);
+      await (context.supabase as any).from("category_public_layouts").update({ updated_at: new Date().toISOString(), card_style: cardStyle }).eq("id", layoutId);
     } else {
       const { data: created, error: cErr } = await (context.supabase as any)
         .from("category_public_layouts")
-        .insert({ category_id: data.category_id, scope: data.scope })
+        .insert({ category_id: data.category_id, scope: data.scope, card_style: cardStyle })
+
         .select("id")
         .single();
       if (cErr) throw new Error(cErr.message);
