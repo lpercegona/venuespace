@@ -308,3 +308,153 @@ export function PublicCardBody({
   );
 }
 
+
+// ---------- Estilo imersivo (Iteração 27) ----------
+
+type ImmersiveSlot = "background" | "badge" | "top_right" | "rating" | "title" | "features" | "location";
+
+function slotFor(it: LayoutItem): ImmersiveSlot {
+  const s = it.config?.slot;
+  const allowed: ImmersiveSlot[] = ["background", "badge", "top_right", "rating", "title", "features", "location"];
+  return allowed.includes(s) ? (s as ImmersiveSlot) : "title";
+}
+
+/** Lista de valores de um campo (multiselect/array/texto). */
+function valuesOf(raw: any): string[] {
+  if (Array.isArray(raw)) return raw.filter((v) => typeof v === "string" && v).map(String);
+  if (typeof raw === "string" && raw) return [raw];
+  return [];
+}
+
+/**
+ * Card público no estilo imersivo: imagem de fundo com informações fixas em
+ * cantos definidos. O super admin escolhe qual campo ocupa cada posição.
+ */
+function ImmersiveCardBody({
+  layout,
+  fields,
+  data,
+  orgName,
+  padding = 4,
+}: {
+  layout: LayoutItem[];
+  fields: RendererField[];
+  data: Record<string, any>;
+  orgName?: string;
+  padding?: 4 | 6;
+}) {
+  const byKey = new Map(fields.map((f) => [f.key, f]));
+  const bySlot = new Map<ImmersiveSlot, Array<{ it: LayoutItem; f?: RendererField }>>();
+  for (const it of layout) {
+    const slot = slotFor(it);
+    const arr = bySlot.get(slot) ?? [];
+    arr.push({ it, f: byKey.get(it.field_key) });
+    bySlot.set(slot, arr);
+  }
+
+  const bg = (bySlot.get("background") ?? [])[0];
+  const bgLabel = (bg?.it.config?.label_override as string) ?? bg?.f?.label ?? "";
+  const bgUrls = bg ? mediaUrlsFor(bg.f, bg.it.field_key, bgLabel, data?.[bg.it.field_key]) : [];
+
+  const textOf = (entry?: { it: LayoutItem; f?: RendererField }) =>
+    entry ? formatValue(entry.f, data?.[entry.it.field_key]).trim() : "";
+
+  const badge = (bySlot.get("badge") ?? [])[0];
+  const badgeText = textOf(badge);
+  const topRight = (bySlot.get("top_right") ?? [])[0];
+  const topRightText = textOf(topRight);
+  const rating = (bySlot.get("rating") ?? [])[0];
+  const ratingText = textOf(rating);
+  const title = (bySlot.get("title") ?? [])[0];
+  const titleText = textOf(title) || orgName || "";
+  const location = (bySlot.get("location") ?? [])[0];
+  const locationText = textOf(location);
+  const features = bySlot.get("features") ?? [];
+
+  const m = padding === 6 ? "-m-6" : "-m-4";
+
+  return (
+    <div className={`${m} relative isolate overflow-hidden rounded-xl`}>
+      <div className="relative aspect-4/3 w-full bg-muted">
+        {bgUrls.length > 1 ? (
+          <GalleryCarousel urls={bgUrls} alt={bgLabel} aspectClassName="aspect-4/3" roundedClassName="" />
+        ) : bgUrls.length === 1 ? (
+          <LazyImage
+            src={bgUrls[0]}
+            alt={bgLabel || titleText}
+            containerClassName="aspect-4/3 w-full"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <IconByName name="Image" className="h-10 w-10 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+
+      {/* Overlay para leitura do texto sobre a imagem */}
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/75 via-black/15 to-black/35" />
+
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3">
+        <div className="flex items-start justify-between gap-2">
+          {badgeText ? (
+            <span className="inline-flex max-w-[70%] items-center gap-1.5 rounded-full bg-card/95 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground shadow-elegant">
+              <IconByName name={(badge?.it.config?.icon as string) ?? null} className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{badgeText}</span>
+            </span>
+          ) : <span />}
+          <div className="flex min-w-0 items-center gap-2">
+            {topRightText ? (
+              <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-primary-foreground drop-shadow">
+                {topRightText}
+              </span>
+            ) : null}
+            {ratingText ? (
+              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-primary-foreground drop-shadow">
+                <IconByName name={(rating?.it.config?.icon as string) ?? "Star"} className="h-3.5 w-3.5 shrink-0" />
+                {ratingText}
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {titleText ? (
+            <h3 className="font-display text-xl font-semibold leading-tight tracking-tight text-primary-foreground drop-shadow line-clamp-2">
+              {titleText}
+            </h3>
+          ) : null}
+          <div className="flex items-end justify-between gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              {features.map(({ it, f }) => {
+                const iconMap = (f?.config?.option_icons ?? {}) as Record<string, string>;
+                const vals = valuesOf(data?.[it.field_key]);
+                if (vals.length === 0) return null;
+                if (it.config?.display === "text") {
+                  return (
+                    <span key={it.id} className="truncate text-[11px] text-primary-foreground/90 drop-shadow">
+                      {vals.join(" · ")}
+                    </span>
+                  );
+                }
+                return vals.map((v) => (
+                  <span key={`${it.id}-${v}`} title={v} aria-label={v} className="text-primary-foreground drop-shadow">
+                    <IconByName
+                      name={iconMap[v] ?? (it.config?.icon as string) ?? "Check"}
+                      className="h-4 w-4 shrink-0"
+                    />
+                  </span>
+                ));
+              })}
+            </div>
+            {locationText ? (
+              <span className="shrink-0 truncate text-[11px] text-primary-foreground/90 drop-shadow">
+                {locationText}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
