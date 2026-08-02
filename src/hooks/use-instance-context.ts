@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { InstanceSettings, CurrencyDisplay } from "@/lib/instance-settings.functions";
-import type { PlatformLabel } from "@/lib/platform-labels.functions";
+import type { CategoryLabel, PlatformLabel } from "@/lib/platform-labels.functions";
 import { resolveContext, type FormatContext } from "@/lib/formatting";
 
 async function fetchInstanceSettings(): Promise<InstanceSettings | null> {
@@ -12,6 +12,12 @@ async function fetchInstanceSettings(): Promise<InstanceSettings | null> {
 
 async function fetchPlatformLabels(): Promise<PlatformLabel[]> {
   const res = await fetch("/api/public/platform-labels", { cache: "no-store" });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function fetchCategoryLabels(): Promise<CategoryLabel[]> {
+  const res = await fetch("/api/public/category-labels", { cache: "no-store" });
   if (!res.ok) return [];
   return res.json();
 }
@@ -64,19 +70,41 @@ const FALLBACK_LABELS: Record<string, string> = {
   categories: "Categorias",
 };
 
-/** Resolve a label key to its current label. Returns fallback when data is loading. */
-export function useLabels() {
+/** Rótulos específicos por categoria (sobrepõem os globais). */
+export function useCategoryLabels() {
+  return useQuery({
+    queryKey: ["category-labels"],
+    queryFn: fetchCategoryLabels,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: "always",
+  });
+}
+
+/**
+ * Resolve a label key. Cascata: fallback -> rótulo global -> rótulo da categoria.
+ * Passe `categoryId` para aplicar os rótulos definidos para aquela categoria.
+ */
+export function useLabels(categoryId?: string | null) {
   const q = usePlatformLabels();
+  const cq = useCategoryLabels();
+  const catRows = useMemo(
+    () => (categoryId ? (cq.data ?? []).filter((l) => l.category_id === categoryId) : []),
+    [cq.data, categoryId],
+  );
   const dict = useMemo(() => {
     const base: Record<string, string> = { ...FALLBACK_LABELS };
     for (const l of q.data ?? []) base[l.key] = l.label;
+    for (const l of catRows) base[l.key] = l.label;
     return base;
-  }, [q.data]);
+  }, [q.data, catRows]);
   const icons = useMemo(() => {
     const map: Record<string, string | null> = {};
     for (const l of q.data ?? []) map[l.key] = l.icon;
+    for (const l of catRows) if (l.icon) map[l.key] = l.icon;
     return map;
-  }, [q.data]);
+  }, [q.data, catRows]);
   return {
     t: (key: string, fallback?: string) => dict[key] ?? fallback ?? key,
     icon: (key: string) => icons[key] ?? null,
