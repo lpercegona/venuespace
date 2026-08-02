@@ -13,7 +13,7 @@ export type LayoutItem = {
   config: Record<string, any>;
 };
 
-export type RendererField = { key: string; label: string; type: string };
+export type RendererField = { key: string; label: string; type: string; config?: Record<string, any> };
 
 function toPascal(name: string) {
   return name.split(/[-_\s]+/).filter(Boolean).map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join("");
@@ -104,6 +104,10 @@ function styleFor(it: LayoutItem): CellStyle {
   return it.field_key === "name" ? "title" : "normal";
 }
 
+export function isImmersiveLayout(layout: LayoutItem[] | undefined | null) {
+  return (layout ?? []).some((it) => it.config?.__card_style === "immersive");
+}
+
 export function PublicCardBody({
   layout,
   fields,
@@ -121,6 +125,9 @@ export function PublicCardBody({
 }) {
   const byKey = new Map(fields.map((f) => [f.key, f]));
   if (!layout || layout.length === 0) return null;
+  if (isImmersiveLayout(layout)) {
+    return <ImmersiveCardBody layout={layout} fields={fields} data={data} orgName={orgName} padding={padding} />;
+  }
 
   type Cell = {
     id: string;
