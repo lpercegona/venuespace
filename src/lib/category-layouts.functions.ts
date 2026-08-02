@@ -67,19 +67,24 @@ export const saveCategoryLayout = createServerFn({ method: "POST" })
     z.object({
       category_id: z.string().uuid(),
       scope: z.enum(["organization_card", "record_card"]),
+      card_style: z.enum(["standard", "immersive"]).optional(),
       fields: z.array(rowSchema),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await requireSA(context.supabase, context.userId);
 
-    // Validate width_percent sums per row (fields are consecutive; group by cumulative until 100).
-    let acc = 0;
-    for (const f of data.fields) {
-      acc += f.width_percent;
-      if (acc > 100) throw new Error("Uma linha excede 100% de largura.");
-      if (acc === 100) acc = 0;
+    const cardStyle = data.card_style ?? "standard";
+    if (cardStyle === "standard") {
+      // Validate width_percent sums per row (fields are consecutive; group by cumulative until 100).
+      let acc = 0;
+      for (const f of data.fields) {
+        acc += f.width_percent;
+        if (acc > 100) throw new Error("Uma linha excede 100% de largura.");
+        if (acc === 100) acc = 0;
+      }
     }
+
 
     // Upsert parent
     const { data: existing } = await (context.supabase as any)
