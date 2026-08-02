@@ -112,6 +112,44 @@ export type Database = {
           },
         ]
       }
+      category_labels: {
+        Row: {
+          category_id: string
+          created_at: string
+          icon: string | null
+          id: string
+          key: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          key: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          key?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_labels_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_org_fields: {
         Row: {
           category_id: string
@@ -199,18 +237,21 @@ export type Database = {
       }
       category_public_layouts: {
         Row: {
+          card_style: string
           category_id: string
           id: string
           scope: Database["public"]["Enums"]["public_layout_scope"]
           updated_at: string
         }
         Insert: {
+          card_style?: string
           category_id: string
           id?: string
           scope: Database["public"]["Enums"]["public_layout_scope"]
           updated_at?: string
         }
         Update: {
+          card_style?: string
           category_id?: string
           id?: string
           scope?: Database["public"]["Enums"]["public_layout_scope"]
