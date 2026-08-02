@@ -29,6 +29,9 @@ import {
 import {
   listPlatformLabelsPublic,
   upsertPlatformLabel,
+  listCategoryLabelsPublic,
+  upsertCategoryLabel,
+  deleteCategoryLabel,
 } from "@/lib/platform-labels.functions";
 import {
   countOrganizationsByCategory,
@@ -246,6 +249,26 @@ function GeneralSection() {
       </CardContent>
     </Card>
   );
+}
+
+/** "Opção | Icone" por linha → { options, option_icons }. */
+function parseOptionLines(text: string) {
+  const options: string[] = [];
+  const option_icons: Record<string, string> = {};
+  for (const line of text.split(/\n/)) {
+    const raw = line.trim();
+    if (!raw) continue;
+    const [labelPart, iconPart] = raw.split("|").map((x) => x.trim());
+    if (!labelPart) continue;
+    options.push(labelPart);
+    if (iconPart) option_icons[labelPart] = iconPart;
+  }
+  return { options, option_icons };
+}
+
+/** Inverso de parseOptionLines, para preencher o textarea de edição. */
+function formatOptionLines(options: string[], icons: Record<string, string> | undefined) {
+  return options.map((o) => (icons?.[o] ? `${o} | ${icons[o]}` : o)).join("\n");
 }
 
 // ---------- Labels ----------
@@ -612,7 +635,7 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setType(f.field_type as any); setRequired(f.required); setOrder(f.order_index);
     const cfg = f.config ?? {};
     const opts = Array.isArray(cfg.options) ? (cfg.options as any[]).map(String) : [];
-    setOptionsText(opts.join("\n"));
+    setOptionsText(formatOptionLines(opts, cfg.option_icons as Record<string, string> | undefined));
     setCepRole(cfg.role === "cep");
     setOpen(true);
   }
@@ -626,11 +649,14 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
       // que não se aplicam mais ao tipo escolhido.
       const config: Record<string, any> = { ...(editing?.config ?? {}) };
       if (type === "select" || type === "multiselect") {
-        const opts = optionsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
-        if (opts.length > 0) config.options = opts;
+        const parsed = parseOptionLines(optionsText);
+        if (parsed.options.length > 0) config.options = parsed.options;
         else delete config.options;
+        if (Object.keys(parsed.option_icons).length > 0) config.option_icons = parsed.option_icons;
+        else delete config.option_icons;
       } else {
         delete config.options;
+        delete config.option_icons;
       }
       if (type === "text" && cepRole) config.role = "cep";
       else if (config.role === "cep") delete config.role;
@@ -711,7 +737,7 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                 </div>
                 {(type === "select" || type === "multiselect") ? (
                   <div className="sm:col-span-2 space-y-2">
-                    <Label htmlFor="df-options">Opções (uma por linha)</Label>
+                    <Label htmlFor="df-options">Opções (uma por linha — use "Opção | Icone" para ícone)</Label>
                     <Textarea id="df-options" rows={4} value={optionsText}
                       onChange={(e) => setOptionsText(e.target.value)}
                       placeholder="Ex: Aluguel&#10;Venda&#10;Temporada" />
@@ -1549,17 +1575,23 @@ function StandardTableFieldsEditor({ standardTableId }: { standardTableId: strin
     setEditing(f); setLabel(f.label); setKey(f.field_key); setType(f.field_type as any);
     setRequired(f.required); setOrder(f.order_index);
     const opts = (f.config?.options as string[] | undefined) ?? [];
-    setOptionsText(opts.join("\n"));
+    setOptionsText(formatOptionLines(opts, f.config?.option_icons as Record<string, string> | undefined));
     setOpen(true);
   }
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
-      const config: Record<string, any> = {};
+      const config: Record<string, any> = { ...(editing?.config ?? {}) };
       if (type === "select" || type === "multiselect") {
-        const opts = optionsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
-        if (opts.length > 0) config.options = opts;
+        const parsed = parseOptionLines(optionsText);
+        if (parsed.options.length > 0) config.options = parsed.options;
+        else delete config.options;
+        if (Object.keys(parsed.option_icons).length > 0) config.option_icons = parsed.option_icons;
+        else delete config.option_icons;
+      } else {
+        delete config.options;
+        delete config.option_icons;
       }
       await upsertCategoryStandardTableField({ data: {
         id: editing?.id, standard_table_id: standardTableId,
