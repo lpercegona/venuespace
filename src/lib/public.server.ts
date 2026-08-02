@@ -548,14 +548,14 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   const catIds = Array.from(new Set(paged.map((r) => r.org_category_id).filter(Boolean))) as string[];
   const [fieldsRes, layouts] = await Promise.all([
     tableIds.length
-      ? sb.from("fields").select("table_id, key, label, type, position").in("table_id", tableIds).order("position", { ascending: true })
+      ? sb.from("fields").select("table_id, key, label, type, position, config").in("table_id", tableIds).order("position", { ascending: true })
       : Promise.resolve({ data: [] as any[] } as any),
     loadLayoutsBatch(catIds, "record_card"),
   ]);
   const fieldsByTable = new Map<string, PublicRendererField[]>();
   for (const f of (((fieldsRes as any).data ?? []) as any[])) {
     const arr = fieldsByTable.get(f.table_id) ?? [];
-    arr.push({ key: f.key, label: f.label, type: f.type });
+    arr.push({ key: f.key, label: f.label, type: f.type, config: (f as any).config ?? {} });
     fieldsByTable.set(f.table_id, arr);
   }
 
