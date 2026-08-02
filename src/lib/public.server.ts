@@ -183,7 +183,7 @@ export async function loadPublicLayout(categoryId: string | null, scope: "organi
   const sb = supabaseAdmin;
   const { data: parent } = await (sb as any)
     .from("category_public_layouts")
-    .select("id")
+    .select("id, card_style")
     .eq("category_id", categoryId)
     .eq("scope", scope)
     .maybeSingle();
@@ -193,16 +193,18 @@ export async function loadPublicLayout(categoryId: string | null, scope: "organi
     .select("id, field_key, width_percent, order_index, config")
     .eq("layout_id", (parent as any).id)
     .order("order_index", { ascending: true });
+  const cardStyle = (parent as any).card_style ?? "standard";
   return ((rows ?? []) as any[]).map((r) => ({
     id: r.id,
     field_key: r.field_key,
     width_percent: r.width_percent,
     order_index: r.order_index,
-    config: r.config ?? {},
+    config: { ...(r.config ?? {}), __card_style: cardStyle },
   }));
 }
 
-export type PublicRendererField = { key: string; label: string; type: string };
+export type PublicRendererField = { key: string; label: string; type: string; config?: Record<string, any> };
+
 
 export type PublicOrganizationSummary = {
   id: string;
