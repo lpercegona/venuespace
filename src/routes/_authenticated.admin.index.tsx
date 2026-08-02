@@ -1101,7 +1101,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={immersive ? 7 : 8} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
             ) : rows.map((r, i) => {
               const bleedable = isMediaFieldKey(r.field_key) && r.width_percent === 100;
               return (
@@ -1151,6 +1151,8 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
                   </Select>
                 </TableCell>
                 )}
+                {immersive ? null : (
+                <>
                 <TableCell>
                   <Select value={String(r.width_percent)} onValueChange={(v) => updateRow(i, { width_percent: Number(v) as any })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1177,6 +1179,8 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
                     <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </TableCell>
+                </>
+                )}
                 <TableCell>
                   <Button size="sm" variant="outline" onClick={() => removeRow(i)}><Trash2 className="h-4 w-4" /></Button>
                 </TableCell>
@@ -1202,7 +1206,9 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        As larguras devem somar 100% por linha (25+75, 50+50, 25+25+50, ou 100). O motor agrupa os campos em linhas automaticamente.
+        {immersive
+          ? "No estilo imersivo a largura é ignorada: cada campo é posicionado pela posição escolhida. Comodidades usam os ícones definidos nas opções do campo (\"Opção | Icone\")."
+          : "As larguras devem somar 100% por linha (25+75, 50+50, 25+25+50, ou 100). O motor agrupa os campos em linhas automaticamente."}
       </p>
     </div>
   );
