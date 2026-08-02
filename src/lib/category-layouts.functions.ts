@@ -29,11 +29,11 @@ export const listCategoryLayout = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: parent } = await (supabaseAdmin as any)
       .from("category_public_layouts")
-      .select("id")
+      .select("id, card_style")
       .eq("category_id", data.category_id)
       .eq("scope", data.scope)
       .maybeSingle();
-    if (!parent) return { layout_id: null, fields: [] as LayoutField[] };
+    if (!parent) return { layout_id: null, card_style: "standard" as const, fields: [] as LayoutField[] };
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("category_public_layout_fields")
       .select("id, field_key, width_percent, order_index, config")
@@ -42,6 +42,7 @@ export const listCategoryLayout = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return {
       layout_id: (parent as any).id as string,
+      card_style: ((parent as any).card_style ?? "standard") as "standard" | "immersive",
       fields: ((rows ?? []) as any[]).map((r) => ({
         id: r.id,
         field_key: r.field_key,
@@ -51,6 +52,7 @@ export const listCategoryLayout = createServerFn({ method: "GET" })
       })) as LayoutField[],
     };
   });
+
 
 const rowSchema = z.object({
   field_key: z.string().min(1).max(120),
