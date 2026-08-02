@@ -276,50 +276,101 @@ function formatOptionLines(options: string[], icons: Record<string, string> | un
 function LabelsSection() {
   const qc = useQueryClient();
   const labels = useQuery({ queryKey: ["admin-platform-labels"], queryFn: () => listPlatformLabelsPublic() });
-  
+  const catLabels = useQuery({ queryKey: ["admin-category-labels"], queryFn: () => listCategoryLabelsPublic() });
+  const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
+  const [scope, setScope] = useState<string>("global");
+  const isGlobal = scope === "global";
 
   const [drafts, setDrafts] = useState<Record<string, { label: string; icon: string }>>({});
   useEffect(() => {
     if (!labels.data) return;
-    const d: typeof drafts = {};
-    for (const l of labels.data) d[l.key] = { label: l.label, icon: l.icon ?? "" };
+    const overrides = new Map(
+      (catLabels.data ?? []).filter((c) => c.category_id === scope).map((c) => [c.key, c]),
+    );
+    const d: Record<string, { label: string; icon: string }> = {};
+    for (const l of labels.data) {
+      const o = isGlobal ? undefined : overrides.get(l.key);
+      d[l.key] = { label: o?.label ?? l.label, icon: (o?.icon ?? l.icon) ?? "" };
+    }
     setDrafts(d);
-  }, [labels.data]);
+  }, [labels.data, catLabels.data, scope, isGlobal]);
+
+  async function refresh() {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["admin-platform-labels"] }),
+      qc.invalidateQueries({ queryKey: ["admin-category-labels"] }),
+      qc.invalidateQueries({ queryKey: ["platform-labels"] }),
+      qc.invalidateQueries({ queryKey: ["category-labels"] }),
+    ]);
+  }
 
   async function saveLabel(key: string) {
     const d = drafts[key];
     if (!d) return;
     try {
-      await upsertPlatformLabel({ data: { key, label: d.label, icon: d.icon || null } });
+      if (isGlobal) await upsertPlatformLabel({ data: { key, label: d.label, icon: d.icon || null } });
+      else await upsertCategoryLabel({ data: { category_id: scope, key, label: d.label, icon: d.icon || null } });
       toast.success("Rótulo salvo");
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["admin-platform-labels"] }),
-        qc.invalidateQueries({ queryKey: ["platform-labels"] }),
-      ]);
+      await refresh();
     } catch (err) { toast.error((err as Error).message); }
   }
 
+  async function resetLabel(key: string) {
+    if (isGlobal) return;
+    try {
+      await deleteCategoryLabel({ data: { category_id: scope, key } });
+      toast.success("Rótulo da categoria removido");
+      await refresh();
+    } catch (err) { toast.error((err as Error).message); }
+  }
 
-
+  const overriddenKeys = new Set(
+    (catLabels.data ?? []).filter((c) => c.category_id === scope).map((c) => c.key),
+  );
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="font-display">Termos-núcleo</CardTitle>
-        <p className="text-sm text-muted-foreground">Aplicados em toda a plataforma. Alterações salvas são revalidadas imediatamente nesta sessão.</p>
+      <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle className="font-display">Termos-núcleo</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Globais valem para toda a plataforma. Ao escolher uma categoria, os rótulos definidos sobrepõem os globais apenas nela.
+          </p>
+        </div>
+        <Select value={scope} onValueChange={setScope}>
+          <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="global">Global (todas as categorias)</SelectItem>
+            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent>
         {labels.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : (
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader><TableRow><TableHead>Chave</TableHead><TableHead>Rótulo</TableHead><TableHead>Ícone (lucide)</TableHead><TableHead className="w-24"></TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Chave</TableHead><TableHead>Rótulo</TableHead><TableHead>Ícone (lucide)</TableHead><TableHead className="w-32"></TableHead></TableRow></TableHeader>
               <TableBody>
                 {(labels.data ?? []).map((l) => (
                   <TableRow key={l.key}>
-                    <TableCell className="font-mono text-xs">{l.key}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      <span className="flex items-center gap-2">
+                        {l.key}
+                        {!isGlobal && overriddenKeys.has(l.key) ? <Badge variant="secondary">categoria</Badge> : null}
+                      </span>
+                    </TableCell>
                     <TableCell><Input value={drafts[l.key]?.label ?? ""} onChange={(e) => setDrafts((s) => ({ ...s, [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), label: e.target.value } }))} /></TableCell>
                     <TableCell><Input value={drafts[l.key]?.icon ?? ""} onChange={(e) => setDrafts((s) => ({ ...s, [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), icon: e.target.value } }))} placeholder="Building2" /></TableCell>
-                    <TableCell><Button size="sm" variant="outline" onClick={() => saveLabel(l.key)}><Save className="h-4 w-4" /></Button></TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="outline" onClick={() => saveLabel(l.key)}><Save className="h-4 w-4" /></Button>
+                        {!isGlobal && overriddenKeys.has(l.key) ? (
+                          <Button size="sm" variant="outline" onClick={() => resetLabel(l.key)} aria-label="Remover rótulo da categoria">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        ) : null}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -330,6 +381,7 @@ function LabelsSection() {
     </Card>
   );
 }
+
 
 // ---------- Categories ----------
 
