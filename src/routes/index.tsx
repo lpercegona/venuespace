@@ -169,7 +169,9 @@ function Landing() {
               </div>
             )}
           </section>
+          {hasRecords ? (
           <section>
+
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight sm:text-2xl">
                 <FileText className="h-5 w-5 text-primary" />
