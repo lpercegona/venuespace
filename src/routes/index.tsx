@@ -60,6 +60,9 @@ function Landing() {
   const catsQ = usePublicCategories();
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
   const catId = activeCat?.id;
+  const orgLayoutQ = useCategoryLayout(catId, "organization_card");
+  const recLayoutQ = useCategoryLayout(catId, "record_card");
+  const { hasRecords } = useHasPublicRecords(catId);
   const orgs = useQuery({
     queryKey: ["landing-orgs", catId],
     queryFn: () => fetchOrgs(catId),
@@ -69,9 +72,10 @@ function Landing() {
   const recs = useQuery({
     queryKey: ["landing-records", catId],
     queryFn: () => fetchRecords(catId),
-    enabled: !!catId || !catsQ.isLoading,
+    enabled: (!!catId || !catsQ.isLoading) && hasRecords,
     staleTime: 60_000,
   });
+
 
   return (
     <div className="min-h-screen bg-background">
