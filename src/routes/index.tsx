@@ -11,6 +11,8 @@ import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-ca
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
+import { useCategoryLayout, useHasPublicRecords } from "@/hooks/use-public-catalog";
+
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 
 
@@ -60,6 +62,9 @@ function Landing() {
   const catsQ = usePublicCategories();
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
   const catId = activeCat?.id;
+  const orgLayoutQ = useCategoryLayout(catId, "organization_card");
+  const recLayoutQ = useCategoryLayout(catId, "record_card");
+  const { hasRecords } = useHasPublicRecords(catId);
   const orgs = useQuery({
     queryKey: ["landing-orgs", catId],
     queryFn: () => fetchOrgs(catId),
@@ -69,9 +74,10 @@ function Landing() {
   const recs = useQuery({
     queryKey: ["landing-records", catId],
     queryFn: () => fetchRecords(catId),
-    enabled: !!catId || !catsQ.isLoading,
+    enabled: (!!catId || !catsQ.isLoading) && hasRecords,
     staleTime: 60_000,
   });
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -124,11 +130,12 @@ function Landing() {
             </div>
 
             {orgs.isLoading ? (
-              <PublicCardSkeletonGrid count={4} withLogo />
+              <PublicCardSkeletonGrid count={3} withLogo layout={orgLayoutQ.data} />
             ) : (orgs.data?.items ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum espaço publicado ainda.</p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
                 {(orgs.data?.items ?? []).map((o) => (
                   <Link
                     key={o.id}
@@ -162,7 +169,9 @@ function Landing() {
               </div>
             )}
           </section>
+          {hasRecords ? (
           <section>
+
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight sm:text-2xl">
                 <FileText className="h-5 w-5 text-primary" />
@@ -178,11 +187,11 @@ function Landing() {
 
             </div>
             {recs.isLoading ? (
-              <PublicCardSkeletonGrid count={4} />
+              <PublicCardSkeletonGrid count={3} layout={recLayoutQ.data} />
             ) : (recs.data?.items ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum ambiente publicado ainda.</p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(recs.data?.items ?? []).map((r) => {
                   const hasLayout = (r.layout ?? []).length > 0;
                   const title = getPublicCardTitle({
@@ -219,6 +228,8 @@ function Landing() {
 
             )}
           </section>
+          ) : null}
+
         </div>
 
         <div className="mt-16 grid gap-4 sm:grid-cols-3">

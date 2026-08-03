@@ -16,6 +16,8 @@ import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-ca
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
+import { useCategoryLayout, useHasPublicRecords } from "@/hooks/use-public-catalog";
+
 
 import { useLabels } from "@/hooks/use-instance-context";
 
@@ -89,8 +91,8 @@ function ExplorePage() {
   const { t } = useLabels();
   const search = Route.useSearch() as Record<string, any>;
   const navigate = Route.useNavigate();
-  const activeTab = search.tab === "records" ? "records" : "orgs";
-  const scope: "organization" | "record" = activeTab === "orgs" ? "organization" : "record";
+  const requestedTab = search.tab === "records" ? "records" : "orgs";
+
 
   const orgsPlural = t("organizations", "Organizações");
   const recordsPlural = t("records", "Registros");
@@ -105,6 +107,12 @@ function ExplorePage() {
   const catsQ = usePublicCategories();
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
   const catId = activeCat?.id;
+  const { hasRecords } = useHasPublicRecords(catId);
+  const activeTab: "orgs" | "records" = hasRecords ? requestedTab : "orgs";
+  const scope: "organization" | "record" = activeTab === "orgs" ? "organization" : "record";
+  const orgLayoutQ = useCategoryLayout(catId, "organization_card");
+  const recLayoutQ = useCategoryLayout(catId, "record_card");
+
 
   const filtersQ = useQuery({
     queryKey: ["explore-filters", scope, catId],
@@ -180,14 +188,17 @@ function ExplorePage() {
         />
 
         <Tabs value={activeTab} onValueChange={setTab} className="mt-4">
-          <TabsList>
-            <TabsTrigger value="orgs" className="gap-1">
-              <Building2 className="h-4 w-4" /> {orgsPlural}
-            </TabsTrigger>
-            <TabsTrigger value="records" className="gap-1">
-              <FileText className="h-4 w-4" /> {recordsPlural}
-            </TabsTrigger>
-          </TabsList>
+          {hasRecords ? (
+            <TabsList>
+              <TabsTrigger value="orgs" className="gap-1">
+                <Building2 className="h-4 w-4" /> {orgsPlural}
+              </TabsTrigger>
+              <TabsTrigger value="records" className="gap-1">
+                <FileText className="h-4 w-4" /> {recordsPlural}
+              </TabsTrigger>
+            </TabsList>
+          ) : null}
+
 
           <form
             className="mt-4 flex gap-2"
@@ -234,7 +245,7 @@ function ExplorePage() {
 
           <TabsContent value="orgs" className="mt-6">
             {orgsQ.isLoading ? (
-              <PublicCardSkeletonGrid count={6} withLogo className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+              <PublicCardSkeletonGrid count={6} withLogo layout={orgLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
             ) : (orgsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
             ) : (
@@ -275,7 +286,7 @@ function ExplorePage() {
 
           <TabsContent value="records" className="mt-6">
             {recsQ.isLoading ? (
-              <PublicCardSkeletonGrid count={6} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+              <PublicCardSkeletonGrid count={6} layout={recLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
             ) : (recsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
             ) : (
