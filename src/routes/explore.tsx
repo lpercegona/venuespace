@@ -89,8 +89,8 @@ function ExplorePage() {
   const { t } = useLabels();
   const search = Route.useSearch() as Record<string, any>;
   const navigate = Route.useNavigate();
-  const activeTab = search.tab === "records" ? "records" : "orgs";
-  const scope: "organization" | "record" = activeTab === "orgs" ? "organization" : "record";
+  const requestedTab = search.tab === "records" ? "records" : "orgs";
+
 
   const orgsPlural = t("organizations", "Organizações");
   const recordsPlural = t("records", "Registros");
