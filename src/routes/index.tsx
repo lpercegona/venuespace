@@ -11,6 +11,8 @@ import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-ca
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
+import { useCategoryLayout, useHasPublicRecords } from "@/hooks/use-public-catalog";
+
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 
 
