@@ -105,6 +105,12 @@ function ExplorePage() {
   const catsQ = usePublicCategories();
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
   const catId = activeCat?.id;
+  const { hasRecords } = useHasPublicRecords(catId);
+  const activeTab: "orgs" | "records" = hasRecords ? requestedTab : "orgs";
+  const scope: "organization" | "record" = activeTab === "orgs" ? "organization" : "record";
+  const orgLayoutQ = useCategoryLayout(catId, "organization_card");
+  const recLayoutQ = useCategoryLayout(catId, "record_card");
+
 
   const filtersQ = useQuery({
     queryKey: ["explore-filters", scope, catId],
