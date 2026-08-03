@@ -130,11 +130,12 @@ function Landing() {
             </div>
 
             {orgs.isLoading ? (
-              <PublicCardSkeletonGrid count={4} withLogo />
+              <PublicCardSkeletonGrid count={3} withLogo layout={orgLayoutQ.data} />
             ) : (orgs.data?.items ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum espaço publicado ainda.</p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
                 {(orgs.data?.items ?? []).map((o) => (
                   <Link
                     key={o.id}
