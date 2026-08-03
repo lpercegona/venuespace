@@ -286,7 +286,7 @@ function ExplorePage() {
 
           <TabsContent value="records" className="mt-6">
             {recsQ.isLoading ? (
-              <PublicCardSkeletonGrid count={6} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+              <PublicCardSkeletonGrid count={6} layout={recLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
             ) : (recsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
             ) : (
