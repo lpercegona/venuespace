@@ -188,14 +188,17 @@ function ExplorePage() {
         />
 
         <Tabs value={activeTab} onValueChange={setTab} className="mt-4">
-          <TabsList>
-            <TabsTrigger value="orgs" className="gap-1">
-              <Building2 className="h-4 w-4" /> {orgsPlural}
-            </TabsTrigger>
-            <TabsTrigger value="records" className="gap-1">
-              <FileText className="h-4 w-4" /> {recordsPlural}
-            </TabsTrigger>
-          </TabsList>
+          {hasRecords ? (
+            <TabsList>
+              <TabsTrigger value="orgs" className="gap-1">
+                <Building2 className="h-4 w-4" /> {orgsPlural}
+              </TabsTrigger>
+              <TabsTrigger value="records" className="gap-1">
+                <FileText className="h-4 w-4" /> {recordsPlural}
+              </TabsTrigger>
+            </TabsList>
+          ) : null}
+
 
           <form
             className="mt-4 flex gap-2"
