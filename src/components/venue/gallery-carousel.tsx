@@ -1,4 +1,12 @@
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useEffect, useState } from "react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { LazyImage } from "@/components/venue/lazy-image";
 
 type Props = {
@@ -13,8 +21,8 @@ type Props = {
 const ARROW_CLS =
   "opacity-100 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/carousel:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100";
 
-/** Keeps carousel interaction from triggering a wrapping <Link>. */
-function stop(e: React.SyntheticEvent) {
+/** Keeps arrow interaction from triggering the wrapping <Link>. */
+function stopNav(e: React.SyntheticEvent) {
   e.preventDefault();
   e.stopPropagation();
 }
@@ -26,6 +34,21 @@ export function GalleryCarousel({
   className,
   roundedClassName = "rounded-md",
 }: Props) {
+  const [api, setApi] = useState<CarouselApi>();
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!api) return;
+    const onSelect = () => setIndex(api.selectedScrollSnap());
+    onSelect();
+    api.on("select", onSelect);
+    api.on("reInit", onSelect);
+    return () => {
+      api.off("select", onSelect);
+      api.off("reInit", onSelect);
+    };
+  }, [api]);
+
   if (!urls || urls.length === 0) return null;
   if (urls.length === 1) {
     return (
@@ -37,31 +60,44 @@ export function GalleryCarousel({
       />
     );
   }
+
+  const total = urls.length;
+  const nextIdx = (index + 1) % total;
+  const prevIdx = (index - 1 + total) % total;
+
   return (
-    <div
-      className={`group/carousel relative w-full ${className ?? ""}`.trim()}
-      onClick={stop}
-      onPointerDown={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
-      role="presentation"
-    >
-      <Carousel opts={{ loop: true }} className="relative w-full">
-        <CarouselContent>
-          {urls.map((u, i) => (
-            <CarouselItem key={i}>
-              <LazyImage
-                src={u}
-                alt={`${alt} ${i + 1}`}
-                containerClassName={`${aspectClassName} w-full ${roundedClassName}`.trim()}
-                className="h-full w-full object-cover"
-              />
-            </CarouselItem>
-          ))}
+    <div className={`group/carousel relative w-full ${className ?? ""}`.trim()} role="presentation">
+      <Carousel opts={{ loop: true }} setApi={setApi} className="relative w-full">
+        <CarouselContent className="ml-0">
+          {urls.map((u, i) => {
+            const eager = i === index || i === nextIdx || i === prevIdx;
+            return (
+              <CarouselItem key={i} className="pl-0">
+                <LazyImage
+                  src={u}
+                  alt={`${alt} ${i + 1}`}
+                  loading={eager ? "eager" : "lazy"}
+                  fetchPriority={i === nextIdx ? "high" : undefined}
+                  containerClassName={`${aspectClassName} w-full ${roundedClassName}`.trim()}
+                  className="h-full w-full object-cover"
+                />
+              </CarouselItem>
+            );
+          })}
         </CarouselContent>
-        <CarouselPrevious type="button" className={`left-2 ${ARROW_CLS}`} />
-        <CarouselNext type="button" className={`right-2 ${ARROW_CLS}`} />
-        <div className={`pointer-events-none absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm backdrop-blur ${ARROW_CLS}`}>
-          {urls.length}
+
+        {/* Somente as setas interceptam o clique; o restante do card navega. */}
+        <span onClick={stopNav} onPointerDown={(e) => e.stopPropagation()} role="presentation">
+          <CarouselPrevious type="button" className={`left-2 ${ARROW_CLS}`} />
+        </span>
+        <span onClick={stopNav} onPointerDown={(e) => e.stopPropagation()} role="presentation">
+          <CarouselNext type="button" className={`right-2 ${ARROW_CLS}`} />
+        </span>
+
+        <div
+          className={`pointer-events-none absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm backdrop-blur ${ARROW_CLS}`}
+        >
+          {index + 1}/{total}
         </div>
       </Carousel>
     </div>
