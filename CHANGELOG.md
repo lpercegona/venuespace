@@ -1,3 +1,13 @@
+## 2026-08-03 (America/Sao_Paulo) — Correção das Iterações 13/22/23/26/27 — cards públicos, galeria e categorias
+
+- Correção da Iteração 22/23: grades públicas da home passam a 3 colunas no desktop (`sm:grid-cols-2 lg:grid-cols-3`), alinhadas ao `/explore`.
+- Correção da Iteração 13/23: `GalleryCarousel` deixa de bloquear o clique do card — apenas as setas esquerda/direita interceptam o evento; o restante da galeria navega para a página individual.
+- Correção da Iteração 13: slides sem gap (`ml-0`/`pl-0` no carrossel de galeria) em todos os usos (cards padrão, imersivo e perfil público).
+- Correção da Iteração 13: pré-carregamento forçado do slide anterior e do próximo (`loading="eager"` + `fetchPriority`), demais slides permanecem lazy; contador passa a mostrar posição atual.
+- Correção da Iteração 27: comodidades exibidas por ícone no card imersivo agora mostram o rótulo da opção ao lado do ícone.
+- Correção da Iteração 26: categorias sem registros públicos ocultam a listagem de registros — no `/explore` as abas Organizações/Registros somem e a listagem fica em Organizações; na home a seção "Registros recentes" é omitida. Categoria padrão passa a ser "Espaços" quando existir.
+- Correção da Iteração 22/27: skeleton dos cards públicos passa a refletir o layout configurado pelo super admin (linhas, larguras 25/50/75/100%, bleed e variante imersiva), via novo hook `src/hooks/use-public-catalog.ts`.
+
 ## 2026-08-02 10:00 (America/Sao_Paulo) — Iteração 27: rótulos por categoria, card imersivo e ícones por opção
 
 - Rótulos por categoria (`category_labels`): server fns `listCategoryLabelsPublic`/`upsertCategoryLabel`/`deleteCategoryLabel`, rota `/api/public/category-labels` e cascata no `useLabels(categoryId)` (fallback → global → categoria). Admin > Rótulos ganhou seletor Global/Categoria com remoção do override.
