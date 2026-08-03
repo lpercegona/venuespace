@@ -245,7 +245,7 @@ function ExplorePage() {
 
           <TabsContent value="orgs" className="mt-6">
             {orgsQ.isLoading ? (
-              <PublicCardSkeletonGrid count={6} withLogo className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+              <PublicCardSkeletonGrid count={6} withLogo layout={orgLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
             ) : (orgsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
             ) : (
