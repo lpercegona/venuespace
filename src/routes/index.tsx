@@ -187,11 +187,11 @@ function Landing() {
 
             </div>
             {recs.isLoading ? (
-              <PublicCardSkeletonGrid count={4} />
+              <PublicCardSkeletonGrid count={3} layout={recLayoutQ.data} />
             ) : (recs.data?.items ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum ambiente publicado ainda.</p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(recs.data?.items ?? []).map((r) => {
                   const hasLayout = (r.layout ?? []).length > 0;
                   const title = getPublicCardTitle({
@@ -228,6 +228,8 @@ function Landing() {
 
             )}
           </section>
+          ) : null}
+
         </div>
 
         <div className="mt-16 grid gap-4 sm:grid-cols-3">
