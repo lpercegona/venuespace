@@ -24,13 +24,15 @@ export function categorySlug(c: PublicCategory) {
   return slugify(c.name);
 }
 
-/** Resolve the active category id from the URL slug (defaults to the first). */
+/** Resolve the active category id from the URL slug (defaults to "Espaços", then the first). */
 export function resolveCategory(cats: PublicCategory[] | undefined, slug: string | undefined) {
   const list = cats ?? [];
   if (list.length === 0) return null;
   const found = slug ? list.find((c) => categorySlug(c) === slug) : undefined;
-  return found ?? list[0];
+  const preferred = list.find((c) => categorySlug(c) === "espacos");
+  return found ?? preferred ?? list[0];
 }
+
 
 export function CategoryTabs({
   categories,
