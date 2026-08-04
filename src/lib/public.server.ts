@@ -385,6 +385,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
       slug: o.slug,
       description: o.description,
       logo_url: o.logo_url,
+      rating: null,
       "address.cep": addr.cep ?? "",
       "address.street": addr.street ?? "",
       "address.number": addr.number ?? "",
