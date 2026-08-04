@@ -40,6 +40,8 @@ export function GalleryCarousel({
   className,
   roundedClassName = "rounded-md",
   fillContainer,
+  itemBasisClassName,
+  preloadCount = 5,
 }: Props) {
   const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(0);
