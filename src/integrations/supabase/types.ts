@@ -897,6 +897,47 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          rating: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          rating: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          rating?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_reviews_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           address: Json
@@ -1440,7 +1481,10 @@ export type Database = {
         | "relation"
         | "computed"
         | "gallery"
-      public_layout_scope: "organization_card" | "record_card"
+      public_layout_scope:
+        | "organization_card"
+        | "record_card"
+        | "organization_page"
       record_status: "draft" | "published" | "archived"
       view_type: "grid" | "public_list" | "public_detail" | "public_form"
     }
@@ -1599,7 +1643,11 @@ export const Constants = {
         "computed",
         "gallery",
       ],
-      public_layout_scope: ["organization_card", "record_card"],
+      public_layout_scope: [
+        "organization_card",
+        "record_card",
+        "organization_page",
+      ],
       record_status: ["draft", "published", "archived"],
       view_type: ["grid", "public_list", "public_detail", "public_form"],
     },
