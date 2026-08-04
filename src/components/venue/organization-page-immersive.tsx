@@ -292,64 +292,95 @@ export function OrganizationPageImmersive({
           <OrganizationReviews organizationId={org.id} avgRating={avgRating} totalReviews={totalReviews} />
         </div>
 
-        {/* Coluna direita: card de interesse sobreposto à faixa hero */}
-        <aside className="space-y-6 pt-8 lg:col-span-2 lg:-mt-24 lg:pt-0">
-          <Card className="shadow-elegant lg:sticky lg:top-24">
-            <CardContent className="space-y-4 p-4 sm:p-6">
-              {org.public_form_view ? (
-                <>
-                  <div>
-                    <h2 className="font-display text-xl font-semibold">Manifestar interesse</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">Envie seu contato para {org.name}.</p>
-                  </div>
-                  <InterestForm
-                    slug={slug}
-                    tableId={org.public_form_view.table_id}
-                    viewId={org.public_form_view.id}
-                    stacked
-                    submitLabel={org.public_form_view.submit_label || "Enviar"}
-                  />
-                </>
-              ) : (
-                <div>
-                  <h2 className="font-display text-xl font-semibold">Contato</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">Fale diretamente com {org.name}.</p>
-                </div>
-              )}
-
-              {(email || whatsapp || phone || websiteHref) ? (
-                <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-4">
-                  {email ? (
-                    <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
-                      <a href={`mailto:${email}`} aria-label={`Enviar e-mail para ${org.name}`}><Mail className="h-4 w-4" /></a>
-                    </Button>
-                  ) : null}
-                  {whatsapp ? (
-                    <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
-                      <a href={`https://wa.me/${digits(whatsapp)}`} target="_blank" rel="noreferrer noopener" aria-label={`WhatsApp de ${org.name}`}>
-                        <MessageSquare className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  ) : null}
-                  {phone ? (
-                    <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
-                      <a href={`tel:${digits(phone)}`} aria-label={`Telefone de ${org.name}`}><Phone className="h-4 w-4" /></a>
-                    </Button>
-                  ) : null}
-                  {websiteHref ? (
-                    <Button asChild size="lg" variant="outline" className="min-h-11 flex-1">
-                      <a href={websiteHref} target="_blank" rel="noreferrer noopener">
-                        <Globe className="h-4 w-4" />
-                        Acessar o site
-                      </a>
-                    </Button>
-                  ) : null}
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+        {/* Coluna direita: card de interesse sobreposto à faixa hero (desktop) */}
+        <aside className="hidden pt-8 lg:col-span-2 lg:-mt-24 lg:block lg:pt-0">
+          <ContactCard org={org} slug={slug} contact={{ email, whatsapp, phone, websiteHref }} />
         </aside>
       </main>
     </div>
   );
 }
+
+function ContactCard({
+  org,
+  slug,
+  contact,
+  collapsible,
+}: {
+  org: any;
+  slug: string;
+  contact: { email: string; whatsapp: string; phone: string; websiteHref: string };
+  collapsible?: boolean;
+}) {
+  const { email, whatsapp, phone, websiteHref } = contact;
+  const [open, setOpen] = useState(!collapsible);
+  const digits = (v: string) => v.replace(/\D+/g, "");
+  const showForm = Boolean(org.public_form_view) && open;
+
+  return (
+    <Card className="shadow-elegant lg:sticky lg:top-24">
+      <CardContent className="space-y-4 p-4 sm:p-6">
+        {org.public_form_view ? (
+          <>
+            {collapsible ? (
+              <Button size="lg" className="min-h-11 w-full" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+                <MessageSquare className="h-4 w-4" />
+                Entrar em contato
+              </Button>
+            ) : (
+              <div>
+                <h2 className="font-display text-xl font-semibold">Manifestar interesse</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Envie seu contato para {org.name}.</p>
+              </div>
+            )}
+            {showForm ? (
+              <InterestForm
+                slug={slug}
+                tableId={org.public_form_view.table_id}
+                viewId={org.public_form_view.id}
+                stacked
+                submitLabel={org.public_form_view.submit_label || "Enviar"}
+              />
+            ) : null}
+          </>
+        ) : (
+          <div>
+            <h2 className="font-display text-xl font-semibold">Contato</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Fale diretamente com {org.name}.</p>
+          </div>
+        )}
+
+        {(email || whatsapp || phone || websiteHref) ? (
+          <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-4">
+            {email ? (
+              <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
+                <a href={`mailto:${email}`} aria-label={`Enviar e-mail para ${org.name}`}><Mail className="h-4 w-4" /></a>
+              </Button>
+            ) : null}
+            {whatsapp ? (
+              <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
+                <a href={`https://wa.me/${digits(whatsapp)}`} target="_blank" rel="noreferrer noopener" aria-label={`WhatsApp de ${org.name}`}>
+                  <MessageSquare className="h-4 w-4" />
+                </a>
+              </Button>
+            ) : null}
+            {phone ? (
+              <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
+                <a href={`tel:${digits(phone)}`} aria-label={`Telefone de ${org.name}`}><Phone className="h-4 w-4" /></a>
+              </Button>
+            ) : null}
+            {websiteHref ? (
+              <Button asChild size="lg" variant="outline" className="min-h-11 flex-1">
+                <a href={websiteHref} target="_blank" rel="noreferrer noopener">
+                  <Globe className="h-4 w-4" />
+                  Acessar o site
+                </a>
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
