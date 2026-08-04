@@ -16,6 +16,8 @@ type Props = {
   className?: string;
   /** Rounding applied to each slide/image. Use "" for bleed (edge-to-edge) cells. */
   roundedClassName?: string;
+  /** When true, the carousel fills its nearest positioned ancestor (use with absolute inset-0). */
+  fillContainer?: boolean;
 };
 
 const ARROW_CLS =
@@ -33,6 +35,7 @@ export function GalleryCarousel({
   aspectClassName = "aspect-video",
   className,
   roundedClassName = "rounded-md",
+  fillContainer,
 }: Props) {
   const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(0);
@@ -50,12 +53,13 @@ export function GalleryCarousel({
   }, [api]);
 
   if (!urls || urls.length === 0) return null;
+  const fillCls = fillContainer ? "h-full w-full" : `${aspectClassName} w-full`;
   if (urls.length === 1) {
     return (
       <LazyImage
         src={urls[0]}
         alt={alt}
-        containerClassName={`${aspectClassName} w-full ${roundedClassName} ${className ?? ""}`.trim()}
+        containerClassName={`${fillCls} ${roundedClassName} ${className ?? ""}`.trim()}
         className="h-full w-full object-cover"
       />
     );
@@ -66,19 +70,19 @@ export function GalleryCarousel({
   const prevIdx = (index - 1 + total) % total;
 
   return (
-    <div className={`group/carousel relative w-full ${className ?? ""}`.trim()} role="presentation">
-      <Carousel opts={{ loop: true }} setApi={setApi} className="relative w-full">
-        <CarouselContent className="ml-0">
+    <div className={`group/carousel relative ${fillContainer ? "h-full w-full" : "w-full"} ${className ?? ""}`.trim()} role="presentation">
+      <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full" : "w-full"}`}>
+        <CarouselContent className={`ml-0 ${fillContainer ? "h-full" : ""}`}>
           {urls.map((u, i) => {
             const eager = i === index || i === nextIdx || i === prevIdx;
             return (
-              <CarouselItem key={i} className="pl-0">
+              <CarouselItem key={i} className={`pl-0 ${fillContainer ? "h-full" : ""}`}>
                 <LazyImage
                   src={u}
                   alt={`${alt} ${i + 1}`}
                   loading={eager ? "eager" : "lazy"}
                   fetchPriority={i === nextIdx ? "high" : undefined}
-                  containerClassName={`${aspectClassName} w-full ${roundedClassName}`.trim()}
+                  containerClassName={`${fillCls} ${roundedClassName}`.trim()}
                   className="h-full w-full object-cover"
                 />
               </CarouselItem>

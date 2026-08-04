@@ -4,6 +4,8 @@ import { MapPin, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { ContactActions } from "@/components/venue/contact-actions";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
+import { OrganizationPageImmersive } from "@/components/venue/organization-page-immersive";
+import { OrganizationReviews } from "@/components/venue/organization-reviews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,6 +49,10 @@ type PublicOrg = PublicOrganizationSummary & {
   address: Record<string, any>;
   contact?: { phone: string | null; whatsapp: string | null; email: string | null; website: string | null };
   public_form_view?: { id: string; table_id: string; submit_label: string } | null;
+  page_layout: PublicLayoutField[];
+  page_style: "standard" | "immersive";
+  avg_rating: number | null;
+  total_reviews: number;
 };
 
 async function fetchOrg(slug: string): Promise<PublicOrg> {
@@ -152,6 +158,20 @@ function PublicOrgPage() {
   const addr = formatAddress(org.address);
   const logoUrl = typeof org.data?.logo_url === "string" && /^https?:\/\//i.test(org.data.logo_url) ? org.data.logo_url : (org.logo_url ?? null);
 
+  const pageStyle = (org.page_style as "standard" | "immersive") ?? "standard";
+
+  if (pageStyle === "immersive") {
+    return (
+      <OrganizationPageImmersive
+        org={org}
+        slug={slug}
+        records={records}
+        contactOpen={contactOpen}
+        setContactOpen={setContactOpen}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
@@ -214,6 +234,8 @@ function PublicOrgPage() {
             </section>
           );
         })() : null}
+
+        <OrganizationReviews organizationId={org.id} avgRating={org.avg_rating ?? null} totalReviews={org.total_reviews ?? 0} />
 
         <section className="space-y-4">
           <h2 className="font-display text-lg font-semibold">Publicações</h2>

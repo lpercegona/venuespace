@@ -79,6 +79,11 @@ import {
   deleteCategoryFilterField,
   type CategoryFilterField,
 } from "@/lib/category-filters.functions";
+import {
+  listPendingReviewsAdmin,
+  moderateReviewAdmin,
+  type ReviewModerationItem,
+} from "@/lib/reviews.functions";
 
 
 export const Route = createFileRoute("/_authenticated/admin/")({
@@ -130,6 +135,7 @@ function AdminPage() {
           <TabsTrigger value="filters">Filtros públicos</TabsTrigger>
           <TabsTrigger value="layouts">Layout público</TabsTrigger>
           <TabsTrigger value="blog">Blog</TabsTrigger>
+          <TabsTrigger value="reviews">Avaliações</TabsTrigger>
         </TabsList>
         <TabsContent value="general"><GeneralSection /></TabsContent>
         <TabsContent value="labels"><LabelsSection /></TabsContent>
@@ -140,6 +146,7 @@ function AdminPage() {
         <TabsContent value="filters"><FilterFieldsSection /></TabsContent>
         <TabsContent value="layouts"><LayoutsSection /></TabsContent>
         <TabsContent value="blog"><BlogSection /></TabsContent>
+        <TabsContent value="reviews"><ReviewsSection /></TabsContent>
       </Tabs>
 
 
@@ -944,9 +951,11 @@ function LayoutsSection() {
             <TabsList>
               <TabsTrigger value="organization_card">Card de organização</TabsTrigger>
               <TabsTrigger value="record_card">Card de registro</TabsTrigger>
+              <TabsTrigger value="organization_page">Página de organização</TabsTrigger>
             </TabsList>
             <TabsContent value="organization_card"><LayoutEditor categoryId={selected} scope="organization_card" /></TabsContent>
             <TabsContent value="record_card"><LayoutEditor categoryId={selected} scope="record_card" /></TabsContent>
+            <TabsContent value="organization_page"><LayoutEditor categoryId={selected} scope="organization_page" /></TabsContent>
           </Tabs>
         )}
       </CardContent>
@@ -954,23 +963,25 @@ function LayoutsSection() {
   );
 }
 
-function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organization_card" | "record_card" }) {
+function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organization_card" | "record_card" | "organization_page" }) {
   const qc = useQueryClient();
   const src = useQuery({
     queryKey: ["admin-layout", scope, categoryId],
     queryFn: async () => {
       const layout = await listCategoryLayout({ data: { category_id: categoryId, scope } });
-      const scopeArg = scope === "organization_card" ? "org" : "record";
+      const isOrgScope = scope === "organization_card" || scope === "organization_page";
+      const scopeArg = isOrgScope ? "org" : "record";
       const cascadeFields = scopeArg === "record"
         ? await listCategoryDefaultFields({ data: { category_id: categoryId } })
         : await listCategoryCascadeFields({ data: { category_id: categoryId, scope: "org" } });
-      const baseFields: Array<{ field_key: string; label: string }> = scope === "organization_card"
+      const baseFields: Array<{ field_key: string; label: string }> = isOrgScope
         ? [
             { field_key: "name", label: "Nome (base)" },
             { field_key: "description", label: "Descrição (base)" },
             { field_key: "logo_url", label: "Logo (base)" },
             { field_key: "address.city", label: "Cidade (base)" },
             { field_key: "address.state", label: "UF (base)" },
+            { field_key: "address.city_state_full", label: "Cidade - Estado (extenso) (base)" },
             { field_key: "address.neighborhood", label: "Bairro (base)" },
             { field_key: "address.street", label: "Logradouro (base)" },
             { field_key: "address.number", label: "Número (base)" },
@@ -1061,18 +1072,20 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
     <div className="mt-4 space-y-4">
       <div className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-medium">Estilo do card</p>
+          <p className="text-sm font-medium">
+            {scope === "organization_page" ? "Estilo da página" : "Estilo do card"}
+          </p>
           <p className="text-xs text-muted-foreground">
             {immersive
-              ? "Imersivo: imagem de fundo com posições fixas. Escolha qual campo ocupa cada posição."
-              : "Padrão: campos empilhados em linhas, com largura configurável."}
+              ? "Layout 2: faixa hero com imagem de fundo e informações sobrepostas."
+              : "Layout 1: duas colunas com campos empilhados e largura configurável."}
           </p>
         </div>
         <Select value={cardStyle} onValueChange={(v) => setCardStyle(v as "standard" | "immersive")}>
           <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="standard">Padrão</SelectItem>
-            <SelectItem value="immersive">Imersivo (imagem de fundo)</SelectItem>
+            <SelectItem value="standard">Layout 1</SelectItem>
+            <SelectItem value="immersive">Layout 2</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -1207,7 +1220,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
       </div>
       <p className="text-xs text-muted-foreground">
         {immersive
-          ? "No estilo imersivo a largura é ignorada: cada campo é posicionado pela posição escolhida. Comodidades usam os ícones definidos nas opções do campo (\"Opção | Icone\")."
+          ? "No Layout 2 a largura é ignorada: cada campo é posicionado pela posição escolhida. Comodidades usam os ícones definidos nas opções do campo (\"Opção | Icone\")."
           : "As larguras devem somar 100% por linha (25+75, 50+50, 25+25+50, ou 100). O motor agrupa os campos em linhas automaticamente."}
       </p>
     </div>
@@ -2170,5 +2183,87 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
         </div>
       )}
     </div>
+  );
+}
+
+// ---------- Reviews moderation ----------
+
+function ReviewsSection() {
+  const qc = useQueryClient();
+  const list = useQuery({ queryKey: ["admin-pending-reviews"], queryFn: () => listPendingReviewsAdmin({}) });
+  const [busy, setBusy] = useState<string | null>(null);
+
+  async function handleModerate(id: string, status: "approved" | "rejected") {
+    setBusy(id);
+    try {
+      await moderateReviewAdmin({ data: { id, status } });
+      toast.success(status === "approved" ? "Avaliação aprovada" : "Avaliação rejeitada");
+      await qc.invalidateQueries({ queryKey: ["admin-pending-reviews"] });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const items = (list.data?.items ?? []) as ReviewModerationItem[];
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="font-display">Moderação de avaliações</CardTitle></CardHeader>
+      <CardContent>
+        {list.isLoading ? (
+          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma avaliação pendente.</p>
+        ) : (
+          <div className="space-y-4">
+            {items.map((r) => (
+              <div key={r.id} className="rounded-xl border border-border p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium text-foreground">{r.user?.display_name || r.user?.email || "Usuário"}</span>
+                      <span className="text-muted-foreground">em</span>
+                      <span className="font-medium text-foreground">{r.organization?.name || "Organização"}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <svg
+                          key={i}
+                          className={`h-4 w-4 ${i < r.rating ? "fill-warning text-warning" : "text-muted-foreground"}`}
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                        </svg>
+                      ))}
+                    </div>
+                    {r.comment ? <p className="mt-2 text-sm text-foreground/90">{r.comment}</p> : null}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy === r.id}
+                      onClick={() => handleModerate(r.id, "rejected")}
+                    >
+                      Rejeitar
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={busy === r.id}
+                      onClick={() => handleModerate(r.id, "approved")}
+                    >
+                      Aprovar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

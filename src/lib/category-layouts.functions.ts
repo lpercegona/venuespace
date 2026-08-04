@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type PublicLayoutScope = "organization_card" | "record_card";
+export type PublicLayoutScope = "organization_card" | "record_card" | "organization_page";
 
 export type LayoutField = {
   id: string;
@@ -22,7 +22,7 @@ export const listCategoryLayout = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) =>
     z.object({
       category_id: z.string().uuid(),
-      scope: z.enum(["organization_card", "record_card"]),
+      scope: z.enum(["organization_card", "record_card", "organization_page"]),
     }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -66,7 +66,7 @@ export const saveCategoryLayout = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
       category_id: z.string().uuid(),
-      scope: z.enum(["organization_card", "record_card"]),
+      scope: z.enum(["organization_card", "record_card", "organization_page"]),
       card_style: z.enum(["standard", "immersive"]).optional(),
       fields: z.array(rowSchema),
     }).parse(d),

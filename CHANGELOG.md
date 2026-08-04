@@ -1,3 +1,14 @@
+## 2026-08-04 (America/Sao_Paulo) — Iteração 28 — tooltips de comodidades, cidade/estado extenso, novo layout de página de organização e avaliações
+
+- Tooltips em comodidades dos cards imersivos: rótulo aparece apenas no hover do ícone (`Tooltip` shadcn) em vez de texto ao lado.
+- Novo campo virtual base `address.city_state_full` (Cidade - Estado extenso) para layouts públicos, com mapa de UF para nome completo (`src/lib/public.server.ts`).
+- Campo virtual `rating` (Avaliação média) adicionado aos campos base de organização para permitir posicionamento no layout público.
+- Nova aba "Página de organização" no painel super admin (Layout público) com estilos Layout 1 (padrão/duas colunas) e Layout 2 (imersivo/hero).
+- Novo componente `src/components/venue/organization-page-immersive.tsx` renderizando hero de galeria com título, avaliação e endereço sobrepostos; coluna principal com sobre, comodidades, informações, mapa e avaliações; coluna lateral fixa com formulário/contato.
+- `GalleryCarousel` ganha prop `fillContainer` para preencher heros de altura fixa sem distorcer o aspecto ou vazar para fora do container.
+- Sistema de avaliações: tabela `organization_reviews` com status `pending`/`approved`/`rejected`; usuários autenticados enviam nota 1-5 e comentário; exibição pública mostra média e total apenas das aprovadas.
+- Painel super admin ganha aba "Avaliações" para aprovar ou rejeitar avaliações pendentes.
+
 ## 2026-08-03 (America/Sao_Paulo) — Correção das Iterações 13/22/23/26/27 — cards públicos, galeria e categorias
 
 - Correção da Iteração 22/23: grades públicas da home passam a 3 colunas no desktop (`sm:grid-cols-2 lg:grid-cols-3`), alinhadas ao `/explore`.

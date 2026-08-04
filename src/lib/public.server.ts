@@ -178,7 +178,7 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
   };
 }
 
-export async function loadPublicLayout(categoryId: string | null, scope: "organization_card" | "record_card"): Promise<PublicLayoutField[]> {
+export async function loadPublicLayout(categoryId: string | null, scope: "organization_card" | "record_card" | "organization_page"): Promise<PublicLayoutField[]> {
   if (!categoryId) return [];
   const sb = supabaseAdmin;
   const { data: parent } = await (sb as any)
@@ -225,6 +225,7 @@ const ORG_BUILTIN_FIELDS: PublicRendererField[] = [
   { key: "slug", label: "Slug", type: "text" },
   { key: "description", label: "Descrição", type: "long_text" },
   { key: "logo_url", label: "Logo", type: "image" },
+  { key: "rating", label: "Avaliação média", type: "number" },
   { key: "address.cep", label: "CEP", type: "text" },
   { key: "address.street", label: "Logradouro", type: "text" },
   { key: "address.number", label: "Número", type: "text" },
@@ -232,7 +233,21 @@ const ORG_BUILTIN_FIELDS: PublicRendererField[] = [
   { key: "address.neighborhood", label: "Bairro", type: "text" },
   { key: "address.city", label: "Cidade", type: "text" },
   { key: "address.state", label: "UF", type: "text" },
+  { key: "address.city_state_full", label: "Cidade - Estado (extenso)", type: "text" },
 ];
+
+const STATE_MAP: Record<string, string> = {
+  ac: "Acre", al: "Alagoas", ap: "Amapá", am: "Amazonas", ba: "Bahia", ce: "Ceará",
+  df: "Distrito Federal", es: "Espírito Santo", go: "Goiás", ma: "Maranhão", mt: "Mato Grosso",
+  ms: "Mato Grosso do Sul", mg: "Minas Gerais", pa: "Pará", pb: "Paraíba", pr: "Paraná",
+  pe: "Pernambuco", pi: "Piauí", rj: "Rio de Janeiro", rn: "Rio Grande do Norte",
+  rs: "Rio Grande do Sul", ro: "Rondônia", rr: "Roraima", sc: "Santa Catarina",
+  sp: "São Paulo", se: "Sergipe", to: "Tocantins",
+};
+
+function expandState(uf: string): string {
+  return STATE_MAP[uf.trim().toLowerCase()] ?? uf;
+}
 
 const RECORD_BUILTIN_FIELDS: PublicRendererField[] = [
   { key: "org_name", label: "Organização", type: "text" },
@@ -241,7 +256,7 @@ const RECORD_BUILTIN_FIELDS: PublicRendererField[] = [
 ];
 
 
-async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card"): Promise<Map<string, PublicLayoutField[]>> {
+async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card" | "organization_page"): Promise<Map<string, PublicLayoutField[]>> {
   const out = new Map<string, PublicLayoutField[]>();
   if (categoryIds.length === 0) return out;
   const sb = supabaseAdmin;
@@ -370,6 +385,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
       slug: o.slug,
       description: o.description,
       logo_url: o.logo_url,
+      rating: null,
       "address.cep": addr.cep ?? "",
       "address.street": addr.street ?? "",
       "address.number": addr.number ?? "",
@@ -377,6 +393,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
       "address.neighborhood": addr.neighborhood ?? "",
       "address.city": addr.city ?? "",
       "address.state": addr.state ?? "",
+      "address.city_state_full": [addr.city, expandState(addr.state ?? "")].filter(Boolean).join(" - "),
       ...o.category_data,
     };
     return { id: o.id, slug: o.slug, name: o.name, description: o.description, logo_url: o.logo_url, category_id: o.category_id, category_data: o.category_data, updated_at: o.updated_at, data, fields, layout };
@@ -397,12 +414,23 @@ export async function getPublicOrganization(slug: string): Promise<any> {
   if (!o) throw new Error("Organização não encontrada");
 
   const catId = (o as any).category_id ?? null;
-  const [layouts, catFields, catRow] = await Promise.all([
+  const [layouts, pageLayouts, catFields, catRow, reviewsAgg] = await Promise.all([
     loadLayoutsBatch(catId ? [catId] : [], "organization_card"),
+    loadLayoutsBatch(catId ? [catId] : [], "organization_page"),
     loadOrgCategoryFieldsBatch(catId ? [catId] : []),
     catId ? (sb as any).from("organization_categories").select("name").eq("id", catId).maybeSingle() : Promise.resolve({ data: null }),
+    (sb as any).from("organization_reviews")
+      .select("rating, status")
+      .eq("organization_id", (o as any).id)
+      .eq("status", "approved"),
   ]);
   const layout = (catId && layouts.get(catId)) || [];
+  const pageLayout = (catId && pageLayouts.get(catId)) || [];
+  const pageStyle = ((pageLayout[0]?.config?.__card_style as string) ?? "standard") as "standard" | "immersive";
+  const approvedReviews = (reviewsAgg?.data ?? []) as Array<{ rating: number }>;
+  const avgRating = approvedReviews.length
+    ? Number((approvedReviews.reduce((a, b) => a + b.rating, 0) / approvedReviews.length).toFixed(1))
+    : null;
   const catF = (catId && catFields.get(catId)) || [];
   const fields = [...ORG_BUILTIN_FIELDS, ...catF];
   const addr = ((o as any).address ?? {}) as Record<string, any>;
@@ -411,6 +439,7 @@ export async function getPublicOrganization(slug: string): Promise<any> {
     slug: (o as any).slug,
     description: (o as any).description,
     logo_url: (o as any).logo_url,
+    rating: avgRating,
     "address.cep": addr.cep ?? "",
     "address.street": addr.street ?? "",
     "address.number": addr.number ?? "",
@@ -418,6 +447,7 @@ export async function getPublicOrganization(slug: string): Promise<any> {
     "address.neighborhood": addr.neighborhood ?? "",
     "address.city": addr.city ?? "",
     "address.state": addr.state ?? "",
+    "address.city_state_full": [addr.city, expandState(addr.state ?? "")].filter(Boolean).join(" - "),
     ...((o as any).system_data ?? {}),
     ...((o as any).category_data ?? {}),
   };
@@ -466,6 +496,10 @@ export async function getPublicOrganization(slug: string): Promise<any> {
     public_form_view: orgFormView
       ? { id: orgFormView.id as string, table_id: orgFormView.table_id as string, submit_label: (orgFormView.config ?? {}).submit_label ?? "Enviar" }
       : null,
+    page_layout: pageLayout,
+    page_style: pageStyle,
+    avg_rating: avgRating,
+    total_reviews: approvedReviews.length,
   };
   await signImagePathsInItems([item as any]);
   return item as any;
