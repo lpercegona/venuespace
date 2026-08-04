@@ -135,6 +135,7 @@ export function OrganizationPageImmersive({
     const pos = (it.config?.position as string) || "default";
     return !["background", "badge", "title", "subtitle", "rating", "address", "features", "description"].includes(pos);
   });
+  const showHeroRating = avgRating != null || (ratingField && getValue(data, ratingField.field_key));
 
   const addressForMap = [org.address?.street, org.address?.number, org.address?.neighborhood, org.address?.city, org.address?.state, org.address?.cep]
     .filter(Boolean).join(", ");
