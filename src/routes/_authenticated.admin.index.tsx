@@ -955,11 +955,117 @@ function LayoutsSection() {
             </TabsList>
             <TabsContent value="organization_card"><LayoutEditor categoryId={selected} scope="organization_card" /></TabsContent>
             <TabsContent value="record_card"><LayoutEditor categoryId={selected} scope="record_card" /></TabsContent>
-            <TabsContent value="organization_page"><LayoutEditor categoryId={selected} scope="organization_page" /></TabsContent>
+            <TabsContent value="organization_page"><PageStyleSelector categoryId={selected} /></TabsContent>
           </Tabs>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** Miniatura em skeleton do Layout 1 (cabeçalho + duas colunas). */
+function LayoutOneThumb() {
+  return (
+    <div className="space-y-1.5 rounded-md bg-muted/60 p-2">
+      <div className="flex items-center gap-1.5">
+        <div className="h-5 w-5 rounded bg-muted-foreground/30" />
+        <div className="h-2 w-16 rounded bg-muted-foreground/30" />
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        <div className="col-span-2 space-y-1.5">
+          <div className="h-2 w-full rounded bg-muted-foreground/20" />
+          <div className="h-2 w-5/6 rounded bg-muted-foreground/20" />
+          <div className="h-10 w-full rounded bg-muted-foreground/20" />
+        </div>
+        <div className="h-16 rounded bg-muted-foreground/30" />
+      </div>
+    </div>
+  );
+}
+
+/** Miniatura em skeleton do Layout 2 (faixa hero + colunas assimétricas). */
+function LayoutTwoThumb() {
+  return (
+    <div className="space-y-1.5 rounded-md bg-muted/60 p-2">
+      <div className="relative -mx-2 -mt-2 h-10 bg-muted-foreground/30">
+        <div className="absolute bottom-1 left-2 h-2 w-14 rounded bg-background/70" />
+      </div>
+      <div className="grid grid-cols-5 gap-1.5">
+        <div className="col-span-3 space-y-1.5">
+          <div className="h-2 w-full rounded bg-muted-foreground/20" />
+          <div className="h-2 w-4/5 rounded bg-muted-foreground/20" />
+          <div className="h-8 w-full rounded bg-muted-foreground/20" />
+        </div>
+        <div className="col-span-2 -mt-4 h-16 rounded bg-muted-foreground/30 shadow-elegant" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Seleção estática do estilo da página pública de organização.
+ * Correção da Iteração 28: sem editor de campos, apenas Layout 1 ou Layout 2.
+ */
+function PageStyleSelector({ categoryId }: { categoryId: string }) {
+  const qc = useQueryClient();
+  const src = useQuery({
+    queryKey: ["admin-layout", "organization_page", categoryId],
+    queryFn: () => listCategoryLayout({ data: { category_id: categoryId, scope: "organization_page" } }),
+  });
+  const [style, setStyle] = useState<"standard" | "immersive">("standard");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (src.data) setStyle((src.data.card_style as "standard" | "immersive") ?? "standard");
+  }, [src.data]);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await saveCategoryLayout({ data: { category_id: categoryId, scope: "organization_page", card_style: style, fields: [] } });
+      toast.success("Estilo da página salvo");
+      qc.invalidateQueries({ queryKey: ["admin-layout", "organization_page", categoryId] });
+    } catch (err) { toast.error((err as Error).message); }
+    finally { setSaving(false); }
+  }
+
+  if (src.isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+
+  const options: Array<{ value: "standard" | "immersive"; title: string; desc: string; thumb: JSX.Element }> = [
+    { value: "standard", title: "Layout 1", desc: "Cabeçalho com logo e duas colunas.", thumb: <LayoutOneThumb /> },
+    { value: "immersive", title: "Layout 2", desc: "Faixa hero com galeria e card de interesse sobreposto.", thumb: <LayoutTwoThumb /> },
+  ];
+
+  return (
+    <div className="mt-4 space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Escolha a estrutura da página individual de organização. Os dois layouts têm estrutura fixa e usam os campos já cadastrados.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {options.map((o) => {
+          const active = style === o.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => setStyle(o.value)}
+              aria-pressed={active}
+              className={`rounded-xl border p-3 text-left outline-hidden transition-colors focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${active ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}
+            >
+              {o.thumb}
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <span className="font-medium">{o.title}</span>
+                {active ? <Check className="h-4 w-4 shrink-0 text-primary" /> : null}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{o.desc}</p>
+            </button>
+          );
+        })}
+      </div>
+      <Button onClick={save} disabled={saving} className="min-h-11">
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+        Salvar estilo
+      </Button>
+    </div>
   );
 }
 
