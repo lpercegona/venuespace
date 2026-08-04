@@ -4,6 +4,8 @@ import { MapPin, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { ContactActions } from "@/components/venue/contact-actions";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
+import { OrganizationPageImmersive } from "@/components/venue/organization-page-immersive";
+import { OrganizationReviews } from "@/components/venue/organization-reviews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
