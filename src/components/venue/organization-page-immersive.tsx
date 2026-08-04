@@ -124,6 +124,11 @@ export function OrganizationPageImmersive({
     [a.city, a.state].filter(Boolean).join("/"),
     a.cep,
   ].filter(Boolean).join(" - ");
+  // Versão curta (mobile): rua/número e cidade/UF, para caber em uma linha.
+  const addressLineShort = [
+    [a.street, a.number].filter(Boolean).join(", "),
+    [a.city, a.state].filter(Boolean).join("/"),
+  ].filter(Boolean).join(" - ");
   const mapQuery = [a.street, a.number, a.neighborhood, a.city, a.state, a.cep].filter(Boolean).join(", ");
 
   return (
