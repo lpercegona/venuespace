@@ -412,12 +412,23 @@ export async function getPublicOrganization(slug: string): Promise<any> {
   if (!o) throw new Error("Organização não encontrada");
 
   const catId = (o as any).category_id ?? null;
-  const [layouts, catFields, catRow] = await Promise.all([
+  const [layouts, pageLayouts, catFields, catRow, reviewsAgg] = await Promise.all([
     loadLayoutsBatch(catId ? [catId] : [], "organization_card"),
+    loadLayoutsBatch(catId ? [catId] : [], "organization_page"),
     loadOrgCategoryFieldsBatch(catId ? [catId] : []),
     catId ? (sb as any).from("organization_categories").select("name").eq("id", catId).maybeSingle() : Promise.resolve({ data: null }),
+    (sb as any).from("organization_reviews")
+      .select("rating, status")
+      .eq("organization_id", (o as any).id)
+      .eq("status", "approved"),
   ]);
   const layout = (catId && layouts.get(catId)) || [];
+  const pageLayout = (catId && pageLayouts.get(catId)) || [];
+  const pageStyle = ((pageLayout[0]?.config?.__card_style as string) ?? "standard") as "standard" | "immersive";
+  const approvedReviews = (reviewsAgg?.data ?? []) as Array<{ rating: number }>;
+  const avgRating = approvedReviews.length
+    ? Number((approvedReviews.reduce((a, b) => a + b.rating, 0) / approvedReviews.length).toFixed(1))
+    : null;
   const catF = (catId && catFields.get(catId)) || [];
   const fields = [...ORG_BUILTIN_FIELDS, ...catF];
   const addr = ((o as any).address ?? {}) as Record<string, any>;
