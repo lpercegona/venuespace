@@ -1065,18 +1065,20 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
     <div className="mt-4 space-y-4">
       <div className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-medium">Estilo do card</p>
+          <p className="text-sm font-medium">
+            {scope === "organization_page" ? "Estilo da página" : "Estilo do card"}
+          </p>
           <p className="text-xs text-muted-foreground">
             {immersive
-              ? "Imersivo: imagem de fundo com posições fixas. Escolha qual campo ocupa cada posição."
-              : "Padrão: campos empilhados em linhas, com largura configurável."}
+              ? "Layout 2: faixa hero com imagem de fundo e informações sobrepostas."
+              : "Layout 1: duas colunas com campos empilhados e largura configurável."}
           </p>
         </div>
         <Select value={cardStyle} onValueChange={(v) => setCardStyle(v as "standard" | "immersive")}>
           <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="standard">Padrão</SelectItem>
-            <SelectItem value="immersive">Imersivo (imagem de fundo)</SelectItem>
+            <SelectItem value="standard">Layout 1</SelectItem>
+            <SelectItem value="immersive">Layout 2</SelectItem>
           </SelectContent>
         </Select>
       </div>
