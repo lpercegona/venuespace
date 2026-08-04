@@ -135,6 +135,7 @@ function AdminPage() {
           <TabsTrigger value="filters">Filtros públicos</TabsTrigger>
           <TabsTrigger value="layouts">Layout público</TabsTrigger>
           <TabsTrigger value="blog">Blog</TabsTrigger>
+          <TabsTrigger value="reviews">Avaliações</TabsTrigger>
         </TabsList>
         <TabsContent value="general"><GeneralSection /></TabsContent>
         <TabsContent value="labels"><LabelsSection /></TabsContent>
@@ -145,6 +146,7 @@ function AdminPage() {
         <TabsContent value="filters"><FilterFieldsSection /></TabsContent>
         <TabsContent value="layouts"><LayoutsSection /></TabsContent>
         <TabsContent value="blog"><BlogSection /></TabsContent>
+        <TabsContent value="reviews"><ReviewsSection /></TabsContent>
       </Tabs>
 
 
