@@ -511,11 +511,14 @@ function ImmersiveCardBody({
                       <TooltipTrigger asChild>
                         <span
                           aria-label={v}
-                          className="inline-flex min-w-0 cursor-default items-center gap-1 text-[11px] text-primary-foreground drop-shadow"
+                          tabIndex={0}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          className="pointer-events-auto inline-flex min-w-0 cursor-default items-center gap-1 text-[11px] text-primary-foreground drop-shadow outline-hidden focus-visible:ring-3 focus-visible:ring-ring"
                         >
                           <IconByName name={iconName} className="h-4 w-4 shrink-0" />
                         </span>
                       </TooltipTrigger>
+
                       <TooltipContent side="top">
                         <p>{v}</p>
                       </TooltipContent>
