@@ -66,7 +66,7 @@ export const saveCategoryLayout = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
       category_id: z.string().uuid(),
-      scope: z.enum(["organization_card", "record_card"]),
+      scope: z.enum(["organization_card", "record_card", "organization_page"]),
       card_style: z.enum(["standard", "immersive"]).optional(),
       fields: z.array(rowSchema),
     }).parse(d),
