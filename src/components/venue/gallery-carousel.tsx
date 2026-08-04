@@ -70,19 +70,19 @@ export function GalleryCarousel({
   const prevIdx = (index - 1 + total) % total;
 
   return (
-    <div className={`group/carousel relative w-full ${className ?? ""}`.trim()} role="presentation">
-      <Carousel opts={{ loop: true }} setApi={setApi} className="relative w-full">
-        <CarouselContent className="ml-0">
+    <div className={`group/carousel relative ${fillContainer ? "h-full w-full" : "w-full"} ${className ?? ""}`.trim()} role="presentation">
+      <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full" : "w-full"}`}>
+        <CarouselContent className={`ml-0 ${fillContainer ? "h-full" : ""}`}>
           {urls.map((u, i) => {
             const eager = i === index || i === nextIdx || i === prevIdx;
             return (
-              <CarouselItem key={i} className="pl-0">
+              <CarouselItem key={i} className={`pl-0 ${fillContainer ? "h-full" : ""}`}>
                 <LazyImage
                   src={u}
                   alt={`${alt} ${i + 1}`}
                   loading={eager ? "eager" : "lazy"}
                   fetchPriority={i === nextIdx ? "high" : undefined}
-                  containerClassName={`${aspectClassName} w-full ${roundedClassName}`.trim()}
+                  containerClassName={`${fillCls} ${roundedClassName}`.trim()}
                   className="h-full w-full object-cover"
                 />
               </CarouselItem>
