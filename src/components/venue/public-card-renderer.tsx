@@ -141,8 +141,9 @@ export function PublicCardBody({
     imgAspect: string;
     bleed: boolean;
     style: CellStyle;
-    kind: "single-image" | "gallery" | "text" | "logo";
+    kind: "single-image" | "gallery" | "text" | "logo" | "icons";
     urls?: string[];
+    values?: string[];
     text?: string;
   };
 
