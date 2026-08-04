@@ -225,6 +225,7 @@ const ORG_BUILTIN_FIELDS: PublicRendererField[] = [
   { key: "slug", label: "Slug", type: "text" },
   { key: "description", label: "Descrição", type: "long_text" },
   { key: "logo_url", label: "Logo", type: "image" },
+  { key: "rating", label: "Avaliação média", type: "number" },
   { key: "address.cep", label: "CEP", type: "text" },
   { key: "address.street", label: "Logradouro", type: "text" },
   { key: "address.number", label: "Número", type: "text" },
