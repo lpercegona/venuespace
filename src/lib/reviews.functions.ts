@@ -19,12 +19,25 @@ export const getOrganizationReviews = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("organization_reviews")
-      .select("id, user_id, rating, comment, status, created_at, user:user_id(display_name)")
+      .select("id, user_id, rating, comment, status, created_at")
       .eq("organization_id", data.organization_id)
       .eq("status", "approved")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return { items: (rows ?? []) as any[] };
+    const list = rows ?? [];
+    const ids = [...new Set(list.map((r) => r.user_id))];
+    const names = new Map<string, string | null>();
+    if (ids.length) {
+      const { data: profs } = await supabaseAdmin
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", ids);
+      for (const p of profs ?? []) names.set(p.id, p.display_name);
+    }
+    return {
+      items: list.map((r) => ({ ...r, user: { display_name: names.get(r.user_id) ?? null } })) as any[],
+    };
+
   });
 
 export const getMyOrganizationReview = createServerFn({ method: "GET" })
