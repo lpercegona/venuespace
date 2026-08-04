@@ -214,6 +214,7 @@ export function PublicCardBody({
   const mb = padding === 6 ? "-mb-6" : "-mb-4";
 
   return (
+    <TooltipProvider>
     <div className="space-y-2">
 
       {rows.map((row, i) => {
@@ -303,6 +304,20 @@ export function PublicCardBody({
                 );
               }
 
+              if (c.kind === "icons") {
+                return (
+                  <div key={c.id} className={`${c.span} min-w-0`}>
+                    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      <IconByName name={c.iconName} className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{c.label}</span>
+                    </div>
+                    <div className="mt-1">
+                      <OptionIconList values={c.values ?? []} iconMap={c.iconMap ?? {}} />
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={c.id} className={`${c.span} min-w-0`}>
                   <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -317,6 +332,45 @@ export function PublicCardBody({
         );
       })}
     </div>
+    </TooltipProvider>
+  );
+}
+
+/**
+ * Lista de valores de multiselect renderizada como ícones com tooltip no hover/foco.
+ * Compartilhada entre cards públicos e a página da organização.
+ */
+export function OptionIconList({
+  values,
+  iconMap,
+  className,
+  iconClassName = "h-4 w-4",
+}: {
+  values: string[];
+  iconMap: Record<string, string>;
+  className?: string;
+  iconClassName?: string;
+}) {
+  if (values.length === 0) return null;
+  return (
+    <TooltipProvider>
+      <div className={className ?? "flex flex-wrap items-center gap-2"}>
+        {values.map((v) => (
+          <Tooltip key={v}>
+            <TooltipTrigger asChild>
+              <span
+                aria-label={v}
+                tabIndex={0}
+                className="inline-flex h-8 w-8 cursor-default items-center justify-center rounded-full bg-muted text-foreground outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                <IconByName name={iconMap[v] ?? "Check"} className={`${iconClassName} shrink-0`} />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top"><p>{v}</p></TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    </TooltipProvider>
   );
 }
 
