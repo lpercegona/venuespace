@@ -2185,3 +2185,85 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
     </div>
   );
 }
+
+// ---------- Reviews moderation ----------
+
+function ReviewsSection() {
+  const qc = useQueryClient();
+  const list = useQuery({ queryKey: ["admin-pending-reviews"], queryFn: () => listPendingReviewsAdmin({}) });
+  const [busy, setBusy] = useState<string | null>(null);
+
+  async function handleModerate(id: string, status: "approved" | "rejected") {
+    setBusy(id);
+    try {
+      await moderateReviewAdmin({ data: { id, status } });
+      toast.success(status === "approved" ? "Avaliação aprovada" : "Avaliação rejeitada");
+      await qc.invalidateQueries({ queryKey: ["admin-pending-reviews"] });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const items = (list.data?.items ?? []) as ReviewModerationItem[];
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="font-display">Moderação de avaliações</CardTitle></CardHeader>
+      <CardContent>
+        {list.isLoading ? (
+          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma avaliação pendente.</p>
+        ) : (
+          <div className="space-y-4">
+            {items.map((r) => (
+              <div key={r.id} className="rounded-xl border border-border p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium text-foreground">{r.user?.display_name || r.user?.email || "Usuário"}</span>
+                      <span className="text-muted-foreground">em</span>
+                      <span className="font-medium text-foreground">{r.organization?.name || "Organização"}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <svg
+                          key={i}
+                          className={`h-4 w-4 ${i < r.rating ? "fill-warning text-warning" : "text-muted-foreground"}`}
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                        </svg>
+                      ))}
+                    </div>
+                    {r.comment ? <p className="mt-2 text-sm text-foreground/90">{r.comment}</p> : null}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy === r.id}
+                      onClick={() => handleModerate(r.id, "rejected")}
+                    >
+                      Rejeitar
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={busy === r.id}
+                      onClick={() => handleModerate(r.id, "approved")}
+                    >
+                      Aprovar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
