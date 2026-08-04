@@ -493,6 +493,10 @@ export async function getPublicOrganization(slug: string): Promise<any> {
     public_form_view: orgFormView
       ? { id: orgFormView.id as string, table_id: orgFormView.table_id as string, submit_label: (orgFormView.config ?? {}).submit_label ?? "Enviar" }
       : null,
+    page_layout: pageLayout,
+    page_style: pageStyle,
+    avg_rating: avgRating,
+    total_reviews: approvedReviews.length,
   };
   await signImagePathsInItems([item as any]);
   return item as any;
