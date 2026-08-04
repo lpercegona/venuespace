@@ -440,20 +440,24 @@ function ImmersiveCardBody({
                     </span>
                   );
                 }
-                return vals.map((v) => (
-                  <span
-                    key={`${it.id}-${v}`}
-                    title={v}
-                    aria-label={v}
-                    className="inline-flex min-w-0 items-center gap-1 text-[11px] text-primary-foreground drop-shadow"
-                  >
-                    <IconByName
-                      name={iconMap[v] ?? (it.config?.icon as string) ?? "Check"}
-                      className="h-4 w-4 shrink-0"
-                    />
-                    <span className="truncate">{v}</span>
-                  </span>
-                ));
+                return vals.map((v) => {
+                  const iconName = iconMap[v] ?? (it.config?.icon as string) ?? "Check";
+                  return (
+                    <Tooltip key={`${it.id}-${v}`}>
+                      <TooltipTrigger asChild>
+                        <span
+                          aria-label={v}
+                          className="inline-flex min-w-0 cursor-default items-center gap-1 text-[11px] text-primary-foreground drop-shadow"
+                        >
+                          <IconByName name={iconName} className="h-4 w-4 shrink-0" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>{v}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                });
 
               })}
             </div>
