@@ -18,6 +18,10 @@ type Props = {
   roundedClassName?: string;
   /** When true, the carousel fills its nearest positioned ancestor (use with absolute inset-0). */
   fillContainer?: boolean;
+  /** Responsive width of each slide (Tailwind basis-*). Defaults to one slide per view. */
+  itemBasisClassName?: string;
+  /** How many images to eagerly preload (default 5). */
+  preloadCount?: number;
 };
 
 const ARROW_CLS =
@@ -36,6 +40,8 @@ export function GalleryCarousel({
   className,
   roundedClassName = "rounded-md",
   fillContainer,
+  itemBasisClassName,
+  preloadCount = 5,
 }: Props) {
   const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(0);
@@ -68,22 +74,22 @@ export function GalleryCarousel({
   const total = urls.length;
   const nextIdx = (index + 1) % total;
   const prevIdx = (index - 1 + total) % total;
-  // Pré-carrega até 5 imagens: anterior, atual e as próximas, sem repetir.
+  // Pré-carrega as primeiras imagens visíveis (padrão 5), anterior e próximas.
   const eagerSet = new Set<number>();
   eagerSet.add(index);
   eagerSet.add(prevIdx);
-  for (let step = 1; eagerSet.size < Math.min(5, total); step++) {
+  for (let step = 1; eagerSet.size < Math.min(preloadCount, total); step++) {
     eagerSet.add((index + step) % total);
   }
 
   return (
     <div className={`group/carousel relative ${fillContainer ? "h-full w-full" : "w-full"} ${className ?? ""}`.trim()} role="presentation">
-      <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full" : "w-full"}`}>
+      <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full [&>div]:h-full" : "w-full"}`}>
         <CarouselContent className={`ml-0 ${fillContainer ? "h-full" : ""}`}>
           {urls.map((u, i) => {
             const eager = eagerSet.has(i);
             return (
-              <CarouselItem key={i} className={`pl-0 ${fillContainer ? "h-full" : ""}`}>
+              <CarouselItem key={i} className={`pl-0 ${itemBasisClassName ?? ""} ${fillContainer ? "h-full" : ""}`.trim()}>
                 <LazyImage
                   src={u}
                   alt={`${alt} ${i + 1}`}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, Globe, Mail, MapPin, MessageSquare, Phone, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -123,6 +124,11 @@ export function OrganizationPageImmersive({
     [a.city, a.state].filter(Boolean).join("/"),
     a.cep,
   ].filter(Boolean).join(" - ");
+  // Versão curta (mobile): rua/número e cidade/UF, para caber em uma linha.
+  const addressLineShort = [
+    [a.street, a.number].filter(Boolean).join(", "),
+    [a.city, a.state].filter(Boolean).join("/"),
+  ].filter(Boolean).join(" - ");
   const mapQuery = [a.street, a.number, a.neighborhood, a.city, a.state, a.cep].filter(Boolean).join(", ");
 
   return (
@@ -145,7 +151,15 @@ export function OrganizationPageImmersive({
       {/* Hero full-bleed */}
       <section className="relative isolate h-72 w-full overflow-hidden sm:h-[26rem]">
         {heroUrls.length > 0 ? (
-          <GalleryCarousel urls={heroUrls} alt={org.name} className="absolute inset-0" fillContainer roundedClassName="" />
+          <GalleryCarousel
+            urls={heroUrls}
+            alt={org.name}
+            className="absolute inset-0"
+            fillContainer
+            roundedClassName=""
+            preloadCount={5}
+            itemBasisClassName="basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 2xl:basis-1/5"
+          />
         ) : (
           <div className="absolute inset-0 bg-muted">
             <OrgLogo src={org.logo_url ?? null} alt={org.name} className="h-full w-full rounded-none border-0" iconClassName="h-16 w-16" />
@@ -163,17 +177,19 @@ export function OrganizationPageImmersive({
               ) : null}
               <h1 className="font-display text-3xl font-semibold tracking-tight drop-shadow sm:text-4xl">{org.name}</h1>
               {addressLine ? (
-                <p className="pointer-events-auto mt-2 flex flex-wrap items-center gap-1.5 text-sm drop-shadow">
-                  <MapPin className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{addressLine}</span>
+                <p className="pointer-events-auto mt-2 flex flex-nowrap items-center gap-1 text-[10px] leading-tight drop-shadow sm:gap-1.5 sm:text-sm">
+                  <MapPin className="h-3 w-3 shrink-0 sm:h-4 sm:w-4" />
+                  <span className="truncate sm:hidden">{addressLineShort || addressLine}</span>
+                  <span className="hidden truncate sm:inline">{addressLine}</span>
                   {mapQuery ? (
                     <>
                       <span aria-hidden className="opacity-60">|</span>
-                      <a href="#localizacao" className="underline underline-offset-2">Ver no mapa</a>
+                      <a href="#localizacao" className="shrink-0 whitespace-nowrap underline underline-offset-2">Ver no mapa</a>
                     </>
                   ) : null}
                 </p>
               ) : null}
+
             </div>
           </div>
         </div>
@@ -226,6 +242,12 @@ export function OrganizationPageImmersive({
               ) : null}
             </section>
           ) : null}
+
+          {/* Mobile: bloco de contato logo abaixo de Site/Telefone */}
+          <div className="lg:hidden">
+            <ContactCard org={org} slug={slug} contact={{ email, whatsapp, phone, websiteHref }} collapsible />
+          </div>
+
 
           <section>
             <h2 className="font-display text-lg font-semibold">Ambientes</h2>
@@ -283,64 +305,95 @@ export function OrganizationPageImmersive({
           <OrganizationReviews organizationId={org.id} avgRating={avgRating} totalReviews={totalReviews} />
         </div>
 
-        {/* Coluna direita: card de interesse sobreposto à faixa hero */}
-        <aside className="space-y-6 pt-8 lg:col-span-2 lg:-mt-24 lg:pt-0">
-          <Card className="shadow-elegant lg:sticky lg:top-24">
-            <CardContent className="space-y-4 p-4 sm:p-6">
-              {org.public_form_view ? (
-                <>
-                  <div>
-                    <h2 className="font-display text-xl font-semibold">Manifestar interesse</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">Envie seu contato para {org.name}.</p>
-                  </div>
-                  <InterestForm
-                    slug={slug}
-                    tableId={org.public_form_view.table_id}
-                    viewId={org.public_form_view.id}
-                    stacked
-                    submitLabel={org.public_form_view.submit_label || "Enviar"}
-                  />
-                </>
-              ) : (
-                <div>
-                  <h2 className="font-display text-xl font-semibold">Contato</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">Fale diretamente com {org.name}.</p>
-                </div>
-              )}
-
-              {(email || whatsapp || phone || websiteHref) ? (
-                <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-4">
-                  {email ? (
-                    <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
-                      <a href={`mailto:${email}`} aria-label={`Enviar e-mail para ${org.name}`}><Mail className="h-4 w-4" /></a>
-                    </Button>
-                  ) : null}
-                  {whatsapp ? (
-                    <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
-                      <a href={`https://wa.me/${digits(whatsapp)}`} target="_blank" rel="noreferrer noopener" aria-label={`WhatsApp de ${org.name}`}>
-                        <MessageSquare className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  ) : null}
-                  {phone ? (
-                    <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
-                      <a href={`tel:${digits(phone)}`} aria-label={`Telefone de ${org.name}`}><Phone className="h-4 w-4" /></a>
-                    </Button>
-                  ) : null}
-                  {websiteHref ? (
-                    <Button asChild size="lg" variant="outline" className="min-h-11 flex-1">
-                      <a href={websiteHref} target="_blank" rel="noreferrer noopener">
-                        <Globe className="h-4 w-4" />
-                        Acessar o site
-                      </a>
-                    </Button>
-                  ) : null}
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+        {/* Coluna direita: card de interesse sobreposto à faixa hero (desktop) */}
+        <aside className="hidden pt-8 lg:col-span-2 lg:-mt-24 lg:block lg:pt-0">
+          <ContactCard org={org} slug={slug} contact={{ email, whatsapp, phone, websiteHref }} />
         </aside>
       </main>
     </div>
   );
 }
+
+function ContactCard({
+  org,
+  slug,
+  contact,
+  collapsible,
+}: {
+  org: any;
+  slug: string;
+  contact: { email: string; whatsapp: string; phone: string; websiteHref: string };
+  collapsible?: boolean;
+}) {
+  const { email, whatsapp, phone, websiteHref } = contact;
+  const [open, setOpen] = useState(!collapsible);
+  const digits = (v: string) => v.replace(/\D+/g, "");
+  const showForm = Boolean(org.public_form_view) && open;
+
+  return (
+    <Card className="shadow-elegant lg:sticky lg:top-24">
+      <CardContent className="space-y-4 p-4 sm:p-6">
+        {org.public_form_view ? (
+          <>
+            {collapsible ? (
+              <Button size="lg" className="min-h-11 w-full" onClick={() => setOpen((v: boolean) => !v)} aria-expanded={open}>
+                <MessageSquare className="h-4 w-4" />
+                Entrar em contato
+              </Button>
+            ) : (
+              <div>
+                <h2 className="font-display text-xl font-semibold">Manifestar interesse</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Envie seu contato para {org.name}.</p>
+              </div>
+            )}
+            {showForm ? (
+              <InterestForm
+                slug={slug}
+                tableId={org.public_form_view.table_id}
+                viewId={org.public_form_view.id}
+                stacked
+                submitLabel={org.public_form_view.submit_label || "Enviar"}
+              />
+            ) : null}
+          </>
+        ) : (
+          <div>
+            <h2 className="font-display text-xl font-semibold">Contato</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Fale diretamente com {org.name}.</p>
+          </div>
+        )}
+
+        {(email || whatsapp || phone || websiteHref) ? (
+          <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-4">
+            {email ? (
+              <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
+                <a href={`mailto:${email}`} aria-label={`Enviar e-mail para ${org.name}`}><Mail className="h-4 w-4" /></a>
+              </Button>
+            ) : null}
+            {whatsapp ? (
+              <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
+                <a href={`https://wa.me/${digits(whatsapp)}`} target="_blank" rel="noreferrer noopener" aria-label={`WhatsApp de ${org.name}`}>
+                  <MessageSquare className="h-4 w-4" />
+                </a>
+              </Button>
+            ) : null}
+            {phone ? (
+              <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
+                <a href={`tel:${digits(phone)}`} aria-label={`Telefone de ${org.name}`}><Phone className="h-4 w-4" /></a>
+              </Button>
+            ) : null}
+            {websiteHref ? (
+              <Button asChild size="lg" variant="outline" className="min-h-11 flex-1">
+                <a href={websiteHref} target="_blank" rel="noreferrer noopener">
+                  <Globe className="h-4 w-4" />
+                  Acessar o site
+                </a>
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
