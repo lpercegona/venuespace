@@ -330,7 +330,7 @@ function ContactCard({
         {org.public_form_view ? (
           <>
             {collapsible ? (
-              <Button size="lg" className="min-h-11 w-full" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+              <Button size="lg" className="min-h-11 w-full" onClick={() => setOpen((v: boolean) => !v)} aria-expanded={open}>
                 <MessageSquare className="h-4 w-4" />
                 Entrar em contato
               </Button>
