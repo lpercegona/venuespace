@@ -172,7 +172,7 @@ export function OrganizationPageImmersive({
               ) : null}
               <h1 className="font-display text-3xl font-semibold tracking-tight drop-shadow sm:text-4xl">{org.name}</h1>
               {addressLine ? (
-                <p className="pointer-events-auto mt-2 flex flex-nowrap items-center gap-1 text-[11px] leading-tight drop-shadow sm:gap-1.5 sm:text-sm">
+                <p className="pointer-events-auto mt-2 flex flex-nowrap items-center gap-1 text-[10px] leading-tight drop-shadow sm:gap-1.5 sm:text-sm">
                   <MapPin className="h-3 w-3 shrink-0 sm:h-4 sm:w-4" />
                   <span className="truncate">{addressLine}</span>
                   {mapQuery ? (
