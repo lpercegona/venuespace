@@ -1,4 +1,12 @@
+## 2026-08-04 15:45 (America/Sao_Paulo) — Correção das Iterações 27/28 — tooltips, pré-carregamento da galeria e posição da localização
+
+- Tooltips dos ícones de multiselect voltam a funcionar nos cards públicos: a camada sobreposta do card imersivo usava `pointer-events-none`, bloqueando hover/foco. Gatilhos agora usam `pointer-events-auto`, `tabIndex` e clique isolado (o card continua navegando para a página individual).
+- `GalleryCarousel`: pré-carrega até 5 imagens (atual, anterior e próximas) quando a galeria tiver mais slides; demais permanecem `lazy`.
+- Imagens da galeria com enquadramento centro/centro (`object-cover object-center`), inclusive no hero do Layout 2.
+- Página individual de organização (Layout 2): bloco "Localização" movido da coluna direita para logo abaixo de "Ambientes", antes de "Avaliações".
+
 ## 2026-08-05 (America/Sao_Paulo) — Correção da Iteração 28 — tooltips gerais, seleção estática do Layout 2 e reestruturação da página imersiva
+
 
 - Tooltips de multiselect com ícones passam a valer em **todos** os cards públicos (padrão e imersivo) e nos blocos de comodidades da página de organização, via `OptionIconList` compartilhado em `public-card-renderer.tsx` (antes só o card imersivo tinha tooltip).
 - Painel super admin > Layout público > "Página de organização" deixa de usar o editor de campos e passa a exibir apenas dois cards de seleção com miniatura em skeleton (Layout 1 e Layout 2), salvando somente `card_style`.
