@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Save, Trash2, Pencil, ArrowLeft, Shield, FileText } from "lucide-react";
+import { Loader2, Plus, Save, Trash2, Pencil, ArrowLeft, Shield, FileText, Check } from "lucide-react";
 import { listBlogPostsAdmin, deleteBlogPost, type BlogPostListItem } from "@/lib/blog.functions";
 
 import { AppShell } from "@/components/venue/app-shell";
@@ -1030,7 +1031,7 @@ function PageStyleSelector({ categoryId }: { categoryId: string }) {
 
   if (src.isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
 
-  const options: Array<{ value: "standard" | "immersive"; title: string; desc: string; thumb: JSX.Element }> = [
+  const options: Array<{ value: "standard" | "immersive"; title: string; desc: string; thumb: ReactNode }> = [
     { value: "standard", title: "Layout 1", desc: "Cabeçalho com logo e duas colunas.", thumb: <LayoutOneThumb /> },
     { value: "immersive", title: "Layout 2", desc: "Faixa hero com galeria e card de interesse sobreposto.", thumb: <LayoutTwoThumb /> },
   ];
