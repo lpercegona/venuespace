@@ -105,11 +105,24 @@ export const listPendingReviewsAdmin = createServerFn({ method: "GET" })
 
     const { data: rows, error } = await context.supabase
       .from("organization_reviews")
-      .select("id, organization_id, user_id, rating, comment, created_at, organization:organization_id(name, slug), user:user_id(display_name, email)")
+      .select("id, organization_id, user_id, rating, comment, created_at, organization:organization_id(name, slug)")
       .eq("status", "pending")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return { items: (rows ?? []) as any[] };
+    const list = (rows ?? []) as any[];
+    const ids = [...new Set(list.map((r) => r.user_id))];
+    const profMap = new Map<string, { display_name: string | null; email: string | null }>();
+    if (ids.length) {
+      const { data: profs } = await context.supabase
+        .from("profiles")
+        .select("id, display_name, email")
+        .in("id", ids);
+      for (const p of profs ?? []) profMap.set(p.id, { display_name: p.display_name, email: p.email });
+    }
+    return {
+      items: list.map((r) => ({ ...r, user: profMap.get(r.user_id) ?? null })) as any[],
+    };
+
   });
 
 export const moderateReviewAdmin = createServerFn({ method: "POST" })
