@@ -60,7 +60,7 @@ export function GalleryCarousel({
         src={urls[0]}
         alt={alt}
         containerClassName={`${fillCls} ${roundedClassName} ${className ?? ""}`.trim()}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-cover object-center"
       />
     );
   }
@@ -68,13 +68,20 @@ export function GalleryCarousel({
   const total = urls.length;
   const nextIdx = (index + 1) % total;
   const prevIdx = (index - 1 + total) % total;
+  // Pré-carrega até 5 imagens: anterior, atual e as próximas, sem repetir.
+  const eagerSet = new Set<number>();
+  eagerSet.add(index);
+  eagerSet.add(prevIdx);
+  for (let step = 1; eagerSet.size < Math.min(5, total); step++) {
+    eagerSet.add((index + step) % total);
+  }
 
   return (
     <div className={`group/carousel relative ${fillContainer ? "h-full w-full" : "w-full"} ${className ?? ""}`.trim()} role="presentation">
       <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full" : "w-full"}`}>
         <CarouselContent className={`ml-0 ${fillContainer ? "h-full" : ""}`}>
           {urls.map((u, i) => {
-            const eager = i === index || i === nextIdx || i === prevIdx;
+            const eager = eagerSet.has(i);
             return (
               <CarouselItem key={i} className={`pl-0 ${fillContainer ? "h-full" : ""}`}>
                 <LazyImage
@@ -83,12 +90,13 @@ export function GalleryCarousel({
                   loading={eager ? "eager" : "lazy"}
                   fetchPriority={i === nextIdx ? "high" : undefined}
                   containerClassName={`${fillCls} ${roundedClassName}`.trim()}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover object-center"
                 />
               </CarouselItem>
             );
           })}
         </CarouselContent>
+
 
         {/* Somente as setas interceptam o clique; o restante do card navega. */}
         <span onClick={stopNav} onPointerDown={(e) => e.stopPropagation()} role="presentation">
