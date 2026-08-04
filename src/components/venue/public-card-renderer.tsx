@@ -361,11 +361,13 @@ export function OptionIconList({
               <span
                 aria-label={v}
                 tabIndex={0}
-                className="inline-flex h-8 w-8 cursor-default items-center justify-center rounded-full bg-muted text-foreground outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                className="pointer-events-auto inline-flex h-8 w-8 cursor-default items-center justify-center rounded-full bg-muted text-foreground outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <IconByName name={iconMap[v] ?? "Check"} className={`${iconClassName} shrink-0`} />
               </span>
             </TooltipTrigger>
+
             <TooltipContent side="top"><p>{v}</p></TooltipContent>
           </Tooltip>
         ))}
