@@ -956,23 +956,25 @@ function LayoutsSection() {
   );
 }
 
-function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organization_card" | "record_card" }) {
+function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organization_card" | "record_card" | "organization_page" }) {
   const qc = useQueryClient();
   const src = useQuery({
     queryKey: ["admin-layout", scope, categoryId],
     queryFn: async () => {
       const layout = await listCategoryLayout({ data: { category_id: categoryId, scope } });
-      const scopeArg = scope === "organization_card" ? "org" : "record";
+      const isOrgScope = scope === "organization_card" || scope === "organization_page";
+      const scopeArg = isOrgScope ? "org" : "record";
       const cascadeFields = scopeArg === "record"
         ? await listCategoryDefaultFields({ data: { category_id: categoryId } })
         : await listCategoryCascadeFields({ data: { category_id: categoryId, scope: "org" } });
-      const baseFields: Array<{ field_key: string; label: string }> = scope === "organization_card"
+      const baseFields: Array<{ field_key: string; label: string }> = isOrgScope
         ? [
             { field_key: "name", label: "Nome (base)" },
             { field_key: "description", label: "Descrição (base)" },
             { field_key: "logo_url", label: "Logo (base)" },
             { field_key: "address.city", label: "Cidade (base)" },
             { field_key: "address.state", label: "UF (base)" },
+            { field_key: "address.city_state_full", label: "Cidade - Estado (extenso) (base)" },
             { field_key: "address.neighborhood", label: "Bairro (base)" },
             { field_key: "address.street", label: "Logradouro (base)" },
             { field_key: "address.number", label: "Número (base)" },
