@@ -237,6 +237,12 @@ export function OrganizationPageImmersive({
             </section>
           ) : null}
 
+          {/* Mobile: bloco de contato logo abaixo de Site/Telefone */}
+          <div className="lg:hidden">
+            <ContactCard org={org} slug={slug} contact={{ email, whatsapp, phone, websiteHref }} collapsible />
+          </div>
+
+
           <section>
             <h2 className="font-display text-lg font-semibold">Ambientes</h2>
             {records.length === 0 ? (
