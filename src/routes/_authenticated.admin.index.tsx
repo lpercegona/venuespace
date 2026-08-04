@@ -1213,7 +1213,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
       </div>
       <p className="text-xs text-muted-foreground">
         {immersive
-          ? "No estilo imersivo a largura é ignorada: cada campo é posicionado pela posição escolhida. Comodidades usam os ícones definidos nas opções do campo (\"Opção | Icone\")."
+          ? "No Layout 2 a largura é ignorada: cada campo é posicionado pela posição escolhida. Comodidades usam os ícones definidos nas opções do campo (\"Opção | Icone\")."
           : "As larguras devem somar 100% por linha (25+75, 50+50, 25+25+50, ou 100). O motor agrupa os campos em linhas automaticamente."}
       </p>
     </div>
