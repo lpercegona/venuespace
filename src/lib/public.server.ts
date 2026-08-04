@@ -391,6 +391,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
       "address.neighborhood": addr.neighborhood ?? "",
       "address.city": addr.city ?? "",
       "address.state": addr.state ?? "",
+      "address.city_state_full": [addr.city, expandState(addr.state ?? "")].filter(Boolean).join(" - "),
       ...o.category_data,
     };
     return { id: o.id, slug: o.slug, name: o.name, description: o.description, logo_url: o.logo_url, category_id: o.category_id, category_data: o.category_data, updated_at: o.updated_at, data, fields, layout };
