@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type PublicLayoutScope = "organization_card" | "record_card";
+export type PublicLayoutScope = "organization_card" | "record_card" | "organization_page";
 
 export type LayoutField = {
   id: string;
