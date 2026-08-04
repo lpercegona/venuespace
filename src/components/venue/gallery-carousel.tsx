@@ -18,6 +18,10 @@ type Props = {
   roundedClassName?: string;
   /** When true, the carousel fills its nearest positioned ancestor (use with absolute inset-0). */
   fillContainer?: boolean;
+  /** Responsive width of each slide (Tailwind basis-*). Defaults to one slide per view. */
+  itemBasisClassName?: string;
+  /** How many images to eagerly preload (default 5). */
+  preloadCount?: number;
 };
 
 const ARROW_CLS =
