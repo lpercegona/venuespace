@@ -377,6 +377,7 @@ function ImmersiveCardBody({
   const m = padding === 6 ? "-m-6" : "-m-4";
 
   return (
+    <TooltipProvider>
     <div className={`${m} relative isolate overflow-hidden rounded-xl`}>
       <div className="relative aspect-4/3 w-full bg-muted">
         {bgUrls.length > 1 ? (
