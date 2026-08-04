@@ -181,11 +181,11 @@ export function OrganizationPageImmersive({
                   </div>
                 ) : null}
               </div>
-              {avgRating != null ? (
+              {showHeroRating ? (
                 <div className="flex shrink-0 items-center gap-2 rounded-lg bg-black/40 px-3 py-2 backdrop-blur-sm">
                   <Star className="h-5 w-5 fill-warning text-warning" />
                   <div>
-                    <div className="text-lg font-semibold leading-none">{avgRating.toFixed(1).replace(".", ",")}</div>
+                    <div className="text-lg font-semibold leading-none">{avgRating?.toFixed(1).replace(".", ",") ?? "—"}</div>
                     <div className="text-[10px] text-white/70">{totalReviews} avaliação{totalReviews === 1 ? "" : "s"}</div>
                   </div>
                 </div>
