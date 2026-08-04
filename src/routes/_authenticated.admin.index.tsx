@@ -79,6 +79,11 @@ import {
   deleteCategoryFilterField,
   type CategoryFilterField,
 } from "@/lib/category-filters.functions";
+import {
+  listPendingReviewsAdmin,
+  moderateReviewAdmin,
+  type ReviewModerationItem,
+} from "@/lib/reviews.functions";
 
 
 export const Route = createFileRoute("/_authenticated/admin/")({
