@@ -84,7 +84,7 @@ export function GalleryCarousel({
 
   return (
     <div className={`group/carousel relative ${fillContainer ? "h-full w-full" : "w-full"} ${className ?? ""}`.trim()} role="presentation">
-      <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full" : "w-full"}`}>
+      <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full [&>div]:h-full" : "w-full"}`}>
         <CarouselContent className={`ml-0 ${fillContainer ? "h-full" : ""}`}>
           {urls.map((u, i) => {
             const eager = eagerSet.has(i);
