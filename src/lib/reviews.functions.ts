@@ -2,6 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+export type ReviewModerationItem = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  organization: { name: string; slug: string } | null;
+  user: { display_name: string | null; email: string | null } | null;
+};
+
 export const getOrganizationReviews = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ organization_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
