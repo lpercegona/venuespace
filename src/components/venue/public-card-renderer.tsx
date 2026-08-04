@@ -144,6 +144,7 @@ export function PublicCardBody({
     kind: "single-image" | "gallery" | "text" | "logo" | "icons";
     urls?: string[];
     values?: string[];
+    iconMap?: Record<string, string>;
     text?: string;
   };
 
@@ -182,7 +183,7 @@ export function PublicCardBody({
     const optionIcons = (f?.config?.option_icons ?? {}) as Record<string, string>;
     const listValues = valuesOf(raw);
     if (listValues.length > 0 && listValues.some((v) => optionIcons[v])) {
-      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, style, kind: "icons", values: listValues, text: JSON.stringify(optionIcons) });
+      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, style, kind: "icons", values: listValues, iconMap: optionIcons });
       continue;
     }
     const text = formatValue(f, raw);
