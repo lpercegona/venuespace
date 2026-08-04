@@ -154,6 +154,20 @@ function PublicOrgPage() {
   const addr = formatAddress(org.address);
   const logoUrl = typeof org.data?.logo_url === "string" && /^https?:\/\//i.test(org.data.logo_url) ? org.data.logo_url : (org.logo_url ?? null);
 
+  const pageStyle = (org.page_style as "standard" | "immersive") ?? "standard";
+
+  if (pageStyle === "immersive") {
+    return (
+      <OrganizationPageImmersive
+        org={org}
+        slug={slug}
+        records={records}
+        contactOpen={contactOpen}
+        setContactOpen={setContactOpen}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
@@ -216,6 +230,8 @@ function PublicOrgPage() {
             </section>
           );
         })() : null}
+
+        <OrganizationReviews organizationId={org.id} avgRating={org.avg_rating ?? null} totalReviews={org.total_reviews ?? 0} />
 
         <section className="space-y-4">
           <h2 className="font-display text-lg font-semibold">Publicações</h2>
