@@ -148,8 +148,8 @@ export function OrganizationPageImmersive({
           <GalleryCarousel
             urls={galleryImages}
             alt={org.name}
-            className="absolute inset-0 h-full w-full"
-            aspectClassName="aspect-auto h-full w-full"
+            className="absolute inset-0"
+            fillContainer
             roundedClassName="rounded-none"
           />
         ) : (
