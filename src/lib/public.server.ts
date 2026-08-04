@@ -439,6 +439,7 @@ export async function getPublicOrganization(slug: string): Promise<any> {
     slug: (o as any).slug,
     description: (o as any).description,
     logo_url: (o as any).logo_url,
+    rating: avgRating,
     "address.cep": addr.cep ?? "",
     "address.street": addr.street ?? "",
     "address.number": addr.number ?? "",
