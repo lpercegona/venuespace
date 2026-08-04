@@ -16,7 +16,7 @@ import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-ca
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type PublicLayoutField = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
-type PublicRendererField = { key: string; label: string; type: string };
+type PublicRendererField = { key: string; label: string; type: string; config?: Record<string, any> };
 
 function IconByName({ name, className }: { name: string; className?: string }) {
   const key = name.replace(/-([a-z])/g, (_, c) => c.toUpperCase()).replace(/^[a-z]/, (c) => c.toUpperCase()) as keyof typeof LucideIcons;
