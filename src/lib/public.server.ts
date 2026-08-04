@@ -433,6 +433,7 @@ export async function getPublicOrganization(slug: string): Promise<any> {
     "address.neighborhood": addr.neighborhood ?? "",
     "address.city": addr.city ?? "",
     "address.state": addr.state ?? "",
+    "address.city_state_full": [addr.city, expandState(addr.state ?? "")].filter(Boolean).join(" - "),
     ...((o as any).system_data ?? {}),
     ...((o as any).category_data ?? {}),
   };
