@@ -22,7 +22,7 @@ export const listCategoryLayout = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) =>
     z.object({
       category_id: z.string().uuid(),
-      scope: z.enum(["organization_card", "record_card"]),
+      scope: z.enum(["organization_card", "record_card", "organization_page"]),
     }).parse(d),
   )
   .handler(async ({ data }) => {
