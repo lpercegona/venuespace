@@ -414,9 +414,11 @@ export async function getPublicOrganization(slug: string): Promise<any> {
   if (!o) throw new Error("Organização não encontrada");
 
   const catId = (o as any).category_id ?? null;
-  const [layouts, pageLayouts, catFields, catRow, reviewsAgg] = await Promise.all([
+  const [layouts, pageStyleRow, catFields, catRow, reviewsAgg] = await Promise.all([
     loadLayoutsBatch(catId ? [catId] : [], "organization_card"),
-    loadLayoutsBatch(catId ? [catId] : [], "organization_page"),
+    catId
+      ? (sb as any).from("category_public_layouts").select("card_style").eq("category_id", catId).eq("scope", "organization_page").maybeSingle()
+      : Promise.resolve({ data: null }),
     loadOrgCategoryFieldsBatch(catId ? [catId] : []),
     catId ? (sb as any).from("organization_categories").select("name").eq("id", catId).maybeSingle() : Promise.resolve({ data: null }),
     (sb as any).from("organization_reviews")
@@ -425,8 +427,7 @@ export async function getPublicOrganization(slug: string): Promise<any> {
       .eq("status", "approved"),
   ]);
   const layout = (catId && layouts.get(catId)) || [];
-  const pageLayout = (catId && pageLayouts.get(catId)) || [];
-  const pageStyle = ((pageLayout[0]?.config?.__card_style as string) ?? "standard") as "standard" | "immersive";
+  const pageStyle = (((pageStyleRow as any)?.data?.card_style as string) ?? "standard") as "standard" | "immersive";
   const approvedReviews = (reviewsAgg?.data ?? []) as Array<{ rating: number }>;
   const avgRating = approvedReviews.length
     ? Number((approvedReviews.reduce((a, b) => a + b.rating, 0) / approvedReviews.length).toFixed(1))
