@@ -179,7 +179,8 @@ export function OrganizationPageImmersive({
               {addressLine ? (
                 <p className="pointer-events-auto mt-2 flex flex-nowrap items-center gap-1 text-[10px] leading-tight drop-shadow sm:gap-1.5 sm:text-sm">
                   <MapPin className="h-3 w-3 shrink-0 sm:h-4 sm:w-4" />
-                  <span className="truncate">{addressLine}</span>
+                  <span className="truncate sm:hidden">{addressLineShort || addressLine}</span>
+                  <span className="hidden truncate sm:inline">{addressLine}</span>
                   {mapQuery ? (
                     <>
                       <span aria-hidden className="opacity-60">|</span>
