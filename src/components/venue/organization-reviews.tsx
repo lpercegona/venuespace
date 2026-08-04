@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/venue/empty-state";
+import { supabase } from "@/integrations/supabase/client";
+
 import {
   getOrganizationReviews,
   getMyOrganizationReview,
