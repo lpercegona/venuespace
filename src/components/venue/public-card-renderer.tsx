@@ -178,6 +178,13 @@ export function PublicCardBody({
       cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed, style, kind: "gallery", urls: mediaUrls });
       continue;
     }
+    // Multiselect com ícones definidos nas opções → apenas ícones com tooltip.
+    const optionIcons = (f?.config?.option_icons ?? {}) as Record<string, string>;
+    const listValues = valuesOf(raw);
+    if (listValues.length > 0 && listValues.some((v) => optionIcons[v])) {
+      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, style, kind: "icons", values: listValues, text: JSON.stringify(optionIcons) });
+      continue;
+    }
     const text = formatValue(f, raw);
     if (!text) continue;
     cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, style, kind: "text", text });
