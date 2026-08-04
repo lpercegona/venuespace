@@ -232,7 +232,21 @@ const ORG_BUILTIN_FIELDS: PublicRendererField[] = [
   { key: "address.neighborhood", label: "Bairro", type: "text" },
   { key: "address.city", label: "Cidade", type: "text" },
   { key: "address.state", label: "UF", type: "text" },
+  { key: "address.city_state_full", label: "Cidade - Estado (extenso)", type: "text" },
 ];
+
+const STATE_MAP: Record<string, string> = {
+  ac: "Acre", al: "Alagoas", ap: "Amapá", am: "Amazonas", ba: "Bahia", ce: "Ceará",
+  df: "Distrito Federal", es: "Espírito Santo", go: "Goiás", ma: "Maranhão", mt: "Mato Grosso",
+  ms: "Mato Grosso do Sul", mg: "Minas Gerais", pa: "Pará", pb: "Paraíba", pr: "Paraná",
+  pe: "Pernambuco", pi: "Piauí", rj: "Rio de Janeiro", rn: "Rio Grande do Norte",
+  rs: "Rio Grande do Sul", ro: "Rondônia", rr: "Roraima", sc: "Santa Catarina",
+  sp: "São Paulo", se: "Sergipe", to: "Tocantins",
+};
+
+function expandState(uf: string): string {
+  return STATE_MAP[uf.trim().toLowerCase()] ?? uf;
+}
 
 const RECORD_BUILTIN_FIELDS: PublicRendererField[] = [
   { key: "org_name", label: "Organização", type: "text" },
