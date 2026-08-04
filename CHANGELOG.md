@@ -1,3 +1,10 @@
+## 2026-08-05 16:20 (America/Sao_Paulo) — Correção do Layout 2 — galeria multi-imagem, endereço mobile e contato colapsável
+
+- `GalleryCarousel`: novas props `itemBasisClassName` (largura responsiva por slide) e `preloadCount`; no modo `fillContainer` o viewport interno recebe `h-full`, corrigindo a galeria que ocupava apenas parte da faixa hero.
+- Página de organização (Layout 2): hero exibe até 5 imagens simultâneas em telas grandes (1 no mobile, 2 em sm, 3 em lg, 4 em xl, 5 em 2xl), com `object-cover object-center` e slider mantido.
+- Endereço do hero no mobile: fonte/ícone reduzidos e versão curta (rua, número e cidade/UF) para caber com "Ver no mapa" em uma única linha; desktop mantém o endereço completo.
+- Mobile: bloco "Manifestar interesse" movido para logo abaixo de Site/Telefone, colapsado por padrão — botão "Entrar em contato" expande o formulário, mantendo os ícones de e-mail, WhatsApp, telefone e "Acessar o site".
+
 ## 2026-08-04 15:45 (America/Sao_Paulo) — Correção das Iterações 27/28 — tooltips, pré-carregamento da galeria e posição da localização
 
 - Tooltips dos ícones de multiselect voltam a funcionar nos cards públicos: a camada sobreposta do card imersivo usava `pointer-events-none`, bloqueando hover/foco. Gatilhos agora usam `pointer-events-auto`, `tabIndex` e clique isolado (o card continua navegando para a página individual).
