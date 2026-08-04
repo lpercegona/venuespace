@@ -145,12 +145,11 @@ export function OrganizationPageImmersive({
       <section className="relative isolate h-72 sm:h-96">
         {galleryImages.length > 0 ? (
           <GalleryCarousel
-            images={galleryImages}
+            urls={galleryImages}
             alt={org.name}
             className="absolute inset-0 h-full w-full"
-            aspectClass="aspect-auto h-full w-full"
-            roundedClass="rounded-none"
-            showDots={galleryImages.length > 1}
+            aspectClassName="aspect-auto h-full w-full"
+            roundedClassName="rounded-none"
           />
         ) : (
           <div className="absolute inset-0 bg-muted">
