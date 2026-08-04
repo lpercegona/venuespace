@@ -178,7 +178,7 @@ export async function loadPublicTable(slug: string, tableId: string): Promise<Pu
   };
 }
 
-export async function loadPublicLayout(categoryId: string | null, scope: "organization_card" | "record_card"): Promise<PublicLayoutField[]> {
+export async function loadPublicLayout(categoryId: string | null, scope: "organization_card" | "record_card" | "organization_page"): Promise<PublicLayoutField[]> {
   if (!categoryId) return [];
   const sb = supabaseAdmin;
   const { data: parent } = await (sb as any)
