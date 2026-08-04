@@ -14,25 +14,64 @@ Novo campo virtual selecionável na configuração de layout público: **"Cidade
 
 Nova aba **"Página de organização"** em Administração > Layout público, com seletor de estilo:
 
-- **Padrão** — o layout atual (duas colunas).
-- **Imersivo** — o modelo do anexo.
+- **Layout 1** — o layout atual (duas colunas, galeria acima do conteúdo, informações e formulário lado a lado).
+- **Layout 2** — o modelo do anexo (galeria horizontal full-bleed com overlay de título, colunas assimétricas, card de interesse flutuante sobre a galeria).
 
-O modelo imersivo usa os mesmos campos já configurados (inclusive contatos e formulário), mudando apenas a organização e a renderização:
+A escolha do estilo é salva no mesmo registro `category_public_layouts` usando o novo escopo `organization_page` e o campo `card_style` (`standard` para Layout 1, `immersive` para Layout 2). Os campos configuráveis continuam sendo os mesmos já disponíveis nos layouts de card de organização.
+
+### Layout 1 (atual)
+
+Estrutura em duas colunas de largura equivalente:
 
 ```text
-[breadcrumb HOME > CATEGORIA]
-[galeria full-bleed em faixa horizontal, altura fixa]
-   nota + título da organização + endereço + "Ver no mapa" sobre a faixa
-[coluna esquerda]                    [coluna direita, sobreposta à faixa]
-  campos em grade (rótulo pequeno)     card "Manifestar interesse" (form)
-  descrição                            ícones de contato + botão do site
-  comodidades com ícone                Localização (mapa)
-  site / telefone
+[header com logo, nome da organização, categoria e endereço]
+[coluna esquerda]                              [coluna direita]
+  bloco de campos configuráveis em grid          card "Entrar em contato" (formulário)
+  descrição                                      ícones de contato (e-mail, whatsapp, telefone)
+  comodidades                                    botão "Acessar o site"
+  localização (mapa)
   Ambientes (cards de registro)
   Avaliações
 ```
 
-Cada bloco só aparece se houver conteúdo. Mobile: coluna única, galeria com altura reduzida, card do formulário abaixo da galeria.
+- A galeria, quando presente, fica dentro do bloco de campos configuráveis e respeita as larguras definidas pelo super admin.
+- Cada bloco só aparece se houver conteúdo.
+
+### Layout 2 (novo)
+
+Estrutura em faixa horizontal hero + colunas assimétricas:
+
+```text
+[breadcrumb HOME > CATEGORIA]
+[faixa horizontal full-bleed com galeria, altura fixa]
+   - gradiente escuro na base da faixa
+   - nota de avaliação (estrelas + número)
+   - título da organização
+   - endereço resumido + link "Ver no mapa"
+[conteúdo abaixo da faixa]
+  [coluna esquerda, ~60%]                      [coluna direita, ~40%, sobreposta parcialmente à faixa]
+    campos em grade (rótulo pequeno)               card "Manifestar interesse" (formulário)
+    descrição                                        ícones de contato (e-mail, whatsapp, telefone)
+    comodidades com ícone                            botão "Acessar o site"
+    site / telefone                                  Localização (mapa)
+    Ambientes (cards de registro)
+    Avaliações
+```
+
+Detalhes do Layout 2:
+
+- **Galeria hero**: ocupa toda a largura da tela (`full-bleed`), altura fixa de `h-72` em mobile e `h-96` em desktop. A galeria respeita as configurações de bleed do layout público (sem padding/margem interna). Os controles de navegação (setas) aparecem apenas no hover/foco, conforme ajustado na Iteração 23.
+- **Overlay**: gradiente semitransparente (`from-background/80 to-transparent` ou similar via token) na base da faixa, garantindo legibilidade do texto branco sobre a imagem. O texto usa `text-primary-foreground`/`text-background` com sombra sutil (`text-shadow` via utilitário quando necessário, mas preferencialmente contraste pelo gradiente).
+- **Nota de avaliação**: exibida apenas se houver avaliações aprovadas. Mostra estrelas preenchidas + média (ex: "4,5").
+- **Título da organização**: `font-display text-3xl sm:text-4xl font-semibold`.
+- **Endereço resumido**: linha única com cidade/UF ou endereço completo, truncado com ellipsis.
+- **Link "Ver no mapa"**: ancora suave para a seção de localização abaixo.
+- **Card de interesse**: posicionado na coluna direita, com `sticky top-24` em desktop para acompanhar a rolagem. Em mobile, o card fica imediatamente abaixo da faixa hero, ocupando largura total.
+- **Coluna esquerda**: blocos empilhados verticalmente com espaçamento consistente (`space-y-8` ou `gap-8`).
+- **Ambientes**: grid de cards de registro em 3 colunas no desktop, conforme ajustado na iteração anterior.
+- **Avaliações**: seção própria abaixo de Ambientes, mostrando média, total e cards de avaliações aprovadas.
+
+Cada bloco só aparece se houver conteúdo. Mobile: coluna única, galeria com altura reduzida, card do formulário abaixo da faixa hero.
 
 ## 4. Avaliações
 
