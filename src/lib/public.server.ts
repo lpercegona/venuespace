@@ -255,7 +255,7 @@ const RECORD_BUILTIN_FIELDS: PublicRendererField[] = [
 ];
 
 
-async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card"): Promise<Map<string, PublicLayoutField[]>> {
+async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card" | "organization_page"): Promise<Map<string, PublicLayoutField[]>> {
   const out = new Map<string, PublicLayoutField[]>();
   if (categoryIds.length === 0) return out;
   const sb = supabaseAdmin;
