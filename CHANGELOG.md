@@ -1,3 +1,12 @@
+## 2026-08-05 (America/Sao_Paulo) — Correção da Iteração 28 — tooltips gerais, seleção estática do Layout 2 e reestruturação da página imersiva
+
+- Tooltips de multiselect com ícones passam a valer em **todos** os cards públicos (padrão e imersivo) e nos blocos de comodidades da página de organização, via `OptionIconList` compartilhado em `public-card-renderer.tsx` (antes só o card imersivo tinha tooltip).
+- Painel super admin > Layout público > "Página de organização" deixa de usar o editor de campos e passa a exibir apenas dois cards de seleção com miniatura em skeleton (Layout 1 e Layout 2), salvando somente `card_style`.
+- `src/components/venue/organization-page-immersive.tsx` reescrito com estrutura fixa conforme o modelo: breadcrumb, faixa hero full-bleed com gradiente, avaliação, título e endereço com "Ver no mapa"; colunas 60/40; grade de campos, descrição, comodidades com ícone, site/telefone, Ambientes em 3 colunas e Avaliações à esquerda; card "Manifestar interesse" sobreposto e sticky, ícones de contato, "Acessar o site" e mapa à direita.
+- Novo `src/components/venue/interest-form.tsx`: formulário de interesse reutilizável inline; `InterestFormModal` passa a consumi-lo (sem duplicação de lógica).
+- `src/lib/public.server.ts`: `page_style` deixa de ser inferido pela quantidade de campos e é lido diretamente de `category_public_layouts.card_style`; campo `page_layout` (não utilizado) removido do payload.
+- Rota `public.$slug.index.tsx` unificada: ambos os layouts sob `PublicHeader`.
+
 ## 2026-08-04 (America/Sao_Paulo) — Iteração 28 — tooltips de comodidades, cidade/estado extenso, novo layout de página de organização e avaliações
 
 - Tooltips em comodidades dos cards imersivos: rótulo aparece apenas no hover do ícone (`Tooltip` shadcn) em vez de texto ao lado.

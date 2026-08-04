@@ -1,246 +1,231 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import { MapPin, Star, MessageCircle, ChevronRight } from "lucide-react";
-import * as LucideIcons from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { ChevronRight, Globe, Mail, MapPin, MessageSquare, Phone, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { GalleryCarousel } from "@/components/venue/gallery-carousel";
-import { LazyImage } from "@/components/venue/lazy-image";
 import { OrgLogo } from "@/components/venue/org-logo";
-import { ContactActions } from "@/components/venue/contact-actions";
 import { OrganizationReviews } from "@/components/venue/organization-reviews";
 import { EmptyState } from "@/components/venue/empty-state";
-import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { InterestForm } from "@/components/venue/interest-form";
+import { PublicHeader } from "@/components/venue/public-header";
+import { getPublicCardTitle, OptionIconList, PublicCardBody } from "@/components/venue/public-card-renderer";
 
-type PublicLayoutField = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
 type PublicRendererField = { key: string; label: string; type: string; config?: Record<string, any> };
 
-function IconByName({ name, className }: { name: string; className?: string }) {
-  const key = name.replace(/-([a-z])/g, (_, c) => c.toUpperCase()).replace(/^[a-z]/, (c) => c.toUpperCase()) as keyof typeof LucideIcons;
-  const Icon = (LucideIcons[key] ?? LucideIcons.Check) as LucideIcon;
-  return <Icon className={className} />;
+const HIDDEN_KEYS = new Set([
+  "name", "slug", "description", "logo_url", "rating",
+  "address.cep", "address.street", "address.number", "address.complement",
+  "address.neighborhood", "address.city", "address.state", "address.city_state_full",
+]);
+
+const CONTACT_KEYS = /^(site|website|url|telefone|phone|whatsapp|email|e_mail)$/i;
+
+function isUrl(v: unknown): v is string {
+  return typeof v === "string" && /^https?:\/\//i.test(v);
 }
 
-function getField(fields: PublicRendererField[], key: string) {
-  return fields.find((f) => f.key === key);
-}
-
-function getValue(data: Record<string, any>, key: string): any {
-  if (key in data) return data[key];
-  const parts = key.split(".");
-  let cur = data;
-  for (const p of parts) {
-    if (cur == null || typeof cur !== "object") return undefined;
-    cur = cur[p];
+function formatValue(field: PublicRendererField | undefined, raw: any): string {
+  if (raw == null || raw === "") return "";
+  if (field?.type === "boolean") return raw ? "Sim" : "Não";
+  if (field?.type === "currency") {
+    const n = Number(raw);
+    return Number.isFinite(n) ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : String(raw);
   }
-  return cur;
-}
-
-function formatValue(v: any): string {
-  if (v == null || v === "") return "";
-  if (Array.isArray(v)) return v.map(formatValue).filter(Boolean).join(", ");
-  if (typeof v === "boolean") return v ? "Sim" : "Não";
-  return String(v);
-}
-
-function extractIconMap(config: Record<string, any>): Record<string, string> {
-  const raw = config?.options ?? [];
-  const map: Record<string, string> = {};
-  for (const opt of raw) {
-    const parts = String(opt).split("|").map((s) => s.trim());
-    if (parts.length >= 2) map[parts[0]] = parts[1];
+  if (field?.type === "number") {
+    const n = Number(raw);
+    return Number.isFinite(n) ? n.toLocaleString("pt-BR") : String(raw);
   }
-  return map;
+  if (field?.type === "date") return new Date(raw).toLocaleDateString("pt-BR");
+  if (field?.type === "datetime") return new Date(raw).toLocaleString("pt-BR");
+  if (Array.isArray(raw)) return raw.filter((x) => x != null && x !== "").join(", ");
+  return String(raw);
 }
 
-function AmenityIcons({ values, iconMap }: { values: string[]; iconMap: Record<string, string> }) {
-  return (
-    <TooltipProvider>
-      <div className="flex flex-wrap items-center gap-2">
-        {values.map((v) => (
-          <Tooltip key={v}>
-            <TooltipTrigger asChild>
-              <span className="inline-flex h-8 w-8 cursor-default items-center justify-center rounded-full bg-primary/10 text-primary">
-                <IconByName name={iconMap[v] ?? "Check"} className="h-4 w-4" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top"><p>{v}</p></TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
-    </TooltipProvider>
-  );
+function valuesOf(raw: any): string[] {
+  if (Array.isArray(raw)) return raw.filter((v) => typeof v === "string" && v);
+  if (typeof raw === "string" && raw) return [raw];
+  return [];
 }
 
+function isMediaField(f: PublicRendererField, raw: any) {
+  if (f.type === "image" || f.type === "gallery") return true;
+  if (Array.isArray(raw) && raw.some((v) => isUrl(v))) return /(capa|cover|foto|galeria|gallery|imagem|image|photo)/i.test(f.key);
+  return false;
+}
+
+/**
+ * Layout 2 da página pública de organização (estrutura fixa).
+ * Faixa hero com a galeria, colunas assimétricas e card de interesse sobreposto.
+ */
 export function OrganizationPageImmersive({
   org,
   slug,
   records,
-  contactOpen,
-  setContactOpen,
 }: {
   org: any;
   slug: string;
   records: any[];
-  contactOpen: boolean;
-  setContactOpen: (v: boolean) => void;
 }) {
-  const layout: PublicLayoutField[] = org.page_layout ?? [];
   const fields: PublicRendererField[] = org.fields ?? [];
-  const data = org.data ?? {};
+  const data: Record<string, any> = org.data ?? {};
 
-  const slots = new Map<string, PublicLayoutField[]>();
-  for (const it of layout) {
-    const pos = (it.config?.position as string) || "default";
-    if (!slots.has(pos)) slots.set(pos, []);
-    slots.get(pos)!.push(it);
-  }
-  const slot = (key: string) => slots.get(key) ?? [];
-
-  const backgroundField = slot("background")[0];
-  const badgeField = slot("badge")[0];
-  const titleField = slot("title")[0];
-  const subtitleField = slot("subtitle")[0];
-  const ratingField = slot("rating")[0];
-  const addressField = slot("address")[0];
-  const featuresField = slot("features")[0];
-  const descriptionField = slot("description")[0];
-
-  const galleryImages = (() => {
-    const imgs: string[] = [];
-    if (backgroundField) {
-      const v = getValue(data, backgroundField.field_key);
-      if (Array.isArray(v)) imgs.push(...v.filter((x) => typeof x === "string"));
-      else if (typeof v === "string" && v) imgs.push(v);
+  // Galeria hero: primeiro campo de mídia com imagens.
+  const heroUrls: string[] = (() => {
+    for (const f of fields) {
+      const raw = data[f.key];
+      if (!isMediaField(f, raw)) continue;
+      const urls = (Array.isArray(raw) ? raw : [raw]).filter((v: any) => isUrl(v));
+      if (urls.length > 0) return urls as string[];
     }
-    return imgs;
+    return [];
   })();
+  const heroKeys = new Set(fields.filter((f) => isMediaField(f, data[f.key])).map((f) => f.key));
 
-  const badgeValue = badgeField ? formatValue(getValue(data, badgeField.field_key)) : null;
-  const addressValue = addressField ? formatValue(getValue(data, addressField.field_key)) : null;
-  const descriptionValue = descriptionField ? formatValue(getValue(data, descriptionField.field_key)) : null;
-  const featuresValue = featuresField ? getValue(data, featuresField.field_key) : null;
-  const featuresArray = Array.isArray(featuresValue) ? featuresValue.filter((x) => typeof x === "string") : [];
-  const featuresIconMap = featuresField ? extractIconMap(getField(fields, featuresField.field_key)?.config ?? {}) : {};
+  // Comodidades: multiselect com ícones definidos nas opções.
+  const amenityBlocks = fields
+    .map((f) => {
+      const iconMap = (f.config?.option_icons ?? {}) as Record<string, string>;
+      const vals = valuesOf(data[f.key]);
+      if (vals.length === 0 || !vals.some((v) => iconMap[v])) return null;
+      return { field: f, values: vals, iconMap };
+    })
+    .filter(Boolean) as Array<{ field: PublicRendererField; values: string[]; iconMap: Record<string, string> }>;
+  const amenityKeys = new Set(amenityBlocks.map((b) => b.field.key));
 
-  const avgRating = org.avg_rating ?? null;
-  const totalReviews = org.total_reviews ?? 0;
+  // Campos em grade: tudo que não é mídia, comodidade, contato ou campo-base oculto.
+  const gridEntries: Array<{ label: string; value: string }> = [];
+  for (const f of fields) {
+    if (HIDDEN_KEYS.has(f.key) || heroKeys.has(f.key) || amenityKeys.has(f.key)) continue;
+    if (CONTACT_KEYS.test(f.key)) continue;
+    const text = formatValue(f, data[f.key]);
+    if (!text || isUrl(text)) continue;
+    gridEntries.push({ label: f.label, value: text });
+  }
 
-  const logoUrl = typeof data.logo_url === "string" && /^https?:\/\//i.test(data.logo_url) ? data.logo_url : (org.logo_url ?? null);
+  const description = (org.description ?? data.description ?? "") as string;
+  const contact = org.contact ?? {};
+  const website = (contact.website ?? "").trim();
+  const websiteHref = website && !/^https?:\/\//i.test(website) ? `https://${website}` : website;
+  const phone = (contact.phone ?? "").trim();
+  const whatsapp = (contact.whatsapp ?? "").trim();
+  const email = (contact.email ?? "").trim();
+  const digits = (v: string) => v.replace(/\D+/g, "");
 
-  const detailsLayout = layout.filter((it) => {
-    const pos = (it.config?.position as string) || "default";
-    return !["background", "badge", "title", "subtitle", "rating", "address", "features", "description"].includes(pos);
-  });
-  const showHeroRating = avgRating != null || (ratingField && getValue(data, ratingField.field_key));
+  const avgRating: number | null = org.avg_rating ?? null;
+  const totalReviews: number = org.total_reviews ?? 0;
 
-  const addressForMap = [org.address?.street, org.address?.number, org.address?.neighborhood, org.address?.city, org.address?.state, org.address?.cep]
-    .filter(Boolean).join(", ");
+  const a = org.address ?? {};
+  const addressLine = [
+    [a.street, a.number].filter(Boolean).join(", "),
+    a.neighborhood,
+    [a.city, a.state].filter(Boolean).join("/"),
+    a.cep,
+  ].filter(Boolean).join(" - ");
+  const mapQuery = [a.street, a.number, a.neighborhood, a.city, a.state, a.cep].filter(Boolean).join(", ");
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <section className="relative isolate h-72 sm:h-96">
-        {galleryImages.length > 0 ? (
-          <GalleryCarousel
-            urls={galleryImages}
-            alt={org.name}
-            className="absolute inset-0"
-            fillContainer
-            roundedClassName="rounded-none"
-          />
+      <PublicHeader />
+
+      {/* Breadcrumb */}
+      <nav aria-label="Trilha" className="border-b border-border/60 bg-surface">
+        <div className="mx-auto flex max-w-6xl items-center gap-1.5 px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:px-6">
+          <Link to="/" className="hover:text-foreground">Home</Link>
+          {org.category_name ? (
+            <>
+              <span aria-hidden>&gt;</span>
+              <span className="truncate text-foreground">{org.category_name}</span>
+            </>
+          ) : null}
+        </div>
+      </nav>
+
+      {/* Hero full-bleed */}
+      <section className="relative isolate h-72 w-full overflow-hidden sm:h-[26rem]">
+        {heroUrls.length > 0 ? (
+          <GalleryCarousel urls={heroUrls} alt={org.name} className="absolute inset-0" fillContainer roundedClassName="" />
         ) : (
           <div className="absolute inset-0 bg-muted">
-            <OrgLogo src={logoUrl} alt={org.name} className="h-full w-full rounded-none object-cover opacity-80" />
+            <OrgLogo src={org.logo_url ?? null} alt={org.name} className="h-full w-full rounded-none border-0" iconClassName="h-16 w-16" />
           </div>
         )}
-        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-black/10" />
-
-        <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-6">
-          <div className="mx-auto max-w-5xl">
-            {badgeValue ? (
-              <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
-                {badgeValue}
-              </span>
-            ) : null}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div className="min-w-0">
-                <h1 className="font-display text-2xl font-semibold sm:text-4xl">
-                  {titleField ? formatValue(getValue(data, titleField.field_key)) || org.name : org.name}
-                </h1>
-                {subtitleField ? (
-                  <p className="mt-1 text-sm text-white/80">{formatValue(getValue(data, subtitleField.field_key))}</p>
-                ) : null}
-                {addressValue ? (
-                  <div className="mt-2 flex items-center gap-1.5 text-sm text-white/80">
-                    <MapPin className="h-4 w-4" />
-                    <span>{addressValue}</span>
-                  </div>
-                ) : null}
-              </div>
-              {showHeroRating ? (
-                <div className="flex shrink-0 items-center gap-2 rounded-lg bg-black/40 px-3 py-2 backdrop-blur-sm">
-                  <Star className="h-5 w-5 fill-warning text-warning" />
-                  <div>
-                    <div className="text-lg font-semibold leading-none">{avgRating?.toFixed(1).replace(".", ",") ?? "—"}</div>
-                    <div className="text-[10px] text-white/70">{totalReviews} avaliação{totalReviews === 1 ? "" : "s"}</div>
-                  </div>
-                </div>
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/80 via-black/25 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0">
+          <div className="mx-auto max-w-6xl px-4 pb-6 sm:px-6">
+            <div className="max-w-3xl text-primary-foreground">
+              {avgRating != null ? (
+                <span className="mb-1 inline-flex items-center gap-1 text-sm font-semibold drop-shadow">
+                  {avgRating.toFixed(1).replace(".", ",")}
+                  <Star className="h-4 w-4 shrink-0" />
+                </span>
+              ) : null}
+              <h1 className="font-display text-3xl font-semibold tracking-tight drop-shadow sm:text-4xl">{org.name}</h1>
+              {addressLine ? (
+                <p className="pointer-events-auto mt-2 flex flex-wrap items-center gap-1.5 text-sm drop-shadow">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{addressLine}</span>
+                  {mapQuery ? (
+                    <>
+                      <span aria-hidden className="opacity-60">|</span>
+                      <a href="#localizacao" className="underline underline-offset-2">Ver no mapa</a>
+                    </>
+                  ) : null}
+                </p>
               ) : null}
             </div>
           </div>
         </div>
       </section>
 
-      <main className="mx-auto grid max-w-5xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-5 lg:gap-8 lg:py-8">
-        {/* Left column */}
-        <div className="space-y-8 lg:col-span-3">
-          {descriptionValue ? (
-            <section>
-              <h2 className="font-display text-lg font-semibold">Sobre</h2>
-              <p className="mt-2 whitespace-pre-line text-foreground/90">{descriptionValue}</p>
-            </section>
-          ) : null}
-
-          {featuresArray.length > 0 ? (
-            <section>
-              <h2 className="font-display text-lg font-semibold">Comodidades</h2>
-              <div className="mt-3">
-                <AmenityIcons values={featuresArray} iconMap={featuresIconMap} />
-              </div>
-            </section>
-          ) : null}
-
-          {detailsLayout.length > 0 ? (
-            <section>
-              <h2 className="font-display text-lg font-semibold">Informações</h2>
-              <div className="mt-3 overflow-hidden rounded-xl border border-border bg-card">
-                <div className="p-4 sm:p-6">
-                  <PublicCardBody layout={layout} fields={fields} data={data} orgName={org.name} padding={6} />
+      <main className="mx-auto grid max-w-6xl gap-8 px-4 pb-16 sm:px-6 lg:grid-cols-5">
+        {/* Coluna esquerda */}
+        <div className="space-y-8 pt-8 lg:col-span-3">
+          {gridEntries.length > 0 ? (
+            <section className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+              {gridEntries.map((e) => (
+                <div key={e.label} className="min-w-0">
+                  <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{e.label}</div>
+                  <div className="mt-1 text-sm text-foreground">{e.value}</div>
                 </div>
-              </div>
+              ))}
             </section>
           ) : null}
 
-          {addressForMap ? (
+          {description ? (
             <section>
-              <h2 className="font-display text-lg font-semibold">Localização</h2>
-              <div className="mt-3 overflow-hidden rounded-xl border border-border">
-                <iframe
-                  title={`Mapa de ${org.name}`}
-                  src={`https://www.google.com/maps?q=${encodeURIComponent(addressForMap)}&z=15&output=embed`}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="h-64 w-full border-0 sm:h-80"
-                />
-              </div>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">{description}</p>
             </section>
           ) : null}
 
-          <OrganizationReviews organizationId={org.id} avgRating={avgRating} totalReviews={totalReviews} />
+          {amenityBlocks.map((b) => (
+            <section key={b.field.key}>
+              <h2 className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{b.field.label}</h2>
+              <div className="mt-2">
+                <OptionIconList values={b.values} iconMap={b.iconMap} />
+              </div>
+            </section>
+          ))}
+
+          {(websiteHref || phone) ? (
+            <section className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+              {websiteHref ? (
+                <div className="min-w-0">
+                  <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Site</div>
+                  <a href={websiteHref} target="_blank" rel="noreferrer noopener" className="mt-1 block truncate text-sm text-foreground underline underline-offset-2">
+                    {website}
+                  </a>
+                </div>
+              ) : null}
+              {phone ? (
+                <div className="min-w-0">
+                  <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Telefone</div>
+                  <a href={`tel:${digits(phone)}`} className="mt-1 block truncate text-sm text-foreground">{phone}</a>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
 
           <section>
             <h2 className="font-display text-lg font-semibold">Ambientes</h2>
@@ -249,8 +234,9 @@ export function OrganizationPageImmersive({
                 <EmptyState title="Sem publicações" description="Esta organização não tem registros publicados." />
               </div>
             ) : (
-              <ul className="mt-3 grid gap-4 sm:grid-cols-2">
+              <ul className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {records.map((r) => {
+                  const hasLayout = (r.layout ?? []).length > 0;
                   const title = getPublicCardTitle({ layout: r.layout ?? [], fields: r.fields ?? [], data: r.data, fallback: "Ambiente" });
                   return (
                     <li key={r.record_id}>
@@ -260,17 +246,16 @@ export function OrganizationPageImmersive({
                         className="group block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       >
                         <Card className="h-full overflow-hidden transition-shadow group-hover:shadow-elegant">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="flex items-center justify-between font-display text-base">
-                              <span className="line-clamp-1">{title || "Ambiente"}</span>
-                              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            {(r.layout ?? []).length > 0 ? (
+                          {hasLayout ? (
+                            <div className="p-4">
                               <PublicCardBody layout={r.layout} fields={r.fields ?? []} data={r.data} />
-                            ) : null}
-                          </CardContent>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between gap-2 p-4">
+                              <span className="font-display text-base line-clamp-2">{title || "Ambiente"}</span>
+                              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            </div>
+                          )}
                         </Card>
                       </Link>
                     </li>
@@ -279,21 +264,81 @@ export function OrganizationPageImmersive({
               </ul>
             )}
           </section>
+
+          <OrganizationReviews organizationId={org.id} avgRating={avgRating} totalReviews={totalReviews} />
         </div>
 
-        {/* Right sticky column */}
-        <aside className="space-y-4 lg:col-span-2 lg:self-start lg:sticky lg:top-24">
-          <Card>
+        {/* Coluna direita: card de interesse sobreposto à faixa hero */}
+        <aside className="space-y-6 pt-8 lg:col-span-2 lg:-mt-24 lg:pt-0">
+          <Card className="shadow-elegant lg:sticky lg:top-24">
             <CardContent className="space-y-4 p-4 sm:p-6">
               {org.public_form_view ? (
-                <Button size="lg" className="min-h-11 w-full" onClick={() => setContactOpen(true)}>
-                  <MessageCircle className="h-4 w-4" />
-                  {org.public_form_view.submit_label || "Manifestar interesse"}
-                </Button>
+                <>
+                  <div>
+                    <h2 className="font-display text-xl font-semibold">Manifestar interesse</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">Envie seu contato para {org.name}.</p>
+                  </div>
+                  <InterestForm
+                    slug={slug}
+                    tableId={org.public_form_view.table_id}
+                    viewId={org.public_form_view.id}
+                    stacked
+                    submitLabel={org.public_form_view.submit_label || "Enviar"}
+                  />
+                </>
+              ) : (
+                <div>
+                  <h2 className="font-display text-xl font-semibold">Contato</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">Fale diretamente com {org.name}.</p>
+                </div>
+              )}
+
+              {(email || whatsapp || phone || websiteHref) ? (
+                <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-4">
+                  {email ? (
+                    <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
+                      <a href={`mailto:${email}`} aria-label={`Enviar e-mail para ${org.name}`}><Mail className="h-4 w-4" /></a>
+                    </Button>
+                  ) : null}
+                  {whatsapp ? (
+                    <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
+                      <a href={`https://wa.me/${digits(whatsapp)}`} target="_blank" rel="noreferrer noopener" aria-label={`WhatsApp de ${org.name}`}>
+                        <MessageSquare className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  ) : null}
+                  {phone ? (
+                    <Button asChild size="icon" variant="outline" className="h-11 w-11 shrink-0">
+                      <a href={`tel:${digits(phone)}`} aria-label={`Telefone de ${org.name}`}><Phone className="h-4 w-4" /></a>
+                    </Button>
+                  ) : null}
+                  {websiteHref ? (
+                    <Button asChild size="lg" variant="outline" className="min-h-11 flex-1">
+                      <a href={websiteHref} target="_blank" rel="noreferrer noopener">
+                        <Globe className="h-4 w-4" />
+                        Acessar o site
+                      </a>
+                    </Button>
+                  ) : null}
+                </div>
               ) : null}
-              <ContactActions contact={org.contact} orgName={org.name} />
             </CardContent>
           </Card>
+
+          {mapQuery ? (
+            <section id="localizacao" className="scroll-mt-24">
+              <h2 className="font-display text-lg font-semibold">Localização</h2>
+              <div className="mt-3 overflow-hidden rounded-xl border border-border">
+                <iframe
+                  title={`Mapa de ${org.name}`}
+                  src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="h-72 w-full border-0"
+                />
+              </div>
+            </section>
+          ) : null}
         </aside>
       </main>
     </div>

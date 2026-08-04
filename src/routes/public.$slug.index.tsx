@@ -49,7 +49,6 @@ type PublicOrg = PublicOrganizationSummary & {
   address: Record<string, any>;
   contact?: { phone: string | null; whatsapp: string | null; email: string | null; website: string | null };
   public_form_view?: { id: string; table_id: string; submit_label: string } | null;
-  page_layout: PublicLayoutField[];
   page_style: "standard" | "immersive";
   avg_rating: number | null;
   total_reviews: number;
@@ -162,13 +161,7 @@ function PublicOrgPage() {
 
   if (pageStyle === "immersive") {
     return (
-      <OrganizationPageImmersive
-        org={org}
-        slug={slug}
-        records={records}
-        contactOpen={contactOpen}
-        setContactOpen={setContactOpen}
-      />
+      <OrganizationPageImmersive org={org} slug={slug} records={records} />
     );
   }
 
