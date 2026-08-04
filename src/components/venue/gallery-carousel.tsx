@@ -74,11 +74,11 @@ export function GalleryCarousel({
   const total = urls.length;
   const nextIdx = (index + 1) % total;
   const prevIdx = (index - 1 + total) % total;
-  // Pré-carrega até 5 imagens: anterior, atual e as próximas, sem repetir.
+  // Pré-carrega as primeiras imagens visíveis (padrão 5), anterior e próximas.
   const eagerSet = new Set<number>();
   eagerSet.add(index);
   eagerSet.add(prevIdx);
-  for (let step = 1; eagerSet.size < Math.min(5, total); step++) {
+  for (let step = 1; eagerSet.size < Math.min(preloadCount, total); step++) {
     eagerSet.add((index + step) % total);
   }
 
@@ -89,7 +89,7 @@ export function GalleryCarousel({
           {urls.map((u, i) => {
             const eager = eagerSet.has(i);
             return (
-              <CarouselItem key={i} className={`pl-0 ${fillContainer ? "h-full" : ""}`}>
+              <CarouselItem key={i} className={`pl-0 ${itemBasisClassName ?? ""} ${fillContainer ? "h-full" : ""}`.trim()}>
                 <LazyImage
                   src={u}
                   alt={`${alt} ${i + 1}`}
