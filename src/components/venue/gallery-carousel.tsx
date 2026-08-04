@@ -16,6 +16,8 @@ type Props = {
   className?: string;
   /** Rounding applied to each slide/image. Use "" for bleed (edge-to-edge) cells. */
   roundedClassName?: string;
+  /** When true, the carousel fills its nearest positioned ancestor (use with absolute inset-0). */
+  fillContainer?: boolean;
 };
 
 const ARROW_CLS =
