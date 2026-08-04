@@ -944,9 +944,11 @@ function LayoutsSection() {
             <TabsList>
               <TabsTrigger value="organization_card">Card de organização</TabsTrigger>
               <TabsTrigger value="record_card">Card de registro</TabsTrigger>
+              <TabsTrigger value="organization_page">Página de organização</TabsTrigger>
             </TabsList>
             <TabsContent value="organization_card"><LayoutEditor categoryId={selected} scope="organization_card" /></TabsContent>
             <TabsContent value="record_card"><LayoutEditor categoryId={selected} scope="record_card" /></TabsContent>
+            <TabsContent value="organization_page"><LayoutEditor categoryId={selected} scope="organization_page" /></TabsContent>
           </Tabs>
         )}
       </CardContent>
