@@ -145,7 +145,15 @@ export function OrganizationPageImmersive({
       {/* Hero full-bleed */}
       <section className="relative isolate h-72 w-full overflow-hidden sm:h-[26rem]">
         {heroUrls.length > 0 ? (
-          <GalleryCarousel urls={heroUrls} alt={org.name} className="absolute inset-0" fillContainer roundedClassName="" />
+          <GalleryCarousel
+            urls={heroUrls}
+            alt={org.name}
+            className="absolute inset-0"
+            fillContainer
+            roundedClassName=""
+            preloadCount={5}
+            itemBasisClassName="basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 2xl:basis-1/5"
+          />
         ) : (
           <div className="absolute inset-0 bg-muted">
             <OrgLogo src={org.logo_url ?? null} alt={org.name} className="h-full w-full rounded-none border-0" iconClassName="h-16 w-16" />
@@ -163,17 +171,18 @@ export function OrganizationPageImmersive({
               ) : null}
               <h1 className="font-display text-3xl font-semibold tracking-tight drop-shadow sm:text-4xl">{org.name}</h1>
               {addressLine ? (
-                <p className="pointer-events-auto mt-2 flex flex-wrap items-center gap-1.5 text-sm drop-shadow">
-                  <MapPin className="h-4 w-4 shrink-0" />
+                <p className="pointer-events-auto mt-2 flex flex-nowrap items-center gap-1 text-[11px] leading-tight drop-shadow sm:gap-1.5 sm:text-sm">
+                  <MapPin className="h-3 w-3 shrink-0 sm:h-4 sm:w-4" />
                   <span className="truncate">{addressLine}</span>
                   {mapQuery ? (
                     <>
                       <span aria-hidden className="opacity-60">|</span>
-                      <a href="#localizacao" className="underline underline-offset-2">Ver no mapa</a>
+                      <a href="#localizacao" className="shrink-0 whitespace-nowrap underline underline-offset-2">Ver no mapa</a>
                     </>
                   ) : null}
                 </p>
               ) : null}
+
             </div>
           </div>
         </div>
