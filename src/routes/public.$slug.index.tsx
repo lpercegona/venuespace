@@ -49,6 +49,10 @@ type PublicOrg = PublicOrganizationSummary & {
   address: Record<string, any>;
   contact?: { phone: string | null; whatsapp: string | null; email: string | null; website: string | null };
   public_form_view?: { id: string; table_id: string; submit_label: string } | null;
+  page_layout: PublicLayoutField[];
+  page_style: "standard" | "immersive";
+  avg_rating: number | null;
+  total_reviews: number;
 };
 
 async function fetchOrg(slug: string): Promise<PublicOrg> {
