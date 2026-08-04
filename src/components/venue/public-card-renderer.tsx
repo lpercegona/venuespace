@@ -471,5 +471,6 @@ function ImmersiveCardBody({
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
