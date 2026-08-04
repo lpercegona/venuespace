@@ -35,6 +35,7 @@ export function GalleryCarousel({
   aspectClassName = "aspect-video",
   className,
   roundedClassName = "rounded-md",
+  fillContainer,
 }: Props) {
   const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(0);
@@ -52,12 +53,13 @@ export function GalleryCarousel({
   }, [api]);
 
   if (!urls || urls.length === 0) return null;
+  const fillCls = fillContainer ? "h-full w-full" : `${aspectClassName} w-full`;
   if (urls.length === 1) {
     return (
       <LazyImage
         src={urls[0]}
         alt={alt}
-        containerClassName={`${aspectClassName} w-full ${roundedClassName} ${className ?? ""}`.trim()}
+        containerClassName={`${fillCls} ${roundedClassName} ${className ?? ""}`.trim()}
         className="h-full w-full object-cover"
       />
     );
