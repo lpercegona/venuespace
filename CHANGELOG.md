@@ -2,8 +2,10 @@
 
 - Tooltips em comodidades dos cards imersivos: rótulo aparece apenas no hover do ícone (`Tooltip` shadcn) em vez de texto ao lado.
 - Novo campo virtual base `address.city_state_full` (Cidade - Estado extenso) para layouts públicos, com mapa de UF para nome completo (`src/lib/public.server.ts`).
+- Campo virtual `rating` (Avaliação média) adicionado aos campos base de organização para permitir posicionamento no layout público.
 - Nova aba "Página de organização" no painel super admin (Layout público) com estilos Layout 1 (padrão/duas colunas) e Layout 2 (imersivo/hero).
 - Novo componente `src/components/venue/organization-page-immersive.tsx` renderizando hero de galeria com título, avaliação e endereço sobrepostos; coluna principal com sobre, comodidades, informações, mapa e avaliações; coluna lateral fixa com formulário/contato.
+- `GalleryCarousel` ganha prop `fillContainer` para preencher heros de altura fixa sem distorcer o aspecto ou vazar para fora do container.
 - Sistema de avaliações: tabela `organization_reviews` com status `pending`/`approved`/`rejected`; usuários autenticados enviam nota 1-5 e comentário; exibição pública mostra média e total apenas das aprovadas.
 - Painel super admin ganha aba "Avaliações" para aprovar ou rejeitar avaliações pendentes.
 
