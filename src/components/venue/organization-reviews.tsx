@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/venue/empty-state";
+import { supabase } from "@/integrations/supabase/client";
+
 import {
   getOrganizationReviews,
   getMyOrganizationReview,
@@ -57,10 +59,19 @@ export function OrganizationReviews({
     queryKey: ["org-reviews", organizationId],
     queryFn: () => getOrganizationReviews({ data: { organization_id: organizationId } }),
   });
+  const sessionQ = useQuery({
+    queryKey: ["auth-session-present"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getSession();
+      return !!data.session;
+    },
+  });
   const mineQ = useQuery({
     queryKey: ["my-org-review", organizationId],
     queryFn: () => getMyOrganizationReview({ data: { organization_id: organizationId } }),
+    enabled: sessionQ.data === true,
   });
+
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
