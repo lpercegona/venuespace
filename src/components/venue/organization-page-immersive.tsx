@@ -324,21 +324,6 @@ export function OrganizationPageImmersive({
               ) : null}
             </CardContent>
           </Card>
-
-          {mapQuery ? (
-            <section id="localizacao" className="scroll-mt-24">
-              <h2 className="font-display text-lg font-semibold">Localização</h2>
-              <div className="mt-3 overflow-hidden rounded-xl border border-border">
-                <iframe
-                  title={`Mapa de ${org.name}`}
-                  src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed`}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="h-72 w-full border-0"
-                />
-              </div>
-            </section>
-          ) : null}
         </aside>
       </main>
     </div>
