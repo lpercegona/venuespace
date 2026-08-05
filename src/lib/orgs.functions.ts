@@ -2,6 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { slugify } from "./slug";
+import { RICH_TEXT_MAX, richTextToPlainText, sanitizeRichText } from "./rich-text";
+
+/** Descrição rica: sanitizada e limitada a RICH_TEXT_MAX caracteres de texto puro. */
+const richDescription = z
+  .string()
+  .max(40000)
+  .refine((v) => richTextToPlainText(v).length <= RICH_TEXT_MAX, {
+    message: `Descrição deve ter até ${RICH_TEXT_MAX} caracteres.`,
+  })
+  .transform((v) => sanitizeRichText(v));
 
 const currencyDisplaySchema = z
   .object({
@@ -26,7 +36,7 @@ const addressSchema = z.object({
 const orgCreate = z.object({
   name: z.string().min(2).max(80),
   slug: z.string().min(2).max(60).regex(/^[a-z0-9-]+$/).optional(),
-  description: z.string().max(500).optional(),
+  description: richDescription.optional(),
   category_id: z.string().uuid({ message: "Categoria é obrigatória." }),
   timezone: z.string().max(64).nullable().optional(),
   currency: z.string().max(8).nullable().optional(),
@@ -136,7 +146,7 @@ export const getOrganizationBySlug = createServerFn({ method: "GET" })
 const orgUpdate = z.object({
   id: z.string().uuid(),
   name: z.string().min(2).max(80).optional(),
-  description: z.string().max(500).nullable().optional(),
+  description: richDescription.nullable().optional(),
   logo_url: z.string().max(500).nullable().optional(),
   category_id: z.string().uuid().optional(),
   timezone: z.string().max(64).nullable().optional(),
