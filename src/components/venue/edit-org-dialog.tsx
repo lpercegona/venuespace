@@ -74,6 +74,10 @@ export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = fals
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (richTextToPlainText(description).length > RICH_TEXT_MAX) {
+      toast.error(`Descrição deve ter até ${RICH_TEXT_MAX} caracteres.`);
+      return;
+    }
     setSaving(true);
     try {
       await updateOrganization({ data: {
