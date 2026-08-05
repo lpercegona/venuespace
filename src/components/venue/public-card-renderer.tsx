@@ -6,6 +6,7 @@ import { GalleryCarousel } from "@/components/venue/gallery-carousel";
 import { LazyImage } from "@/components/venue/lazy-image";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { isRichTextHtml, richTextToPlainText } from "@/lib/rich-text";
 
 
 export type LayoutItem = {
@@ -48,7 +49,8 @@ function formatValue(field: RendererField | undefined, raw: any): string {
   if (field.type === "datetime") return new Date(raw).toLocaleString("pt-BR");
   if (field.type === "multiselect" && Array.isArray(raw)) return raw.join(", ");
   if (Array.isArray(raw)) return raw.filter((x) => x != null && x !== "").join(", ");
-  return String(raw);
+  const str = String(raw);
+  return isRichTextHtml(str) ? richTextToPlainText(str) : str;
 }
 
 function isUrl(v: unknown): v is string {
@@ -97,6 +99,13 @@ export function getPublicCardTitle({
     if (text && !isUrl(text)) return text;
   }
   return fallback;
+}
+
+/** Prefixo configurável pelo super admin, aplicado antes do valor formatado. */
+function withPrefix(it: LayoutItem, text: string): string {
+  const prefix = typeof it.config?.prefix === "string" ? it.config.prefix.trim() : "";
+  if (!text || !prefix) return text;
+  return `${prefix} ${text}`;
 }
 
 type CellStyle = "title" | "subtitle" | "normal";
@@ -186,7 +195,7 @@ export function PublicCardBody({
       cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, style, kind: "icons", values: listValues, iconMap: optionIcons });
       continue;
     }
-    const text = formatValue(f, raw);
+    const text = withPrefix(it, formatValue(f, raw));
     if (!text) continue;
     cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, style, kind: "text", text });
   }
@@ -425,7 +434,7 @@ function ImmersiveCardBody({
   const bgUrls = bg ? mediaUrlsFor(bg.f, bg.it.field_key, bgLabel, data?.[bg.it.field_key]) : [];
 
   const textOf = (entry?: { it: LayoutItem; f?: RendererField }) =>
-    entry ? formatValue(entry.f, data?.[entry.it.field_key]).trim() : "";
+    entry ? withPrefix(entry.it, formatValue(entry.f, data?.[entry.it.field_key]).trim()) : "";
 
   const badge = (bySlot.get("badge") ?? [])[0];
   const badgeText = textOf(badge);

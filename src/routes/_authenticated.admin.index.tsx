@@ -902,6 +902,7 @@ type EditorRow = {
   width_percent: 25 | 50 | 75 | 100;
   order_index: number;
   label_override?: string;
+  prefix?: string;
   icon?: string;
   bleed?: boolean;
   style?: "title" | "subtitle" | "normal";
@@ -1119,6 +1120,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
         width_percent: r.width_percent,
         order_index: r.order_index,
         label_override: (r.config?.label_override as string) ?? "",
+        prefix: (r.config?.prefix as string) ?? "",
         icon: (r.config?.icon as string) ?? "",
         bleed: (r.config?.bleed as boolean) ?? false,
         style: ((r.config?.style as EditorRow["style"]) ?? (r.field_key === "name" ? "title" : "normal")),
@@ -1157,6 +1159,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
           field_key: r.field_key, width_percent: r.width_percent, order_index: i,
           config: {
             ...(r.label_override ? { label_override: r.label_override } : {}),
+            ...(r.prefix?.trim() ? { prefix: r.prefix.trim() } : {}),
             ...(r.icon ? { icon: r.icon } : {}),
             ...(r.bleed && r.width_percent === 100 ? { bleed: true } : {}),
             ...(r.style ? { style: r.style } : {}),
@@ -1203,6 +1206,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
               <TableHead className="w-24">Ordem</TableHead>
               <TableHead>Campo</TableHead>
               <TableHead>Rótulo (override)</TableHead>
+              <TableHead className="w-32">Prefixo</TableHead>
               <TableHead>Ícone (lucide)</TableHead>
               {immersive ? (
                 <>
@@ -1221,7 +1225,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
-              <TableRow><TableCell colSpan={immersive ? 7 : 8} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={immersive ? 8 : 9} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
             ) : rows.map((r, i) => {
               const bleedable = isMediaFieldKey(r.field_key) && r.width_percent === 100;
               return (
@@ -1234,6 +1238,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
                 </TableCell>
                 <TableCell className="font-mono text-xs">{r.field_key}</TableCell>
                 <TableCell><Input value={r.label_override ?? ""} onChange={(e) => updateRow(i, { label_override: e.target.value })} placeholder="—" /></TableCell>
+                <TableCell><Input value={r.prefix ?? ""} onChange={(e) => updateRow(i, { prefix: e.target.value })} placeholder="ATÉ" /></TableCell>
                 <TableCell><Input value={r.icon ?? ""} onChange={(e) => updateRow(i, { icon: e.target.value })} placeholder="Home, MapPin..." /></TableCell>
                 {immersive ? (
                   <>
