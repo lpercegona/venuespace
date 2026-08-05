@@ -240,7 +240,7 @@ export function PublicCardBody({
           if (c.kind === "gallery") {
             return (
               <div key={c.id} className={`${bleedCls} overflow-hidden`}>
-                <GalleryCarousel urls={c.urls!} alt={c.label} aspectClassName="aspect-video" roundedClassName="" />
+                <GalleryCarousel urls={c.urls!} alt={c.label} aspectClassName="aspect-video" roundedClassName="" showCounter={false} />
               </div>
             );
           }
@@ -280,7 +280,7 @@ export function PublicCardBody({
                 const aspect = c.width_percent === 100 ? "aspect-video" : "aspect-square";
                 return (
                   <div key={c.id} className={`${c.span} min-w-0`}>
-                    <GalleryCarousel urls={c.urls!} alt={c.label} aspectClassName={aspect} />
+                    <GalleryCarousel urls={c.urls!} alt={c.label} aspectClassName={aspect} showCounter={false} />
                   </div>
                 );
               }
@@ -446,7 +446,7 @@ function ImmersiveCardBody({
     <div className={`${m} relative isolate overflow-hidden rounded-xl`}>
       <div className="relative aspect-4/3 w-full bg-muted">
         {bgUrls.length > 1 ? (
-          <GalleryCarousel urls={bgUrls} alt={bgLabel} aspectClassName="aspect-4/3" roundedClassName="" />
+          <GalleryCarousel urls={bgUrls} alt={bgLabel} aspectClassName="aspect-4/3" roundedClassName="" showCounter={false} />
         ) : bgUrls.length === 1 ? (
           <LazyImage
             src={bgUrls[0]}
