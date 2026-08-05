@@ -19,6 +19,8 @@ import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
 import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
 import { UploadField } from "@/components/venue/dynamic-form";
 import { OrgMembersManager } from "@/components/venue/org-members-manager";
+import { RichTextEditor } from "@/components/venue/rich-text-editor";
+import { RICH_TEXT_MAX, richTextToPlainText } from "@/lib/rich-text";
 
 type Props = {
   open: boolean;
