@@ -32,8 +32,10 @@ export function toRichTextHtml(value: string): string {
   const v = (value ?? "").trim();
   if (!v) return "";
   if (isRichTextHtml(v)) return sanitizeRichText(v);
+  const escape = (s: string) =>
+    s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c] as string);
   return v
     .split(/\n{2,}/)
-    .map((p) => `<p>${p.replace(/\n/g, "<br />").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] as string))}</p>`)
+    .map((p) => `<p>${escape(p).replace(/\n/g, "<br />")}</p>`)
     .join("");
 }
