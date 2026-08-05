@@ -14,6 +14,7 @@ import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-ca
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { EmptyState } from "@/components/venue/empty-state";
+import { RichTextView } from "@/components/venue/rich-text-view";
 
 
 type PublicLayoutField = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
@@ -178,7 +179,7 @@ function PublicOrgPage() {
                 <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{org.category_name}</p>
               ) : null}
               <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{org.name}</h1>
-              {org.description ? <p className="mt-3 max-w-2xl text-sm text-foreground/90">{org.description}</p> : null}
+              {org.description ? <RichTextView value={org.description} className="mt-3 max-w-2xl" /> : null}
               {addr ? (
                 <div className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0" />

@@ -9,6 +9,7 @@ import { GalleryCarousel } from "@/components/venue/gallery-carousel";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { OrganizationReviews } from "@/components/venue/organization-reviews";
 import { EmptyState } from "@/components/venue/empty-state";
+import { RichTextView } from "@/components/venue/rich-text-view";
 import { InterestForm } from "@/components/venue/interest-form";
 import { PublicHeader } from "@/components/venue/public-header";
 import { getPublicCardTitle, OptionIconList, PublicCardBody } from "@/components/venue/public-card-renderer";
@@ -211,7 +212,7 @@ export function OrganizationPageImmersive({
 
           {description ? (
             <section>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">{description}</p>
+              <RichTextView value={description} />
             </section>
           ) : null}
 

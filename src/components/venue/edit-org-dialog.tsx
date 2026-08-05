@@ -19,6 +19,8 @@ import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
 import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
 import { UploadField } from "@/components/venue/dynamic-form";
 import { OrgMembersManager } from "@/components/venue/org-members-manager";
+import { RichTextEditor } from "@/components/venue/rich-text-editor";
+import { RICH_TEXT_MAX, richTextToPlainText } from "@/lib/rich-text";
 
 type Props = {
   open: boolean;
@@ -72,6 +74,10 @@ export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = fals
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (richTextToPlainText(description).length > RICH_TEXT_MAX) {
+      toast.error(`Descrição deve ter até ${RICH_TEXT_MAX} caracteres.`);
+      return;
+    }
     setSaving(true);
     try {
       await updateOrganization({ data: {
@@ -127,8 +133,9 @@ export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = fals
           </div>
           <div className="space-y-2">
             <Label htmlFor="o-desc">Descrição</Label>
-            <Textarea id="o-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <RichTextEditor value={description} onChange={setDescription} />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="o-logo">Logo</Label>
             <UploadField value={logoUrl} kind="image" onChange={setLogoUrl} />

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { getOrganizationBySlug, listTables, createTable, updateTable, deleteTable, listMembers, addMemberByEmail } from "@/lib/orgs.functions";
 import { amISuperAdmin } from "@/lib/instance-settings.functions";
 import { AppShell } from "@/components/venue/app-shell";
+import { richTextToPlainText } from "@/lib/rich-text";
 import { EmptyState } from "@/components/venue/empty-state";
 import { EditOrgDialog } from "@/components/venue/edit-org-dialog";
 import { Button } from "@/components/ui/button";
@@ -133,7 +134,7 @@ function OrgDashboard() {
   return (
     <AppShell
       title={org.data.name}
-      subtitle={org.data.description || `/${org.data.slug}`}
+      subtitle={richTextToPlainText(org.data.description ?? "") || `/${org.data.slug}`}
       actions={
         <div className="flex flex-wrap items-center gap-2">
           {isOwner ? (

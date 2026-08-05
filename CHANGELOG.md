@@ -1,3 +1,11 @@
+## 2026-08-05 21:55 (America/Sao_Paulo) — Correção/extensão das Iterações 18 e 22/23/27 — descrição rica e prefixo nos cards
+
+- Descrição da organização (extensão da Iteração 18): limite ampliado de 500 para **2500 caracteres** (contados sobre o texto puro) e novo editor limitado com texto, título (H4) e bullets — `src/components/venue/rich-text-editor.tsx`.
+- Novo utilitário `src/lib/rich-text.ts` (`sanitizeRichText`, `richTextToPlainText`, `toRichTextHtml`, `RICH_TEXT_MAX`), com allowlist restrita a `p`, `h4`, `ul`, `li`, `strong`, `em`, `br`; sanitização aplicada no servidor em `createOrganization`/`updateOrganization`.
+- Novo componente `src/components/venue/rich-text-view.tsx` usado na página pública (Layout 1 e Layout 2); descrições antigas em texto puro continuam sendo exibidas como parágrafos.
+- Onde a descrição aparece como texto puro (painel da organização, cards públicos), o HTML é convertido em texto para não vazar marcação.
+- Prefixo nos cards públicos (extensão das Iterações 22/23/27): nova coluna **Prefixo** no editor de layout de cards de organização e registro; salvo em `category_public_layout_fields.config.prefix` (sem migração) e renderizado entre o ícone e o valor, tanto no Layout 1 quanto nos slots de texto do Layout 2. Campos sem valor continuam ocultos.
+
 ## 2026-08-05 16:20 (America/Sao_Paulo) — Correção do Layout 2 — galeria multi-imagem, endereço mobile e contato colapsável
 
 - `GalleryCarousel`: novas props `itemBasisClassName` (largura responsiva por slide) e `preloadCount`; no modo `fillContainer` o viewport interno recebe `h-full`, corrigindo a galeria que ocupava apenas parte da faixa hero.
