@@ -22,10 +22,16 @@ type Props = {
   itemBasisClassName?: string;
   /** How many images to eagerly preload (default 5). */
   preloadCount?: number;
+  /** Shows the "1/5" slide counter (default true). */
+  showCounter?: boolean;
 };
 
-const ARROW_CLS =
+const REVEAL_CLS =
   "opacity-100 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/carousel:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100";
+
+const GLASS_CLS = "bg-background/30 backdrop-blur-md border-white/25 text-white hover:bg-background/45 hover:text-white";
+
+const ARROW_CLS = `z-30 ${REVEAL_CLS} ${GLASS_CLS}`;
 
 /** Keeps arrow interaction from triggering the wrapping <Link>. */
 function stopNav(e: React.SyntheticEvent) {
