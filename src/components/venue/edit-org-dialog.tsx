@@ -127,8 +127,9 @@ export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = fals
           </div>
           <div className="space-y-2">
             <Label htmlFor="o-desc">Descrição</Label>
-            <Textarea id="o-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <RichTextEditor value={description} onChange={setDescription} />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="o-logo">Logo</Label>
             <UploadField value={logoUrl} kind="image" onChange={setLogoUrl} />
