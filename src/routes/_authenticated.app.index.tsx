@@ -124,8 +124,9 @@ function OrgsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="org-desc">Descrição (opcional)</Label>
-                <Textarea id="org-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+                <RichTextEditor value={description} onChange={setDescription} />
               </div>
+
               <div className="space-y-2">
                 <Label>Categoria *</Label>
                 <Select
