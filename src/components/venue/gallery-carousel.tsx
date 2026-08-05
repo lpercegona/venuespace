@@ -22,10 +22,16 @@ type Props = {
   itemBasisClassName?: string;
   /** How many images to eagerly preload (default 5). */
   preloadCount?: number;
+  /** Shows the "1/5" slide counter (default true). */
+  showCounter?: boolean;
 };
 
-const ARROW_CLS =
+const REVEAL_CLS =
   "opacity-100 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/carousel:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100";
+
+const GLASS_CLS = "bg-background/30 backdrop-blur-md border-white/25 text-white hover:bg-background/45 hover:text-white";
+
+const ARROW_CLS = `z-30 ${REVEAL_CLS} ${GLASS_CLS}`;
 
 /** Keeps arrow interaction from triggering the wrapping <Link>. */
 function stopNav(e: React.SyntheticEvent) {
@@ -42,6 +48,7 @@ export function GalleryCarousel({
   fillContainer,
   itemBasisClassName,
   preloadCount = 5,
+  showCounter = true,
 }: Props) {
   const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(0);
@@ -84,7 +91,7 @@ export function GalleryCarousel({
 
   return (
     <div className={`group/carousel relative ${fillContainer ? "h-full w-full" : "w-full"} ${className ?? ""}`.trim()} role="presentation">
-      <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full [&>div]:h-full" : "w-full"}`}>
+      <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full [&>div:first-child]:h-full" : "w-full"}`}>
         <CarouselContent className={`ml-0 ${fillContainer ? "h-full" : ""}`}>
           {urls.map((u, i) => {
             const eager = eagerSet.has(i);
@@ -111,13 +118,15 @@ export function GalleryCarousel({
         <span onClick={stopNav} onPointerDown={(e) => e.stopPropagation()} role="presentation">
           <CarouselNext type="button" className={`right-2 ${ARROW_CLS}`} />
         </span>
+      </Carousel>
 
+      {showCounter ? (
         <div
-          className={`pointer-events-none absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm backdrop-blur ${ARROW_CLS}`}
+          className={`pointer-events-none absolute bottom-2 right-2 z-30 h-fit w-fit rounded-full border px-2 py-0.5 text-[10px] font-medium shadow-sm ${GLASS_CLS} ${REVEAL_CLS}`}
         >
           {index + 1}/{total}
         </div>
-      </Carousel>
+      ) : null}
     </div>
   );
 }
