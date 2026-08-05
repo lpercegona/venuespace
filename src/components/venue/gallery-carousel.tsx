@@ -48,6 +48,7 @@ export function GalleryCarousel({
   fillContainer,
   itemBasisClassName,
   preloadCount = 5,
+  showCounter = true,
 }: Props) {
   const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(0);
