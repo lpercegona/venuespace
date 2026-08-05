@@ -8,7 +8,6 @@ import { EmptyState } from "@/components/venue/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +18,8 @@ import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
 import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
 import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
+import { RichTextEditor } from "@/components/venue/rich-text-editor";
+import { RICH_TEXT_MAX, richTextToPlainText } from "@/lib/rich-text";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
@@ -60,6 +61,10 @@ function OrgsPage() {
     e.preventDefault();
     if (!categoryId) {
       toast.error("Selecione uma categoria.");
+      return;
+    }
+    if (richTextToPlainText(description).length > RICH_TEXT_MAX) {
+      toast.error(`Descrição deve ter até ${RICH_TEXT_MAX} caracteres.`);
       return;
     }
     setSaving(true);
@@ -201,7 +206,7 @@ function OrgsPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
-                    {org.description || "Sem descrição."}
+                    {richTextToPlainText(org.description ?? "") || "Sem descrição."}
                   </p>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="font-mono text-xs text-muted-foreground">/{org.slug}</span>
