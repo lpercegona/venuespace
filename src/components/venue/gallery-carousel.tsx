@@ -91,7 +91,7 @@ export function GalleryCarousel({
 
   return (
     <div className={`group/carousel relative ${fillContainer ? "h-full w-full" : "w-full"} ${className ?? ""}`.trim()} role="presentation">
-      <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full [&>div]:h-full" : "w-full"}`}>
+      <Carousel opts={{ loop: true }} setApi={setApi} className={`relative ${fillContainer ? "h-full w-full [&>div:first-child]:h-full" : "w-full"}`}>
         <CarouselContent className={`ml-0 ${fillContainer ? "h-full" : ""}`}>
           {urls.map((u, i) => {
             const eager = eagerSet.has(i);
@@ -118,13 +118,15 @@ export function GalleryCarousel({
         <span onClick={stopNav} onPointerDown={(e) => e.stopPropagation()} role="presentation">
           <CarouselNext type="button" className={`right-2 ${ARROW_CLS}`} />
         </span>
+      </Carousel>
 
+      {showCounter ? (
         <div
-          className={`pointer-events-none absolute bottom-2 right-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm backdrop-blur ${ARROW_CLS}`}
+          className={`pointer-events-none absolute bottom-2 right-2 z-30 h-fit w-fit rounded-full border px-2 py-0.5 text-[10px] font-medium shadow-sm ${GLASS_CLS} ${REVEAL_CLS}`}
         >
           {index + 1}/{total}
         </div>
-      </Carousel>
+      ) : null}
     </div>
   );
 }
