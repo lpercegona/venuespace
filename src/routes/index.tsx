@@ -110,12 +110,13 @@ function Landing() {
                 {orgsPlural} recentes
               </h2>
               <Link
-                to="/explore"
-                search={{ tab: "orgs", categoria: search.categoria || undefined } as any}
+                to="/categoria/$slug"
+                params={{ slug: activeSlug }}
                 className="text-sm text-primary hover:underline"
               >
                 Ver todas
               </Link>
+
             </div>
 
             {orgs.isLoading ? (
