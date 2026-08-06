@@ -42,6 +42,18 @@ function OrgsPage() {
     queryKey: ["my-orgs"],
     queryFn: () => fetchOrgs(),
   });
+  const isSuperAdmin = useQuery({
+    queryKey: ["am-super-admin"],
+    queryFn: () => amISuperAdmin(),
+    staleTime: 60_000,
+  });
+  const [orgSearch, setOrgSearch] = useState("");
+  const visibleOrgs = ((data ?? []) as any[]).filter((o) =>
+    isSuperAdmin.data?.is_super_admin && orgSearch.trim()
+      ? String(o.name ?? "").toLowerCase().includes(orgSearch.trim().toLowerCase())
+      : true,
+  );
+
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
