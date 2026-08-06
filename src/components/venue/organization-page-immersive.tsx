@@ -244,6 +244,19 @@ export function OrganizationPageImmersive({
             </section>
           ) : null}
 
+          <p className="text-xs leading-snug text-muted-foreground">
+            Este espaço é seu?{" "}
+            <a
+              href={`mailto:contato@venuespace.com.br?subject=${encodeURIComponent(`Reivindicação do espaço ${org.name}`)}`}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Clique aqui
+            </a>{" "}
+            para reivindicar a propriedade e assumir o perfil.
+          </p>
+
+
+
           {/* Mobile: bloco de contato logo abaixo de Site/Telefone */}
           <div className="lg:hidden">
             <ContactCard org={org} slug={slug} contact={{ email, whatsapp, phone, websiteHref }} collapsible />
@@ -309,7 +322,19 @@ export function OrganizationPageImmersive({
         {/* Coluna direita: card de interesse sobreposto à faixa hero (desktop) */}
         <aside className="hidden pt-8 lg:col-span-2 lg:-mt-24 lg:block lg:pt-0">
           <ContactCard org={org} slug={slug} contact={{ email, whatsapp, phone, websiteHref }} />
+          <p className="mt-3 text-[10px] leading-snug text-muted-foreground">
+            Fotos indexadas de sites de espaços ou de buscadores na internet. Para reivindicar autoria ou solicitar
+            remoção,{" "}
+            <a
+              href={`mailto:contato@venuespace.com.br?subject=${encodeURIComponent(`Autoria de fotos — ${org.name}`)}`}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              clique aqui
+            </a>
+            .
+          </p>
         </aside>
+
       </main>
     </div>
   );

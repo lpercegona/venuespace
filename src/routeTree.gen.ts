@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as LeadTokenRouteImport } from './routes/lead.$token'
+import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as PublicSlugIndexRouteImport } from './routes/public.$slug.index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
@@ -88,6 +89,11 @@ const BlogIndexRoute = BlogIndexRouteImport.update({
 const LeadTokenRoute = LeadTokenRouteImport.update({
   id: '/lead/$token',
   path: '/lead/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoriaSlugRoute = CategoriaSlugRouteImport.update({
+  id: '/categoria/$slug',
+  path: '/categoria/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogRouteWithChildren
   '/explore': typeof ExploreRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
   '/blog/': typeof BlogIndexRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
@@ -358,6 +365,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/explore': typeof ExploreRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
   '/blog': typeof BlogIndexRoute
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
@@ -406,6 +414,7 @@ export interface FileRoutesById {
   '/blog': typeof BlogRouteWithChildren
   '/explore': typeof ExploreRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
   '/blog/': typeof BlogIndexRoute
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
@@ -455,6 +464,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/explore'
     | '/blog/$slug'
+    | '/categoria/$slug'
     | '/lead/$token'
     | '/blog/'
     | '/me/applications'
@@ -501,6 +511,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/explore'
     | '/blog/$slug'
+    | '/categoria/$slug'
     | '/lead/$token'
     | '/blog'
     | '/me/applications'
@@ -548,6 +559,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/explore'
     | '/blog/$slug'
+    | '/categoria/$slug'
     | '/lead/$token'
     | '/blog/'
     | '/_authenticated/me/applications'
@@ -596,6 +608,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BlogRoute: typeof BlogRouteWithChildren
   ExploreRoute: typeof ExploreRoute
+  CategoriaSlugRoute: typeof CategoriaSlugRoute
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicCategoryLabelsRoute: typeof ApiPublicCategoryLabelsRoute
   ApiPublicExploreFiltersRoute: typeof ApiPublicExploreFiltersRoute
@@ -669,6 +682,13 @@ declare module '@tanstack/react-router' {
       path: '/lead/$token'
       fullPath: '/lead/$token'
       preLoaderRoute: typeof LeadTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/categoria/$slug': {
+      id: '/categoria/$slug'
+      path: '/categoria/$slug'
+      fullPath: '/categoria/$slug'
+      preLoaderRoute: typeof CategoriaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog/$slug': {
@@ -1055,6 +1075,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BlogRoute: BlogRouteWithChildren,
   ExploreRoute: ExploreRoute,
+  CategoriaSlugRoute: CategoriaSlugRoute,
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicCategoryLabelsRoute: ApiPublicCategoryLabelsRoute,
   ApiPublicExploreFiltersRoute: ApiPublicExploreFiltersRoute,
@@ -1083,13 +1104,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Building2, FileText, X } from "lucide-react";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
+
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
@@ -107,8 +109,9 @@ function ExplorePage() {
   const catsQ = usePublicCategories();
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
   const catId = activeCat?.id;
-  const { hasRecords } = useHasPublicRecords(catId);
-  const activeTab: "orgs" | "records" = hasRecords ? requestedTab : "orgs";
+  // Alternância Organizações/Registros removida temporariamente.
+  const activeTab = "orgs" as "orgs" | "records";
+
   const scope: "organization" | "record" = activeTab === "orgs" ? "organization" : "record";
   const orgLayoutQ = useCategoryLayout(catId, "organization_card");
   const recLayoutQ = useCategoryLayout(catId, "record_card");
@@ -188,16 +191,8 @@ function ExplorePage() {
         />
 
         <Tabs value={activeTab} onValueChange={setTab} className="mt-4">
-          {hasRecords ? (
-            <TabsList>
-              <TabsTrigger value="orgs" className="gap-1">
-                <Building2 className="h-4 w-4" /> {orgsPlural}
-              </TabsTrigger>
-              <TabsTrigger value="records" className="gap-1">
-                <FileText className="h-4 w-4" /> {recordsPlural}
-              </TabsTrigger>
-            </TabsList>
-          ) : null}
+          {/* Alternância Organizações/Registros removida temporariamente. */}
+
 
 
           <form
@@ -359,6 +354,8 @@ function ExplorePage() {
           </div>
         ) : null}
       </section>
+      <PublicFooter />
     </div>
+
   );
 }

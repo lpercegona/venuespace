@@ -4,16 +4,18 @@ import { z } from "zod";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Database, MessageSquare, Sparkles, Building2, FileText } from "lucide-react";
+import { ArrowRight, Database, MessageSquare, Sparkles, Building2 } from "lucide-react";
 import { useLabels } from "@/hooks/use-instance-context";
 import { PublicHeader } from "@/components/venue/public-header";
-import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
+import { PublicFooter } from "@/components/venue/public-footer";
+import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
-import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
-import { useCategoryLayout, useHasPublicRecords } from "@/hooks/use-public-catalog";
+import { CategoryTabs, categorySlug, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
+import { useCategoryLayout } from "@/hooks/use-public-catalog";
 
-import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
+import type { PublicOrganizationSummary } from "@/lib/public.server";
+
 
 
 const searchSchema = z.object({
@@ -46,37 +48,23 @@ async function fetchOrgs(categoryId?: string): Promise<{ items: PublicOrganizati
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
-async function fetchRecords(categoryId?: string): Promise<{ items: PublicRecordSummary[] }> {
-  const p = new URLSearchParams({ limit: "8" });
-  if (categoryId) p.set("category", categoryId);
-  const res = await fetch(`/api/public/records?${p.toString()}`);
-  if (!res.ok) throw new Error("Falha ao carregar");
-  return res.json();
-}
 function Landing() {
   const { t } = useLabels();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const orgsPlural = t("organizations", "Organizações");
-  const recordsPlural = t("records", "Registros");
   const catsQ = usePublicCategories();
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
   const catId = activeCat?.id;
+  const activeSlug = activeCat ? categorySlug(activeCat) : "espacos";
   const orgLayoutQ = useCategoryLayout(catId, "organization_card");
-  const recLayoutQ = useCategoryLayout(catId, "record_card");
-  const { hasRecords } = useHasPublicRecords(catId);
   const orgs = useQuery({
     queryKey: ["landing-orgs", catId],
     queryFn: () => fetchOrgs(catId),
     enabled: !!catId || !catsQ.isLoading,
     staleTime: 60_000,
   });
-  const recs = useQuery({
-    queryKey: ["landing-records", catId],
-    queryFn: () => fetchRecords(catId),
-    enabled: (!!catId || !catsQ.isLoading) && hasRecords,
-    staleTime: 60_000,
-  });
+
 
 
   return (
@@ -97,11 +85,12 @@ function Landing() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/explore" search={{ tab: "orgs", categoria: search.categoria || undefined } as any}>
+            <Link to="/categoria/$slug" params={{ slug: activeSlug }}>
               <Button size="lg" variant="outline" className="h-12 px-6">
                 Explorar espaços
               </Button>
             </Link>
+
           </div>
         </div>
 
@@ -121,12 +110,13 @@ function Landing() {
                 {orgsPlural} recentes
               </h2>
               <Link
-                to="/explore"
-                search={{ tab: "orgs", categoria: search.categoria || undefined } as any}
+                to="/categoria/$slug"
+                params={{ slug: activeSlug }}
                 className="text-sm text-primary hover:underline"
               >
                 Ver todas
               </Link>
+
             </div>
 
             {orgs.isLoading ? (
@@ -169,66 +159,8 @@ function Landing() {
               </div>
             )}
           </section>
-          {hasRecords ? (
-          <section>
+          {/* Bloco "Registros recentes" removido temporariamente. */}
 
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight sm:text-2xl">
-                <FileText className="h-5 w-5 text-primary" />
-                {recordsPlural} recentes
-              </h2>
-              <Link
-                to="/explore"
-                search={{ tab: "records", categoria: search.categoria || undefined } as any}
-                className="text-sm text-primary hover:underline"
-              >
-                Ver todos
-              </Link>
-
-            </div>
-            {recs.isLoading ? (
-              <PublicCardSkeletonGrid count={3} layout={recLayoutQ.data} />
-            ) : (recs.data?.items ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum ambiente publicado ainda.</p>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {(recs.data?.items ?? []).map((r) => {
-                  const hasLayout = (r.layout ?? []).length > 0;
-                  const title = getPublicCardTitle({
-                    layout: r.layout ?? [],
-                    fields: r.fields ?? [],
-                    data: r.data,
-                    fallback: "Ambiente",
-                  });
-                  return (
-                    <Link
-                      key={r.record_id}
-                      to="/public/$slug/$tableId/$recordId"
-                      params={{ slug: r.org_slug, tableId: r.table_id, recordId: r.record_id }}
-                      className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    >
-                      <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
-                        {hasLayout ? (
-                          <div className="p-4">
-                            <PublicCardBody layout={r.layout as any} fields={r.fields as any} data={r.data} />
-                          </div>
-                        ) : (
-                          <CardHeader className="pb-2">
-                            <p className="text-xs text-muted-foreground truncate">
-                              {r.org_name} · {r.table_name}
-                            </p>
-                            <CardTitle className="font-display text-base line-clamp-2">{title || "Ambiente"}</CardTitle>
-                          </CardHeader>
-                        )}
-                      </Card>
-                    </Link>
-                  );
-                })}
-              </div>
-
-            )}
-          </section>
-          ) : null}
 
         </div>
 
@@ -259,11 +191,8 @@ function Landing() {
         </div>
       </section>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto w-full max-w-6xl px-4 py-6 text-sm text-muted-foreground sm:px-6">
-          © {new Date().getFullYear()} VENUESPACE
-        </div>
-      </footer>
+      <PublicFooter />
+
     </div>
   );
 }
