@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Building2, FileText, X } from "lucide-react";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
+
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
