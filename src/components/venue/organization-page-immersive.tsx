@@ -244,6 +244,19 @@ export function OrganizationPageImmersive({
             </section>
           ) : null}
 
+          <p className="text-xs leading-snug text-muted-foreground">
+            Este espaço é seu?{" "}
+            <a
+              href={`mailto:contato@venuespace.com.br?subject=${encodeURIComponent(`Reivindicação do espaço ${org.name}`)}`}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Clique aqui
+            </a>{" "}
+            para reivindicar a propriedade e assumir o perfil.
+          </p>
+
+
+
           {/* Mobile: bloco de contato logo abaixo de Site/Telefone */}
           <div className="lg:hidden">
             <ContactCard org={org} slug={slug} contact={{ email, whatsapp, phone, websiteHref }} collapsible />
