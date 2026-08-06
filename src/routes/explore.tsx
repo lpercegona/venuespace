@@ -352,6 +352,8 @@ function ExplorePage() {
           </div>
         ) : null}
       </section>
+      <PublicFooter />
     </div>
+
   );
 }
