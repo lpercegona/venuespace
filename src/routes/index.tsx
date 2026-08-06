@@ -201,11 +201,8 @@ function Landing() {
         </div>
       </section>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto w-full max-w-6xl px-4 py-6 text-sm text-muted-foreground sm:px-6">
-          © {new Date().getFullYear()} VENUESPACE
-        </div>
-      </footer>
+      <PublicFooter />
+
     </div>
   );
 }
