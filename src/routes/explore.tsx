@@ -108,7 +108,7 @@ function ExplorePage() {
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
   const catId = activeCat?.id;
   // Alternância Organizações/Registros removida temporariamente.
-  const activeTab: "orgs" | "records" = "orgs";
+  const activeTab = "orgs" as "orgs" | "records";
 
   const scope: "organization" | "record" = activeTab === "orgs" ? "organization" : "record";
   const orgLayoutQ = useCategoryLayout(catId, "organization_card");
