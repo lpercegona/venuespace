@@ -189,16 +189,8 @@ function ExplorePage() {
         />
 
         <Tabs value={activeTab} onValueChange={setTab} className="mt-4">
-          {hasRecords ? (
-            <TabsList>
-              <TabsTrigger value="orgs" className="gap-1">
-                <Building2 className="h-4 w-4" /> {orgsPlural}
-              </TabsTrigger>
-              <TabsTrigger value="records" className="gap-1">
-                <FileText className="h-4 w-4" /> {recordsPlural}
-              </TabsTrigger>
-            </TabsList>
-          ) : null}
+          {/* Alternância Organizações/Registros removida temporariamente. */}
+
 
 
           <form
