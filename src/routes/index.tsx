@@ -169,66 +169,8 @@ function Landing() {
               </div>
             )}
           </section>
-          {hasRecords ? (
-          <section>
+          {/* Bloco "Registros recentes" removido temporariamente. */}
 
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight sm:text-2xl">
-                <FileText className="h-5 w-5 text-primary" />
-                {recordsPlural} recentes
-              </h2>
-              <Link
-                to="/explore"
-                search={{ tab: "records", categoria: search.categoria || undefined } as any}
-                className="text-sm text-primary hover:underline"
-              >
-                Ver todos
-              </Link>
-
-            </div>
-            {recs.isLoading ? (
-              <PublicCardSkeletonGrid count={3} layout={recLayoutQ.data} />
-            ) : (recs.data?.items ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum ambiente publicado ainda.</p>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {(recs.data?.items ?? []).map((r) => {
-                  const hasLayout = (r.layout ?? []).length > 0;
-                  const title = getPublicCardTitle({
-                    layout: r.layout ?? [],
-                    fields: r.fields ?? [],
-                    data: r.data,
-                    fallback: "Ambiente",
-                  });
-                  return (
-                    <Link
-                      key={r.record_id}
-                      to="/public/$slug/$tableId/$recordId"
-                      params={{ slug: r.org_slug, tableId: r.table_id, recordId: r.record_id }}
-                      className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    >
-                      <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
-                        {hasLayout ? (
-                          <div className="p-4">
-                            <PublicCardBody layout={r.layout as any} fields={r.fields as any} data={r.data} />
-                          </div>
-                        ) : (
-                          <CardHeader className="pb-2">
-                            <p className="text-xs text-muted-foreground truncate">
-                              {r.org_name} · {r.table_name}
-                            </p>
-                            <CardTitle className="font-display text-base line-clamp-2">{title || "Ambiente"}</CardTitle>
-                          </CardHeader>
-                        )}
-                      </Card>
-                    </Link>
-                  );
-                })}
-              </div>
-
-            )}
-          </section>
-          ) : null}
 
         </div>
 
