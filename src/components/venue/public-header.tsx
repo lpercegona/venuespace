@@ -1,14 +1,18 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Compass, BookOpen } from "lucide-react";
+import { ArrowLeft, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
 
 type Props = {
   showAuthActions?: boolean;
-  showExplore?: boolean;
-  showBlog?: boolean;
+  /** Slug da categoria ativa (destaca o link correspondente). */
+  activeCategorySlug?: string;
 };
 
-export function PublicHeader({ showAuthActions = true, showExplore = true, showBlog = true }: Props) {
+export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Props) {
+  const cats = usePublicCategories();
+  const list = cats.data ?? [];
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
@@ -17,34 +21,28 @@ export function PublicHeader({ showAuthActions = true, showExplore = true, showB
             <img src="/Venuespace logo1.svg" alt="Venuespace Logo" className="h-5 w-auto" />
           </span>
         </Link>
-        <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {showExplore ? (
-            <Link to="/explore">
-              <Button variant="ghost" size="sm" className="gap-1.5">
-                <Compass className="h-4 w-4" />
-                <span className="hidden sm:inline">Explorar</span>
-              </Button>
-            </Link>
-          ) : null}
-          {showBlog ? (
-            <Link to="/blog">
-              <Button variant="ghost" size="sm" className="gap-1.5">
-                <BookOpen className="h-4 w-4" />
-                <span className="hidden sm:inline">Blog</span>
-              </Button>
-            </Link>
-          ) : null}
-          {showAuthActions ? (
-            <>
-              <Link to="/auth">
-                <Button variant="ghost" size="sm">
-                  Entrar
+        <nav className="flex min-w-0 shrink items-center gap-1 overflow-x-auto sm:gap-2">
+          {list.map((c) => {
+            const s = categorySlug(c);
+            const active = activeCategorySlug === s;
+            return (
+              <Link key={c.id} to="/categoria/$slug" params={{ slug: s }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={active ? "text-foreground underline underline-offset-4" : "text-muted-foreground"}
+                >
+                  {c.name}
                 </Button>
               </Link>
-              <Link to="/auth">
-                <Button size="sm">Começar</Button>
-              </Link>
-            </>
+            );
+          })}
+          {showAuthActions ? (
+            <Link to="/auth" aria-label="Entrar">
+              <Button variant="ghost" size="icon" aria-label="Entrar">
+                <LogIn className="h-4 w-4" />
+              </Button>
+            </Link>
           ) : null}
         </nav>
       </div>
