@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-r
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listMyOrganizations, createOrganization } from "@/lib/orgs.functions";
+import { amISuperAdmin } from "@/lib/instance-settings.functions";
+
 import { listOrganizationCategoriesPublic } from "@/lib/organization-categories.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
