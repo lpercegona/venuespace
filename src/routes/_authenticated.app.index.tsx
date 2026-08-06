@@ -211,31 +211,50 @@ function OrgsPage() {
           }
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data.map((org: any) => (
-            <Link key={org.id} to="/app/$orgSlug" params={{ orgSlug: org.slug }}>
-              <Card className="h-full transition-shadow hover:shadow-elegant">
-                <CardHeader className="pb-2">
-                  <CardTitle className="font-display text-lg">{org.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
-                    {richTextToPlainText(org.description ?? "") || "Sem descrição."}
-                  </p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="font-mono text-xs text-muted-foreground">/{org.slug}</span>
-                    {org.is_super_admin_access ? (
-                      <Badge>super admin</Badge>
-                    ) : (
-                      <Badge variant="secondary">{org.role}</Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <>
+          {isSuperAdmin.data?.is_super_admin ? (
+            <div className="mb-4 max-w-sm">
+              <Input
+                value={orgSearch}
+                onChange={(e) => setOrgSearch(e.target.value)}
+                placeholder={`Buscar ${organizationsLabel} pelo nome...`}
+                aria-label={`Buscar ${organizationsLabel}`}
+              />
+            </div>
+          ) : null}
+          {visibleOrgs.length === 0 ? (
+            <p className="py-12 text-center text-sm text-muted-foreground">
+              Nenhum resultado para “{orgSearch}”.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {visibleOrgs.map((org: any) => (
+                <Link key={org.id} to="/app/$orgSlug" params={{ orgSlug: org.slug }}>
+                  <Card className="h-full transition-shadow hover:shadow-elegant">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="font-display text-lg">{org.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
+                        {richTextToPlainText(org.description ?? "") || "Sem descrição."}
+                      </p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="font-mono text-xs text-muted-foreground">/{org.slug}</span>
+                        {org.is_super_admin_access ? (
+                          <Badge>super admin</Badge>
+                        ) : (
+                          <Badge variant="secondary">{org.role}</Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </>
       )}
+
     </AppShell>
   );
 }
