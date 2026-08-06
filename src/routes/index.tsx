@@ -48,37 +48,23 @@ async function fetchOrgs(categoryId?: string): Promise<{ items: PublicOrganizati
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
-async function fetchRecords(categoryId?: string): Promise<{ items: PublicRecordSummary[] }> {
-  const p = new URLSearchParams({ limit: "8" });
-  if (categoryId) p.set("category", categoryId);
-  const res = await fetch(`/api/public/records?${p.toString()}`);
-  if (!res.ok) throw new Error("Falha ao carregar");
-  return res.json();
-}
 function Landing() {
   const { t } = useLabels();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const orgsPlural = t("organizations", "Organizações");
-  const recordsPlural = t("records", "Registros");
   const catsQ = usePublicCategories();
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
   const catId = activeCat?.id;
+  const activeSlug = activeCat ? categorySlug(activeCat) : "espacos";
   const orgLayoutQ = useCategoryLayout(catId, "organization_card");
-  const recLayoutQ = useCategoryLayout(catId, "record_card");
-  const { hasRecords } = useHasPublicRecords(catId);
   const orgs = useQuery({
     queryKey: ["landing-orgs", catId],
     queryFn: () => fetchOrgs(catId),
     enabled: !!catId || !catsQ.isLoading,
     staleTime: 60_000,
   });
-  const recs = useQuery({
-    queryKey: ["landing-records", catId],
-    queryFn: () => fetchRecords(catId),
-    enabled: (!!catId || !catsQ.isLoading) && hasRecords,
-    staleTime: 60_000,
-  });
+
 
 
   return (
