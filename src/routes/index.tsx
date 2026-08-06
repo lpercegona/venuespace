@@ -85,11 +85,12 @@ function Landing() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link to="/explore" search={{ tab: "orgs", categoria: search.categoria || undefined } as any}>
+            <Link to="/categoria/$slug" params={{ slug: activeSlug }}>
               <Button size="lg" variant="outline" className="h-12 px-6">
                 Explorar espaços
               </Button>
             </Link>
+
           </div>
         </div>
 
