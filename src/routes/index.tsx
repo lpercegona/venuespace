@@ -4,16 +4,18 @@ import { z } from "zod";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Database, MessageSquare, Sparkles, Building2, FileText } from "lucide-react";
+import { ArrowRight, Database, MessageSquare, Sparkles, Building2 } from "lucide-react";
 import { useLabels } from "@/hooks/use-instance-context";
 import { PublicHeader } from "@/components/venue/public-header";
-import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
+import { PublicFooter } from "@/components/venue/public-footer";
+import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
-import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
-import { useCategoryLayout, useHasPublicRecords } from "@/hooks/use-public-catalog";
+import { CategoryTabs, categorySlug, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
+import { useCategoryLayout } from "@/hooks/use-public-catalog";
 
-import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
+import type { PublicOrganizationSummary } from "@/lib/public.server";
+
 
 
 const searchSchema = z.object({
