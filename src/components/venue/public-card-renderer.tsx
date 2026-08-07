@@ -526,7 +526,8 @@ function ImmersiveCardBody({
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               {features.map(({ it, f }) => {
                 const iconMap = (f?.config?.option_icons ?? {}) as Record<string, string>;
-                const vals = valuesOf(data?.[it.field_key]);
+                const labelMap = optionLabelMapFor(f);
+                const vals = sortValuesByLabel(valuesOf(data?.[it.field_key]), labelMap);
                 if (vals.length === 0) return null;
                 if (it.config?.display === "text") {
                   return (
@@ -551,7 +552,7 @@ function ImmersiveCardBody({
                       </TooltipTrigger>
 
                       <TooltipContent side="top">
-                        <p>{v}</p>
+                        <p>{labelMap[v] ?? v}</p>
                       </TooltipContent>
                     </Tooltip>
                   );
