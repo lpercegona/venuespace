@@ -55,12 +55,19 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="max-w-[200px] gap-1.5">
+                <Button
+                  variant="outline"
+                  size={org.data?.name ? "sm" : "icon"}
+                  aria-label={org.data?.name ? org.data.name : `Selecionar ${t("organization", "organização").toLowerCase()}`}
+                  className={org.data?.name ? "w-[200px] gap-1.5" : "h-9 w-9"}
+                >
                   <Building2 className="h-4 w-4 shrink-0" />
-                  <span className="truncate">
-                    {org.data?.name ?? (orgSlug ? orgSlug : `Selecionar ${t("organization", "organização").toLowerCase()}`)}
-                  </span>
-                  <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+                  {org.data?.name ? (
+                    <>
+                      <span className="w-0 grow truncate">{org.data.name}</span>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+                    </>
+                  ) : null}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
