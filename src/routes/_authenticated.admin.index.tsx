@@ -137,6 +137,8 @@ function AdminPage() {
           <TabsTrigger value="standard-forms">Formulários padrão</TabsTrigger>
           <TabsTrigger value="filters">Filtros públicos</TabsTrigger>
           <TabsTrigger value="layouts">Layout público</TabsTrigger>
+          <TabsTrigger value="home-groupings">Agrupamentos</TabsTrigger>
+          <TabsTrigger value="home-blocks">Blocos da home</TabsTrigger>
           <TabsTrigger value="blog">Blog</TabsTrigger>
           <TabsTrigger value="reviews">Avaliações</TabsTrigger>
         </TabsList>
@@ -148,6 +150,8 @@ function AdminPage() {
         <TabsContent value="standard-forms"><StandardFormsSection /></TabsContent>
         <TabsContent value="filters"><FilterFieldsSection /></TabsContent>
         <TabsContent value="layouts"><LayoutsSection /></TabsContent>
+        <TabsContent value="home-groupings"><HomeGroupingsSection /></TabsContent>
+        <TabsContent value="home-blocks"><HomeBlocksSection /></TabsContent>
         <TabsContent value="blog"><BlogSection /></TabsContent>
         <TabsContent value="reviews"><ReviewsSection /></TabsContent>
       </Tabs>
