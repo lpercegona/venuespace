@@ -1,8 +1,12 @@
 ## 2026-08-07 01:31 (America/Sao_Paulo) — Iteração 30 — camada de dados: agrupamentos e blocos da home
 
-- Novo `src/lib/home-config.functions.ts` com server functions: `listHomeGroupingsPublic` (leitura pública dos agrupamentos ativos, categorias e blocos ativos), `listHomeBlocksAdmin`, `saveHomeBlock`, `deleteHomeBlock`, `saveHomeGrouping`, `deleteHomeGrouping` — as últimas quatro exigem super admin, validadas com Zod (`home_groupings`, `home_blocks`).
-- Novo endpoint público `src/routes/api/public/home-config.ts` (GET) expondo os agrupamentos ativos com seus blocos.
+- Novo `src/lib/home-config.functions.ts` com server functions: `listHomeGroupingsPublic` (leitura pública dos agrupamentos ativos, categorias e blocos ativos), `listHomeGroupingsAdmin`, `listHomeBlocksAdmin`, `saveHomeBlock`, `deleteHomeBlock`, `saveHomeGrouping`, `deleteHomeGrouping` — as funções administrativas exigem super admin e são validadas com Zod (`home_groupings`, `home_blocks`).
+- Novos endpoints públicos: `src/routes/api/public/home-config.ts` (GET) expondo os agrupamentos ativos com seus blocos; `src/routes/api/public/home-block-data.ts` (GET) retornando organizações ou registros filtrados pelas regras de um bloco.
 - `src/routes/api/public/organizations.ts` e `src/routes/api/public/records.ts` passam a aceitar `?rules=` (JSON com `{field_key, operator, value}`), com operadores permitidos `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `filled`; filtro aplicado em `src/lib/public.server.ts` (`applyRules`) e limite máximo de 50 itens reforçado nas rotas.
+- Redesign da home (`src/routes/index.tsx`): hero com cor de marca, título centralizado, toggle de agrupamentos estilo pill, renderização dinâmica dos blocos ativos via `HomeBlockSection` e `HomeBlockCard`.
+- Novo componente `src/components/admin/home-groupings-section.tsx` para o super admin criar/editar/remover agrupamentos de home e vinculá-los a categorias.
+- Novo componente `src/components/admin/home-blocks-section.tsx` para o super admin criar/editar/remover blocos de conteúdo (fonte, filtros, ordenação, limite) dentro de cada agrupamento.
+- Painel super admin (`src/routes/_authenticated.admin.index.tsx`) ganha as abas "Agrupamentos" e "Blocos da home".
 - Correção de ordenação: `listMyOrganizations` (`src/lib/orgs.functions.ts`) agora ordena organizações por nome (case-insensitive, `localeCompare` pt-BR) em vez de `created_at`.
 - Correção de ordenação: ícones de opções multiselect (`kind: "icons"`) no `public-card-renderer.tsx` (padrão e imersivo) agora são ordenados alfabeticamente pelo label da opção, com fallback para o valor bruto.
 
