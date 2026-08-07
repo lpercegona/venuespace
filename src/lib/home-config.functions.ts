@@ -76,12 +76,14 @@ export const listHomeGroupingsPublic = createServerFn({ method: "GET" }).handler
     const arr = blocksByGrouping.get(b.grouping_id) ?? [];
     arr.push({
       id: b.id,
+      grouping_id: b.grouping_id,
       title: b.title,
       source: b.source,
       rules: (b.rules ?? []) as HomeBlockRule[],
       order_by: b.order_by ?? null,
       limit_count: b.limit_count,
       order_index: b.order_index,
+      is_active: b.is_active ?? true,
     });
     blocksByGrouping.set(b.grouping_id, arr);
   }
