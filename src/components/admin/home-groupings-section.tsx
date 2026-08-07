@@ -157,7 +157,7 @@ export function HomeGroupingsSection() {
         {groupingsQ.isLoading ? (
           <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : list.length === 0 ? (
-          <EmptyState message="Nenhum agrupamento criado." />
+          <EmptyState title="Nenhum agrupamento criado." />
         ) : (
           <Table>
             <TableHeader>

@@ -120,10 +120,10 @@ function Landing() {
             </div>
           ) : activeGrouping ? (
             <>
-              {activeGrouping.blocks.length === 0 ? (
+              {(activeGrouping.blocks ?? []).length === 0 ? (
                 <p className="text-center text-sm text-muted-foreground">Nenhum bloco configurado para esta aba.</p>
               ) : (
-                activeGrouping.blocks.map((block) => (
+                (activeGrouping.blocks ?? []).map((block) => (
                   <HomeBlockSection key={block.id} block={block} />
                 ))
               )}

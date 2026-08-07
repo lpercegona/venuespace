@@ -90,6 +90,7 @@ export const listHomeGroupingsPublic = createServerFn({ method: "GET" }).handler
     slug: g.slug,
     description: g.description ?? null,
     order_index: g.order_index,
+    is_active: g.is_active ?? true,
     category_ids: catsByGrouping.get(g.id) ?? [],
     blocks: blocksByGrouping.get(g.id) ?? [],
   }));
