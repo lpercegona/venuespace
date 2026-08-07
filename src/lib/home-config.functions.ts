@@ -29,8 +29,9 @@ export type HomeGroupingDTO = {
   slug: string;
   description: string | null;
   order_index: number;
+  is_active: boolean;
   category_ids: string[];
-  blocks: HomeBlockDTO[];
+  blocks?: HomeBlockDTO[];
 };
 
 /** Public: active home groupings with categories and active blocks. */
