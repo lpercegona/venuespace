@@ -2,12 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/** True when the caller is a platform super admin. */
-async function isSuperAdmin(supabase: any, userId: string) {
-  const { data } = await supabase.rpc("is_super_admin", { _user_id: userId });
-  return !!data;
-}
-
 async function requireSuperAdmin(context: { supabase: any; userId: string }) {
   const { data: isAdmin } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
   if (!isAdmin) throw new Error("Forbidden");
