@@ -85,6 +85,8 @@ import {
   moderateReviewAdmin,
   type ReviewModerationItem,
 } from "@/lib/reviews.functions";
+import { HomeGroupingsSection } from "@/components/admin/home-groupings-section";
+import { HomeBlocksSection } from "@/components/admin/home-blocks-section";
 
 
 export const Route = createFileRoute("/_authenticated/admin/")({
