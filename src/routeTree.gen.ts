@@ -32,6 +32,7 @@ import { Route as ApiPublicPlatformLabelsRouteImport } from './routes/api/public
 import { Route as ApiPublicOrganizationsRouteImport } from './routes/api/public/organizations'
 import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/api/public/organization-categories'
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
+import { Route as ApiPublicHomeConfigRouteImport } from './routes/api/public/home-config'
 import { Route as ApiPublicExploreFiltersRouteImport } from './routes/api/public/explore-filters'
 import { Route as ApiPublicCategoryLabelsRouteImport } from './routes/api/public/category-labels'
 import { Route as AuthenticatedMeApplicationsRouteImport } from './routes/_authenticated.me.applications'
@@ -176,6 +177,11 @@ const ApiPublicInstanceSettingsRoute =
     path: '/api/public/instance-settings',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHomeConfigRoute = ApiPublicHomeConfigRouteImport.update({
+  id: '/api/public/home-config',
+  path: '/api/public/home-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicExploreFiltersRoute = ApiPublicExploreFiltersRouteImport.update({
   id: '/api/public/explore-filters',
   path: '/api/public/explore-filters',
@@ -345,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
+  '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
@@ -395,6 +402,7 @@ export interface FileRoutesByTo {
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
+  '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
@@ -447,6 +455,7 @@ export interface FileRoutesById {
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
+  '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
@@ -500,6 +509,7 @@ export interface FileRouteTypes {
     | '/me/applications'
     | '/api/public/category-labels'
     | '/api/public/explore-filters'
+    | '/api/public/home-config'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
@@ -550,6 +560,7 @@ export interface FileRouteTypes {
     | '/me/applications'
     | '/api/public/category-labels'
     | '/api/public/explore-filters'
+    | '/api/public/home-config'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
@@ -601,6 +612,7 @@ export interface FileRouteTypes {
     | '/_authenticated/me/applications'
     | '/api/public/category-labels'
     | '/api/public/explore-filters'
+    | '/api/public/home-config'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
@@ -651,6 +663,7 @@ export interface RootRouteChildren {
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicCategoryLabelsRoute: typeof ApiPublicCategoryLabelsRoute
   ApiPublicExploreFiltersRoute: typeof ApiPublicExploreFiltersRoute
+  ApiPublicHomeConfigRoute: typeof ApiPublicHomeConfigRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
   ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
   ApiPublicOrganizationsRoute: typeof ApiPublicOrganizationsRouteWithChildren
@@ -833,6 +846,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/instance-settings'
       fullPath: '/api/public/instance-settings'
       preLoaderRoute: typeof ApiPublicInstanceSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/home-config': {
+      id: '/api/public/home-config'
+      path: '/api/public/home-config'
+      fullPath: '/api/public/home-config'
+      preLoaderRoute: typeof ApiPublicHomeConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/explore-filters': {
@@ -1142,6 +1162,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicCategoryLabelsRoute: ApiPublicCategoryLabelsRoute,
   ApiPublicExploreFiltersRoute: ApiPublicExploreFiltersRoute,
+  ApiPublicHomeConfigRoute: ApiPublicHomeConfigRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
   ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,
   ApiPublicOrganizationsRoute: ApiPublicOrganizationsRouteWithChildren,
