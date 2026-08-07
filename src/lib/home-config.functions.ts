@@ -96,6 +96,36 @@ export const listHomeGroupingsPublic = createServerFn({ method: "GET" }).handler
   return { groupings: result };
 });
 
+/** Admin: list all groupings for CRUD. */
+export const listHomeGroupingsAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireSuperAdmin(context);
+    const [{ data: groupings, error: gErr }, { data: cats, error: cErr }] = await Promise.all([
+      context.supabase.from("home_groupings").select("id, label, slug, description, order_index, is_active").order("order_index", { ascending: true }),
+      context.supabase.from("home_grouping_categories").select("grouping_id, category_id"),
+    ]);
+    if (gErr) throw new Error(gErr.message);
+    if (cErr) throw new Error(cErr.message);
+    const catsByGrouping = new Map<string, string[]>();
+    for (const c of (cats ?? []) as any[]) {
+      const arr = catsByGrouping.get(c.grouping_id) ?? [];
+      arr.push(c.category_id);
+      catsByGrouping.set(c.grouping_id, arr);
+    }
+    return {
+      groupings: ((groupings ?? []) as any[]).map((g) => ({
+        id: g.id,
+        label: g.label,
+        slug: g.slug,
+        description: g.description ?? null,
+        order_index: g.order_index,
+        is_active: g.is_active,
+        category_ids: catsByGrouping.get(g.id) ?? [],
+      })),
+    };
+  });
+
 /** Admin: list all blocks with grouping info for CRUD. */
 export const listHomeBlocksAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
