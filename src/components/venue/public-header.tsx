@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, LogIn } from "lucide-react";
+import { ArrowLeft, LogIn, circle-user-round } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
 
@@ -40,7 +40,7 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
           {showAuthActions ? (
             <Link to="/auth" aria-label="Entrar">
               <Button variant="ghost" size="icon" aria-label="Entrar">
-                <LogIn className="h-4 w-4" />
+                <circle-user-round className="h-4 w-4" />
               </Button>
             </Link>
           ) : null}
