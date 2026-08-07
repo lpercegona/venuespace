@@ -1,3 +1,11 @@
+## 2026-08-07 01:31 (America/Sao_Paulo) — Iteração 30 — camada de dados: agrupamentos e blocos da home
+
+- Novo `src/lib/home-config.functions.ts` com server functions: `listHomeGroupingsPublic` (leitura pública dos agrupamentos ativos, categorias e blocos ativos), `listHomeBlocksAdmin`, `saveHomeBlock`, `deleteHomeBlock`, `saveHomeGrouping`, `deleteHomeGrouping` — as últimas quatro exigem super admin, validadas com Zod (`home_groupings`, `home_blocks`).
+- Novo endpoint público `src/routes/api/public/home-config.ts` (GET) expondo os agrupamentos ativos com seus blocos.
+- `src/routes/api/public/organizations.ts` e `src/routes/api/public/records.ts` passam a aceitar `?rules=` (JSON com `{field_key, operator, value}`), com operadores permitidos `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `filled`; filtro aplicado em `src/lib/public.server.ts` (`applyRules`) e limite máximo de 50 itens reforçado nas rotas.
+- Correção de ordenação: `listMyOrganizations` (`src/lib/orgs.functions.ts`) agora ordena organizações por nome (case-insensitive, `localeCompare` pt-BR) em vez de `created_at`.
+- Correção de ordenação: ícones de opções multiselect (`kind: "icons"`) no `public-card-renderer.tsx` (padrão e imersivo) agora são ordenados alfabeticamente pelo label da opção, com fallback para o valor bruto.
+
 ## 2026-08-05 21:55 (America/Sao_Paulo) — Correção/extensão das Iterações 18 e 22/23/27 — descrição rica e prefixo nos cards
 
 - Descrição da organização (extensão da Iteração 18): limite ampliado de 500 para **2500 caracteres** (contados sobre o texto puro) e novo editor limitado com texto, título (H4) e bullets — `src/components/venue/rich-text-editor.tsx`.
