@@ -15,12 +15,14 @@ export type HomeBlockRule = {
 
 export type HomeBlockDTO = {
   id: string;
+  grouping_id: string;
   title: string;
   source: "organizations" | "records";
   rules: HomeBlockRule[];
   order_by: string | null;
   limit_count: number;
   order_index: number;
+  is_active: boolean;
 };
 
 export type HomeGroupingDTO = {
