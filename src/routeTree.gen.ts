@@ -9,7 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermosECondicoesRouteImport } from './routes/termos-e-condicoes'
+import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as ContestacaoDeEspacosRouteImport } from './routes/contestacao-de-espacos'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -29,6 +32,8 @@ import { Route as ApiPublicPlatformLabelsRouteImport } from './routes/api/public
 import { Route as ApiPublicOrganizationsRouteImport } from './routes/api/public/organizations'
 import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/api/public/organization-categories'
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
+import { Route as ApiPublicHomeConfigRouteImport } from './routes/api/public/home-config'
+import { Route as ApiPublicHomeBlockDataRouteImport } from './routes/api/public/home-block-data'
 import { Route as ApiPublicExploreFiltersRouteImport } from './routes/api/public/explore-filters'
 import { Route as ApiPublicCategoryLabelsRouteImport } from './routes/api/public/category-labels'
 import { Route as AuthenticatedMeApplicationsRouteImport } from './routes/_authenticated.me.applications'
@@ -57,9 +62,24 @@ import { Route as AuthenticatedAppOrgSlugConversationsConversationIdRouteImport 
 import { Route as AuthenticatedAppOrgSlugTablesTableIdIndexRouteImport } from './routes/_authenticated.app.$orgSlug.tables.$tableId.index'
 import { Route as AuthenticatedAppOrgSlugTablesTableIdSchemaRouteImport } from './routes/_authenticated.app.$orgSlug.tables.$tableId.schema'
 
+const TermosECondicoesRoute = TermosECondicoesRouteImport.update({
+  id: '/termos-e-condicoes',
+  path: '/termos-e-condicoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
+  id: '/politica-de-privacidade',
+  path: '/politica-de-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContestacaoDeEspacosRoute = ContestacaoDeEspacosRouteImport.update({
+  id: '/contestacao-de-espacos',
+  path: '/contestacao-de-espacos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogRoute = BlogRouteImport.update({
@@ -158,6 +178,16 @@ const ApiPublicInstanceSettingsRoute =
     path: '/api/public/instance-settings',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHomeConfigRoute = ApiPublicHomeConfigRouteImport.update({
+  id: '/api/public/home-config',
+  path: '/api/public/home-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHomeBlockDataRoute = ApiPublicHomeBlockDataRouteImport.update({
+  id: '/api/public/home-block-data',
+  path: '/api/public/home-block-data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicExploreFiltersRoute = ApiPublicExploreFiltersRouteImport.update({
   id: '/api/public/explore-filters',
   path: '/api/public/explore-filters',
@@ -316,7 +346,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
+  '/contestacao-de-espacos': typeof ContestacaoDeEspacosRoute
   '/explore': typeof ExploreRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -324,6 +357,8 @@ export interface FileRoutesByFullPath {
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
+  '/api/public/home-block-data': typeof ApiPublicHomeBlockDataRoute
+  '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
@@ -363,7 +398,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/contestacao-de-espacos': typeof ContestacaoDeEspacosRoute
   '/explore': typeof ExploreRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -371,6 +409,8 @@ export interface FileRoutesByTo {
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
+  '/api/public/home-block-data': typeof ApiPublicHomeBlockDataRoute
+  '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
@@ -412,7 +452,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
+  '/contestacao-de-espacos': typeof ContestacaoDeEspacosRoute
   '/explore': typeof ExploreRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -420,6 +463,8 @@ export interface FileRoutesById {
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
+  '/api/public/home-block-data': typeof ApiPublicHomeBlockDataRoute
+  '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
@@ -462,7 +507,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/blog'
+    | '/contestacao-de-espacos'
     | '/explore'
+    | '/politica-de-privacidade'
+    | '/termos-e-condicoes'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -470,6 +518,8 @@ export interface FileRouteTypes {
     | '/me/applications'
     | '/api/public/category-labels'
     | '/api/public/explore-filters'
+    | '/api/public/home-block-data'
+    | '/api/public/home-config'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
@@ -509,7 +559,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/contestacao-de-espacos'
     | '/explore'
+    | '/politica-de-privacidade'
+    | '/termos-e-condicoes'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -517,6 +570,8 @@ export interface FileRouteTypes {
     | '/me/applications'
     | '/api/public/category-labels'
     | '/api/public/explore-filters'
+    | '/api/public/home-block-data'
+    | '/api/public/home-config'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
@@ -557,7 +612,10 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/blog'
+    | '/contestacao-de-espacos'
     | '/explore'
+    | '/politica-de-privacidade'
+    | '/termos-e-condicoes'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -565,6 +623,8 @@ export interface FileRouteTypes {
     | '/_authenticated/me/applications'
     | '/api/public/category-labels'
     | '/api/public/explore-filters'
+    | '/api/public/home-block-data'
+    | '/api/public/home-config'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
@@ -607,11 +667,16 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
   BlogRoute: typeof BlogRouteWithChildren
+  ContestacaoDeEspacosRoute: typeof ContestacaoDeEspacosRoute
   ExploreRoute: typeof ExploreRoute
+  PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
+  TermosECondicoesRoute: typeof TermosECondicoesRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicCategoryLabelsRoute: typeof ApiPublicCategoryLabelsRoute
   ApiPublicExploreFiltersRoute: typeof ApiPublicExploreFiltersRoute
+  ApiPublicHomeBlockDataRoute: typeof ApiPublicHomeBlockDataRoute
+  ApiPublicHomeConfigRoute: typeof ApiPublicHomeConfigRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
   ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
   ApiPublicOrganizationsRoute: typeof ApiPublicOrganizationsRouteWithChildren
@@ -635,11 +700,32 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/termos-e-condicoes': {
+      id: '/termos-e-condicoes'
+      path: '/termos-e-condicoes'
+      fullPath: '/termos-e-condicoes'
+      preLoaderRoute: typeof TermosECondicoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-privacidade': {
+      id: '/politica-de-privacidade'
+      path: '/politica-de-privacidade'
+      fullPath: '/politica-de-privacidade'
+      preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/explore': {
       id: '/explore'
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contestacao-de-espacos': {
+      id: '/contestacao-de-espacos'
+      path: '/contestacao-de-espacos'
+      fullPath: '/contestacao-de-espacos'
+      preLoaderRoute: typeof ContestacaoDeEspacosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog': {
@@ -773,6 +859,20 @@ declare module '@tanstack/react-router' {
       path: '/api/public/instance-settings'
       fullPath: '/api/public/instance-settings'
       preLoaderRoute: typeof ApiPublicInstanceSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/home-config': {
+      id: '/api/public/home-config'
+      path: '/api/public/home-config'
+      fullPath: '/api/public/home-config'
+      preLoaderRoute: typeof ApiPublicHomeConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/home-block-data': {
+      id: '/api/public/home-block-data'
+      path: '/api/public/home-block-data'
+      fullPath: '/api/public/home-block-data'
+      preLoaderRoute: typeof ApiPublicHomeBlockDataRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/explore-filters': {
@@ -1074,11 +1174,16 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
   BlogRoute: BlogRouteWithChildren,
+  ContestacaoDeEspacosRoute: ContestacaoDeEspacosRoute,
   ExploreRoute: ExploreRoute,
+  PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
+  TermosECondicoesRoute: TermosECondicoesRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicCategoryLabelsRoute: ApiPublicCategoryLabelsRoute,
   ApiPublicExploreFiltersRoute: ApiPublicExploreFiltersRoute,
+  ApiPublicHomeBlockDataRoute: ApiPublicHomeBlockDataRoute,
+  ApiPublicHomeConfigRoute: ApiPublicHomeConfigRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
   ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,
   ApiPublicOrganizationsRoute: ApiPublicOrganizationsRouteWithChildren,
@@ -1104,13 +1209,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

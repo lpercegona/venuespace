@@ -64,6 +64,10 @@ async function canManageOrg(supabase: any, userId: string, orgId: string) {
   return isSuperAdmin(supabase, userId);
 }
 
+function sortByNamePtBr<T extends { name?: string }>(list: T[]): T[] {
+  return [...list].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "pt-BR", { sensitivity: "base" }));
+}
+
 export const listMyOrganizations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -71,19 +75,20 @@ export const listMyOrganizations = createServerFn({ method: "GET" })
       .from("memberships")
       .select(`role, organization:organizations(${ORG_LIST_COLUMNS})`)
       .eq("user_id", context.userId)
-      .order("created_at", { referencedTable: "organizations", ascending: false });
+      .order("name", { referencedTable: "organizations", ascending: true, nullsFirst: false });
     if (error) throw new Error(error.message);
-    const mine = (data ?? []).map((m) => ({ role: m.role, ...(m.organization as any) }));
+    const mine = sortByNamePtBr((data ?? []).map((m) => ({ role: m.role, ...(m.organization as any) })));
 
     if (!(await isSuperAdmin(context.supabase, context.userId))) return mine;
 
     const { data: all, error: aErr } = await context.supabase
       .from("organizations")
       .select(ORG_LIST_COLUMNS)
-      .order("created_at", { ascending: false });
+      .order("name", { ascending: true, nullsFirst: false });
     if (aErr) throw new Error(aErr.message);
     const byId = new Map(mine.map((o: any) => [o.id, o]));
-    return (all ?? []).map((o: any) => byId.get(o.id) ?? { ...o, role: "super_admin", is_super_admin_access: true });
+    const merged = (all ?? []).map((o: any) => byId.get(o.id) ?? { ...o, role: "super_admin", is_super_admin_access: true });
+    return sortByNamePtBr(merged);
   });
 
 

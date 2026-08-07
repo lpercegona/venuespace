@@ -1,6 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, CircleUserRound } from "lucide-react";
+import { ArrowLeft, CircleUserRound, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
 
 type Props = {
@@ -17,34 +23,51 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
     <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center gap-2">
-          <span className="truncate font-display text-base font-semibold tracking-tight text-foreground sm:text-lg">
-            <img src="/Venuespace logo1.svg" alt="Venuespace Logo" className="h-5 w-auto" />
-          </span>
+          <img src="/Venuespace logo1.svg" alt="Venuespace Logo" className="h-5 w-auto" />
         </Link>
-        <nav className="flex min-w-0 shrink items-center gap-1 overflow-x-auto sm:gap-2">
-          {list.map((c) => {
-            const s = categorySlug(c);
-            const active = activeCategorySlug === s;
-            return (
-              <Link key={c.id} to="/categoria/$slug" params={{ slug: s }}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={active ? "text-foreground underline underline-offset-4" : "text-muted-foreground"}
-                >
-                  {c.name}
-                </Button>
-              </Link>
-            );
-          })}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
+              <Compass className="h-4 w-4" />
+              <span className="hidden sm:inline">Explore</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center">
+            {list.map((c) => {
+              const s = categorySlug(c);
+              return (
+                <DropdownMenuItem key={c.id} asChild>
+                  <Link
+                    to="/categoria/$slug"
+                    params={{ slug: s }}
+                    className={activeCategorySlug === s ? "text-foreground" : ""}
+                  >
+                    {c.name}
+                  </Link>
+                </DropdownMenuItem>
+              );
+            })}
+            {list.length === 0 ? (
+              <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="flex items-center gap-2">
+          <Link to="/auth">
+            <Button size="sm" className="rounded-full px-4">
+              Cadastrar empresa
+            </Button>
+          </Link>
           {showAuthActions ? (
             <Link to="/auth" aria-label="Entrar">
-              <Button variant="ghost" size="icon" aria-label="Entrar">
-                <CircleUserRound className="h-4 w-4" />
+              <Button variant="ghost" size="icon" aria-label="Entrar" className="h-9 w-9">
+                <CircleUserRound className="h-5 w-5" />
               </Button>
             </Link>
           ) : null}
-        </nav>
+        </div>
       </div>
     </header>
   );

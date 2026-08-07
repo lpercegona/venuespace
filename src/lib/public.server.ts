@@ -306,7 +306,44 @@ async function loadOrgCategoryFieldsBatch(categoryIds: string[]): Promise<Map<st
 }
 
 
-export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string; filters?: Record<string, string> } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
+
+export type PublicFilterRule = {
+  field_key: string;
+  operator: "=" | "!=" | ">" | ">=" | "<" | "<=" | "contains" | "filled";
+  value?: string;
+};
+
+/** Applies a list of ad-hoc filter rules (Iteração 30 — home blocks) to a value resolver. */
+function applyRules<T>(items: T[], rules: PublicFilterRule[] | undefined, resolve: (item: T, key: string) => unknown): T[] {
+  if (!rules || rules.length === 0) return items;
+  return items.filter((item) =>
+    rules.every((rule) => {
+      const raw = resolve(item, rule.field_key);
+      if (rule.operator === "filled") {
+        if (raw == null) return false;
+        if (typeof raw === "string") return raw.trim() !== "";
+        if (Array.isArray(raw)) return raw.length > 0;
+        return true;
+      }
+      if (rule.operator === "contains") {
+        if (typeof raw !== "string") return false;
+        return raw.toLowerCase().includes(String(rule.value ?? "").toLowerCase());
+      }
+      if (rule.operator === "=" ) return String(raw ?? "") === String(rule.value ?? "");
+      if (rule.operator === "!=") return String(raw ?? "") !== String(rule.value ?? "");
+      const a = Number(raw);
+      const b = Number(rule.value);
+      if (Number.isNaN(a) || Number.isNaN(b)) return false;
+      if (rule.operator === ">") return a > b;
+      if (rule.operator === ">=") return a >= b;
+      if (rule.operator === "<") return a < b;
+      if (rule.operator === "<=") return a <= b;
+      return true;
+    })
+  );
+}
+
+export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string; filters?: Record<string, string>; rules?: PublicFilterRule[] } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
   const sb = supabaseAdmin;
   const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
   const offset = Math.max(opts.offset ?? 0, 0);
@@ -353,6 +390,8 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
       return false;
     });
   }
+
+  base = applyRules(base, opts.rules, resolveOrgVal);
 
   if (q) base = base.filter((i) => {
     if (i.name.toLowerCase().includes(q)) return true;
@@ -521,7 +560,7 @@ export type PublicRecordSummary = {
   layout: PublicLayoutField[];
 };
 
-export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string; slug?: string; filters?: Record<string, string> } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
+export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string; slug?: string; filters?: Record<string, string>; rules?: PublicFilterRule[] } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
   const sb = supabaseAdmin;
   const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
   const offset = Math.max(opts.offset ?? 0, 0);
@@ -564,6 +603,8 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
       return false;
     });
   }
+
+  base = applyRules(base, opts.rules, (r, key) => (r.data ?? {})[key]);
 
   const { loadFilterKeys } = await import("@/lib/explore-filters.server");
   const { searchKeys } = await loadFilterKeys("record", categoryId);
