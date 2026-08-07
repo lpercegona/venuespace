@@ -17,8 +17,6 @@ Cinco rotas públicas novas, com cabeçalho e rodapé padrão, `<h1>` único, me
 
 - `/termos-e-condicoes` — Termos e Condições
 - `/politica-de-privacidade` — Política de Privacidade
-- `/termos-de-servico` — Termos de Serviço
-- `/acessibilidade` — Declaração de Acessibilidade
 - `/contestacao-de-espacos` — Contestação dos Espaços
 
 O `PublicFooter` passa a listar esses cinco links + Blog, agrupados em colunas responsivas (coluna única em mobile).
