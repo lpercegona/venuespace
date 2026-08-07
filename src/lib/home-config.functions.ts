@@ -194,6 +194,8 @@ export const saveHomeGrouping = createServerFn({ method: "POST" })
       groupingId = (row as any).id;
     }
 
+    if (!groupingId) throw new Error("Failed to save grouping");
+
     const { error: delErr } = await context.supabase.from("home_grouping_categories").delete().eq("grouping_id", groupingId);
     if (delErr) throw new Error(delErr.message);
     if (data.category_ids.length > 0) {
