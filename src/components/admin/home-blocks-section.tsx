@@ -245,7 +245,7 @@ export function HomeBlocksSection() {
                   <TableCell>{b.is_active ? "Sim" : "Não"}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button size="sm" variant="outline" onClick={() => openEdit(b)}><PencilIcon /></Button>
+                      <Button size="sm" variant="outline" onClick={() => openEdit(b)} aria-label="Editar"><Pencil className="h-4 w-4" /></Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button size="sm" variant="outline" aria-label="Excluir"><Trash2 className="h-4 w-4" /></Button>
