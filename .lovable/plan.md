@@ -9,7 +9,7 @@ Escopo fechado. Referências: Iteração 25 (acesso do super admin às organiza�
 
 ## 2. Seletor de organização no header administrativo
 
-- No `AppShell`, quando nenhuma organização estiver selecionada, o gatilho passa a exibir apenas o ícone (sem o texto "Selecionar organização"), com `aria-label` descritivo e alvo de toque adequado. Com organização selecionada, o nome continua visível.
+- No `AppShell`, quando nenhuma organização estiver selecionada, o gatilho passa a exibir apenas o ícone (sem o texto "Selecionar organização"), com `aria-label` descritivo e alvo de toque adequado. Com organização selecionada, o nome continua visível em largura fixa, truncando com reticências (…) quando exceder.
 
 ## 3. Novas páginas públicas + links no rodapé
 
