@@ -343,7 +343,7 @@ function applyRules<T>(items: T[], rules: PublicFilterRule[] | undefined, resolv
   );
 }
 
-export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string; filters?: Record<string, string> } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
+export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string; filters?: Record<string, string>; rules?: PublicFilterRule[] } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
   const sb = supabaseAdmin;
   const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
   const offset = Math.max(opts.offset ?? 0, 0);
@@ -390,6 +390,8 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
       return false;
     });
   }
+
+  base = applyRules(base, opts.rules, resolveOrgVal);
 
   if (q) base = base.filter((i) => {
     if (i.name.toLowerCase().includes(q)) return true;
@@ -558,7 +560,7 @@ export type PublicRecordSummary = {
   layout: PublicLayoutField[];
 };
 
-export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string; slug?: string; filters?: Record<string, string> } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
+export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string; slug?: string; filters?: Record<string, string>; rules?: PublicFilterRule[] } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
   const sb = supabaseAdmin;
   const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
   const offset = Math.max(opts.offset ?? 0, 0);
@@ -601,6 +603,8 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
       return false;
     });
   }
+
+  base = applyRules(base, opts.rules, (r, key) => (r.data ?? {})[key]);
 
   const { loadFilterKeys } = await import("@/lib/explore-filters.server");
   const { searchKeys } = await loadFilterKeys("record", categoryId);
