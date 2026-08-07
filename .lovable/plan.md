@@ -13,15 +13,13 @@ Escopo fechado. Referências: Iteração 25 (acesso do super admin às organiza�
 
 ## 3. Novas páginas públicas + links no rodapé
 
-Cinco rotas públicas novas, com cabeçalho e rodapé padrão, `<h1>` único, meta tags próprias e conteúdo placeholder curto (título + parágrafo indicativo para preenchimento posterior):
+Três rotas públicas novas, com cabeçalho e rodapé padrão, `<h1>` único, meta tags próprias e conteúdo placeholder curto (título + parágrafo indicativo para preenchimento posterior):
 
 - `/termos-e-condicoes` — Termos e Condições
 - `/politica-de-privacidade` — Política de Privacidade
-- `/termos-de-servico` — Termos de Serviço
-- `/acessibilidade` — Declaração de Acessibilidade
 - `/contestacao-de-espacos` — Contestação dos Espaços
 
-O `PublicFooter` passa a listar esses cinco links + Blog, agrupados em colunas responsivas (coluna única em mobile).
+O `PublicFooter` passa a listar esses três links + Blog, agrupados em colunas responsivas (coluna única em mobile).
 
 ## 4. Blocos dinâmicos da home (Super Admin)
 
