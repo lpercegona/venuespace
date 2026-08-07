@@ -613,6 +613,125 @@ export type Database = {
           },
         ]
       }
+      home_blocks: {
+        Row: {
+          created_at: string
+          grouping_id: string
+          id: string
+          is_active: boolean
+          limit_count: number
+          order_by: string | null
+          order_index: number
+          rules: Json
+          source: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          grouping_id: string
+          id?: string
+          is_active?: boolean
+          limit_count?: number
+          order_by?: string | null
+          order_index?: number
+          rules?: Json
+          source: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          grouping_id?: string
+          id?: string
+          is_active?: boolean
+          limit_count?: number
+          order_by?: string | null
+          order_index?: number
+          rules?: Json
+          source?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_blocks_grouping_id_fkey"
+            columns: ["grouping_id"]
+            isOneToOne: false
+            referencedRelation: "home_groupings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_grouping_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          grouping_id: string
+          id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          grouping_id: string
+          id?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          grouping_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_grouping_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_grouping_categories_grouping_id_fkey"
+            columns: ["grouping_id"]
+            isOneToOne: false
+            referencedRelation: "home_groupings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_groupings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          label: string
+          order_index: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          order_index?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          order_index?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       instance_settings: {
         Row: {
           allow_user_field_management: boolean
