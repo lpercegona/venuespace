@@ -9,7 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermosECondicoesRouteImport } from './routes/termos-e-condicoes'
+import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as ContestacaoDeEspacosRouteImport } from './routes/contestacao-de-espacos'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -57,9 +60,24 @@ import { Route as AuthenticatedAppOrgSlugConversationsConversationIdRouteImport 
 import { Route as AuthenticatedAppOrgSlugTablesTableIdIndexRouteImport } from './routes/_authenticated.app.$orgSlug.tables.$tableId.index'
 import { Route as AuthenticatedAppOrgSlugTablesTableIdSchemaRouteImport } from './routes/_authenticated.app.$orgSlug.tables.$tableId.schema'
 
+const TermosECondicoesRoute = TermosECondicoesRouteImport.update({
+  id: '/termos-e-condicoes',
+  path: '/termos-e-condicoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
+  id: '/politica-de-privacidade',
+  path: '/politica-de-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContestacaoDeEspacosRoute = ContestacaoDeEspacosRouteImport.update({
+  id: '/contestacao-de-espacos',
+  path: '/contestacao-de-espacos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogRoute = BlogRouteImport.update({
@@ -316,7 +334,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
+  '/contestacao-de-espacos': typeof ContestacaoDeEspacosRoute
   '/explore': typeof ExploreRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -363,7 +384,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/contestacao-de-espacos': typeof ContestacaoDeEspacosRoute
   '/explore': typeof ExploreRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -412,7 +436,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
+  '/contestacao-de-espacos': typeof ContestacaoDeEspacosRoute
   '/explore': typeof ExploreRoute
+  '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -462,7 +489,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/blog'
+    | '/contestacao-de-espacos'
     | '/explore'
+    | '/politica-de-privacidade'
+    | '/termos-e-condicoes'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -509,7 +539,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/contestacao-de-espacos'
     | '/explore'
+    | '/politica-de-privacidade'
+    | '/termos-e-condicoes'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -557,7 +590,10 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/blog'
+    | '/contestacao-de-espacos'
     | '/explore'
+    | '/politica-de-privacidade'
+    | '/termos-e-condicoes'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -607,7 +643,10 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
   BlogRoute: typeof BlogRouteWithChildren
+  ContestacaoDeEspacosRoute: typeof ContestacaoDeEspacosRoute
   ExploreRoute: typeof ExploreRoute
+  PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
+  TermosECondicoesRoute: typeof TermosECondicoesRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicCategoryLabelsRoute: typeof ApiPublicCategoryLabelsRoute
@@ -635,11 +674,32 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/termos-e-condicoes': {
+      id: '/termos-e-condicoes'
+      path: '/termos-e-condicoes'
+      fullPath: '/termos-e-condicoes'
+      preLoaderRoute: typeof TermosECondicoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-privacidade': {
+      id: '/politica-de-privacidade'
+      path: '/politica-de-privacidade'
+      fullPath: '/politica-de-privacidade'
+      preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/explore': {
       id: '/explore'
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contestacao-de-espacos': {
+      id: '/contestacao-de-espacos'
+      path: '/contestacao-de-espacos'
+      fullPath: '/contestacao-de-espacos'
+      preLoaderRoute: typeof ContestacaoDeEspacosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog': {
@@ -1074,7 +1134,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
   BlogRoute: BlogRouteWithChildren,
+  ContestacaoDeEspacosRoute: ContestacaoDeEspacosRoute,
   ExploreRoute: ExploreRoute,
+  PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
+  TermosECondicoesRoute: TermosECondicoesRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicCategoryLabelsRoute: ApiPublicCategoryLabelsRoute,
@@ -1104,13 +1167,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

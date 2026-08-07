@@ -154,6 +154,7 @@ export function PublicCardBody({
     urls?: string[];
     values?: string[];
     iconMap?: Record<string, string>;
+    labelMap?: Record<string, string>;
     text?: string;
   };
 
@@ -190,9 +191,10 @@ export function PublicCardBody({
     }
     // Multiselect com ícones definidos nas opções → apenas ícones com tooltip.
     const optionIcons = (f?.config?.option_icons ?? {}) as Record<string, string>;
-    const listValues = valuesOf(raw);
+    const optionLabelMap = optionLabelMapFor(f);
+    const listValues = sortValuesByLabel(valuesOf(raw), optionLabelMap);
     if (listValues.length > 0 && listValues.some((v) => optionIcons[v])) {
-      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, style, kind: "icons", values: listValues, iconMap: optionIcons });
+      cells.push({ id: it.id, width_percent: width, span, label, iconName, imgAspect, bleed: false, style, kind: "icons", values: listValues, iconMap: optionIcons, labelMap: optionLabelMap });
       continue;
     }
     const text = withPrefix(it, formatValue(f, raw));
@@ -321,7 +323,7 @@ export function PublicCardBody({
                       <span className="truncate">{c.label}</span>
                     </div>
                     <div className="mt-1">
-                      <OptionIconList values={c.values ?? []} iconMap={c.iconMap ?? {}} />
+                      <OptionIconList values={c.values ?? []} iconMap={c.iconMap ?? {}} labelMap={c.labelMap ?? {}} />
                     </div>
                   </div>
                 );
@@ -352,19 +354,22 @@ export function PublicCardBody({
 export function OptionIconList({
   values,
   iconMap,
+  labelMap,
   className,
   iconClassName = "h-4 w-4",
 }: {
   values: string[];
   iconMap: Record<string, string>;
+  labelMap?: Record<string, string>;
   className?: string;
   iconClassName?: string;
 }) {
   if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
   return (
     <TooltipProvider>
       <div className={className ?? "flex flex-wrap items-center gap-2"}>
-        {values.map((v) => (
+        {sorted.map((v) => (
           <Tooltip key={v}>
             <TooltipTrigger asChild>
               <span
@@ -377,7 +382,7 @@ export function OptionIconList({
               </span>
             </TooltipTrigger>
 
-            <TooltipContent side="top"><p>{v}</p></TooltipContent>
+            <TooltipContent side="top"><p>{labelMap?.[v] ?? v}</p></TooltipContent>
           </Tooltip>
         ))}
       </div>
@@ -401,6 +406,21 @@ function valuesOf(raw: any): string[] {
   if (Array.isArray(raw)) return raw.filter((v) => typeof v === "string" && v).map(String);
   if (typeof raw === "string" && raw) return [raw];
   return [];
+}
+
+/** Mapa value → label a partir de field.config.options (Iteração 30). */
+function optionLabelMapFor(f: RendererField | undefined): Record<string, string> {
+  const options = (f?.config?.options ?? []) as Array<{ value?: string; label?: string }>;
+  const map: Record<string, string> = {};
+  for (const o of options) {
+    if (o && typeof o.value === "string") map[o.value] = typeof o.label === "string" && o.label ? o.label : o.value;
+  }
+  return map;
+}
+
+/** Ordena valores alfabeticamente pelo label exibido (fallback: o próprio valor). */
+function sortValuesByLabel(values: string[], labelMap: Record<string, string>): string[] {
+  return [...values].sort((a, b) => (labelMap[a] ?? a).localeCompare(labelMap[b] ?? b, "pt-BR", { sensitivity: "base" }));
 }
 
 /**
