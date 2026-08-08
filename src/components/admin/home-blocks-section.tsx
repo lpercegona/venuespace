@@ -229,12 +229,34 @@ export function HomeBlocksSection() {
                   <Input id="b-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="b-type">Tipo de bloco</Label>
+                  <Select value={blockType} onValueChange={(v) => setBlockType(v as any)}>
+                    <SelectTrigger id="b-type"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cards">Cards dinâmicos</SelectItem>
+                      <SelectItem value="links">Cards de atalho (título + imagem)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="b-source">Fonte</Label>
-                  <Select value={source} onValueChange={(v) => setSource(v as any)}>
+                  <Select value={source} onValueChange={(v) => setSource(v as any)} disabled={blockType === "links"}>
                     <SelectTrigger id="b-source"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="organizations">Organizações</SelectItem>
                       <SelectItem value="records">Registros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="b-columns">Colunas (desktop)</Label>
+                  <Select value={String(columns)} onValueChange={(v) => setColumns(Number(v) as 3 | 4)}>
+                    <SelectTrigger id="b-columns"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 colunas</SelectItem>
+                      <SelectItem value="4">4 colunas</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -258,34 +280,69 @@ export function HomeBlocksSection() {
                 <Label htmlFor="b-active">Ativo</Label>
               </div>
 
-              <div className="space-y-3 rounded-lg border border-border p-4">
-                <div className="flex items-center justify-between">
-                  <Label>Filtros (rules)</Label>
-                  <Button type="button" variant="outline" size="sm" onClick={addRule}>Adicionar</Button>
-                </div>
-                {rules.map((r, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2">
-                    <div className="col-span-4">
-                      <Input value={r.field_key} onChange={(e) => updateRule(i, { field_key: e.target.value })} placeholder="field_key" />
-                    </div>
-                    <div className="col-span-3">
-                      <Select value={r.operator} onValueChange={(v) => updateRule(i, { operator: v as any })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {operators.map((op) => <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-4">
-                      <Input value={r.value ?? ""} onChange={(e) => updateRule(i, { value: e.target.value })} placeholder="valor" disabled={r.operator === "filled"} />
-                    </div>
-                    <div className="col-span-1 flex items-center justify-end">
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removeRule(i)} aria-label="Remover"><Trash2 className="h-4 w-4" /></Button>
+              {blockType === "cards" ? (
+                <div className="space-y-3 rounded-lg border border-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Label>Filtros (rules)</Label>
+                    <div className="flex items-center gap-1">
+                      <FieldKeysHelper source={source} />
+                      <Button type="button" variant="outline" size="sm" onClick={addRule}>Adicionar</Button>
                     </div>
                   </div>
-                ))}
-                {rules.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum filtro — exibe os itens mais recentes.</p> : null}
-              </div>
+                  {rules.map((r, i) => (
+                    <div key={i} className="grid grid-cols-12 gap-2">
+                      <div className="col-span-4">
+                        <Input value={r.field_key} onChange={(e) => updateRule(i, { field_key: e.target.value })} placeholder="field_key" />
+                      </div>
+                      <div className="col-span-3">
+                        <Select value={r.operator} onValueChange={(v) => updateRule(i, { operator: v as any })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {operators.map((op) => <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-4">
+                        <Input value={r.value ?? ""} onChange={(e) => updateRule(i, { value: e.target.value })} placeholder="valor" disabled={r.operator === "filled"} />
+                      </div>
+                      <div className="col-span-1 flex items-center justify-end">
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeRule(i)} aria-label="Remover"><Trash2 className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  ))}
+                  {rules.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum filtro — exibe os itens mais recentes.</p> : null}
+                </div>
+              ) : (
+                <div className="space-y-3 rounded-lg border border-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <Label>Cards de atalho</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Título + imagem de fundo. Cada card abre a busca já filtrada pelo campo e valor definidos.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <FieldKeysHelper source="organizations" />
+                      <Button type="button" variant="outline" size="sm" onClick={addItem}>Adicionar</Button>
+                    </div>
+                  </div>
+                  {items.map((it, i) => (
+                    <div key={i} className="space-y-2 rounded-md border border-border p-3">
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        <Input value={it.title} onChange={(e) => updateItem(i, { title: e.target.value })} placeholder="Título (ex.: Curitiba)" />
+                        <Input value={it.field_key ?? ""} onChange={(e) => updateItem(i, { field_key: e.target.value })} placeholder="field_key (ex.: address.city)" />
+                        <Input value={it.value ?? ""} onChange={(e) => updateItem(i, { value: e.target.value })} placeholder="valor (ex.: Curitiba)" />
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <UploadField value={it.image_path ?? ""} kind="image" onChange={(v) => updateItem(i, { image_path: v })} />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(i)} aria-label="Remover card"><Trash2 className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  ))}
+                  {items.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum card de atalho adicionado.</p> : null}
+                </div>
+              )}
+
 
               <DialogFooter>
                 <Button type="submit" disabled={saving}>
