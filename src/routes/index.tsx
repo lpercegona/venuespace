@@ -1,20 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight } from "lucide-react";
 import { PublicHeader } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
-import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
-import { useCategoryLayout } from "@/hooks/use-public-catalog";
 
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import type { HomeGroupingDTO, HomeBlockDTO } from "@/lib/home-config.functions";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
