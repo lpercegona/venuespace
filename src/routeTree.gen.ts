@@ -32,8 +32,10 @@ import { Route as ApiPublicPlatformLabelsRouteImport } from './routes/api/public
 import { Route as ApiPublicOrganizationsRouteImport } from './routes/api/public/organizations'
 import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/api/public/organization-categories'
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
+import { Route as ApiPublicHomeGroupingDataRouteImport } from './routes/api/public/home-grouping-data'
 import { Route as ApiPublicHomeConfigRouteImport } from './routes/api/public/home-config'
 import { Route as ApiPublicHomeBlockDataRouteImport } from './routes/api/public/home-block-data'
+import { Route as ApiPublicFieldKeysRouteImport } from './routes/api/public/field-keys'
 import { Route as ApiPublicExploreFiltersRouteImport } from './routes/api/public/explore-filters'
 import { Route as ApiPublicCategoryLabelsRouteImport } from './routes/api/public/category-labels'
 import { Route as AuthenticatedMeApplicationsRouteImport } from './routes/_authenticated.me.applications'
@@ -178,6 +180,12 @@ const ApiPublicInstanceSettingsRoute =
     path: '/api/public/instance-settings',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHomeGroupingDataRoute =
+  ApiPublicHomeGroupingDataRouteImport.update({
+    id: '/api/public/home-grouping-data',
+    path: '/api/public/home-grouping-data',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHomeConfigRoute = ApiPublicHomeConfigRouteImport.update({
   id: '/api/public/home-config',
   path: '/api/public/home-config',
@@ -186,6 +194,11 @@ const ApiPublicHomeConfigRoute = ApiPublicHomeConfigRouteImport.update({
 const ApiPublicHomeBlockDataRoute = ApiPublicHomeBlockDataRouteImport.update({
   id: '/api/public/home-block-data',
   path: '/api/public/home-block-data',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFieldKeysRoute = ApiPublicFieldKeysRouteImport.update({
+  id: '/api/public/field-keys',
+  path: '/api/public/field-keys',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicExploreFiltersRoute = ApiPublicExploreFiltersRouteImport.update({
@@ -357,8 +370,10 @@ export interface FileRoutesByFullPath {
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
+  '/api/public/field-keys': typeof ApiPublicFieldKeysRoute
   '/api/public/home-block-data': typeof ApiPublicHomeBlockDataRoute
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
+  '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
@@ -409,8 +424,10 @@ export interface FileRoutesByTo {
   '/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
+  '/api/public/field-keys': typeof ApiPublicFieldKeysRoute
   '/api/public/home-block-data': typeof ApiPublicHomeBlockDataRoute
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
+  '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
@@ -463,8 +480,10 @@ export interface FileRoutesById {
   '/_authenticated/me/applications': typeof AuthenticatedMeApplicationsRoute
   '/api/public/category-labels': typeof ApiPublicCategoryLabelsRoute
   '/api/public/explore-filters': typeof ApiPublicExploreFiltersRoute
+  '/api/public/field-keys': typeof ApiPublicFieldKeysRoute
   '/api/public/home-block-data': typeof ApiPublicHomeBlockDataRoute
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
+  '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
@@ -518,8 +537,10 @@ export interface FileRouteTypes {
     | '/me/applications'
     | '/api/public/category-labels'
     | '/api/public/explore-filters'
+    | '/api/public/field-keys'
     | '/api/public/home-block-data'
     | '/api/public/home-config'
+    | '/api/public/home-grouping-data'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
@@ -570,8 +591,10 @@ export interface FileRouteTypes {
     | '/me/applications'
     | '/api/public/category-labels'
     | '/api/public/explore-filters'
+    | '/api/public/field-keys'
     | '/api/public/home-block-data'
     | '/api/public/home-config'
+    | '/api/public/home-grouping-data'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
@@ -623,8 +646,10 @@ export interface FileRouteTypes {
     | '/_authenticated/me/applications'
     | '/api/public/category-labels'
     | '/api/public/explore-filters'
+    | '/api/public/field-keys'
     | '/api/public/home-block-data'
     | '/api/public/home-config'
+    | '/api/public/home-grouping-data'
     | '/api/public/instance-settings'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
@@ -675,8 +700,10 @@ export interface RootRouteChildren {
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicCategoryLabelsRoute: typeof ApiPublicCategoryLabelsRoute
   ApiPublicExploreFiltersRoute: typeof ApiPublicExploreFiltersRoute
+  ApiPublicFieldKeysRoute: typeof ApiPublicFieldKeysRoute
   ApiPublicHomeBlockDataRoute: typeof ApiPublicHomeBlockDataRoute
   ApiPublicHomeConfigRoute: typeof ApiPublicHomeConfigRoute
+  ApiPublicHomeGroupingDataRoute: typeof ApiPublicHomeGroupingDataRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
   ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
   ApiPublicOrganizationsRoute: typeof ApiPublicOrganizationsRouteWithChildren
@@ -861,6 +888,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicInstanceSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/home-grouping-data': {
+      id: '/api/public/home-grouping-data'
+      path: '/api/public/home-grouping-data'
+      fullPath: '/api/public/home-grouping-data'
+      preLoaderRoute: typeof ApiPublicHomeGroupingDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/home-config': {
       id: '/api/public/home-config'
       path: '/api/public/home-config'
@@ -873,6 +907,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/home-block-data'
       fullPath: '/api/public/home-block-data'
       preLoaderRoute: typeof ApiPublicHomeBlockDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/field-keys': {
+      id: '/api/public/field-keys'
+      path: '/api/public/field-keys'
+      fullPath: '/api/public/field-keys'
+      preLoaderRoute: typeof ApiPublicFieldKeysRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/explore-filters': {
@@ -1182,8 +1223,10 @@ const rootRouteChildren: RootRouteChildren = {
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicCategoryLabelsRoute: ApiPublicCategoryLabelsRoute,
   ApiPublicExploreFiltersRoute: ApiPublicExploreFiltersRoute,
+  ApiPublicFieldKeysRoute: ApiPublicFieldKeysRoute,
   ApiPublicHomeBlockDataRoute: ApiPublicHomeBlockDataRoute,
   ApiPublicHomeConfigRoute: ApiPublicHomeConfigRoute,
+  ApiPublicHomeGroupingDataRoute: ApiPublicHomeGroupingDataRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
   ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,
   ApiPublicOrganizationsRoute: ApiPublicOrganizationsRouteWithChildren,
@@ -1209,13 +1252,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
