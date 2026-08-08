@@ -102,6 +102,9 @@ export function HomeBlocksSection() {
   const [orderIndex, setOrderIndex] = useState(0);
   const [isActive, setIsActive] = useState(true);
   const [rules, setRules] = useState<HomeBlockDTO["rules"]>([]);
+  const [blockType, setBlockType] = useState<"cards" | "links">("cards");
+  const [columns, setColumns] = useState<3 | 4>(3);
+  const [items, setItems] = useState<HomeBlockLink[]>([]);
   const [saving, setSaving] = useState(false);
 
   function reset(dto?: HomeBlockDTO) {
@@ -114,6 +117,9 @@ export function HomeBlocksSection() {
     setOrderIndex(dto?.order_index ?? 0);
     setIsActive(dto?.is_active ?? true);
     setRules(dto?.rules ?? []);
+    setBlockType(dto?.block_type ?? "cards");
+    setColumns(dto?.columns ?? 3);
+    setItems(dto?.items ?? []);
   }
 
   function openNew() {
@@ -136,11 +142,14 @@ export function HomeBlocksSection() {
           grouping_id: groupingId,
           title,
           source,
-          rules,
+          rules: blockType === "links" ? [] : rules,
           order_by: orderBy || undefined,
           limit_count: limitCount,
           order_index: orderIndex,
           is_active: isActive,
+          block_type: blockType,
+          columns,
+          items: blockType === "links" ? items.filter((i) => i.title.trim() !== "") : [],
         },
       });
       toast.success(editing ? "Bloco atualizado" : "Bloco criado");
@@ -174,6 +183,19 @@ export function HomeBlocksSection() {
   function removeRule(index: number) {
     setRules((prev) => prev.filter((_, i) => i !== index));
   }
+
+  function updateItem(index: number, patch: Partial<HomeBlockLink>) {
+    setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
+  }
+
+  function addItem() {
+    setItems((prev) => [...prev, { title: "", image_path: "", field_key: "address.city", value: "" }]);
+  }
+
+  function removeItem(index: number) {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
 
   const list = blocksQ.data?.blocks ?? [];
   const groupings = groupingsQ.data?.groupings ?? [];
