@@ -313,37 +313,45 @@ export type PublicFilterRule = {
   value?: string;
 };
 
+/** Normaliza qualquer valor em lista de strings comparáveis (arrays, booleanos, números). */
+function normalizeValues(raw: unknown): string[] {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) return raw.flatMap((v) => normalizeValues(v));
+  if (typeof raw === "boolean") return [raw ? "true" : "false"];
+  if (typeof raw === "object") return Object.values(raw as Record<string, unknown>).flatMap((v) => normalizeValues(v));
+  const s = String(raw).trim();
+  return s === "" ? [] : [s];
+}
+
 /** Applies a list of ad-hoc filter rules (Iteração 30 — home blocks) to a value resolver. */
 function applyRules<T>(items: T[], rules: PublicFilterRule[] | undefined, resolve: (item: T, key: string) => unknown): T[] {
   if (!rules || rules.length === 0) return items;
   return items.filter((item) =>
     rules.every((rule) => {
       const raw = resolve(item, rule.field_key);
-      if (rule.operator === "filled") {
-        if (raw == null) return false;
-        if (typeof raw === "string") return raw.trim() !== "";
-        if (Array.isArray(raw)) return raw.length > 0;
-        return true;
-      }
+      const values = normalizeValues(raw);
+      if (rule.operator === "filled") return values.length > 0;
+      const target = String(rule.value ?? "").trim().toLowerCase();
       if (rule.operator === "contains") {
-        if (typeof raw !== "string") return false;
-        return raw.toLowerCase().includes(String(rule.value ?? "").toLowerCase());
+        return values.some((v) => v.toLowerCase().includes(target));
       }
-      if (rule.operator === "=" ) return String(raw ?? "") === String(rule.value ?? "");
-      if (rule.operator === "!=") return String(raw ?? "") !== String(rule.value ?? "");
-      const a = Number(raw);
+      if (rule.operator === "=") return values.some((v) => v.toLowerCase() === target);
+      if (rule.operator === "!=") return !values.some((v) => v.toLowerCase() === target);
       const b = Number(rule.value);
-      if (Number.isNaN(a) || Number.isNaN(b)) return false;
-      if (rule.operator === ">") return a > b;
-      if (rule.operator === ">=") return a >= b;
-      if (rule.operator === "<") return a < b;
-      if (rule.operator === "<=") return a <= b;
+      if (Number.isNaN(b)) return false;
+      const nums = values.map((v) => Number(v)).filter((n) => !Number.isNaN(n));
+      if (nums.length === 0) return false;
+      if (rule.operator === ">") return nums.some((a) => a > b);
+      if (rule.operator === ">=") return nums.some((a) => a >= b);
+      if (rule.operator === "<") return nums.some((a) => a < b);
+      if (rule.operator === "<=") return nums.some((a) => a <= b);
       return true;
     })
   );
 }
 
-export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string; filters?: Record<string, string>; rules?: PublicFilterRule[] } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
+
+export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string; filters?: Record<string, string>; rules?: PublicFilterRule[]; exclude_ids?: string[] } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
   const sb = supabaseAdmin;
   const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
   const offset = Math.max(opts.offset ?? 0, 0);
@@ -392,6 +400,10 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   }
 
   base = applyRules(base, opts.rules, resolveOrgVal);
+  if (opts.exclude_ids && opts.exclude_ids.length > 0) {
+    const skip = new Set(opts.exclude_ids);
+    base = base.filter((o) => !skip.has(o.id));
+  }
 
   if (q) base = base.filter((i) => {
     if (i.name.toLowerCase().includes(q)) return true;
@@ -560,7 +572,7 @@ export type PublicRecordSummary = {
   layout: PublicLayoutField[];
 };
 
-export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string; slug?: string; filters?: Record<string, string>; rules?: PublicFilterRule[] } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
+export async function listPublicRecords(opts: { limit?: number; offset?: number; q?: string; category_id?: string; slug?: string; filters?: Record<string, string>; rules?: PublicFilterRule[]; exclude_ids?: string[] } = {}): Promise<{ items: PublicRecordSummary[]; total: number }> {
   const sb = supabaseAdmin;
   const limit = Math.min(Math.max(opts.limit ?? 12, 1), 60);
   const offset = Math.max(opts.offset ?? 0, 0);
@@ -605,6 +617,10 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   }
 
   base = applyRules(base, opts.rules, (r, key) => (r.data ?? {})[key]);
+  if (opts.exclude_ids && opts.exclude_ids.length > 0) {
+    const skip = new Set(opts.exclude_ids);
+    base = base.filter((r) => !skip.has(r.record_id));
+  }
 
   const { loadFilterKeys } = await import("@/lib/explore-filters.server");
   const { searchKeys } = await loadFilterKeys("record", categoryId);

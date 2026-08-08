@@ -615,10 +615,13 @@ export type Database = {
       }
       home_blocks: {
         Row: {
+          block_type: string
+          columns: number
           created_at: string
           grouping_id: string
           id: string
           is_active: boolean
+          items: Json
           limit_count: number
           order_by: string | null
           order_index: number
@@ -628,10 +631,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          block_type?: string
+          columns?: number
           created_at?: string
           grouping_id: string
           id?: string
           is_active?: boolean
+          items?: Json
           limit_count?: number
           order_by?: string | null
           order_index?: number
@@ -641,10 +647,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          block_type?: string
+          columns?: number
           created_at?: string
           grouping_id?: string
           id?: string
           is_active?: boolean
+          items?: Json
           limit_count?: number
           order_by?: string | null
           order_index?: number

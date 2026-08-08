@@ -13,6 +13,15 @@ export type HomeBlockRule = {
   value?: string;
 };
 
+export type HomeBlockLink = {
+  title: string;
+  image_path?: string | null;
+  image_url?: string | null;
+  field_key?: string | null;
+  value?: string | null;
+  category_id?: string | null;
+};
+
 export type HomeBlockDTO = {
   id: string;
   grouping_id: string;
@@ -23,6 +32,9 @@ export type HomeBlockDTO = {
   limit_count: number;
   order_index: number;
   is_active: boolean;
+  block_type: "cards" | "links";
+  columns: 3 | 4;
+  items: HomeBlockLink[];
 };
 
 export type HomeGroupingDTO = {
@@ -56,7 +68,7 @@ export const listHomeGroupingsPublic = createServerFn({ method: "GET" }).handler
     groupingIds.length
       ? sb
           .from("home_blocks")
-          .select("id, grouping_id, title, source, rules, order_by, limit_count, order_index, is_active")
+          .select("id, grouping_id, title, source, rules, order_by, limit_count, order_index, is_active, block_type, columns, items")
           .in("grouping_id", groupingIds)
           .eq("is_active", true)
           .order("order_index", { ascending: true })
@@ -84,6 +96,9 @@ export const listHomeGroupingsPublic = createServerFn({ method: "GET" }).handler
       limit_count: b.limit_count,
       order_index: b.order_index,
       is_active: b.is_active ?? true,
+      block_type: (b.block_type ?? "cards") as "cards" | "links",
+      columns: (b.columns === 4 ? 4 : 3) as 3 | 4,
+      items: (Array.isArray(b.items) ? b.items : []) as HomeBlockLink[],
     });
     blocksByGrouping.set(b.grouping_id, arr);
   }
@@ -139,7 +154,7 @@ export const listHomeBlocksAdmin = createServerFn({ method: "GET" })
     await requireSuperAdmin(context);
     const { data: blocks, error } = await context.supabase
       .from("home_blocks")
-      .select("id, grouping_id, title, source, rules, order_by, limit_count, order_index, is_active, created_at, updated_at, grouping:home_groupings(id, label, slug)")
+      .select("id, grouping_id, title, source, rules, order_by, limit_count, order_index, is_active, block_type, columns, items, created_at, updated_at, grouping:home_groupings(id, label, slug)")
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
     return { blocks: blocks ?? [] };
@@ -161,6 +176,19 @@ const homeBlockSchema = z.object({
   limit_count: z.number().int().min(1).max(50).default(6),
   order_index: z.number().int().default(0),
   is_active: z.boolean().default(true),
+  block_type: z.enum(["cards", "links"]).default("cards"),
+  columns: z.union([z.literal(3), z.literal(4)]).default(3),
+  items: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(80),
+        image_path: z.string().max(500).nullable().optional(),
+        field_key: z.string().max(120).nullable().optional(),
+        value: z.string().max(200).nullable().optional(),
+        category_id: z.string().uuid().nullable().optional(),
+      }),
+    )
+    .default([]),
 });
 
 export const saveHomeBlock = createServerFn({ method: "POST" })
@@ -177,6 +205,9 @@ export const saveHomeBlock = createServerFn({ method: "POST" })
       limit_count: data.limit_count,
       order_index: data.order_index,
       is_active: data.is_active,
+      block_type: data.block_type,
+      columns: data.columns,
+      items: data.items as any,
     };
     if (data.id) {
       const { error } = await context.supabase.from("home_blocks").update(payload as any).eq("id", data.id);

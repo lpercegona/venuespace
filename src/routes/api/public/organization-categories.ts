@@ -6,7 +6,14 @@ export const Route = createFileRoute("/api/public/organization-categories")({
       GET: async () => {
         try {
           const { listOrganizationCategoriesPublic } = await import("@/lib/organization-categories.functions");
-          const data = await listOrganizationCategoriesPublic();
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const [cats, { data: orgs }] = await Promise.all([
+            listOrganizationCategoriesPublic(),
+            supabaseAdmin.from("organizations").select("category_id").eq("is_public", true),
+          ]);
+          // Categorias sem nenhuma organização pública não aparecem na navegação.
+          const withOrgs = new Set(((orgs ?? []) as any[]).map((o) => o.category_id).filter(Boolean));
+          const data = (cats ?? []).filter((c) => withOrgs.has(c.id));
           return new Response(JSON.stringify(data), {
             headers: {
               "content-type": "application/json",

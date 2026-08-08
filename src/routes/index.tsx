@@ -1,20 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight } from "lucide-react";
 import { PublicHeader } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
-import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
-import { useCategoryLayout } from "@/hooks/use-public-catalog";
 
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import type { HomeGroupingDTO, HomeBlockDTO } from "@/lib/home-config.functions";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,21 +41,27 @@ async function fetchHomeGroupings(): Promise<{ groupings: HomeGroupingDTO[] }> {
   return res.json();
 }
 
-async function fetchBlockData(
-  block: HomeBlockDTO,
-): Promise<{ items: (PublicOrganizationSummary | PublicRecordSummary)[] }> {
-  const p = new URLSearchParams();
-  p.set("source", block.source);
-  p.set("limit", String(block.limit_count));
-  if (block.order_by) p.set("order_by", block.order_by);
-  if (block.rules.length > 0) p.set("rules", JSON.stringify(block.rules));
-  const res = await fetch(`/api/public/home-block-data?${p.toString()}`);
-  if (!res.ok) throw new Error("Falha ao carregar bloco");
+type GroupingData = {
+  blocks: Array<{
+    id: string;
+    items: (PublicOrganizationSummary | PublicRecordSummary)[];
+    links: Array<{ title: string; image_url?: string | null; field_key?: string | null; value?: string | null }>;
+  }>;
+};
+
+async function fetchGroupingData(groupingId: string): Promise<GroupingData> {
+  const res = await fetch(`/api/public/home-grouping-data?grouping_id=${encodeURIComponent(groupingId)}`);
+  if (!res.ok) throw new Error("Falha ao carregar blocos");
   return res.json();
 }
 
+function gridClass(columns: 3 | 4) {
+  return columns === 4
+    ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+    : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
+}
+
 function Landing() {
-  const catsQ = usePublicCategories();
   const groupingsQ = useQuery({
     queryKey: ["home-groupings"],
     queryFn: fetchHomeGroupings,
@@ -67,6 +70,21 @@ function Landing() {
   const groupings = groupingsQ.data?.groupings ?? [];
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const activeGrouping = groupings.find((g) => g.slug === (activeSlug ?? groupings[0]?.slug)) ?? groupings[0];
+
+  const dataQ = useQuery({
+    queryKey: ["home-grouping-data", activeGrouping?.id],
+    queryFn: () => fetchGroupingData(activeGrouping!.id),
+    enabled: !!activeGrouping?.id,
+    staleTime: 60_000,
+  });
+
+  const byBlock = new Map((dataQ.data?.blocks ?? []).map((b) => [b.id, b]));
+  const visibleBlocks = (activeGrouping?.blocks ?? []).filter((b) => {
+    if (dataQ.isLoading) return true;
+    const d = byBlock.get(b.id);
+    if (!d) return false;
+    return b.block_type === "links" ? d.links.length > 0 : d.items.length > 0;
+  });
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -98,15 +116,6 @@ function Landing() {
               })}
             </div>
           ) : null}
-
-          <div className="mt-8 flex justify-center gap-3">
-            <Link to="/auth">
-              <Button size="lg" className="h-12 bg-primary-foreground px-6 text-primary hover:bg-primary-foreground/90">
-                Cadastrar meu espaço
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -119,15 +128,18 @@ function Landing() {
               <PublicCardSkeletonGrid count={3} withLogo />
             </div>
           ) : activeGrouping ? (
-            <>
-              {(activeGrouping.blocks ?? []).length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground">Nenhum bloco configurado para esta aba.</p>
-              ) : (
-                (activeGrouping.blocks ?? []).map((block) => (
-                  <HomeBlockSection key={block.id} block={block} />
-                ))
-              )}
-            </>
+            visibleBlocks.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground">Nenhum bloco configurado para esta aba.</p>
+            ) : (
+              visibleBlocks.map((block) => (
+                <HomeBlockSection
+                  key={block.id}
+                  block={block}
+                  data={byBlock.get(block.id)}
+                  isLoading={dataQ.isLoading}
+                />
+              ))
+            )
           ) : (
             <p className="text-center text-sm text-muted-foreground">Nenhuma categoria configurada.</p>
           )}
@@ -139,12 +151,16 @@ function Landing() {
   );
 }
 
-function HomeBlockSection({ block }: { block: HomeBlockDTO }) {
-  const q = useQuery({
-    queryKey: ["home-block", block.id],
-    queryFn: () => fetchBlockData(block),
-    staleTime: 60_000,
-  });
+function HomeBlockSection({
+  block,
+  data,
+  isLoading,
+}: {
+  block: HomeBlockDTO;
+  data: GroupingData["blocks"][number] | undefined;
+  isLoading: boolean;
+}) {
+  const columns = (block.columns ?? 3) as 3 | 4;
 
   return (
     <section>
@@ -152,13 +168,19 @@ function HomeBlockSection({ block }: { block: HomeBlockDTO }) {
         <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">{block.title}</h2>
       </div>
 
-      {q.isLoading ? (
+      {isLoading ? (
         <PublicCardSkeletonGrid count={block.limit_count} withLogo />
-      ) : (q.data?.items ?? []).length === 0 ? (
+      ) : block.block_type === "links" ? (
+        <div className={gridClass(columns)}>
+          {(data?.links ?? []).map((link, i) => (
+            <ShortcutCard key={`${link.title}-${i}`} link={link} />
+          ))}
+        </div>
+      ) : (data?.items ?? []).length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhum resultado nesta seção.</p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(q.data?.items ?? []).map((item) =>
+        <div className={gridClass(columns)}>
+          {(data?.items ?? []).map((item) =>
             "slug" in item ? (
               <OrganizationCard key={item.id} org={item as PublicOrganizationSummary} />
             ) : (
@@ -168,6 +190,38 @@ function HomeBlockSection({ block }: { block: HomeBlockDTO }) {
         </div>
       )}
     </section>
+  );
+}
+
+function ShortcutCard({
+  link,
+}: {
+  link: { title: string; image_url?: string | null; field_key?: string | null; value?: string | null };
+}) {
+  const search: Record<string, string> = {};
+  if (link.field_key && link.value) search[`f_${link.field_key}`] = link.value;
+
+  return (
+    <Link
+      to="/explore"
+      search={search as any}
+      className="group block overflow-hidden rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <div className="relative h-40 w-full overflow-hidden rounded-xl bg-muted">
+        {link.image_url ? (
+          <img
+            src={link.image_url}
+            alt={link.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-foreground/40" />
+        <span className="absolute inset-x-0 bottom-0 p-4 font-display text-lg font-semibold text-background">
+          {link.title}
+        </span>
+      </div>
+    </Link>
   );
 }
 
@@ -219,3 +273,4 @@ function RecordCard({ record }: { record: PublicRecordSummary }) {
     </Link>
   );
 }
+
