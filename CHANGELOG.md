@@ -1,3 +1,14 @@
+## 2026-08-08 00:15 (America/Sao_Paulo) — Correção/extensão da Iteração 30 — regras, deduplicação e novos blocos da home
+
+- `src/lib/public.server.ts`: `applyRules` reescrito com normalização de valores (`normalizeValues`) — passa a funcionar com campos de lista (multiselect, ex.: comodidades), booleanos, números e objetos; comparações `=`/`!=`/`contains` agora são case-insensitive e avaliam cada item da lista. `listPublicOrganizations` e `listPublicRecords` aceitam `exclude_ids`.
+- Novo `src/lib/home-data.server.ts`: `loadHomeGroupingData` resolve os blocos de um agrupamento em sequência, sem repetir organizações/registros já exibidos em blocos anteriores da mesma página; assina imagens dos cards de atalho. `listAvailableFieldKeys` expõe as field-keys base, de endereço e de categoria.
+- Novos endpoints públicos: `src/routes/api/public/home-grouping-data.ts` (dados dos blocos com deduplicação) e `src/routes/api/public/field-keys.ts` (catálogo de field-keys).
+- Migration: `home_blocks` ganha `block_type` ('cards' | 'links'), `columns` (3 | 4) e `items` (jsonb), com CHECK constraints.
+- `src/lib/home-config.functions.ts`: DTO e schema Zod estendidos com `block_type`, `columns` e `items` (tipo `HomeBlockLink`).
+- `src/components/admin/home-blocks-section.tsx`: seleção de tipo de bloco, alternância de 3/4 colunas, editor de cards de atalho (título, imagem de fundo, field_key + valor de pré-filtragem) e popover informativo `FieldKeysHelper` com todas as field-keys disponíveis.
+- `src/routes/index.tsx`: consome `/api/public/home-grouping-data`, aplica a grade configurada (3 ou 4 colunas), renderiza blocos de atalho com link para `/explore` pré-filtrado, oculta blocos sem resultado e remove o botão "Cadastrar meu espaço" do hero.
+- `src/routes/api/public/organization-categories.ts`: retorna apenas categorias com ao menos uma organização pública, ocultando categorias vazias na navegação e no explorar.
+
 ## 2026-08-07 01:31 (America/Sao_Paulo) — Iteração 30 — camada de dados: agrupamentos e blocos da home
 
 - Novo `src/lib/home-config.functions.ts` com server functions: `listHomeGroupingsPublic` (leitura pública dos agrupamentos ativos, categorias e blocos ativos), `listHomeGroupingsAdmin`, `listHomeBlocksAdmin`, `saveHomeBlock`, `deleteHomeBlock`, `saveHomeGrouping`, `deleteHomeGrouping` — as funções administrativas exigem super admin e são validadas com Zod (`home_groupings`, `home_blocks`).
