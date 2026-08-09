@@ -682,18 +682,19 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   if (categoryId) base = base.filter((i) => i.org_category_id === categoryId);
   if (slug) base = base.filter((i) => i.org_slug === slug);
 
+  const recAliases = await loadOptionAliases(
+    "category_standard_table_fields",
+    [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
+  );
+
   for (const [key, val] of Object.entries(filters)) {
-    const target = String(val).trim().toLowerCase();
-    if (!target) continue;
-    base = base.filter((r) => {
-      const v = (r.data ?? {})[key];
-      if (typeof v === "string") return v.trim().toLowerCase() === target;
-      if (Array.isArray(v)) return v.some((x) => typeof x === "string" && x.trim().toLowerCase() === target);
-      return false;
-    });
+    if (!norm(String(val))) continue;
+    const targets = ruleTargets({ field_key: key, operator: "=", value: String(val) }, recAliases);
+    base = base.filter((r) => normalizeValues((r.data ?? {})[key]).map(norm).some((v) => targets.includes(v)));
   }
 
-  base = applyRules(base, opts.rules, (r, key) => (r.data ?? {})[key]);
+  base = applyRules(base, opts.rules, (r, key) => (r.data ?? {})[key], recAliases);
+
   if (opts.exclude_ids && opts.exclude_ids.length > 0) {
     const skip = new Set(opts.exclude_ids);
     base = base.filter((r) => !skip.has(r.record_id));
