@@ -444,6 +444,10 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     if (key === "name") return o.name;
     if (key === "slug") return o.slug;
     if (key === "description") return o.description;
+    if (key === "address.city_state_full") {
+      const addr = o.address ?? {};
+      return [addr.city, expandState(addr.state ?? "")].filter(Boolean).join(" - ");
+    }
     if (key.startsWith("address.")) return (o.address ?? {})[key.slice("address.".length)];
     return (o.category_data ?? {})[key];
   };
@@ -459,18 +463,20 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     updated_at: o.updated_at,
   }));
 
+  const orgAliases = await loadOptionAliases(
+    "category_org_fields",
+    [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
+  );
+
   for (const [key, val] of Object.entries(filters)) {
-    const target = String(val).trim().toLowerCase();
+    const target = norm(String(val));
     if (!target) continue;
-    base = base.filter((o) => {
-      const v = resolveOrgVal(o, key);
-      if (typeof v === "string") return v.trim().toLowerCase() === target;
-      if (Array.isArray(v)) return v.some((x) => typeof x === "string" && x.trim().toLowerCase() === target);
-      return false;
-    });
+    const targets = ruleTargets({ field_key: key, operator: "=", value: String(val) }, orgAliases);
+    base = base.filter((o) => normalizeValues(resolveOrgVal(o, key)).map(norm).some((v) => targets.includes(v)));
   }
 
-  base = applyRules(base, opts.rules, resolveOrgVal);
+  base = applyRules(base, opts.rules, resolveOrgVal, orgAliases);
+
   if (opts.exclude_ids && opts.exclude_ids.length > 0) {
     const skip = new Set(opts.exclude_ids);
     base = base.filter((o) => !skip.has(o.id));
