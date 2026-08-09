@@ -10,7 +10,15 @@ export type HomeBlockLinkItem = {
   field_key?: string | null;
   value?: string | null;
   category_id?: string | null;
+  category_slug?: string | null;
 };
+
+/** Mapa category_id -> slug (derivado do nome, igual à navegação pública). */
+async function loadCategorySlugs(): Promise<Map<string, string>> {
+  const { slugify } = await import("@/lib/slug");
+  const { data } = await supabaseAdmin.from("organization_categories").select("id, name");
+  return new Map(((data ?? []) as any[]).map((c) => [c.id as string, slugify(c.name as string)]));
+}
 
 async function signPaths(paths: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
@@ -36,6 +44,7 @@ export async function loadHomeGroupingData(groupingId: string) {
     .order("order_index", { ascending: true });
   if (error) throw new Error(error.message);
 
+  const categorySlugs = await loadCategorySlugs();
   const seenOrgs = new Set<string>();
   const seenRecords = new Set<string>();
   const result: Array<{ id: string; items: any[]; links: HomeBlockLinkItem[] }> = [];
@@ -50,6 +59,7 @@ export async function loadHomeGroupingData(groupingId: string) {
         items: [],
         links: raw.map((i) => ({
           ...i,
+          category_slug: i.category_id ? (categorySlugs.get(i.category_id) ?? null) : null,
           image_url: i.image_path && !/^https?:\/\//i.test(i.image_path)
             ? (signed.get(i.image_path) ?? null)
             : (i.image_path ?? null),
@@ -84,7 +94,21 @@ export async function loadHomeGroupingData(groupingId: string) {
   return { blocks: result };
 }
 
-export type FieldKeyInfo = { key: string; label: string; type: string; scope: string };
+export type FieldKeyOption = { value: string; label: string };
+export type FieldKeyInfo = { key: string; label: string; type: string; scope: string; options?: FieldKeyOption[] };
+
+function optionsOf(config: any): FieldKeyOption[] {
+  const raw = Array.isArray(config?.options) ? config.options : [];
+  const out: FieldKeyOption[] = [];
+  for (const o of raw) {
+    if (typeof o === "string") out.push({ value: o, label: o });
+    else if (o && typeof o === "object") {
+      const value = String(o.value ?? o.key ?? o.label ?? "");
+      if (value) out.push({ value, label: String(o.label ?? o.name ?? value) });
+    }
+  }
+  return out;
+}
 
 /** Lista todas as field-keys disponíveis para regras de blocos da home. */
 export async function listAvailableFieldKeys(): Promise<{ organization: FieldKeyInfo[]; record: FieldKeyInfo[] }> {
@@ -104,8 +128,8 @@ export async function listAvailableFieldKeys(): Promise<{ organization: FieldKey
 
   const [{ data: cats }, { data: orgFields }, { data: recFields }] = await Promise.all([
     supabaseAdmin.from("organization_categories").select("id, name"),
-    supabaseAdmin.from("category_org_fields").select("category_id, field_key, label, field_type").order("order_index", { ascending: true }),
-    supabaseAdmin.from("category_standard_table_fields").select("field_key, label, field_type").order("order_index", { ascending: true }),
+    supabaseAdmin.from("category_org_fields").select("category_id, field_key, label, field_type, config").order("order_index", { ascending: true }),
+    supabaseAdmin.from("category_standard_table_fields").select("field_key, label, field_type, config").order("order_index", { ascending: true }),
   ]);
 
   const catName = new Map(((cats ?? []) as any[]).map((c) => [c.id, c.name as string]));
@@ -116,6 +140,7 @@ export async function listAvailableFieldKeys(): Promise<{ organization: FieldKey
       label: f.label,
       type: f.field_type,
       scope: catName.get(f.category_id) ?? "Categoria",
+      options: optionsOf(f.config),
     });
   }
 
@@ -124,7 +149,7 @@ export async function listAvailableFieldKeys(): Promise<{ organization: FieldKey
   for (const f of ((recFields ?? []) as any[])) {
     if (seen.has(f.field_key)) continue;
     seen.add(f.field_key);
-    record.push({ key: f.field_key, label: f.label, type: f.field_type, scope: "Registro" });
+    record.push({ key: f.field_key, label: f.label, type: f.field_type, scope: "Registro", options: optionsOf(f.config) });
   }
 
   return { organization, record };
