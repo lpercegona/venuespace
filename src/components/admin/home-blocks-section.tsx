@@ -312,7 +312,19 @@ export function HomeBlocksSection() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Label>Filtros (rules)</Label>
                     <div className="flex items-center gap-1">
-                      <FieldKeysHelper source={source} />
+                      <FieldKeysHelper
+                        source={source}
+                        onPick={(key, value) =>
+                          setRules((prev) => {
+                            if (prev.length === 0) return [{ field_key: key, operator: "=", value: value ?? "" }];
+                            return prev.map((r, i) =>
+                              i === prev.length - 1
+                                ? { ...r, field_key: key, ...(value !== undefined ? { value } : {}) }
+                                : r,
+                            );
+                          })
+                        }
+                      />
                       <Button type="button" variant="outline" size="sm" onClick={addRule}>Adicionar</Button>
                     </div>
                   </div>
@@ -349,7 +361,20 @@ export function HomeBlocksSection() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <FieldKeysHelper source="organizations" />
+                      <FieldKeysHelper
+                        source="organizations"
+                        onPick={(key, value) =>
+                          setItems((prev) => {
+                            if (prev.length === 0)
+                              return [{ title: "", image_path: "", field_key: key, value: value ?? "" }];
+                            return prev.map((it, i) =>
+                              i === prev.length - 1
+                                ? { ...it, field_key: key, ...(value !== undefined ? { value } : {}) }
+                                : it,
+                            );
+                          })
+                        }
+                      />
                       <Button type="button" variant="outline" size="sm" onClick={addItem}>Adicionar</Button>
                     </div>
                   </div>
