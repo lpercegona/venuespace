@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/venue/empty-state";
 import { UploadField } from "@/components/venue/dynamic-form";
+import { usePublicCategories } from "@/components/venue/category-tabs";
 import {
   listHomeBlocksAdmin,
   listHomeGroupingsAdmin,
@@ -118,6 +119,7 @@ export function HomeBlocksSection() {
   const qc = useQueryClient();
   const blocksQ = useQuery({ queryKey: ["admin-home-blocks"], queryFn: () => listHomeBlocksAdmin() });
   const groupingsQ = useQuery({ queryKey: ["admin-home-groupings"], queryFn: () => listHomeGroupingsAdmin() });
+  const categoriesQ = usePublicCategories();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<HomeBlockDTO | null>(null);
@@ -385,6 +387,17 @@ export function HomeBlocksSection() {
                         <Input value={it.field_key ?? ""} onChange={(e) => updateItem(i, { field_key: e.target.value })} placeholder="field_key (ex.: address.city)" />
                         <Input value={it.value ?? ""} onChange={(e) => updateItem(i, { value: e.target.value })} placeholder="valor (ex.: Curitiba)" />
                       </div>
+                      <Select
+                        value={it.category_id ?? ""}
+                        onValueChange={(v) => updateItem(i, { category_id: v })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Categoria de destino" /></SelectTrigger>
+                        <SelectContent>
+                          {(categoriesQ.data ?? []).map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <UploadField value={it.image_path ?? ""} kind="image" onChange={(v) => updateItem(i, { image_path: v })} />
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(i)} aria-label="Remover card"><Trash2 className="h-4 w-4" /></Button>
