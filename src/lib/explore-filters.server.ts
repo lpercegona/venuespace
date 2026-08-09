@@ -85,32 +85,64 @@ export async function listExploreFilters(opts: {
     for (const f of recFields ?? []) if (!labelMap[f.field_key]) labelMap[f.field_key] = f.label;
   }
 
-  // Compute distinct values for select filters by scanning published items.
+  // Compute distinct values for select filters, unindo os valores presentes nos dados
+  // com as opções declaradas na configuração do campo.
   const selectKeys = uniq.filter((r) => r.filter_type === "select").map((r) => r.field_key);
   const distinct = new Map<string, Set<string>>();
   if (selectKeys.length > 0) {
+    for (const key of selectKeys) distinct.set(key, new Set<string>());
+
+    const addValue = (key: string, v: unknown) => {
+      const set = distinct.get(key);
+      if (!set) return;
+      if (typeof v === "string" && v.trim()) set.add(v.trim());
+      else if (Array.isArray(v)) for (const x of v) if (typeof x === "string" && x.trim()) set.add(x.trim());
+    };
+
+    // Opções configuradas (aparecem mesmo sem nenhum item usando o valor).
     if (opts.scope === "organization") {
-      const { data: pubRecs } = await sb
-        .from("records")
-        .select("table:tables!inner(organization_id)")
-        .eq("status", "published")
-        .limit(5000);
-      const orgIds = Array.from(
-        new Set((pubRecs ?? []).map((r: any) => r.table?.organization_id).filter(Boolean)),
-      );
-      if (orgIds.length > 0) {
-        let q = sb.from("organizations").select("name, slug, description, address, category_data, category_id").in("id", orgIds);
-        if (opts.category_id) q = q.eq("category_id", opts.category_id);
-        const { data: orgs } = await q;
-        for (const key of selectKeys) {
-          const set = new Set<string>();
-          for (const o of orgs ?? []) {
-            const v = resolveOrgValue(o, key);
-            if (typeof v === "string" && v.trim()) set.add(v.trim());
-            else if (Array.isArray(v)) for (const x of v) if (typeof x === "string" && x.trim()) set.add(x.trim());
-          }
-          distinct.set(key, set);
+      let cfgQ = sb
+        .from("category_org_fields")
+        .select("field_key, field_type, config, category_id")
+        .in("field_key", selectKeys);
+      if (opts.category_id) cfgQ = cfgQ.eq("category_id", opts.category_id);
+      const { data: cfgFields } = await cfgQ;
+      for (const f of (cfgFields ?? []) as any[]) {
+        for (const o of Array.isArray(f.config?.options) ? f.config.options : []) {
+          const label = typeof o === "string" ? o : String(o?.label ?? o?.value ?? "");
+          if (label.trim()) addValue(f.field_key, label.trim());
         }
+      }
+    } else {
+      let stQ = sb.from("category_standard_tables").select("id, category_id");
+      if (opts.category_id) stQ = stQ.eq("category_id", opts.category_id);
+      const { data: stRows } = await stQ;
+      const stIds = ((stRows ?? []) as any[]).map((r) => r.id);
+      if (stIds.length > 0) {
+        const { data: cfgFields } = await sb
+          .from("category_standard_table_fields")
+          .select("field_key, field_type, config, standard_table_id")
+          .in("standard_table_id", stIds)
+          .in("field_key", selectKeys);
+        for (const f of (cfgFields ?? []) as any[]) {
+          for (const o of Array.isArray(f.config?.options) ? f.config.options : []) {
+            const label = typeof o === "string" ? o : String(o?.label ?? o?.value ?? "");
+            if (label.trim()) addValue(f.field_key, label.trim());
+          }
+        }
+      }
+    }
+
+    // Valores efetivamente presentes nos itens públicos (mesma base da listagem).
+    if (opts.scope === "organization") {
+      let q = sb
+        .from("organizations")
+        .select("name, slug, description, address, category_data, category_id")
+        .eq("is_public", true);
+      if (opts.category_id) q = q.eq("category_id", opts.category_id);
+      const { data: orgs } = await q;
+      for (const key of selectKeys) {
+        for (const o of orgs ?? []) addValue(key, resolveOrgValue(o, key));
       }
     } else {
       let q = sb
@@ -118,19 +150,24 @@ export async function listExploreFilters(opts: {
         .select("data, table:tables!inner(organization:organizations!inner(category_id))")
         .eq("status", "published")
         .limit(5000);
+      if (opts.category_id) q = q.eq("table.organization.category_id", opts.category_id);
       const { data: recs } = await q;
       for (const key of selectKeys) {
-        const set = new Set<string>();
-        for (const r of recs ?? []) {
-          if (opts.category_id && r.table?.organization?.category_id !== opts.category_id) continue;
-          const v = resolveRecordValue(r, key);
-          if (typeof v === "string" && v.trim()) set.add(v.trim());
-          else if (Array.isArray(v)) for (const x of v) if (typeof x === "string" && x.trim()) set.add(x.trim());
-        }
-        distinct.set(key, set);
+        for (const r of recs ?? []) addValue(key, resolveRecordValue(r, key));
       }
     }
+
+    // Remove duplicidades case-insensitive mantendo a primeira grafia.
+    for (const [key, set] of distinct) {
+      const seenNorm = new Map<string, string>();
+      for (const v of set) {
+        const k = v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        if (!seenNorm.has(k)) seenNorm.set(k, v);
+      }
+      distinct.set(key, new Set(seenNorm.values()));
+    }
   }
+
 
   const filters: ExploreFilterDef[] = uniq.map((r) => ({
     key: r.field_key,

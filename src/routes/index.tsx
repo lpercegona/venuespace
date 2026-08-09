@@ -8,6 +8,7 @@ import { PublicFooter } from "@/components/venue/public-footer";
 import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
+import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
 
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import type { HomeGroupingDTO, HomeBlockDTO } from "@/lib/home-config.functions";
@@ -45,7 +46,14 @@ type GroupingData = {
   blocks: Array<{
     id: string;
     items: (PublicOrganizationSummary | PublicRecordSummary)[];
-    links: Array<{ title: string; image_url?: string | null; field_key?: string | null; value?: string | null }>;
+    links: Array<{
+      title: string;
+      image_url?: string | null;
+      field_key?: string | null;
+      value?: string | null;
+      category_id?: string | null;
+      category_slug?: string | null;
+    }>;
   }>;
 };
 
@@ -196,14 +204,27 @@ function HomeBlockSection({
 function ShortcutCard({
   link,
 }: {
-  link: { title: string; image_url?: string | null; field_key?: string | null; value?: string | null };
+  link: {
+    title: string;
+    image_url?: string | null;
+    field_key?: string | null;
+    value?: string | null;
+    category_slug?: string | null;
+  };
 }) {
   const search: Record<string, string> = {};
   if (link.field_key && link.value) search[`f_${link.field_key}`] = link.value;
 
+  const catsQ = usePublicCategories();
+  const fallbackSlug = (catsQ.data ?? [])[0] ? categorySlug((catsQ.data ?? [])[0]!) : "";
+  const slug = link.category_slug || fallbackSlug;
+
+  if (!slug) return null;
+
   return (
     <Link
-      to="/explore"
+      to="/categoria/$slug"
+      params={{ slug }}
       search={search as any}
       className="group block overflow-hidden rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >

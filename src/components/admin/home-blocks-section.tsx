@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/venue/empty-state";
 import { UploadField } from "@/components/venue/dynamic-form";
+import { usePublicCategories } from "@/components/venue/category-tabs";
 import {
   listHomeBlocksAdmin,
   listHomeGroupingsAdmin,
@@ -35,9 +36,16 @@ const operators = [
   { value: "filled", label: "Preenchido" },
 ];
 
-type FieldKeyInfo = { key: string; label: string; type: string; scope: string };
+type FieldKeyOption = { value: string; label: string };
+type FieldKeyInfo = { key: string; label: string; type: string; scope: string; options?: FieldKeyOption[] };
 
-function FieldKeysHelper({ source }: { source: "organizations" | "records" }) {
+function FieldKeysHelper({
+  source,
+  onPick,
+}: {
+  source: "organizations" | "records";
+  onPick?: (key: string, value?: string) => void;
+}) {
   const q = useQuery({
     queryKey: ["admin-field-keys"],
     queryFn: async (): Promise<{ organization: FieldKeyInfo[]; record: FieldKeyInfo[] }> => {
@@ -56,30 +64,50 @@ function FieldKeysHelper({ source }: { source: "organizations" | "records" }) {
           Field-keys
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-[min(92vw,44rem)] p-0" align="end">
         <div className="border-b border-border px-3 py-2">
           <p className="text-sm font-medium">Field-keys disponíveis</p>
           <p className="text-xs text-muted-foreground">
-            Campos de lista (ex.: comodidades) aceitam “Igual a” e “Contém” pelo valor de cada opção.
+            Clique na chave para preencher o filtro; clique em uma opção para preencher chave e valor.
           </p>
         </div>
-        <ScrollArea className="max-h-72">
-          <ul className="divide-y divide-border">
+        <ScrollArea className="h-[22rem]">
+          <div className="grid gap-2 p-3 sm:grid-cols-2">
             {q.isLoading ? (
-              <li className="px-3 py-3 text-xs text-muted-foreground">Carregando...</li>
+              <p className="px-1 py-2 text-xs text-muted-foreground">Carregando...</p>
             ) : list.length === 0 ? (
-              <li className="px-3 py-3 text-xs text-muted-foreground">Nenhuma field-key encontrada.</li>
+              <p className="px-1 py-2 text-xs text-muted-foreground">Nenhuma field-key encontrada.</p>
             ) : (
               list.map((f, i) => (
-                <li key={`${f.key}-${i}`} className="px-3 py-2">
-                  <code className="text-xs font-medium">{f.key}</code>
-                  <p className="text-xs text-muted-foreground">
-                    {f.label} · {f.type} · {f.scope}
-                  </p>
-                </li>
+                <div key={`${f.key}-${i}`} className="rounded-md border border-border p-2">
+                  <button
+                    type="button"
+                    className="text-left"
+                    onClick={() => onPick?.(f.key)}
+                  >
+                    <code className="text-xs font-medium">{f.key}</code>
+                    <p className="text-xs text-muted-foreground">
+                      {f.label} · {f.type} · {f.scope}
+                    </p>
+                  </button>
+                  {(f.options ?? []).length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {(f.options ?? []).map((o) => (
+                        <button
+                          key={o.value}
+                          type="button"
+                          onClick={() => onPick?.(f.key, o.value)}
+                          className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                        >
+                          {o.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               ))
             )}
-          </ul>
+          </div>
         </ScrollArea>
       </PopoverContent>
     </Popover>
@@ -91,6 +119,7 @@ export function HomeBlocksSection() {
   const qc = useQueryClient();
   const blocksQ = useQuery({ queryKey: ["admin-home-blocks"], queryFn: () => listHomeBlocksAdmin() });
   const groupingsQ = useQuery({ queryKey: ["admin-home-groupings"], queryFn: () => listHomeGroupingsAdmin() });
+  const categoriesQ = usePublicCategories();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<HomeBlockDTO | null>(null);
@@ -285,7 +314,19 @@ export function HomeBlocksSection() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Label>Filtros (rules)</Label>
                     <div className="flex items-center gap-1">
-                      <FieldKeysHelper source={source} />
+                      <FieldKeysHelper
+                        source={source}
+                        onPick={(key, value) =>
+                          setRules((prev) => {
+                            if (prev.length === 0) return [{ field_key: key, operator: "=", value: value ?? "" }];
+                            return prev.map((r, i) =>
+                              i === prev.length - 1
+                                ? { ...r, field_key: key, ...(value !== undefined ? { value } : {}) }
+                                : r,
+                            );
+                          })
+                        }
+                      />
                       <Button type="button" variant="outline" size="sm" onClick={addRule}>Adicionar</Button>
                     </div>
                   </div>
@@ -322,7 +363,20 @@ export function HomeBlocksSection() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <FieldKeysHelper source="organizations" />
+                      <FieldKeysHelper
+                        source="organizations"
+                        onPick={(key, value) =>
+                          setItems((prev) => {
+                            if (prev.length === 0)
+                              return [{ title: "", image_path: "", field_key: key, value: value ?? "" }];
+                            return prev.map((it, i) =>
+                              i === prev.length - 1
+                                ? { ...it, field_key: key, ...(value !== undefined ? { value } : {}) }
+                                : it,
+                            );
+                          })
+                        }
+                      />
                       <Button type="button" variant="outline" size="sm" onClick={addItem}>Adicionar</Button>
                     </div>
                   </div>
@@ -333,6 +387,17 @@ export function HomeBlocksSection() {
                         <Input value={it.field_key ?? ""} onChange={(e) => updateItem(i, { field_key: e.target.value })} placeholder="field_key (ex.: address.city)" />
                         <Input value={it.value ?? ""} onChange={(e) => updateItem(i, { value: e.target.value })} placeholder="valor (ex.: Curitiba)" />
                       </div>
+                      <Select
+                        value={it.category_id ?? ""}
+                        onValueChange={(v) => updateItem(i, { category_id: v })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Categoria de destino" /></SelectTrigger>
+                        <SelectContent>
+                          {(categoriesQ.data ?? []).map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <UploadField value={it.image_path ?? ""} kind="image" onChange={(v) => updateItem(i, { image_path: v })} />
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(i)} aria-label="Remover card"><Trash2 className="h-4 w-4" /></Button>

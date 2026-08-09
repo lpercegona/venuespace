@@ -323,20 +323,90 @@ function normalizeValues(raw: unknown): string[] {
   return s === "" ? [] : [s];
 }
 
+/** Comparação insensível a acentos, caixa e espaços extras. */
+function norm(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+/**
+ * Mapa field_key -> (rótulo/valor normalizado -> valores equivalentes), para que
+ * regras escritas com o rótulo da opção casem com o valor armazenado e vice-versa.
+ */
+export type OptionAliasMap = Map<string, Map<string, string[]>>;
+
+function optionEntries(config: any): Array<{ value: string; label: string }> {
+  const opts = Array.isArray(config?.options) ? config.options : [];
+  const out: Array<{ value: string; label: string }> = [];
+  for (const o of opts) {
+    if (typeof o === "string") out.push({ value: o, label: o });
+    else if (o && typeof o === "object") {
+      const value = String(o.value ?? o.key ?? o.label ?? "");
+      const label = String(o.label ?? o.name ?? value);
+      if (value) out.push({ value, label });
+    }
+  }
+  return out;
+}
+
+async function loadOptionAliases(
+  table: "category_org_fields" | "category_standard_table_fields",
+  fieldKeys: string[],
+): Promise<OptionAliasMap> {
+  const map: OptionAliasMap = new Map();
+  const keys = Array.from(new Set(fieldKeys.filter(Boolean)));
+  if (keys.length === 0) return map;
+  const { data } = await (supabaseAdmin as any)
+    .from(table)
+    .select("field_key, field_type, config")
+    .in("field_key", keys);
+  for (const f of ((data ?? []) as any[])) {
+    const entries = optionEntries(f.config);
+    if (entries.length === 0) continue;
+    const inner = map.get(f.field_key) ?? new Map<string, string[]>();
+    for (const e of entries) {
+      for (const alias of [e.value, e.label]) {
+        const k = norm(alias);
+        const arr = inner.get(k) ?? [];
+        if (!arr.includes(e.value)) arr.push(e.value);
+        if (!arr.includes(e.label)) arr.push(e.label);
+        inner.set(k, arr);
+      }
+    }
+    map.set(f.field_key, inner);
+  }
+  return map;
+}
+
+function ruleTargets(rule: PublicFilterRule, aliases?: OptionAliasMap): string[] {
+  const base = norm(String(rule.value ?? ""));
+  const extra = aliases?.get(rule.field_key)?.get(base) ?? [];
+  return Array.from(new Set([base, ...extra.map(norm)]));
+}
+
 /** Applies a list of ad-hoc filter rules (Iteração 30 — home blocks) to a value resolver. */
-function applyRules<T>(items: T[], rules: PublicFilterRule[] | undefined, resolve: (item: T, key: string) => unknown): T[] {
+function applyRules<T>(
+  items: T[],
+  rules: PublicFilterRule[] | undefined,
+  resolve: (item: T, key: string) => unknown,
+  aliases?: OptionAliasMap,
+): T[] {
   if (!rules || rules.length === 0) return items;
   return items.filter((item) =>
     rules.every((rule) => {
       const raw = resolve(item, rule.field_key);
-      const values = normalizeValues(raw);
+      const values = normalizeValues(raw).map(norm);
       if (rule.operator === "filled") return values.length > 0;
-      const target = String(rule.value ?? "").trim().toLowerCase();
+      const targets = ruleTargets(rule, aliases);
       if (rule.operator === "contains") {
-        return values.some((v) => v.toLowerCase().includes(target));
+        return values.some((v) => targets.some((t) => t !== "" && v.includes(t)));
       }
-      if (rule.operator === "=") return values.some((v) => v.toLowerCase() === target);
-      if (rule.operator === "!=") return !values.some((v) => v.toLowerCase() === target);
+      if (rule.operator === "=") return values.some((v) => targets.includes(v));
+      if (rule.operator === "!=") return !values.some((v) => targets.includes(v));
       const b = Number(rule.value);
       if (Number.isNaN(b)) return false;
       const nums = values.map((v) => Number(v)).filter((n) => !Number.isNaN(n));
@@ -349,6 +419,7 @@ function applyRules<T>(items: T[], rules: PublicFilterRule[] | undefined, resolv
     })
   );
 }
+
 
 
 export async function listPublicOrganizations(opts: { limit?: number; offset?: number; q?: string; category_id?: string; filters?: Record<string, string>; rules?: PublicFilterRule[]; exclude_ids?: string[] } = {}): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
@@ -373,6 +444,10 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     if (key === "name") return o.name;
     if (key === "slug") return o.slug;
     if (key === "description") return o.description;
+    if (key === "address.city_state_full") {
+      const addr = o.address ?? {};
+      return [addr.city, expandState(addr.state ?? "")].filter(Boolean).join(" - ");
+    }
     if (key.startsWith("address.")) return (o.address ?? {})[key.slice("address.".length)];
     return (o.category_data ?? {})[key];
   };
@@ -388,18 +463,20 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     updated_at: o.updated_at,
   }));
 
+  const orgAliases = await loadOptionAliases(
+    "category_org_fields",
+    [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
+  );
+
   for (const [key, val] of Object.entries(filters)) {
-    const target = String(val).trim().toLowerCase();
+    const target = norm(String(val));
     if (!target) continue;
-    base = base.filter((o) => {
-      const v = resolveOrgVal(o, key);
-      if (typeof v === "string") return v.trim().toLowerCase() === target;
-      if (Array.isArray(v)) return v.some((x) => typeof x === "string" && x.trim().toLowerCase() === target);
-      return false;
-    });
+    const targets = ruleTargets({ field_key: key, operator: "=", value: String(val) }, orgAliases);
+    base = base.filter((o) => normalizeValues(resolveOrgVal(o, key)).map(norm).some((v) => targets.includes(v)));
   }
 
-  base = applyRules(base, opts.rules, resolveOrgVal);
+  base = applyRules(base, opts.rules, resolveOrgVal, orgAliases);
+
   if (opts.exclude_ids && opts.exclude_ids.length > 0) {
     const skip = new Set(opts.exclude_ids);
     base = base.filter((o) => !skip.has(o.id));
@@ -605,18 +682,19 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   if (categoryId) base = base.filter((i) => i.org_category_id === categoryId);
   if (slug) base = base.filter((i) => i.org_slug === slug);
 
+  const recAliases = await loadOptionAliases(
+    "category_standard_table_fields",
+    [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
+  );
+
   for (const [key, val] of Object.entries(filters)) {
-    const target = String(val).trim().toLowerCase();
-    if (!target) continue;
-    base = base.filter((r) => {
-      const v = (r.data ?? {})[key];
-      if (typeof v === "string") return v.trim().toLowerCase() === target;
-      if (Array.isArray(v)) return v.some((x) => typeof x === "string" && x.trim().toLowerCase() === target);
-      return false;
-    });
+    if (!norm(String(val))) continue;
+    const targets = ruleTargets({ field_key: key, operator: "=", value: String(val) }, recAliases);
+    base = base.filter((r) => normalizeValues((r.data ?? {})[key]).map(norm).some((v) => targets.includes(v)));
   }
 
-  base = applyRules(base, opts.rules, (r, key) => (r.data ?? {})[key]);
+  base = applyRules(base, opts.rules, (r, key) => (r.data ?? {})[key], recAliases);
+
   if (opts.exclude_ids && opts.exclude_ids.length > 0) {
     const skip = new Set(opts.exclude_ids);
     base = base.filter((r) => !skip.has(r.record_id));

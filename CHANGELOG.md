@@ -1,3 +1,9 @@
+## 2026-08-09 00:20 (America/Sao_Paulo) — Correção/extensão da Iteração 30 — filtros, atalhos e blocos
+- **Filtros públicos** (`src/lib/explore-filters.server.ts`): as opções dos filtros `select` deixam de ser derivadas apenas de organizações com registros publicados; passam a varrer `organizations` com `is_public = true` (mesma base da listagem) e a unir com as opções declaradas em `config.options` dos campos da categoria. Escopo `record` filtra por categoria na consulta e também une as opções configuradas. Deduplicação case/acento-insensível.
+- **Regras de blocos** (`src/lib/public.server.ts`): comparação normalizada por acento/caixa/espaços; `address.city_state_full` resolvido a partir de cidade + estado por extenso; `=`, `!=` e `contains` casam tanto pelo valor quanto pelo rótulo da opção (`category_org_fields` / `category_standard_table_fields`). Filtros `f_*` da listagem usam o mesmo casamento.
+- **Atalhos da home** (`src/lib/home-data.server.ts`, `src/routes/index.tsx`): cada card de atalho devolve `category_slug` e navega para `/categoria/$slug` com o pré-filtro `f_<campo>`, em vez da página antiga `/explore`. Editor de blocos ganhou seleção da categoria de destino.
+- **Popover de field-keys** (`src/components/admin/home-blocks-section.tsx`, `/api/public/field-keys`): layout em duas colunas com scroll, exibindo as opções disponíveis de cada field-key; clique na chave preenche o filtro e clique na opção preenche chave + valor.
+
 ## 2026-08-08 00:15 (America/Sao_Paulo) — Correção/extensão da Iteração 30 — regras, deduplicação e novos blocos da home
 
 - `src/lib/public.server.ts`: `applyRules` reescrito com normalização de valores (`normalizeValues`) — passa a funcionar com campos de lista (multiselect, ex.: comodidades), booleanos, números e objetos; comparações `=`/`!=`/`contains` agora são case-insensitive e avaliam cada item da lista. `listPublicOrganizations` e `listPublicRecords` aceitam `exclude_ids`.
