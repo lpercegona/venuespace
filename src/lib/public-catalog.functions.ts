@@ -16,7 +16,7 @@ export const getPublicCategoriesFn = createServerFn({ method: "GET" }).handler(a
 /** Agrupamentos + blocos ativos da home. */
 export const getHomeGroupingsFn = createServerFn({ method: "GET" }).handler(async () => {
   const { listHomeGroupingsPublic } = await import("@/lib/home-config.functions");
-  return { groupings: await listHomeGroupingsPublic() };
+  return listHomeGroupingsPublic();
 });
 
 /** Dados (cards/links) de um agrupamento da home. */
