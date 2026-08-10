@@ -9,6 +9,13 @@ import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
+import {
+  categoryLayoutQuery,
+  homeGroupingDataQuery,
+  homeGroupingsQuery,
+  publicCategoriesQuery,
+} from "@/lib/public-queries";
+import type { LayoutItem } from "@/components/venue/public-card-renderer";
 
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import type { HomeGroupingDTO, HomeBlockDTO } from "@/lib/home-config.functions";
@@ -33,14 +40,20 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  loader: async ({ context }) => {
+    const qc = context.queryClient;
+    qc.prefetchQuery(publicCategoriesQuery());
+    const config = await qc.ensureQueryData(homeGroupingsQuery());
+    const first = (config as { groupings: HomeGroupingDTO[] }).groupings?.[0];
+    if (first) await qc.ensureQueryData(homeGroupingDataQuery(first.id));
+  },
+  errorComponent: ({ error }) => (
+    <div className="p-8 text-center text-sm text-muted-foreground" role="alert">
+      {(error as Error).message}
+    </div>
+  ),
   component: Landing,
 });
-
-async function fetchHomeGroupings(): Promise<{ groupings: HomeGroupingDTO[] }> {
-  const res = await fetch("/api/public/home-config");
-  if (!res.ok) throw new Error("Falha ao carregar");
-  return res.json();
-}
 
 type GroupingData = {
   blocks: Array<{
@@ -57,12 +70,6 @@ type GroupingData = {
   }>;
 };
 
-async function fetchGroupingData(groupingId: string): Promise<GroupingData> {
-  const res = await fetch(`/api/public/home-grouping-data?grouping_id=${encodeURIComponent(groupingId)}`);
-  if (!res.ok) throw new Error("Falha ao carregar blocos");
-  return res.json();
-}
-
 function gridClass(columns: 3 | 4) {
   return columns === 4
     ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
@@ -70,23 +77,20 @@ function gridClass(columns: 3 | 4) {
 }
 
 function Landing() {
-  const groupingsQ = useQuery({
-    queryKey: ["home-groupings"],
-    queryFn: fetchHomeGroupings,
-    staleTime: 60_000,
-  });
-  const groupings = groupingsQ.data?.groupings ?? [];
+  const groupingsQ = useQuery(homeGroupingsQuery());
+  const groupings = (groupingsQ.data?.groupings ?? []) as HomeGroupingDTO[];
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const activeGrouping = groupings.find((g) => g.slug === (activeSlug ?? groupings[0]?.slug)) ?? groupings[0];
 
-  const dataQ = useQuery({
-    queryKey: ["home-grouping-data", activeGrouping?.id],
-    queryFn: () => fetchGroupingData(activeGrouping!.id),
-    enabled: !!activeGrouping?.id,
-    staleTime: 60_000,
-  });
+  const dataQ = useQuery(homeGroupingDataQuery(activeGrouping?.id));
 
-  const byBlock = new Map((dataQ.data?.blocks ?? []).map((b) => [b.id, b]));
+  // Layouts configurados pelo super admin — usados para o skeleton refletir o card real.
+  const categoryId = activeGrouping?.category_ids?.[0];
+  const orgLayoutQ = useQuery(categoryLayoutQuery(categoryId, "organization_card"));
+  const recLayoutQ = useQuery(categoryLayoutQuery(categoryId, "record_card"));
+
+  const data = dataQ.data as GroupingData | undefined;
+  const byBlock = new Map((data?.blocks ?? []).map((b) => [b.id, b]));
   const visibleBlocks = (activeGrouping?.blocks ?? []).filter((b) => {
     if (dataQ.isLoading) return true;
     const d = byBlock.get(b.id);
@@ -99,7 +103,7 @@ function Landing() {
       <PublicHeader />
 
       {/* Hero */}
-      <section className="relative bg-primary pb-24 pt-12 text-primary-foreground sm:pb-32 sm:pt-20">
+      <section className="relative -mt-[57px] bg-primary pb-24 pt-[85px] text-primary-foreground sm:pb-32 sm:pt-24">
         <div className="mx-auto w-full max-w-6xl px-4 text-center sm:px-6">
           <h1 className="mx-auto max-w-3xl font-display text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
             Encontre espaços e fornecedores de eventos
@@ -145,6 +149,7 @@ function Landing() {
                   block={block}
                   data={byBlock.get(block.id)}
                   isLoading={dataQ.isLoading}
+                  layout={block.source === "records" ? recLayoutQ.data : orgLayoutQ.data}
                 />
               ))
             )
@@ -163,10 +168,12 @@ function HomeBlockSection({
   block,
   data,
   isLoading,
+  layout,
 }: {
   block: HomeBlockDTO;
   data: GroupingData["blocks"][number] | undefined;
   isLoading: boolean;
+  layout?: LayoutItem[] | null;
 }) {
   const columns = (block.columns ?? 3) as 3 | 4;
 
@@ -177,7 +184,20 @@ function HomeBlockSection({
       </div>
 
       {isLoading ? (
-        <PublicCardSkeletonGrid count={block.limit_count} withLogo />
+        block.block_type === "links" ? (
+          <div className={gridClass(columns)}>
+            {Array.from({ length: block.limit_count }).map((_, i) => (
+              <Skeleton key={i} className="h-40 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : (
+          <PublicCardSkeletonGrid
+            count={block.limit_count}
+            withLogo={block.source !== "records"}
+            layout={layout}
+            className={gridClass(columns)}
+          />
+        )
       ) : block.block_type === "links" ? (
         <div className={gridClass(columns)}>
           {(data?.links ?? []).map((link, i) => (
@@ -226,6 +246,7 @@ function ShortcutCard({
       to="/categoria/$slug"
       params={{ slug }}
       search={search as any}
+      preload="intent"
       className="group block overflow-hidden rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="relative h-40 w-full overflow-hidden rounded-xl bg-muted">
@@ -234,6 +255,7 @@ function ShortcutCard({
             src={link.image_url}
             alt={link.title}
             loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : null}
@@ -251,6 +273,7 @@ function OrganizationCard({ org }: { org: PublicOrganizationSummary }) {
     <Link
       to="/public/$slug"
       params={{ slug: org.slug }}
+      preload="intent"
       className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
@@ -277,6 +300,7 @@ function RecordCard({ record }: { record: PublicRecordSummary }) {
     <Link
       to="/public/$slug/$tableId"
       params={{ slug: record.org_slug, tableId: record.table_id }}
+      preload="intent"
       className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
@@ -294,4 +318,3 @@ function RecordCard({ record }: { record: PublicRecordSummary }) {
     </Link>
   );
 }
-
