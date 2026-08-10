@@ -63,7 +63,7 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
       <div className="mx-auto grid w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3 sm:flex sm:justify-between sm:gap-3 sm:px-6">
         {/* Logo: apenas em telas maiores */}
         <Link to="/" className="hidden min-w-0 items-center gap-2 sm:flex">
-          <img src="/Venuespace logo1.svg" alt="Venuespace Logo" className="h-5 w-auto" />
+          <img src="/Venuespace logo1.svg" alt="Venuespace Logo" className="h-5 w-auto mix-blend-difference" />
         </Link>
 
         <div className="justify-self-start sm:justify-self-auto">
@@ -72,7 +72,12 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn("gap-1.5", onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "text-muted-foreground")}
+                className={cn(
+                  "gap-1.5",
+                  onHero
+                    ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                    : "text-muted-foreground",
+                )}
               >
                 <Compass className="h-4 w-4" />
                 <span className="hidden sm:inline">Explore</span>
@@ -94,9 +99,7 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
                   </DropdownMenuItem>
                 );
               })}
-              {list.length === 0 ? (
-                <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem>
-              ) : null}
+              {list.length === 0 ? <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem> : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -120,7 +123,10 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
                 variant="ghost"
                 size="icon"
                 aria-label="Entrar"
-                className={cn("h-9 w-9", onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "")}
+                className={cn(
+                  "h-9 w-9",
+                  onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "",
+                )}
               >
                 <CircleUserRound className="h-5 w-5" />
               </Button>
