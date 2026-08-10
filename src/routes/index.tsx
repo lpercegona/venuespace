@@ -45,7 +45,9 @@ export const Route = createFileRoute("/")({
     qc.prefetchQuery(publicCategoriesQuery());
     const config = await qc.ensureQueryData(homeGroupingsQuery());
     const first = (config as { groupings: HomeGroupingDTO[] }).groupings?.[0];
-    if (first) await qc.ensureQueryData(homeGroupingDataQuery(first.id));
+    // Não bloqueia o HTML: os blocos chegam via streaming enquanto o skeleton
+    // já reflete o layout configurado.
+    if (first) qc.prefetchQuery(homeGroupingDataQuery(first.id));
   },
   errorComponent: ({ error }) => (
     <div className="p-8 text-center text-sm text-muted-foreground" role="alert">
