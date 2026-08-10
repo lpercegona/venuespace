@@ -1,3 +1,4 @@
+import { cached, TTL_SHORT } from "@/lib/server-cache";
 // Server-only helper computing explore filter definitions + distinct option values.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -181,6 +182,13 @@ export async function listExploreFilters(opts: {
 
 /** Load filter definitions (search + select keys) for list-side filtering. */
 export async function loadFilterKeys(
+  scope: "organization" | "record",
+  categoryId?: string,
+): Promise<{ searchKeys: string[]; selectKeys: string[] }> {
+  return cached(`filterkeys:${scope}:${categoryId ?? "all"}`, TTL_SHORT, () => loadFilterKeysUncached(scope, categoryId));
+}
+
+async function loadFilterKeysUncached(
   scope: "organization" | "record",
   categoryId?: string,
 ): Promise<{ searchKeys: string[]; selectKeys: string[] }> {

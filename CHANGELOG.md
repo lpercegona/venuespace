@@ -1,3 +1,13 @@
+## 2026-08-10 (America/Sao_Paulo) — Otimização de páginas públicas, skeleton dinâmico e header
+
+- Novo `src/lib/public-catalog.functions.ts`: server functions (`getPublicCategoriesFn`, `getHomeGroupingsFn`, `getHomeGroupingDataFn`, `getCategoryLayoutFn`, `listPublicOrganizationsFn`, `getExploreFiltersFn`) para leitura pública direta no servidor, sem round-trip HTTP durante o SSR.
+- Novo `src/lib/public-queries.ts`: `queryOptions` compartilhados (categorias, home, layout, filtros e listagem por categoria) usados tanto nos loaders quanto nos componentes.
+- Novo `src/lib/server-cache.ts`: cache em memória com TTL e dedup de chamadas concorrentes.
+- `src/lib/public.server.ts`: `signPathsCached` reutiliza URLs assinadas (TTL 45min); layouts, campos de categoria, aliases de opções e a base de organizações públicas passam a ser cacheados (TTL 30s). `src/lib/explore-filters.server.ts` e `src/lib/home-data.server.ts` usam os mesmos caches.
+- `src/routes/index.tsx` e `src/routes/categoria.$slug.tsx`: `loader` com `ensureQueryData`/`prefetchQuery` (dados de bloco em streaming, sem bloquear o HTML). Tempo de `/api/public/home-grouping-data` caiu de ~8,5s para ~0,2s em cache quente.
+- Skeleton inicial (`PublicCardSkeletonGrid`) recebe o layout configurado pelo super admin para a categoria, refletindo o formato real do card.
+- `src/components/venue/public-header.tsx`: em mobile a logo é omitida (Explorar à esquerda, "Cadastrar empresa" ao centro, login à direita); header fixo com a mesma cor do hero no topo da home, some no scroll down e reaparece no scroll up.
+
 ## 2026-08-09 00:20 (America/Sao_Paulo) — Correção/extensão da Iteração 30 — filtros, atalhos e blocos
 - **Filtros públicos** (`src/lib/explore-filters.server.ts`): as opções dos filtros `select` deixam de ser derivadas apenas de organizações com registros publicados; passam a varrer `organizations` com `is_public = true` (mesma base da listagem) e a unir com as opções declaradas em `config.options` dos campos da categoria. Escopo `record` filtra por categoria na consulta e também une as opções configuradas. Deduplicação case/acento-insensível.
 - **Regras de blocos** (`src/lib/public.server.ts`): comparação normalizada por acento/caixa/espaços; `address.city_state_full` resolvido a partir de cidade + estado por extenso; `=`, `!=` e `contains` casam tanto pelo valor quanto pelo rótulo da opção (`category_org_fields` / `category_standard_table_fields`). Filtros `f_*` da listagem usam o mesmo casamento.

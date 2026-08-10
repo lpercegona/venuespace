@@ -3,6 +3,28 @@
 // were removed; scoping (published status, org/table match) is enforced in code here.
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { cached, cacheGet, cacheSet, TTL_MEDIUM, TTL_SHORT, TTL_SIGNED } from "@/lib/server-cache";
+
+/** Assina caminhos do storage reutilizando URLs já assinadas (cache em memória). */
+export async function signPathsCached(paths: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const missing: string[] = [];
+  for (const p of Array.from(new Set(paths.filter(Boolean)))) {
+    const hit = cacheGet<string>(`signed:${p}`);
+    if (hit) out.set(p, hit);
+    else missing.push(p);
+  }
+  if (missing.length > 0) {
+    const { data } = await supabaseAdmin.storage.from("venue-uploads").createSignedUrls(missing, 60 * 60);
+    (data ?? []).forEach((row: any, i: number) => {
+      const path = row?.path ?? missing[i];
+      if (!row?.signedUrl || !path) return;
+      cacheSet(`signed:${path}`, row.signedUrl as string, TTL_SIGNED);
+      out.set(path, row.signedUrl as string);
+    });
+  }
+  return out;
+}
 
 export type PublicLayoutField = {
   id: string;
@@ -257,8 +279,12 @@ const RECORD_BUILTIN_FIELDS: PublicRendererField[] = [
 
 
 async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card" | "organization_page"): Promise<Map<string, PublicLayoutField[]>> {
+  if (categoryIds.length === 0) return new Map<string, PublicLayoutField[]>();
+  return cached(`layouts:${scope}:${[...categoryIds].sort().join(",")}`, TTL_SHORT, () => loadLayoutsBatchUncached(categoryIds, scope));
+}
+
+async function loadLayoutsBatchUncached(categoryIds: string[], scope: "organization_card" | "record_card" | "organization_page"): Promise<Map<string, PublicLayoutField[]>> {
   const out = new Map<string, PublicLayoutField[]>();
-  if (categoryIds.length === 0) return out;
   const sb = supabaseAdmin;
   const { data: parents } = await (sb as any)
     .from("category_public_layouts")
@@ -290,8 +316,12 @@ async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card
 }
 
 async function loadOrgCategoryFieldsBatch(categoryIds: string[]): Promise<Map<string, PublicRendererField[]>> {
+  if (categoryIds.length === 0) return new Map<string, PublicRendererField[]>();
+  return cached(`orgfields:${[...categoryIds].sort().join(",")}`, TTL_SHORT, () => loadOrgCategoryFieldsBatchUncached(categoryIds));
+}
+
+async function loadOrgCategoryFieldsBatchUncached(categoryIds: string[]): Promise<Map<string, PublicRendererField[]>> {
   const out = new Map<string, PublicRendererField[]>();
-  if (categoryIds.length === 0) return out;
   const { data } = await (supabaseAdmin as any)
     .from("category_org_fields")
     .select("category_id, field_key, label, field_type, config, order_index")
@@ -354,6 +384,15 @@ function optionEntries(config: any): Array<{ value: string; label: string }> {
 }
 
 async function loadOptionAliases(
+  table: "category_org_fields" | "category_standard_table_fields",
+  fieldKeys: string[],
+): Promise<OptionAliasMap> {
+  const keysSorted = Array.from(new Set(fieldKeys.filter(Boolean))).sort();
+  if (keysSorted.length === 0) return new Map();
+  return cached(`aliases:${table}:${keysSorted.join(",")}`, TTL_SHORT, () => loadOptionAliasesUncached(table, keysSorted));
+}
+
+async function loadOptionAliasesUncached(
   table: "category_org_fields" | "category_standard_table_fields",
   fieldKeys: string[],
 ): Promise<OptionAliasMap> {
@@ -437,7 +476,10 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     .order("updated_at", { ascending: false });
 
   if (categoryId) query = query.eq("category_id", categoryId);
-  const { data, error } = await query;
+  const { data, error } = await cached(`orgs:public:${categoryId ?? "all"}`, TTL_SHORT, async () => {
+    const res = await query;
+    return res as { data: any[] | null; error: { message: string } | null };
+  });
   if (error) throw new Error(error.message);
 
   const resolveOrgVal = (o: any, key: string): unknown => {
@@ -783,15 +825,15 @@ async function signImagePathsInItems(items: Array<{ data: Record<string, any>; f
     }
   }
   if (paths.length === 0) return;
-  const { data: signed } = await supabaseAdmin.storage.from("venue-uploads").createSignedUrls(paths, 60 * 60);
-  (signed ?? []).forEach((s, i) => {
-    const ref = refs[i];
-    if (!s?.signedUrl || !ref) return;
+  const signed = await signPathsCached(paths);
+  refs.forEach((ref, i) => {
+    const url = signed.get(paths[i] as string);
+    if (!url || !ref) return;
     if (ref.kind === "single") {
-      ref.data[ref.key] = s.signedUrl;
+      ref.data[ref.key] = url;
     } else {
       const arr = ref.data[ref.key];
-      if (Array.isArray(arr)) arr[ref.index] = s.signedUrl;
+      if (Array.isArray(arr)) arr[ref.index] = url;
     }
   });
 }
