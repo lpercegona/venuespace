@@ -72,5 +72,5 @@ export const getExploreFiltersFn = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     const { listExploreFilters } = await import("@/lib/explore-filters.server");
-    return { filters: await listExploreFilters(data.scope, data.categoryId) };
+    return listExploreFilters({ scope: data.scope, category_id: data.categoryId });
   });
