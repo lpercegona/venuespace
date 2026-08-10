@@ -9,14 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, SlidersHorizontal, X } from "lucide-react";
-import type { PublicOrganizationSummary } from "@/lib/public.server";
 import { PublicHeader } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
-import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
-import { useCategoryLayout } from "@/hooks/use-public-catalog";
+import { categorySlug } from "@/components/venue/category-tabs";
+import {
+  categoryFiltersQuery,
+  categoryLayoutQuery,
+  categoryOrganizationsQuery,
+  publicCategoriesQuery,
+} from "@/lib/public-queries";
 
 const searchSchema = z
   .object({
@@ -25,8 +29,19 @@ const searchSchema = z
   })
   .catchall(fallback(z.string(), "").default(""));
 
+const PAGE_SIZE = 24;
+
+function extractFilters(search: Record<string, any>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(search)) {
+    if (k.startsWith("f_") && typeof v === "string" && v) out[k.slice(2)] = v;
+  }
+  return out;
+}
+
 export const Route = createFileRoute("/categoria/$slug")({
   validateSearch: zodValidator(searchSchema as any),
+  loaderDeps: ({ search }) => ({ search: search as Record<string, any> }),
   head: () => ({
     meta: [
       { title: "Categoria — Venuespace" },
@@ -37,54 +52,41 @@ export const Route = createFileRoute("/categoria/$slug")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  loader: async ({ context, params, deps }) => {
+    const qc = context.queryClient;
+    const cats = (await qc.ensureQueryData(publicCategoriesQuery())) as Array<{ id: string; name: string }>;
+    const category = cats.find((c) => categorySlug(c as any) === params.slug);
+    if (!category) return;
+    const search = deps.search ?? {};
+    const page = Math.max(1, Number(search.page ?? 1));
+    qc.prefetchQuery(categoryLayoutQuery(category.id, "organization_card"));
+    qc.prefetchQuery(categoryFiltersQuery(category.id));
+    await qc.ensureQueryData(
+      categoryOrganizationsQuery({
+        categoryId: category.id,
+        q: String(search.q ?? ""),
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+        filters: extractFilters(search),
+      }),
+    );
+  },
+  errorComponent: ({ error }) => (
+    <div className="p-8 text-center text-sm text-muted-foreground" role="alert">
+      {(error as Error).message}
+    </div>
+  ),
   component: CategoryPage,
 });
-
-const PAGE_SIZE = 24;
-
-type FilterDef = { key: string; label: string; filter_type: "search" | "select"; options: string[] };
-
-async function fetchOrgs(
-  q: string,
-  offset: number,
-  filters: Record<string, string>,
-  categoryId?: string,
-): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
-  const p = new URLSearchParams();
-  p.set("limit", String(PAGE_SIZE));
-  p.set("offset", String(offset));
-  if (q) p.set("q", q);
-  if (categoryId) p.set("category", categoryId);
-  for (const [k, v] of Object.entries(filters)) if (v) p.set(`f_${k}`, v);
-  const res = await fetch(`/api/public/organizations?${p.toString()}`);
-  if (!res.ok) throw new Error("Falha ao carregar");
-  return res.json();
-}
-
-async function fetchFilters(categoryId?: string): Promise<{ filters: FilterDef[] }> {
-  const res = await fetch(
-    `/api/public/explore-filters?scope=organization${categoryId ? `&category=${encodeURIComponent(categoryId)}` : ""}`,
-  );
-  if (!res.ok) return { filters: [] };
-  return res.json();
-}
-
-function extractFilters(search: Record<string, any>): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(search)) {
-    if (k.startsWith("f_") && typeof v === "string" && v) out[k.slice(2)] = v;
-  }
-  return out;
-}
 
 function CategoryPage() {
   const { slug } = Route.useParams();
   const search = Route.useSearch() as Record<string, any>;
   const navigate = Route.useNavigate();
 
-  const catsQ = usePublicCategories();
-  const category = (catsQ.data ?? []).find((c) => categorySlug(c) === slug) ?? null;
-  const catId = category?.id;
+  const catsQ = useQuery(publicCategoriesQuery());
+  const category = (catsQ.data ?? []).find((c: any) => categorySlug(c) === slug) ?? null;
+  const catId = (category as any)?.id as string | undefined;
 
   const currentFilters = useMemo(() => extractFilters(search), [search]);
   const q: string = search.q ?? "";
@@ -92,19 +94,12 @@ function CategoryPage() {
   const offset = (page - 1) * PAGE_SIZE;
   const [term, setTerm] = useState(q);
 
-  const layoutQ = useCategoryLayout(catId, "organization_card");
-  const filtersQ = useQuery({
-    queryKey: ["category-filters", catId],
-    queryFn: () => fetchFilters(catId),
-    enabled: !!catId,
-    staleTime: 5 * 60_000,
-  });
-  const orgsQ = useQuery({
-    queryKey: ["category-orgs", catId, q, offset, currentFilters],
-    queryFn: () => fetchOrgs(q, offset, currentFilters, catId),
-    enabled: !!catId,
-    staleTime: 30_000,
-  });
+  const layoutQ = useQuery(categoryLayoutQuery(catId, "organization_card"));
+  const filtersQ = useQuery(categoryFiltersQuery(catId));
+  const orgsQ = useQuery(
+    categoryOrganizationsQuery({ categoryId: catId, q, limit: PAGE_SIZE, offset, filters: currentFilters }),
+  );
+
 
   const total = orgsQ.data?.total ?? 0;
 
