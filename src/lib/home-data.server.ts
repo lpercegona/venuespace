@@ -1,6 +1,7 @@
 // Server-only helpers for the configurable home (Iteração 30 — correção/extensão).
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { listPublicOrganizations, listPublicRecords } from "@/lib/public.server";
+import { cached, TTL_SHORT } from "@/lib/server-cache";
+import { listPublicOrganizations, listPublicRecords, signPathsCached } from "@/lib/public.server";
 import type { PublicFilterRule } from "@/lib/public.server";
 
 export type HomeBlockLinkItem = {
@@ -15,20 +16,17 @@ export type HomeBlockLinkItem = {
 
 /** Mapa category_id -> slug (derivado do nome, igual à navegação pública). */
 async function loadCategorySlugs(): Promise<Map<string, string>> {
+  return cached("home:category-slugs", TTL_SHORT, loadCategorySlugsUncached);
+}
+
+async function loadCategorySlugsUncached(): Promise<Map<string, string>> {
   const { slugify } = await import("@/lib/slug");
   const { data } = await supabaseAdmin.from("organization_categories").select("id, name");
   return new Map(((data ?? []) as any[]).map((c) => [c.id as string, slugify(c.name as string)]));
 }
 
 async function signPaths(paths: string[]): Promise<Map<string, string>> {
-  const out = new Map<string, string>();
-  const unique = Array.from(new Set(paths.filter(Boolean)));
-  if (unique.length === 0) return out;
-  const { data } = await supabaseAdmin.storage.from("venue-uploads").createSignedUrls(unique, 60 * 60);
-  for (const row of (data ?? []) as Array<{ path?: string | null; signedUrl?: string | null }>) {
-    if (row?.path && row?.signedUrl) out.set(row.path, row.signedUrl);
-  }
-  return out;
+  return signPathsCached(paths);
 }
 
 /**
