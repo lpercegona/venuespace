@@ -5,11 +5,12 @@
 Hoje toda página pública (home, `/categoria/$slug`, `/explore`, `/public/$slug`, blog) monta vazia e só então dispara `fetch` no cliente — o usuário vê skeleton mesmo quando o dado poderia vir pronto do servidor.
 
 Mudanças:
+
 - Adicionar `loader` nas rotas públicas usando `context.queryClient.ensureQueryData(...)` para os dados de primeira dobra (home: config de agrupamentos + dados do primeiro bloco; categoria: categorias, layout, filtros e primeira página de organizações; organização: dados do perfil). O HTML já chega com conteúdo (melhor LCP e SEO).
 - Extrair as chamadas duplicadas (`fetchHomeGroupings`, `fetchOrgs`, `fetchFilters`, categorias) para `queryOptions` compartilhados, evitando refetch entre páginas e permitindo prefetch.
 - Alinhar `staleTime` com o cache HTTP já existente (categorias/labels/layouts = 5 min) e adicionar `cache-control` nos endpoints públicos que hoje estão sem ele ou com `no-store` indevido (ex.: `category-labels`).
 - Prefetch em hover/foco nos links de categoria do header e nos cards, para navegação instantânea.
-- Imagens: `loading="lazy"` + `decoding="async"` em cards fora da primeira dobra, `fetchpriority="high"` e `preload` apenas na imagem de herói da página de organização; `width`/`height` para evitar layout shift.
+- Imagens: `loading="lazy"` + `decoding="async"` em cards fora da primeira dobra, `fetchpriority="high"` e `preload` apenas na imagem de hero da página de organização; `width`/`height` para evitar layout shift.
 - Reduzir requisições em cascata na home (config → dados do bloco) resolvendo os dados do agrupamento inicial no mesmo loader.
 
 ## 2. Skeleton fiel ao layout da categoria
