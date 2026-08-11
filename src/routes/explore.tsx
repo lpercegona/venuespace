@@ -210,13 +210,9 @@ function ExplorePage() {
           onSelect={(s) => navigate({ search: { tab: activeTab, categoria: s } as any })}
         />
 
-        <Tabs value={activeTab} onValueChange={setTab} className="mt-4">
-          {/* Alternância Organizações/Registros removida temporariamente. */}
-
-
-
-          <PublicFilterBar
-            className="mt-4"
+        <div className="mt-6 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-8">
+          <PublicFilterSidebar
+            className="hidden lg:sticky lg:top-24 lg:block"
             term={term}
             onTermChange={setTerm}
             filters={availableFilters as any}
@@ -224,6 +220,20 @@ function ExplorePage() {
             onFilterChange={setFilter}
             onClear={clearFilters}
           />
+
+          <div className="min-w-0">
+            <PublicFilterBar
+              className="lg:hidden"
+              term={term}
+              onTermChange={setTerm}
+              filters={availableFilters as any}
+              values={currentFilters}
+              onFilterChange={setFilter}
+              onClear={clearFilters}
+            />
+
+        <Tabs value={activeTab} onValueChange={setTab} className="mt-4">
+
 
 
           <TabsContent value="orgs" className="mt-6">
