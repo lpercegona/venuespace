@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Check, Loader2, Plus, Search, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DynamicForm } from "@/components/venue/dynamic-form";
