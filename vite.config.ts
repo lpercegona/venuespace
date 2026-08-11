@@ -4,7 +4,13 @@
 //     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+
+// tslib 1.x (nested under pdf-lib) is CJS-only: bundling it breaks at runtime with
+// "Cannot destructure property '__extends' of '__toESM(...).default'".
+// Force every import of tslib to the root ESM build (tslib 2.x, named exports).
+const tslibEsm = fileURLToPath(new URL("./node_modules/tslib/tslib.es6.mjs", import.meta.url));
 
 export default defineConfig({
   tanstackStart: {
@@ -14,9 +20,7 @@ export default defineConfig({
   },
   vite: {
     resolve: {
-      // Force a single tslib (2.x, ESM with named exports). tslib 1.x is CJS-only and
-      // breaks pdf-lib at runtime with "Cannot destructure property '__extends'".
-      alias: { tslib: "tslib" },
+      alias: [{ find: /^tslib$/, replacement: tslibEsm }],
     },
   },
 });
