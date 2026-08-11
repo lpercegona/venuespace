@@ -22,7 +22,6 @@ import { useCategoryLayout } from "@/hooks/use-public-catalog";
 
 
 
-import { useLabels } from "@/hooks/use-instance-context";
 
 // Filter values are encoded in the URL as f_<key>=value.
 const searchSchema = z.object({
@@ -91,7 +90,6 @@ function extractFilters(search: Record<string, any>): Record<string, string> {
 }
 
 function ExplorePage() {
-  const { t } = useLabels();
   const search = Route.useSearch() as Record<string, any>;
   const navigate = Route.useNavigate();
 
