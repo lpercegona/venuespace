@@ -1,3 +1,7 @@
+## 2026-08-11 18:57 (America/Sao_Paulo) — Correção/extensão da Iteração 33 — acordeon nos filtros
+
+- **Acordeon simplificado**: `FilterOptionList` passa a recolher/expandir cada grupo de filtro por um cabeçalho clicável com chevron e contador de selecionados (`aria-expanded`), separados por divisória. Abre por padrão o primeiro grupo e qualquer grupo com seleção ativa (nova prop `defaultOpen`). Aplicado à sidebar de `/explore` e `/categoria/$slug`, à barra de filtros e à busca da home.
+
 ## 2026-08-11 18:55 (America/Sao_Paulo) — Correção/extensão da Iteração 33 — filtros laterais na categoria e multisseleção
 
 - **Categoria com coluna lateral**: `/categoria/$slug` adota o mesmo layout do `/explore` em `lg+` (`grid-cols-[280px_minmax(0,1fr)]`, sidebar sticky com filtros expandidos, listagem em 2 colunas e 3 em `xl`). Abaixo de `lg`, barra com busca + popover de filtros.
