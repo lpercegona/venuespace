@@ -79,11 +79,17 @@ export function BookingFormDialog({
   }
 
   async function submit() {
+    const missingPeriod = periodFields.filter((f: any) => !period[f.key]);
+    if (periodFields.length > 0 && missingPeriod.length > 0) {
+      toast.error("Informe o período da reserva (início e término).");
+      return;
+    }
     if (selected.length === 0) {
       toast.error("Selecione ao menos um item para o orçamento.");
       return;
     }
     setSaving(true);
+
     try {
       if (editing) {
         await updateBooking({
