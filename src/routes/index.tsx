@@ -171,19 +171,37 @@ function HomeBlockSection({
   data,
   isLoading,
   layout,
+  categorySlug: catSlug,
 }: {
   block: HomeBlockDTO;
   data: GroupingData["blocks"][number] | undefined;
   isLoading: boolean;
   layout?: LayoutItem[] | null;
+  categorySlug?: string;
 }) {
   const columns = (block.columns ?? 3) as 3 | 4;
+
+  // "Ver todos" reaplica as regras "=" do bloco como filtros na listagem.
+  const seeAllSearch: Record<string, string> = {};
+  for (const rule of block.rules ?? []) {
+    if (rule.operator === "=" && rule.field_key && rule.value) seeAllSearch[`f_${rule.field_key}`] = rule.value;
+  }
+  if (catSlug) seeAllSearch.categoria = catSlug;
 
   return (
     <section>
       <div className="mb-5 flex items-end justify-between gap-4">
         <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">{block.title}</h2>
+        <Link
+          to="/explore"
+          search={seeAllSearch as any}
+          preload="intent"
+          className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Ver todos
+        </Link>
       </div>
+
 
       {isLoading ? (
         block.block_type === "links" ? (
