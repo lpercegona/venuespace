@@ -94,11 +94,8 @@ function ExplorePage() {
   const { t } = useLabels();
   const search = Route.useSearch() as Record<string, any>;
   const navigate = Route.useNavigate();
-  const requestedTab = search.tab === "records" ? "records" : "orgs";
 
 
-  const orgsPlural = t("organizations", "Organizações");
-  const recordsPlural = t("records", "Registros");
 
   const currentFilters = useMemo(() => extractFilters(search), [search]);
   const q: string = search.q ?? "";
@@ -219,7 +216,7 @@ function ExplorePage() {
 
 
           <TabsContent value="orgs" className="mt-6">
-            {orgsQ.isLoading ? (
+            {orgsQ.isPending ? (
               <PublicCardSkeletonGrid count={6} withLogo layout={orgLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
             ) : (orgsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
@@ -260,7 +257,7 @@ function ExplorePage() {
           </TabsContent>
 
           <TabsContent value="records" className="mt-6">
-            {recsQ.isLoading ? (
+            {recsQ.isPending ? (
               <PublicCardSkeletonGrid count={6} layout={recLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
             ) : (recsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
@@ -316,7 +313,7 @@ function ExplorePage() {
               variant="outline"
               size="sm"
               disabled={page <= 1}
-              onClick={() => updateSearch({ page: page > 2 ? String(page - 1) : undefined })}
+              onClick={() => updateSearch({ page: page > 2 ? page - 1 : undefined })}
             >
               Anterior
             </Button>
@@ -327,7 +324,7 @@ function ExplorePage() {
               variant="outline"
               size="sm"
               disabled={offset + PAGE_SIZE >= total}
-              onClick={() => updateSearch({ page: String(page + 1) })}
+              onClick={() => updateSearch({ page: page + 1 })}
             >
               Próxima
             </Button>
