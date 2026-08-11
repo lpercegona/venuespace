@@ -9,6 +9,8 @@ import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
+import { HomeSearchBar } from "@/components/venue/home-search-bar";
+
 import {
   categoryLayoutQuery,
   homeGroupingDataQuery,
