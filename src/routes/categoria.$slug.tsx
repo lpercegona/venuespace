@@ -134,7 +134,7 @@ function CategoryPage() {
     setTerm("");
   }
 
-  const availableFilters = (filtersQ.data?.filters ?? []).filter((f) => f.filter_type === "select");
+  const availableFilters = (filtersQ.data?.filters ?? []).filter((f: any) => f.filter_type !== "search");
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
