@@ -213,21 +213,25 @@ export const listBookings = createServerFn({ method: "GET" })
   });
 
 
-/** Recursos sem reserva aceita/fechada sobreposta ao período informado. */
+/** Itens sem reserva aceita/fechada sobreposta ao período informado. */
 export const listAvailableResources = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({ table_id: z.string().uuid(), from: z.string().min(1), to: z.string().min(1) }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadResourceLabels, overlaps } = await import("./bookings.server");
+    const { loadBookingMeta, loadResourceLabels, loadBookableItems, overlaps } =
+      await import("./bookings.server");
     const meta = await loadBookingMeta(context.supabase, data.table_id);
-    const resources = await loadResourceLabels(context.supabase, meta.targetTableId);
-    if (!meta.startKey || !meta.endKey || !meta.relKey) return { available: [], busy: [] };
+    const relResources = await loadResourceLabels(context.supabase, meta.targetTableId);
+    const itemResources = (await loadBookableItems(context.supabase, data.table_id))
+      .map((i) => ({ id: i.id, label: i.label }));
+    const resources = relResources.length > 0 ? relResources : itemResources;
+    if (!meta.startKey || !meta.endKey || resources.length === 0) return { available: [], busy: [] };
 
     const { data: rows } = await context.supabase
       .from("records")
-      .select("id, data, deal_status, status")
+      .select("id, data, system_data, deal_status, status")
       .eq("table_id", data.table_id)
       .in("deal_status", ["accepted", "closed"]);
 
@@ -236,9 +240,13 @@ export const listAvailableResources = createServerFn({ method: "GET" })
       if (r.status === "archived") continue;
       const s = r.data?.[meta.startKey];
       const e = r.data?.[meta.endKey];
-      const res = r.data?.[meta.relKey];
-      if (!s || !e || typeof res !== "string") continue;
-      if (overlaps(String(s), String(e), data.from, data.to + "\uffff")) busyIds.add(res);
+      if (!s || !e) continue;
+      if (!overlaps(String(s), String(e), data.from, data.to + "\uffff")) continue;
+      const res = meta.relKey ? r.data?.[meta.relKey] : null;
+      if (typeof res === "string") busyIds.add(res);
+      for (const it of ((r.system_data as any)?.items ?? []) as any[]) {
+        if (it?.record_id) busyIds.add(String(it.record_id));
+      }
     }
     return {
       available: resources.filter((r) => !busyIds.has(r.id)),
@@ -252,41 +260,58 @@ export const createBooking = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
       table_id: z.string().uuid(),
-      data: z.record(z.string(), z.any()),
+      data: z.record(z.string(), z.any()).optional(),
+      item_record_ids: z.array(z.string().uuid()).min(1, "Selecione ao menos um item."),
+      contact_record_id: z.string().uuid().nullable().optional(),
       title: z.string().max(160).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadResourceLabels, overlaps } = await import("./bookings.server");
+    const { loadBookingMeta, loadBookableItems, overlaps } = await import("./bookings.server");
     const table = await tableOrg(context.supabase, data.table_id);
     await assertCanEdit(context.supabase, table.organization_id, context.userId);
 
     const meta = await loadBookingMeta(context.supabase, data.table_id);
-    const start = meta.startKey ? data.data?.[meta.startKey] : null;
-    const end = meta.endKey ? data.data?.[meta.endKey] : null;
-    const resourceId = meta.relKey ? data.data?.[meta.relKey] : null;
+    const values = (data.data ?? {}) as Record<string, any>;
+    const start = meta.startKey ? values[meta.startKey] : null;
+    const end = meta.endKey ? values[meta.endKey] : null;
 
     if (start && end && String(start) >= String(end)) {
       throw new Error("A data final deve ser posterior à data inicial.");
     }
 
-    if (start && end && typeof resourceId === "string" && meta.startKey && meta.endKey && meta.relKey) {
+    const catalog = await loadBookableItems(context.supabase, data.table_id);
+    const chosen = data.item_record_ids
+      .map((id) => catalog.find((c) => c.id === id))
+      .filter(Boolean) as Array<{ id: string; label: string; value: number }>;
+    if (chosen.length === 0) throw new Error("Itens inválidos para esta tabela.");
+    const bookingItems = chosen.map((c) => ({ record_id: c.id, label: c.label, value: c.value }));
+
+    if (start && end && meta.startKey && meta.endKey) {
+      const chosenIds = new Set(chosen.map((c) => c.id));
       const { data: others } = await context.supabase
         .from("records")
-        .select("id, data, status")
+        .select("id, data, system_data, status")
         .eq("table_id", data.table_id)
-        .in("deal_status", ["accepted", "closed"])
-        .contains("data", { [meta.relKey]: resourceId } as any);
+        .in("deal_status", ["accepted", "closed"]);
       for (const o of (others ?? []) as any[]) {
         if (o.status === "archived") continue;
         const os = o.data?.[meta.startKey];
         const oe = o.data?.[meta.endKey];
         if (!os || !oe) continue;
-        if (overlaps(String(start), String(end), String(os), String(oe))) {
-          throw new Error(`Conflito de reserva: o recurso já está ocupado entre ${os} e ${oe}.`);
+        if (!overlaps(String(start), String(end), String(os), String(oe))) continue;
+        const busy = [
+          ...(meta.relKey && typeof o.data?.[meta.relKey] === "string" ? [String(o.data[meta.relKey])] : []),
+          ...(((o.system_data as any)?.items ?? []) as any[]).map((i) => String(i?.record_id ?? "")),
+        ];
+        const clash = busy.find((id) => chosenIds.has(id));
+        if (clash) {
+          const label = chosen.find((c) => c.id === clash)?.label ?? "Item";
+          throw new Error(`Conflito de reserva: "${label}" já está reservado entre ${os} e ${oe}.`);
         }
       }
     }
+
 
     const { data: row, error } = await context.supabase
       .from("records")
