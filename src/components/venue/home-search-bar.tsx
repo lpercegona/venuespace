@@ -76,39 +76,28 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
               ) : null}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-72 p-0">
-            <ScrollArea className="max-h-[60vh]">
-              <div className="space-y-3 p-3 text-left">
+          <PopoverContent align="end" className="w-80 p-0">
+            <ScrollArea className="max-h-[70vh]">
+              <div className="space-y-4 p-3 text-left">
                 {filters.map((f: any) => (
-                  <div key={f.key} className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">{f.label}</Label>
-                    <Select
-                      value={values[f.key] ?? "__any"}
-                      onValueChange={(v) =>
-                        setValues((prev) => {
-                          const next = { ...prev };
-                          if (v === "__any") delete next[f.key];
-                          else next[f.key] = v;
-                          return next;
-                        })
-                      }
-                    >
-                      <SelectTrigger className="h-10 w-full">
-                        <SelectValue placeholder={f.label} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__any">Todos</SelectItem>
-                        {f.options.map((opt: string) => (
-                          <SelectItem key={opt} value={opt}>
-                            {opt}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <FilterOptionList
+                    key={f.key}
+                    label={f.label}
+                    options={f.options}
+                    value={values[f.key]}
+                    onChange={(next) =>
+                      setValues((prev) => {
+                        const copy = { ...prev };
+                        if (next) copy[f.key] = next;
+                        else delete copy[f.key];
+                        return copy;
+                      })
+                    }
+                  />
                 ))}
               </div>
             </ScrollArea>
+
           </PopoverContent>
         </Popover>
       ) : null}
