@@ -37,11 +37,47 @@ const ORG_BASE_LABELS: Record<string, string> = {
   "address.state": "UF",
 };
 
+function norm(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function valuesOf(raw: unknown): string[] {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) return raw.flatMap((v) => valuesOf(v));
+  if (typeof raw === "boolean") return [raw ? "true" : "false"];
+  if (typeof raw === "object") return Object.values(raw as Record<string, unknown>).flatMap((v) => valuesOf(v));
+  const s = String(raw).trim();
+  return s === "" ? [] : [s];
+}
+
+function matchesText(item: any, resolve: (item: any, key: string) => unknown, keys: string[], q: string): boolean {
+  if (!q) return true;
+  const needle = norm(q);
+  const pool = [...keys.map((k) => resolve(item, k)), item.name, item.description, item.address];
+  for (const raw of pool) {
+    for (const v of valuesOf(raw)) if (norm(v).includes(needle)) return true;
+  }
+  return false;
+}
+
 export async function listExploreFilters(opts: {
   scope: "organization" | "record";
   category_id?: string;
+  /** Termo de busca corrente — restringe as opções às ainda disponíveis. */
+  q?: string;
+  /** Filtros já selecionados — facetas calculadas ignorando o próprio campo. */
+  filters?: Record<string, string>;
 }): Promise<{ filters: ExploreFilterDef[] }> {
   const sb = supabaseAdmin as any;
+  const q = (opts.q ?? "").trim();
+  const selected = Object.fromEntries(
+    Object.entries(opts.filters ?? {}).filter(([, v]) => typeof v === "string" && v.trim() !== ""),
+  ) as Record<string, string>;
 
   // If no category is chosen, aggregate filters across all categories that have entries.
   let filterRows: any[] = [];
@@ -86,21 +122,15 @@ export async function listExploreFilters(opts: {
     for (const f of recFields ?? []) if (!labelMap[f.field_key]) labelMap[f.field_key] = f.label;
   }
 
-  // Compute distinct values for select filters, unindo os valores presentes nos dados
-  // com as opções declaradas na configuração do campo.
+  const searchKeys = uniq.filter((r) => r.filter_type === "search").map((r) => r.field_key);
   const selectKeys = uniq.filter((r) => r.filter_type === "select").map((r) => r.field_key);
   const distinct = new Map<string, Set<string>>();
+
   if (selectKeys.length > 0) {
     for (const key of selectKeys) distinct.set(key, new Set<string>());
 
-    const addValue = (key: string, v: unknown) => {
-      const set = distinct.get(key);
-      if (!set) return;
-      if (typeof v === "string" && v.trim()) set.add(v.trim());
-      else if (Array.isArray(v)) for (const x of v) if (typeof x === "string" && x.trim()) set.add(x.trim());
-    };
-
-    // Opções configuradas (aparecem mesmo sem nenhum item usando o valor).
+    // Rótulos configurados (usados para preservar a grafia oficial da opção).
+    const configured = new Map<string, string>(); // normalizado -> rótulo
     if (opts.scope === "organization") {
       let cfgQ = sb
         .from("category_org_fields")
@@ -111,7 +141,7 @@ export async function listExploreFilters(opts: {
       for (const f of (cfgFields ?? []) as any[]) {
         for (const o of Array.isArray(f.config?.options) ? f.config.options : []) {
           const label = typeof o === "string" ? o : String(o?.label ?? o?.value ?? "");
-          if (label.trim()) addValue(f.field_key, label.trim());
+          if (label.trim()) configured.set(`${f.field_key}|${norm(label)}`, label.trim());
         }
       }
     } else {
@@ -128,57 +158,81 @@ export async function listExploreFilters(opts: {
         for (const f of (cfgFields ?? []) as any[]) {
           for (const o of Array.isArray(f.config?.options) ? f.config.options : []) {
             const label = typeof o === "string" ? o : String(o?.label ?? o?.value ?? "");
-            if (label.trim()) addValue(f.field_key, label.trim());
+            if (label.trim()) configured.set(`${f.field_key}|${norm(label)}`, label.trim());
           }
         }
       }
     }
 
-    // Valores efetivamente presentes nos itens públicos (mesma base da listagem).
+    // Base de itens públicos (mesma da listagem).
+    let items: any[] = [];
+    let resolve: (item: any, key: string) => unknown;
     if (opts.scope === "organization") {
-      let q = sb
+      let iq = sb
         .from("organizations")
         .select("name, slug, description, address, category_data, category_id")
         .eq("is_public", true);
-      if (opts.category_id) q = q.eq("category_id", opts.category_id);
-      const { data: orgs } = await q;
-      for (const key of selectKeys) {
-        for (const o of orgs ?? []) addValue(key, resolveOrgValue(o, key));
-      }
+      if (opts.category_id) iq = iq.eq("category_id", opts.category_id);
+      const { data: orgs } = await iq;
+      items = orgs ?? [];
+      resolve = resolveOrgValue;
     } else {
-      let q = sb
+      let iq = sb
         .from("records")
         .select("data, table:tables!inner(organization:organizations!inner(category_id))")
         .eq("status", "published")
         .limit(5000);
-      if (opts.category_id) q = q.eq("table.organization.category_id", opts.category_id);
-      const { data: recs } = await q;
-      for (const key of selectKeys) {
-        for (const r of recs ?? []) addValue(key, resolveRecordValue(r, key));
+      if (opts.category_id) iq = iq.eq("table.organization.category_id", opts.category_id);
+      const { data: recs } = await iq;
+      items = recs ?? [];
+      resolve = resolveRecordValue;
+    }
+
+    const matchesFilter = (item: any, key: string, value: string) => {
+      const targets = [norm(value)];
+      return valuesOf(resolve(item, key)).map(norm).some((v) => targets.includes(v));
+    };
+
+    // Facetas: para cada campo, aplica busca + os demais filtros selecionados.
+    for (const key of selectKeys) {
+      const set = distinct.get(key)!;
+      const others = Object.entries(selected).filter(([k]) => k !== key);
+      for (const item of items) {
+        if (!matchesText(item, resolve, searchKeys, q)) continue;
+        if (!others.every(([k, v]) => matchesFilter(item, k, v))) continue;
+        for (const v of valuesOf(resolve(item, key))) {
+          const label = configured.get(`${key}|${norm(v)}`) ?? v.trim();
+          if (label) set.add(label);
+        }
       }
+      // Mantém o valor atualmente selecionado sempre visível.
+      const current = selected[key];
+      if (current && ![...set].some((v) => norm(v) === norm(current))) set.add(current);
     }
 
     // Remove duplicidades case-insensitive mantendo a primeira grafia.
     for (const [key, set] of distinct) {
       const seenNorm = new Map<string, string>();
       for (const v of set) {
-        const k = v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-        if (!seenNorm.has(k)) seenNorm.set(k, v);
+        if (!seenNorm.has(norm(v))) seenNorm.set(norm(v), v);
       }
       distinct.set(key, new Set(seenNorm.values()));
     }
   }
 
-
-  const filters: ExploreFilterDef[] = uniq.map((r) => ({
-    key: r.field_key,
-    label: r.label_override ?? labelMap[r.field_key] ?? ORG_BASE_LABELS[r.field_key] ?? r.field_key,
-    filter_type: r.filter_type,
-    options: Array.from(distinct.get(r.field_key) ?? []).sort((a, b) => a.localeCompare(b, "pt-BR")),
-  }));
+  const filters: ExploreFilterDef[] = uniq
+    .map((r) => ({
+      key: r.field_key,
+      label: r.label_override ?? labelMap[r.field_key] ?? ORG_BASE_LABELS[r.field_key] ?? r.field_key,
+      filter_type: r.filter_type,
+      options: Array.from(distinct.get(r.field_key) ?? []).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    }))
+    // Filtros de seleção sem nenhuma opção disponível são omitidos.
+    .filter((f) => f.filter_type !== "select" || f.options.length > 0);
 
   return { filters };
 }
+
 
 /** Load filter definitions (search + select keys) for list-side filtering. */
 export async function loadFilterKeys(
