@@ -155,7 +155,7 @@ function CategoryPage() {
 
 
         <div className="mt-8">
-          {catsQ.isLoading || orgsQ.isLoading ? (
+          {catsQ.isLoading || orgsQ.isPending ? (
             <PublicCardSkeletonGrid
               count={6}
               withLogo
