@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SegmentedToggle } from "@/components/venue/segmented-toggle";
-import { BookingFormDialog } from "@/components/venue/booking-form-dialog";
+import { BookingFormDialog, type BookingEditTarget } from "@/components/venue/booking-form-dialog";
 import { BookingAvailabilityFilter, todayISO, type BookingRange } from "@/components/venue/booking-availability-filter";
 import { BookingStatusActions, DealBadge } from "@/components/venue/booking-status-actions";
 import { useLabels } from "@/hooks/use-instance-context";
@@ -81,6 +81,7 @@ function BookingTablePanel({
   const [includeArchived, setIncludeArchived] = useState(false);
   const [stage, setStage] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
+  const [editing, setEditing] = useState<BookingEditTarget | null>(null);
 
   const from = filtering ? range.from : null;
   const to = filtering ? (range.mode === "single" ? range.from : range.to) : null;
@@ -224,7 +225,20 @@ function BookingTablePanel({
                     </div>
                   </div>
 
-                  <BookingStatusActions booking={b as any} orgSlug={orgSlug} canEdit={canEdit} onChanged={refresh} />
+                  <BookingStatusActions
+                    booking={b as any}
+                    orgSlug={orgSlug}
+                    canEdit={canEdit}
+                    onChanged={refresh}
+                    onEdit={() =>
+                      setEditing({
+                        id: b.id,
+                        data: b.data ?? {},
+                        items: b.items ?? [],
+                        contact: b.contact ? { id: b.contact.id } : null,
+                      })
+                    }
+                  />
                 </li>
               ))}
             </ul>
@@ -232,6 +246,18 @@ function BookingTablePanel({
           </ScrollArea>
         )}
       </CardContent>
+
+      {editing ? (
+        <BookingFormDialog
+          key={editing.id}
+          open
+          onOpenChange={(v) => { if (!v) setEditing(null); }}
+          tableId={tableId}
+          tableName={tableName}
+          booking={editing}
+          onCreated={() => { setEditing(null); refresh(); }}
+        />
+      ) : null}
 
       {openNew ? (
         <BookingFormDialog

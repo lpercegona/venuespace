@@ -12,30 +12,42 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { BookingContactPicker, type ContactOption } from "@/components/venue/booking-contact-picker";
-import { getBookingContext, createBooking } from "@/lib/bookings.functions";
+import { getBookingContext, createBooking, updateBooking } from "@/lib/bookings.functions";
+
+export type BookingEditTarget = {
+  id: string;
+  data: Record<string, any>;
+  items: Array<{ record_id: string }>;
+  contact: { id: string } | null;
+};
 
 const brl = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n || 0);
 
-/** Dialog de nova reserva manual: período, itens do orçamento e contato. */
+/** Dialog de reserva manual (criação e edição): período, itens do orçamento e contato. */
 export function BookingFormDialog({
   open,
   onOpenChange,
   tableId,
   tableName,
   onCreated,
+  booking,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   tableId: string;
   tableName: string;
   onCreated: () => void;
+  booking?: BookingEditTarget | null;
 }) {
+  const editing = !!booking;
   const [saving, setSaving] = useState(false);
-  const [period, setPeriod] = useState<Record<string, any>>({});
-  const [selected, setSelected] = useState<string[]>([]);
+  const [period, setPeriod] = useState<Record<string, any>>(() => ({ ...(booking?.data ?? {}) }));
+  const [selected, setSelected] = useState<string[]>(
+    () => (booking?.items ?? []).map((i) => i.record_id),
+  );
   const [term, setTerm] = useState("");
-  const [contactId, setContactId] = useState<string | null>(null);
+  const [contactId, setContactId] = useState<string | null>(booking?.contact?.id ?? null);
   const [extraContacts, setExtraContacts] = useState<ContactOption[]>([]);
 
   const ctx = useQuery({
@@ -73,15 +85,26 @@ export function BookingFormDialog({
     }
     setSaving(true);
     try {
-      await createBooking({
-        data: {
-          table_id: tableId,
-          data: period,
-          item_record_ids: selected,
-          contact_record_id: contactId,
-        },
-      });
-      toast.success("Reserva criada em negociação.");
+      if (editing) {
+        await updateBooking({
+          data: {
+            id: booking!.id,
+            data: period,
+            item_record_ids: selected,
+            contact_record_id: contactId,
+          },
+        });
+      } else {
+        await createBooking({
+          data: {
+            table_id: tableId,
+            data: period,
+            item_record_ids: selected,
+            contact_record_id: contactId,
+          },
+        });
+      }
+      toast.success(editing ? "Reserva atualizada." : "Reserva criada em negociação.");
       onOpenChange(false);
       setSelected([]);
       setPeriod({});
@@ -98,9 +121,13 @@ export function BookingFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="font-display">Nova reserva — {tableName}</DialogTitle>
+          <DialogTitle className="font-display">
+            {editing ? "Editar reserva" : "Nova reserva"} — {tableName}
+          </DialogTitle>
           <DialogDescription>
-            A reserva nasce em negociação. O conflito de datas é verificado por item antes de salvar.
+            {editing
+              ? "Altere período, itens e contato. O conflito de datas é verificado por item antes de salvar."
+              : "A reserva nasce em negociação. O conflito de datas é verificado por item antes de salvar."}
           </DialogDescription>
         </DialogHeader>
 
@@ -195,7 +222,7 @@ export function BookingFormDialog({
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <Button type="button" className="h-11 sm:h-10" disabled={saving} onClick={submit}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  {saving ? "Salvando..." : "Criar reserva"}
+                  {saving ? "Salvando..." : editing ? "Salvar alterações" : "Criar reserva"}
                 </Button>
               </div>
             </DialogFooter>

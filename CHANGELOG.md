@@ -1,3 +1,9 @@
+## 2026-08-11 15:05 (America/Sao_Paulo) — Correção/extensão da Iteração 32 — edição e exclusão de reservas
+
+- **Editar reserva**: `BookingFormDialog` passa a operar em modo de edição (período, itens do orçamento e contato pré-carregados); novo botão "Editar" em cada reserva da página de Reservas.
+- **Excluir reserva**: novo botão "Excluir" com confirmação (`AlertDialog`); remove a reserva, a conversa vinculada, mensagens, tokens de acesso do lead e os PDFs de orçamento do bucket privado.
+- **Backend** (`src/lib/bookings.functions.ts`): novas server fns `updateBooking` (revalida conflito de datas por item, ignorando a própria reserva) e `deleteBooking`; ambas restritas a owner/editor (e super admin) via `assertCanEdit`.
+
 ## 2026-08-11 (America/Sao_Paulo) — Correção da Iteração 32 — reserva multi-item e contato
 
 - **Nova reserva multi-item**: o formulário passa a listar os registros da própria tabela reservável para compor o orçamento (busca por nome, seleção múltipla, total somado). Itens gravados em `records.system_data.items` (`record_id`, `label`, `value`); sem novas colunas.

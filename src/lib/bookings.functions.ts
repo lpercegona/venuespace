@@ -358,6 +358,124 @@ export const archiveBooking = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Edição de uma reserva existente: período, itens do orçamento e contato. */
+export const updateBooking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      data: z.record(z.string(), z.any()).optional(),
+      item_record_ids: z.array(z.string().uuid()).min(1, "Selecione ao menos um item."),
+      contact_record_id: z.string().uuid().nullable().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { loadBookingMeta, loadBookableItems, overlaps } = await import("./bookings.server");
+
+    const { data: rec, error: recErr } = await context.supabase
+      .from("records")
+      .select("id, table_id, organization_id, data, system_data")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (recErr) throw new Error(recErr.message);
+    if (!rec) throw new Error("Reserva não encontrada.");
+    await assertCanEdit(context.supabase, rec.organization_id, context.userId);
+
+    const meta = await loadBookingMeta(context.supabase, rec.table_id);
+    const values = { ...((rec.data ?? {}) as Record<string, any>), ...((data.data ?? {}) as Record<string, any>) };
+    const start = meta.startKey ? values[meta.startKey] : null;
+    const end = meta.endKey ? values[meta.endKey] : null;
+    if (start && end && String(start) >= String(end)) {
+      throw new Error("A data final deve ser posterior à data inicial.");
+    }
+
+    const catalog = await loadBookableItems(context.supabase, rec.table_id);
+    const chosen = data.item_record_ids
+      .map((id) => catalog.find((c) => c.id === id))
+      .filter(Boolean) as Array<{ id: string; label: string; value: number }>;
+    if (chosen.length === 0) throw new Error("Itens inválidos para esta tabela.");
+    const bookingItems = chosen.map((c) => ({ record_id: c.id, label: c.label, value: c.value }));
+
+    if (start && end && meta.startKey && meta.endKey) {
+      const chosenIds = new Set(chosen.map((c) => c.id));
+      const { data: others } = await context.supabase
+        .from("records")
+        .select("id, data, system_data, status")
+        .eq("table_id", rec.table_id)
+        .neq("id", rec.id)
+        .in("deal_status", ["accepted", "closed"]);
+      for (const o of (others ?? []) as any[]) {
+        if (o.status === "archived") continue;
+        const os = o.data?.[meta.startKey];
+        const oe = o.data?.[meta.endKey];
+        if (!os || !oe) continue;
+        if (!overlaps(String(start), String(end), String(os), String(oe))) continue;
+        const busy = [
+          ...(meta.relKey && typeof o.data?.[meta.relKey] === "string" ? [String(o.data[meta.relKey])] : []),
+          ...(((o.system_data as any)?.items ?? []) as any[]).map((i) => String(i?.record_id ?? "")),
+        ];
+        const clash = busy.find((id) => chosenIds.has(id));
+        if (clash) {
+          const label = chosen.find((c) => c.id === clash)?.label ?? "Item";
+          throw new Error(`Conflito de reserva: "${label}" já está reservado entre ${os} e ${oe}.`);
+        }
+      }
+    }
+
+    const sd = (rec.system_data ?? {}) as any;
+    const { error } = await context.supabase
+      .from("records")
+      .update({
+        data: values as any,
+        system_data: {
+          ...sd,
+          items: bookingItems,
+          contact_record_id: data.contact_record_id ?? null,
+        } as any,
+      })
+      .eq("id", rec.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Exclusão definitiva de uma reserva: mensagens, conversa, orçamentos e registro. */
+export const deleteBooking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rec, error: recErr } = await context.supabase
+      .from("records")
+      .select("id, organization_id, system_data")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (recErr) throw new Error(recErr.message);
+    if (!rec) throw new Error("Reserva não encontrada.");
+    await assertCanEdit(context.supabase, rec.organization_id, context.userId);
+
+    const paths = (((rec.system_data as any)?.quotes ?? []) as any[])
+      .map((q) => String(q?.path ?? ""))
+      .filter((p) => p.startsWith("orcamentos/"));
+    if (paths.length > 0) {
+      await context.supabase.storage.from("venue-uploads").remove(paths);
+    }
+
+    const { data: convs } = await context.supabase
+      .from("conversations")
+      .select("id")
+      .eq("record_id", rec.id);
+    const convIds = ((convs ?? []) as any[]).map((c) => c.id as string);
+    if (convIds.length > 0) {
+      await context.supabase.from("messages").delete().in("conversation_id", convIds);
+      await context.supabase.from("lead_access_tokens").delete().in("conversation_id", convIds);
+      await context.supabase.from("conversations").delete().in("id", convIds);
+    }
+
+    const { error } = await context.supabase.from("records").delete().eq("id", rec.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 /** Gera o orçamento em PDF, salva no bucket privado e registra a proposta na conversa. */
 export const generateBookingQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
