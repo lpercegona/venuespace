@@ -113,7 +113,7 @@ function Landing() {
             Encontre espaços e fornecedores de eventos
           </h1>
 
-          <HomeSearchBar className="rounded-full" categoryId={categoryId} categorySlug={activeCategorySlug} />
+          <HomeSearchBar categoryId={categoryId} categorySlug={activeCategorySlug} />
 
           {/* Pill toggle */}
           {groupings.length > 1 ? (
