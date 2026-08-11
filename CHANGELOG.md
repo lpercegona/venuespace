@@ -1,4 +1,12 @@
+## 2026-08-11 (America/Sao_Paulo) — Correção da Iteração 32 — reserva multi-item e contato
+
+- **Nova reserva multi-item**: o formulário passa a listar os registros da própria tabela reservável para compor o orçamento (busca por nome, seleção múltipla, total somado). Itens gravados em `records.system_data.items` (`record_id`, `label`, `value`); sem novas colunas.
+- **Contato**: novo `src/components/venue/booking-contact-picker.tsx` — seleção de contato existente da tabela de contatos da organização ou criação inline com os campos do formulário padrão da categoria. Vínculo por `system_data.contact_record_id`.
+- **Backend** (`bookings.server.ts` / `bookings.functions.ts`): helpers `loadBookableItems`, `loadContactSetup`, `loadContacts`, `contactLabel`; `createBookingContact`; `createBooking` valida conflito de datas por item; `listBookings` devolve itens, total e contato; `generateBookingQuote` monta o PDF a partir dos itens selecionados (fallback para campos de moeda quando não houver itens).
+- **UI**: `booking-form-dialog.tsx` reescrito (período + itens + contato + total) e lista de reservas exibindo contato, quantidade de itens e total.
+
 ## 2026-08-11 (America/Sao_Paulo) — Correção da Iteração 32 — erro `Cannot destructure property '__extends'`
+
 
 - Causa: `pdf-lib@1.17.1` depende de `tslib@^1` (cópia aninhada 1.14.1, somente CommonJS). Ao ser convertida para ESM pelo bundler (`__toESM(...)`), a exportação nomeada `__extends` fica indefinida e a geração de orçamento em PDF quebra em runtime.
 - `tslib` atualizado para `^2` (2.8.1) no projeto.
