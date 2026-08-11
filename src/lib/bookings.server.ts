@@ -1,12 +1,15 @@
 // Server-only helpers for the bookings module (Iteração 32).
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
+export type BookingField = { id: string; key: string; label: string; type: string; config: any };
+
 export type BookingMeta = {
   startKey: string | null;
   endKey: string | null;
   relKey: string | null;
   targetTableId: string | null;
-  fields: Array<{ id: string; key: string; label: string; type: string; config: any }>;
+  fields: BookingField[];
+  periodFields: BookingField[];
 };
 
 export async function loadBookingMeta(supabase: any, tableId: string): Promise<BookingMeta> {
