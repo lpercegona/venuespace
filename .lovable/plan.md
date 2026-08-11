@@ -24,28 +24,44 @@ Base existente que será estendida (não recriada): rota `/app/$orgSlug/calendar
 
 - Server function autenticada gera o PDF da reserva e o salva no bucket privado existente `venue-uploads`, em `orcamentos/<organization_id>/<record_id>/<timestamp>.pdf`.
 - Conteúdo: nome/logo da organização, número e data do orçamento, recurso reservado, período, dados de contato do interessado, itens/valores dos campos de moeda da reserva, valor total proposto e observações.
-- O caminho gerado é registrado no `system_data` do registro (histórico de orçamentos), e a tela oferece link assinado para download; cada geração adiciona uma nova versão.
-- Opcionalmente registra a proposta na conversa com o valor, mantendo o fluxo de aceite existente.
+- O caminho gerado é registrado em `records.system_data` (coluna jsonb já existente no banco) sob a chave `quotes`, como **array de versões**: `{ "quotes": [{ "path": "...", "created_at": "...", "created_by": "<uuid>", "total": 0 }] }`. Cada geração acrescenta um item; nenhuma coluna nova é criada.
+- A tela oferece link assinado temporário para download de qualquer versão.
+- Ao gerar, registra também uma mensagem `type = 'proposal'` na conversa da reserva com o valor total, mantendo o fluxo de aceite existente (é o passo "envio de proposta" do ciclo de vida).
+- **Escopo do orçamento (decisão explícita)**: v1 soma apenas os campos de moeda do próprio registro da reserva (recurso único). Orçamento multi-item pelo padrão relacional (tabela de itens + `computed`) fica **fora do escopo** desta iteração e entra como pendência declarada.
+
 
 ## 4. Ciclo de vida da reserva
 
-Transições explícitas na tela de reservas e na conversa:
+Estágios com o valor de `deal_status` declarado explicitamente:
 
 ```text
-negociação  --(envio de orçamento/proposta)-->  negociação
-negociação  --(aceite da proposta)----------->  fechada
-fechada     --(serviço entregue)-------------->  encerrada
-negociação  --(recusa)------------------------>  recusada + arquivada
+negociação (deal_status = 'negotiating')
+   --(envio de orçamento/proposta)-->  permanece 'negotiating'
+   --(aceite da proposta)----------->  fechada   (deal_status = 'accepted')
+   --(recusa)------------------------> recusada  (deal_status = 'declined' + status = 'archived')
+
+fechada (accepted)
+   --(serviço entregue)-------------->  encerrada (deal_status = 'closed')
 ```
 
-- "Fechar negócio" só é permitido se não houver conflito de datas (revalidação no servidor).
-- Recusa: `deal_status = 'declined'` **e** `status = 'archived'`; some da lista padrão, aparece apenas no filtro "Arquivadas", com ação de desarquivar.
-- Encerramento: `deal_status = 'closed'`, mantendo o valor acordado.
+- **Fechada = `accepted`** (não `closed`). É nesse momento que `agreed_value` é gravado, copiado da última proposta aceita — comportamento já existente em `setDealStatus`.
+- **Encerrada = `closed`**, significando serviço entregue; `agreed_value` é preservado, não recalculado. Isto redefine o significado anterior de `closed` (antes "negócio concluído"); registros existentes em `closed` são lidos como encerrados, sem migração de dados.
+- "Fechar negócio" (→ `accepted`) revalida conflito de datas no servidor e bloqueia em caso de sobreposição.
+- Recusa: `deal_status = 'declined'` **e** `status = 'archived'`; some da lista padrão, aparece apenas no filtro "Arquivadas", com ação de desarquivar (volta a `status = 'draft'`, mantendo `declined`).
+
 
 ## Detalhes técnicos
 
 - **PDF**: `pdf-lib` (compatível com o runtime edge do servidor; sem dependências nativas). Geração dentro do handler de `createServerFn`, upload via cliente Supabase autenticado; leitura por URL assinada temporária.
 - **Server functions** (novo `src/lib/bookings.functions.ts`): `createBooking`, `listBookingsForRange`, `listAvailableResources`, `generateBookingQuote`, `archiveBooking`/`unarchiveBooking`. Todas com `requireSupabaseAuth`; escrita restrita a owner/editor.
-- **Migração**: política de storage para o prefixo `orcamentos/` no bucket `venue-uploads` (leitura/escrita apenas por membros da organização). Sem novas tabelas — reservas continuam em `records`, usando `deal_status`, `status` e `system_data`.
+- **Transições de estágio — sem função nova**: "negociação → fechada" (`accepted`) e "fechada → encerrada" (`closed`) reaproveitam o `setDealStatus` existente (Iteração 4), que já revalida conflito de datas via `runBookingCheck` em ambas as transições e já copia `agreed_value`. A tela de reservas apenas o chama; nenhuma lógica de negociação é duplicada em `bookings.functions.ts`.
+- **Modelo de dados — nada novo**: verificado no banco que `record_status` já contém `draft | published | archived` e que `records.system_data` (jsonb) já existe. Portanto esta iteração **não altera schema de tabelas**; apenas passa a usar `archived` e a chave `system_data.quotes`.
+- **Migração**: apenas políticas de storage para o prefixo `orcamentos/` no bucket privado `venue-uploads` (leitura/escrita restritas a membros da organização dona do caminho).
 - **UI**: `src/routes/_authenticated.app.$orgSlug.calendar.tsx` reescrita como painel de gestão; novos componentes `src/components/venue/booking-form-dialog.tsx`, `booking-availability-filter.tsx`, `booking-status-actions.tsx`, todos sobre primitives shadcn já presentes (Dialog, Calendar/Popover, Table, Badge, Tabs) e tokens semânticos existentes.
 - **Governança (§0)**: validação em 360/768/1280, light+dark, sem regressão nas Iterações 4/5/7; entrada em `CHANGELOG.md` como "Iteração 32 — extensão da Iteração 7".
+
+## Pendências declaradas (não resolvidas nesta iteração)
+
+- **Condição de corrida na checagem de conflito** (débito herdado da Iteração 7): a verificação continua em nível de aplicação, sem constraint de exclusão no banco (`EXCLUDE USING gist` sobre recurso + período). Esta iteração adiciona uma segunda superfície dependente do mesmo mecanismo (criação manual + revalidação no fechamento). Fica registrado como débito técnico crescente, a resolver em iteração própria com migração dedicada.
+- **Orçamento multi-item relacional** (espaço + serviços adicionais) usando tabela de itens + `computed`: fora do escopo, a definir em iteração futura.
+
