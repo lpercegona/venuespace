@@ -815,3 +815,8 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 - Filtros públicos: `listPublicTables`, `loadPublicTable`, `listPublicRecords` e `loadPublicRecord` em `src/lib/public.server.ts` passam a exigir `tables.is_public = true`.
 - UI organização: diálogos "Nova tabela" e "Editar tabela" ganharam toggle "Tabela pública". Badge "pública" aparece no card. Em tabelas travadas (padrão), toggle de visibilidade fica editável mesmo com estrutura bloqueada.
 - UI super admin: diálogo de tabela-modelo ganhou toggle "Pública por padrão".
+
+## Correção/extensão da Iteração 32 — período no formulário de reserva (2026-08-11)
+- `loadBookingMeta` agora deriva o período quando não há `booking_role` configurado: usa os campos de data/datetime da tabela e, na ausência deles, expõe um período virtual (`booking_start`/`booking_end`).
+- `getBookingContext` passa a devolver `meta.periodFields`, garantindo que o formulário de nova reserva/edição sempre exiba Início e Término.
+- Período tornou-se obrigatório no `BookingFormDialog` antes de salvar.

@@ -1,12 +1,15 @@
 // Server-only helpers for the bookings module (Iteração 32).
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
+export type BookingField = { id: string; key: string; label: string; type: string; config: any };
+
 export type BookingMeta = {
   startKey: string | null;
   endKey: string | null;
   relKey: string | null;
   targetTableId: string | null;
-  fields: Array<{ id: string; key: string; label: string; type: string; config: any }>;
+  fields: BookingField[];
+  periodFields: BookingField[];
 };
 
 export async function loadBookingMeta(supabase: any, tableId: string): Promise<BookingMeta> {
@@ -18,8 +21,26 @@ export async function loadBookingMeta(supabase: any, tableId: string): Promise<B
   const fields = ((data ?? []) as any[]).map((f) => ({
     id: f.id, key: f.key, label: f.label, type: f.type, config: f.config ?? {},
   }));
-  const startF = fields.find((f) => f.config?.booking_role === "start");
-  const endF = fields.find((f) => f.config?.booking_role === "end");
+  let startF = fields.find((f) => f.config?.booking_role === "start");
+  let endF = fields.find((f) => f.config?.booking_role === "end");
+  // Fallback: sem papéis configurados, usa os campos de data/hora da tabela.
+  if (!startF || !endF) {
+    const dateFields = fields.filter((f) => f.type === "date" || f.type === "datetime");
+    startF = startF ?? dateFields[0];
+    endF = endF ?? dateFields.find((f) => f.key !== startF?.key);
+  }
+  // Última garantia: período virtual, salvo no próprio `data` do registro.
+  if (!startF || !endF) {
+    const virtualType = startF?.type ?? endF?.type ?? "datetime";
+    startF = startF ?? {
+      id: "virtual-booking-start", key: "booking_start", label: "Início",
+      type: virtualType, config: { booking_role: "start", virtual: true },
+    };
+    endF = endF ?? {
+      id: "virtual-booking-end", key: "booking_end", label: "Término",
+      type: virtualType, config: { booking_role: "end", virtual: true },
+    };
+  }
   const relF =
     fields.find((f) => f.config?.is_resource_relation === true) ??
     fields.find((f) => f.type === "relation");
@@ -29,8 +50,10 @@ export async function loadBookingMeta(supabase: any, tableId: string): Promise<B
     relKey: relF?.key ?? null,
     targetTableId: (relF?.config?.target_table_id as string) ?? null,
     fields,
+    periodFields: [startF, endF].filter(Boolean) as BookingMeta["fields"],
   };
 }
+
 
 /** Rótulos legíveis dos registros de recurso da tabela alvo. */
 export async function loadResourceLabels(
