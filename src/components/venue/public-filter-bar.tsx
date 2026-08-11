@@ -70,13 +70,14 @@ export function PublicFilterBar({
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 p-0">
             <ScrollArea className="max-h-[70vh]">
-              <div className="space-y-4 p-3">
-                {filters.map((f) => (
+              <div className="space-y-0 p-3">
+                {filters.map((f, i) => (
                   <FilterOptionList
                     key={f.key}
                     label={f.label}
                     options={f.options}
                     value={values[f.key]}
+                    defaultOpen={i === 0}
                     onChange={(next) => onFilterChange(f.key, next)}
                   />
                 ))}

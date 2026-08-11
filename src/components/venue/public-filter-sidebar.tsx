@@ -45,13 +45,14 @@ export function PublicFilterSidebar({
         />
       </div>
 
-      <div className="max-h-[calc(100vh-12rem)] space-y-5 overflow-y-auto pr-1">
-        {filters.map((f) => (
+      <div className="max-h-[calc(100vh-12rem)] space-y-0 overflow-y-auto pr-1">
+        {filters.map((f, i) => (
           <FilterOptionList
             key={f.key}
             label={f.label}
             options={f.options}
             value={values[f.key]}
+            defaultOpen={i === 0}
             onChange={(next) => onFilterChange(f.key, next)}
           />
         ))}

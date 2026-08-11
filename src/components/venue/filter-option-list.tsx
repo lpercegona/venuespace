@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseFilterValues, toggleFilterValue } from "@/lib/filter-params";
 
@@ -16,6 +16,8 @@ type Props = {
   /** Valor serializado atual (`A|B`). */
   value: string | undefined;
   onChange: (next: string) => void;
+  /** Abre o acordeon por padrão. */
+  defaultOpen?: boolean;
   className?: string;
 };
 
@@ -27,10 +29,11 @@ function norm(s: string) {
  * Lista de opções em multisseleção (checkboxes).
  * Listas curtas aparecem completas; listas longas ganham busca e scroll.
  */
-export function FilterOptionList({ label, options, value, onChange, className }: Props) {
+export function FilterOptionList({ label, options, value, onChange, defaultOpen, className }: Props) {
   const selected = useMemo(() => parseFilterValues(value), [value]);
   const isLong = options.length > LONG_LIST_THRESHOLD;
   const [term, setTerm] = useState("");
+  const [open, setOpen] = useState(() => defaultOpen ?? parseFilterValues(value).length > 0);
 
   const visible = useMemo(() => {
     if (!isLong || !term.trim()) return options;
@@ -41,12 +44,25 @@ export function FilterOptionList({ label, options, value, onChange, className }:
   const isChecked = (opt: string) => selected.some((v) => v.toLowerCase() === opt.toLowerCase());
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("border-b border-border/60 pb-2 last:border-b-0", className)}>
       <div className="flex items-center justify-between gap-2">
-        <Label className="text-xs font-medium text-muted-foreground">
-          {label}
-          {selected.length > 0 ? ` (${selected.length})` : ""}
-        </Label>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center justify-between gap-2 py-2 text-left"
+        >
+          <span className="truncate text-xs font-medium text-muted-foreground">
+            {label}
+            {selected.length > 0 ? ` (${selected.length})` : ""}
+          </span>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+              open && "rotate-180",
+            )}
+          />
+        </button>
         {selected.length > 0 ? (
           <Button
             type="button"
@@ -60,6 +76,8 @@ export function FilterOptionList({ label, options, value, onChange, className }:
         ) : null}
       </div>
 
+      {!open ? null : (
+      <div className="space-y-2 pb-1">
       {isLong ? (
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -97,6 +115,8 @@ export function FilterOptionList({ label, options, value, onChange, className }:
           })
         )}
       </div>
+      </div>
+      )}
     </div>
   );
 }
