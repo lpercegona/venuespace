@@ -63,7 +63,7 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
       <div className="mx-auto grid w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3 sm:flex sm:justify-between sm:gap-3 sm:px-6">
         {/* Logo: apenas em telas maiores */}
         <Link to="/" className="hidden min-w-0 items-center gap-2 sm:flex">
-          <img src="/Venuespace logo1.svg" alt="Venuespace Logo" className="h-5 w-auto mix-blend-difference" />
+          <img src="/Venuespace logo1.svg" alt="Venuespace Logo" className="h-5 w-auto" />
         </Link>
 
         <div className="justify-self-start sm:justify-self-auto">
