@@ -1,4 +1,5 @@
 import { cached, TTL_SHORT } from "@/lib/server-cache";
+import { parseFilterValues } from "@/lib/filter-params";
 // Server-only helper computing explore filter definitions + distinct option values.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -189,7 +190,8 @@ export async function listExploreFilters(opts: {
     }
 
     const matchesFilter = (item: any, key: string, value: string) => {
-      const targets = [norm(value)];
+      const targets = parseFilterValues(value).map(norm);
+      if (targets.length === 0) return true;
       return valuesOf(resolve(item, key)).map(norm).some((v) => targets.includes(v));
     };
 
@@ -206,8 +208,9 @@ export async function listExploreFilters(opts: {
         }
       }
       // Mantém o valor atualmente selecionado sempre visível.
-      const current = selected[key];
-      if (current && ![...set].some((v) => norm(v) === norm(current))) set.add(current);
+      for (const current of parseFilterValues(selected[key])) {
+        if (![...set].some((v) => norm(v) === norm(current))) set.add(current);
+      }
     }
 
     // Remove duplicidades case-insensitive mantendo a primeira grafia.

@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FilterOptionList } from "@/components/venue/filter-option-list";
+import { countSelectedFilters } from "@/lib/filter-params";
 
 export type PublicFilterDef = {
   key: string;
@@ -26,8 +26,8 @@ type Props = {
 };
 
 /**
- * Busca instantânea + filtros agrupados em um único dropdown
- * (mesmo comportamento em mobile e desktop).
+ * Busca instantânea + filtros em multisseleção dentro de um painel
+ * (usado em mobile e como fallback compacto).
  */
 export function PublicFilterBar({
   term,
@@ -38,7 +38,7 @@ export function PublicFilterBar({
   onClear,
   className,
 }: Props) {
-  const activeCount = Object.values(values).filter(Boolean).length;
+  const activeCount = countSelectedFilters(values);
   const hasActive = activeCount > 0 || !!term;
 
   return (
@@ -68,29 +68,17 @@ export function PublicFilterBar({
               ) : null}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-72 p-0">
-            <ScrollArea className="max-h-[60vh]">
-              <div className="space-y-3 p-3">
+          <PopoverContent align="end" className="w-80 p-0">
+            <ScrollArea className="max-h-[70vh]">
+              <div className="space-y-4 p-3">
                 {filters.map((f) => (
-                  <div key={f.key} className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">{f.label}</Label>
-                    <Select
-                      value={values[f.key] ?? "__any"}
-                      onValueChange={(v) => onFilterChange(f.key, v === "__any" ? "" : v)}
-                    >
-                      <SelectTrigger className="h-10 w-full">
-                        <SelectValue placeholder={f.label} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__any">Todos</SelectItem>
-                        {f.options.map((opt) => (
-                          <SelectItem key={opt} value={opt}>
-                            {opt}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <FilterOptionList
+                    key={f.key}
+                    label={f.label}
+                    options={f.options}
+                    value={values[f.key]}
+                    onChange={(next) => onFilterChange(f.key, next)}
+                  />
                 ))}
               </div>
             </ScrollArea>

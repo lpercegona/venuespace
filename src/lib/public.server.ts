@@ -2,6 +2,7 @@
 // Uses the service-role admin client since anon RLS reads on org/tables/fields/views
 // were removed; scoping (published status, org/table match) is enforced in code here.
 
+import { parseFilterValues } from "@/lib/filter-params";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { cached, cacheGet, cacheSet, TTL_MEDIUM, TTL_SHORT, TTL_SIGNED } from "@/lib/server-cache";
 
@@ -511,9 +512,10 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   );
 
   for (const [key, val] of Object.entries(filters)) {
-    const target = norm(String(val));
-    if (!target) continue;
-    const targets = ruleTargets({ field_key: key, operator: "=", value: String(val) }, orgAliases);
+    // Multivalor: `A|B` combina em OU dentro do mesmo campo.
+    const parts = parseFilterValues(String(val));
+    if (parts.length === 0) continue;
+    const targets = parts.flatMap((p) => ruleTargets({ field_key: key, operator: "=", value: p }, orgAliases));
     base = base.filter((o) => normalizeValues(resolveOrgVal(o, key)).map(norm).some((v) => targets.includes(v)));
   }
 
@@ -730,8 +732,9 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   );
 
   for (const [key, val] of Object.entries(filters)) {
-    if (!norm(String(val))) continue;
-    const targets = ruleTargets({ field_key: key, operator: "=", value: String(val) }, recAliases);
+    const parts = parseFilterValues(String(val));
+    if (parts.length === 0) continue;
+    const targets = parts.flatMap((p) => ruleTargets({ field_key: key, operator: "=", value: p }, recAliases));
     base = base.filter((r) => normalizeValues((r.data ?? {})[key]).map(norm).some((v) => targets.includes(v)));
   }
 
