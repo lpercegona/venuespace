@@ -1,3 +1,9 @@
+## 2026-08-11 (America/Sao_Paulo) — Correção da Iteração 32 — erro `Cannot destructure property '__extends'`
+
+- Causa: `pdf-lib@1.17.1` depende de `tslib@^1` (cópia aninhada 1.14.1, somente CommonJS). Ao ser convertida para ESM pelo bundler (`__toESM(...)`), a exportação nomeada `__extends` fica indefinida e a geração de orçamento em PDF quebra em runtime.
+- `tslib` atualizado para `^2` (2.8.1) no projeto.
+- `vite.config.ts`: alias `^tslib$` → `node_modules/tslib/tslib.es6.mjs`, garantindo uma única cópia ESM do tslib no bundle (cliente e servidor), independentemente de cópias aninhadas 1.x.
+
 ## 2026-08-11 17:15 (America/Sao_Paulo) — Iteração 32 — Gestão de reservas (criação manual, disponibilidade, orçamento em PDF e ciclo de negociação)
 
 - **Backend**: novos `src/lib/bookings.server.ts` (metadados de reserva a partir de `fields.config.booking_role`/`resource_relation_field_id`, verificação de conflito de datas e construção do PDF com `pdf-lib`) e `src/lib/bookings.functions.ts` (`getBookingContext`, `listBookings`, `listAvailableResources`, `createBooking`, `archiveBooking`, `generateBookingQuote`, `getQuoteUrl`).
