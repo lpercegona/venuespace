@@ -49,12 +49,12 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
         e.preventDefault();
         submit();
       }}
-      className="mx-auto mt-8 flex w-full max-w-2xl items-center gap-2 rounded-full bg-tansparent p-2 shadow-elegant"
+      className="mx-auto mt-8 flex w-full max-w-2xl items-center gap-2 rounded-full bg-background/30 p-2 shadow-elegant"
     >
       <div className="relative min-w-0 grow">
         <Search className="rounded-full pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          className="h-11 border bg-muted pl-9 text-foreground shadow-none focus-visible:ring-0"
+          className="h-11 border bg-transparent pl-9 text-foreground shadow-none focus-visible:ring-0"
           type="search"
           placeholder="Buscar por nome, cidade ou característica"
           aria-label="Buscar"
