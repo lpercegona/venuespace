@@ -3,12 +3,13 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building2, Check, List, Shield } from "lucide-react";
+import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building2, Check, List, Shield, Search } from "lucide-react";
 import { getOrganizationBySlug, listMyOrganizations } from "@/lib/orgs.functions";
 import { getMyProfile } from "@/lib/profile.functions";
 import { amISuperAdmin } from "@/lib/instance-settings.functions";
@@ -153,7 +154,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                   <Settings className="h-4 w-4" />Configurações
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => navigate({ to: "/me/applications" })}>
-                  <FileHeart className="h-4 w-4" />Minhas candidaturas
+                  <FileHeart className="h-4 w-4" />Interações
                 </DropdownMenuItem>
                 {orgSlug ? (
                   <>
