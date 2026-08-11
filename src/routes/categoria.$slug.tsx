@@ -206,7 +206,7 @@ function CategoryPage() {
               variant="outline"
               size="sm"
               disabled={page <= 1}
-              onClick={() => updateSearch({ page: page > 2 ? String(page - 1) : undefined })}
+              onClick={() => updateSearch({ page: page > 2 ? page - 1 : undefined })}
             >
               Anterior
             </Button>
@@ -217,12 +217,13 @@ function CategoryPage() {
               variant="outline"
               size="sm"
               disabled={offset + PAGE_SIZE >= total}
-              onClick={() => updateSearch({ page: String(page + 1) })}
+              onClick={() => updateSearch({ page: page + 1 })}
             >
               Próxima
             </Button>
           </div>
         ) : null}
+
       </section>
 
       <PublicFooter />
