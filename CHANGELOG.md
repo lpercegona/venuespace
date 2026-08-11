@@ -1,3 +1,12 @@
+## 2026-08-11 17:15 (America/Sao_Paulo) — Iteração 32 — Gestão de reservas (criação manual, disponibilidade, orçamento em PDF e ciclo de negociação)
+
+- **Backend**: novos `src/lib/bookings.server.ts` (metadados de reserva a partir de `fields.config.booking_role`/`resource_relation_field_id`, verificação de conflito de datas e construção do PDF com `pdf-lib`) e `src/lib/bookings.functions.ts` (`getBookingContext`, `listBookings`, `listAvailableResources`, `createBooking`, `archiveBooking`, `generateBookingQuote`, `getQuoteUrl`).
+- **Armazenamento**: PDFs de orçamento gravados em `venue-uploads` sob `orcamentos/{organization_id}/`, com política de leitura para membros da organização; histórico versionado em `records.system_data.quotes`.
+- **Ciclo de vida**: `negotiating` (envio de orçamento/proposta) → `accepted` (fechamento) → `closed` (serviço entregue); recusa aplica `declined` e arquiva o registro (`status='archived'`), com opção de desarquivar.
+- **Rota `/app/$orgSlug/calendar`** reescrita como painel de gestão de reservas: uma seção por tabela reservável, botão "Nova reserva", filtro de disponibilidade por data única ou período, `SegmentedToggle` por estágio, alternância de arquivadas e lista com valor acordado e contagem de orçamentos.
+- **Componentes novos**: `src/components/venue/booking-form-dialog.tsx` (DynamicForm com validação de conflito no servidor), `booking-availability-filter.tsx` e `booking-status-actions.tsx` (transições, arquivamento, geração e abertura do PDF, link para a conversa).
+- Meta tags da rota atualizadas (título/descrição próprios, `noindex`).
+
 ## 2026-08-11 (America/Sao_Paulo) — Correção/extensão das Iterações 26, 30 e 31 — busca, paginação e navegação da administração
 
 - **Busca pública instantânea**: novo `src/hooks/use-debounced-value.ts` e `src/components/venue/public-filter-bar.tsx` (campo de busca + popover "Filtros" em linha única, mesmo padrão em desktop e mobile). Aplicado em `src/routes/categoria.$slug.tsx` e `src/routes/explore.tsx`; consultas usam `keepPreviousData` para evitar flicker.
