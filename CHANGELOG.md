@@ -1,3 +1,10 @@
+## 2026-08-11 19:16 (America/Sao_Paulo) — Correção/extensão da Iteração 33 — filtro de faixa numérica
+
+- **Novo comportamento `range` nas definições de filtro (super admin)**: em Filtros da categoria é possível vincular dois campos numéricos (Campo mínimo / Campo máximo) num único filtro, com rótulo próprio. Colunas `min_field_key`/`max_field_key` em `category_filter_fields` (`filter_type` aceita `range`).
+- **UI pública**: novo `FilterRangeSelect` (mesmo padrão de acordeon dos demais filtros) com dois seletores — "A partir de" e "Até" — usado na sidebar de `/explore` e `/categoria/$slug`, na barra de filtros e na busca da home.
+- **URL**: valor serializado como `f_<chave>=min:X|max:Y` (`parseRangeValue`/`serializeRangeValue` em `filter-params.ts`); números tolerantes a prefixos e separadores pt-BR.
+- **Aplicação e facetas**: `public.server.ts` filtra por faixa contida (`mínimo do item >= a partir de` e `máximo do item <= até`) para organizações e registros; `explore-filters.server.ts` calcula dinamicamente as opções numéricas disponíveis de cada lado, respeitando busca e demais filtros ativos.
+
 ## 2026-08-11 18:57 (America/Sao_Paulo) — Correção/extensão da Iteração 33 — acordeon nos filtros
 
 - **Acordeon simplificado**: `FilterOptionList` passa a recolher/expandir cada grupo de filtro por um cabeçalho clicável com chevron e contador de selecionados (`aria-expanded`), separados por divisória. Abre por padrão o primeiro grupo e qualquer grupo com seleção ativa (nova prop `defaultOpen`). Aplicado à sidebar de `/explore` e `/categoria/$slug`, à barra de filtros e à busca da home.

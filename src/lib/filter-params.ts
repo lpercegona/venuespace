@@ -37,3 +37,43 @@ export function toggleFilterValue(current: string | undefined, option: string): 
 export function countSelectedFilters(values: Record<string, string>): number {
   return Object.values(values).reduce((acc, v) => acc + parseFilterValues(v).length, 0);
 }
+
+/* ---------- Faixa numérica (`min:100|max:300`) ---------- */
+
+export type RangeValue = { min?: number; max?: number };
+
+/** Converte texto em número tolerando prefixos/sufixos ("até 200 pessoas", "1.500"). */
+export function toFilterNumber(raw: unknown): number | null {
+  if (raw == null) return null;
+  if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
+  const s = String(raw).replace(/[^\d.,-]/g, "");
+  if (!s) return null;
+  const cleaned = s.replace(/[.,](?=\d{3}\b)/g, "").replace(",", ".");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function parseRangeValue(raw: string | undefined | null): RangeValue {
+  const out: RangeValue = {};
+  for (const part of parseFilterValues(raw)) {
+    const [k, v] = part.split(":");
+    const n = toFilterNumber(v);
+    if (n == null) continue;
+    if (k === "min") out.min = n;
+    else if (k === "max") out.max = n;
+  }
+  return out;
+}
+
+export function serializeRangeValue(value: RangeValue): string {
+  const parts: string[] = [];
+  if (value.min != null) parts.push(`min:${value.min}`);
+  if (value.max != null) parts.push(`max:${value.max}`);
+  return parts.join(FILTER_SEP);
+}
+
+/** Um valor de faixa é reconhecido pelo prefixo `min:`/`max:`. */
+export function isRangeValue(raw: string | undefined | null): boolean {
+  return parseFilterValues(raw).some((p) => p.startsWith("min:") || p.startsWith("max:"));
+}
+

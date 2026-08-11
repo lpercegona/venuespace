@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type FilterScope = "organization" | "record";
-export type FilterType = "search" | "select";
+export type FilterType = "search" | "select" | "range";
 
 export type CategoryFilterField = {
   id: string;
@@ -13,10 +13,12 @@ export type CategoryFilterField = {
   filter_type: FilterType;
   label_override: string | null;
   order_index: number;
+  min_field_key: string | null;
+  max_field_key: string | null;
 };
 
 const scopeSchema = z.enum(["organization", "record"]);
-const typeSchema = z.enum(["search", "select"]);
+const typeSchema = z.enum(["search", "select", "range"]);
 
 async function requireSA(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("is_super_admin", { _user_id: userId });
@@ -32,7 +34,7 @@ export const listCategoryFilterFieldsPublic = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let q: any = (supabaseAdmin as any)
       .from("category_filter_fields")
-      .select("id, category_id, scope, field_key, filter_type, label_override, order_index")
+      .select("id, category_id, scope, field_key, filter_type, label_override, order_index, min_field_key, max_field_key")
       .eq("category_id", data.category_id)
       .order("order_index");
     if (data.scope) q = q.eq("scope", data.scope);
@@ -49,11 +51,19 @@ const upsertSchema = z.object({
   filter_type: typeSchema,
   label_override: z.string().max(120).nullable().optional(),
   order_index: z.number().int().min(0).max(999).optional(),
+  min_field_key: z.string().max(120).nullable().optional(),
+  max_field_key: z.string().max(120).nullable().optional(),
 });
 
 export const upsertCategoryFilterField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => upsertSchema.parse(d))
+  .inputValidator((d: unknown) => {
+    const parsed = upsertSchema.parse(d);
+    if (parsed.filter_type === "range" && (!parsed.min_field_key || !parsed.max_field_key)) {
+      throw new Error("Informe o campo mínimo e o campo máximo da faixa.");
+    }
+    return parsed;
+  })
   .handler(async ({ data, context }) => {
     await requireSA(context.supabase, context.userId);
     const row: Record<string, any> = {
@@ -63,6 +73,8 @@ export const upsertCategoryFilterField = createServerFn({ method: "POST" })
       filter_type: data.filter_type,
       label_override: data.label_override ?? null,
       order_index: data.order_index ?? 0,
+      min_field_key: data.filter_type === "range" ? (data.min_field_key ?? null) : null,
+      max_field_key: data.filter_type === "range" ? (data.max_field_key ?? null) : null,
     };
     if (data.id) row.id = data.id;
     const { error } = await (context.supabase as any)

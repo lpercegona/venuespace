@@ -76,6 +76,8 @@ export type Database = {
           filter_type: string
           id: string
           label_override: string | null
+          max_field_key: string | null
+          min_field_key: string | null
           order_index: number
           scope: string
           updated_at: string
@@ -87,6 +89,8 @@ export type Database = {
           filter_type: string
           id?: string
           label_override?: string | null
+          max_field_key?: string | null
+          min_field_key?: string | null
           order_index?: number
           scope: string
           updated_at?: string
@@ -98,6 +102,8 @@ export type Database = {
           filter_type?: string
           id?: string
           label_override?: string | null
+          max_field_key?: string | null
+          min_field_key?: string | null
           order_index?: number
           scope?: string
           updated_at?: string

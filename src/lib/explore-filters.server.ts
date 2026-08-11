@@ -1,13 +1,18 @@
 import { cached, TTL_SHORT } from "@/lib/server-cache";
-import { parseFilterValues } from "@/lib/filter-params";
+import { parseFilterValues, parseRangeValue, toFilterNumber } from "@/lib/filter-params";
 // Server-only helper computing explore filter definitions + distinct option values.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type ExploreFilterDef = {
   key: string;
   label: string;
-  filter_type: "search" | "select";
+  filter_type: "search" | "select" | "range";
   options: string[]; // only for select
+  /** Faixa numérica: chaves vinculadas e opções de cada lado. */
+  min_field_key?: string | null;
+  max_field_key?: string | null;
+  min_options?: number[];
+  max_options?: number[];
 };
 
 function resolveOrgValue(org: any, key: string): unknown {
@@ -85,7 +90,7 @@ export async function listExploreFilters(opts: {
   if (opts.category_id) {
     const { data } = await sb
       .from("category_filter_fields")
-      .select("field_key, filter_type, label_override, order_index, scope, category_id")
+      .select("field_key, filter_type, label_override, order_index, scope, category_id, min_field_key, max_field_key")
       .eq("category_id", opts.category_id)
       .eq("scope", opts.scope)
       .order("order_index");
@@ -93,7 +98,7 @@ export async function listExploreFilters(opts: {
   } else {
     const { data } = await sb
       .from("category_filter_fields")
-      .select("field_key, filter_type, label_override, order_index, scope, category_id")
+      .select("field_key, filter_type, label_override, order_index, scope, category_id, min_field_key, max_field_key")
       .eq("scope", opts.scope)
       .order("order_index");
     filterRows = data ?? [];
@@ -125,9 +130,11 @@ export async function listExploreFilters(opts: {
 
   const searchKeys = uniq.filter((r) => r.filter_type === "search").map((r) => r.field_key);
   const selectKeys = uniq.filter((r) => r.filter_type === "select").map((r) => r.field_key);
+  const rangeRows = uniq.filter((r) => r.filter_type === "range");
   const distinct = new Map<string, Set<string>>();
+  const rangeOptions = new Map<string, { min: Set<number>; max: Set<number> }>();
 
-  if (selectKeys.length > 0) {
+  if (selectKeys.length > 0 || rangeRows.length > 0) {
     for (const key of selectKeys) distinct.set(key, new Set<string>());
 
     // Rótulos configurados (usados para preservar a grafia oficial da opção).
@@ -136,7 +143,7 @@ export async function listExploreFilters(opts: {
       let cfgQ = sb
         .from("category_org_fields")
         .select("field_key, field_type, config, category_id")
-        .in("field_key", selectKeys);
+        .in("field_key", selectKeys.length > 0 ? selectKeys : ["__none"]);
       if (opts.category_id) cfgQ = cfgQ.eq("category_id", opts.category_id);
       const { data: cfgFields } = await cfgQ;
       for (const f of (cfgFields ?? []) as any[]) {
@@ -155,7 +162,7 @@ export async function listExploreFilters(opts: {
           .from("category_standard_table_fields")
           .select("field_key, field_type, config, standard_table_id")
           .in("standard_table_id", stIds)
-          .in("field_key", selectKeys);
+          .in("field_key", selectKeys.length > 0 ? selectKeys : ["__none"]);
         for (const f of (cfgFields ?? []) as any[]) {
           for (const o of Array.isArray(f.config?.options) ? f.config.options : []) {
             const label = typeof o === "string" ? o : String(o?.label ?? o?.value ?? "");
@@ -189,7 +196,19 @@ export async function listExploreFilters(opts: {
       resolve = resolveRecordValue;
     }
 
+    const rangeByKey = new Map<string, any>(rangeRows.map((r) => [r.field_key, r]));
+
     const matchesFilter = (item: any, key: string, value: string) => {
+      const rangeRow = rangeByKey.get(key);
+      if (rangeRow) {
+        const { min, max } = parseRangeValue(value);
+        if (min == null && max == null) return true;
+        const lo = toFilterNumber(resolve(item, rangeRow.min_field_key ?? key));
+        const hi = toFilterNumber(resolve(item, rangeRow.max_field_key ?? key));
+        if (min != null && (lo == null || lo < min)) return false;
+        if (max != null && (hi == null || hi > max)) return false;
+        return true;
+      }
       const targets = parseFilterValues(value).map(norm);
       if (targets.length === 0) return true;
       return valuesOf(resolve(item, key)).map(norm).some((v) => targets.includes(v));
@@ -213,6 +232,24 @@ export async function listExploreFilters(opts: {
       }
     }
 
+    // Facetas das faixas numéricas: valores distintos de cada campo vinculado.
+    for (const row of rangeRows) {
+      const acc = { min: new Set<number>(), max: new Set<number>() };
+      const others = Object.entries(selected).filter(([k]) => k !== row.field_key);
+      for (const item of items) {
+        if (!matchesText(item, resolve, searchKeys, q)) continue;
+        if (!others.every(([k, v]) => matchesFilter(item, k, v))) continue;
+        const lo = toFilterNumber(resolve(item, row.min_field_key ?? row.field_key));
+        const hi = toFilterNumber(resolve(item, row.max_field_key ?? row.field_key));
+        if (lo != null) acc.min.add(lo);
+        if (hi != null) acc.max.add(hi);
+      }
+      const current = parseRangeValue(selected[row.field_key]);
+      if (current.min != null) acc.min.add(current.min);
+      if (current.max != null) acc.max.add(current.max);
+      rangeOptions.set(row.field_key, acc);
+    }
+
     // Remove duplicidades case-insensitive mantendo a primeira grafia.
     for (const [key, set] of distinct) {
       const seenNorm = new Map<string, string>();
@@ -224,40 +261,65 @@ export async function listExploreFilters(opts: {
   }
 
   const filters: ExploreFilterDef[] = uniq
-    .map((r) => ({
-      key: r.field_key,
-      label: r.label_override ?? labelMap[r.field_key] ?? ORG_BASE_LABELS[r.field_key] ?? r.field_key,
-      filter_type: r.filter_type,
-      options: Array.from(distinct.get(r.field_key) ?? []).sort((a, b) => a.localeCompare(b, "pt-BR")),
-    }))
-    // Filtros de seleção sem nenhuma opção disponível são omitidos.
-    .filter((f) => f.filter_type !== "select" || f.options.length > 0);
+    .map((r) => {
+      const range = rangeOptions.get(r.field_key);
+      return {
+        key: r.field_key,
+        label: r.label_override ?? labelMap[r.field_key] ?? ORG_BASE_LABELS[r.field_key] ?? r.field_key,
+        filter_type: r.filter_type,
+        options: Array.from(distinct.get(r.field_key) ?? []).sort((a, b) => a.localeCompare(b, "pt-BR")),
+        min_field_key: r.min_field_key ?? null,
+        max_field_key: r.max_field_key ?? null,
+        min_options: range ? Array.from(range.min).sort((a, b) => a - b) : [],
+        max_options: range ? Array.from(range.max).sort((a, b) => a - b) : [],
+      } as ExploreFilterDef;
+    })
+    // Filtros sem nenhuma opção disponível são omitidos.
+    .filter((f) => {
+      if (f.filter_type === "select") return f.options.length > 0;
+      if (f.filter_type === "range") return (f.min_options?.length ?? 0) > 0 || (f.max_options?.length ?? 0) > 0;
+      return true;
+    });
 
   return { filters };
 }
 
 
-/** Load filter definitions (search + select keys) for list-side filtering. */
+export type RangeFieldKeys = { key: string; min_field_key: string; max_field_key: string };
+export type FilterKeys = { searchKeys: string[]; selectKeys: string[]; ranges: RangeFieldKeys[] };
+
+/** Load filter definitions (search + select + range keys) for list-side filtering. */
 export async function loadFilterKeys(
   scope: "organization" | "record",
   categoryId?: string,
-): Promise<{ searchKeys: string[]; selectKeys: string[] }> {
+): Promise<FilterKeys> {
   return cached(`filterkeys:${scope}:${categoryId ?? "all"}`, TTL_SHORT, () => loadFilterKeysUncached(scope, categoryId));
 }
 
 async function loadFilterKeysUncached(
   scope: "organization" | "record",
   categoryId?: string,
-): Promise<{ searchKeys: string[]; selectKeys: string[] }> {
+): Promise<FilterKeys> {
   const sb = supabaseAdmin as any;
-  let q = sb.from("category_filter_fields").select("field_key, filter_type, scope, category_id").eq("scope", scope);
+  let q = sb
+    .from("category_filter_fields")
+    .select("field_key, filter_type, scope, category_id, min_field_key, max_field_key")
+    .eq("scope", scope);
   if (categoryId) q = q.eq("category_id", categoryId);
   const { data } = await q;
   const searchKeys = new Set<string>();
   const selectKeys = new Set<string>();
+  const ranges = new Map<string, RangeFieldKeys>();
   for (const r of (data ?? []) as any[]) {
     if (r.filter_type === "search") searchKeys.add(r.field_key);
     else if (r.filter_type === "select") selectKeys.add(r.field_key);
+    else if (r.filter_type === "range" && !ranges.has(r.field_key)) {
+      ranges.set(r.field_key, {
+        key: r.field_key,
+        min_field_key: r.min_field_key ?? r.field_key,
+        max_field_key: r.max_field_key ?? r.field_key,
+      });
+    }
   }
-  return { searchKeys: Array.from(searchKeys), selectKeys: Array.from(selectKeys) };
+  return { searchKeys: Array.from(searchKeys), selectKeys: Array.from(selectKeys), ranges: Array.from(ranges.values()) };
 }
