@@ -9,6 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
+import { VenuespaceLogo } from "@/components/venue/venuespace-logo";
+
 import { cn } from "@/lib/utils";
 
 type Props = {
