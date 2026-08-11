@@ -49,7 +49,14 @@ export const Route = createFileRoute("/explore")({
 
 const PAGE_SIZE = 24;
 
-type FilterDef = { key: string; label: string; filter_type: "search" | "select"; options: string[] };
+type FilterDef = {
+  key: string;
+  label: string;
+  filter_type: "search" | "select" | "range";
+  options: string[];
+  min_options?: number[];
+  max_options?: number[];
+};
 
 function buildQuery(opts: {
   q: string;
@@ -191,7 +198,7 @@ function ExplorePage() {
     setTerm("");
   }
 
-  const availableFilters = (filtersQ.data?.filters ?? []).filter((f) => f.filter_type === "select");
+  const availableFilters = (filtersQ.data?.filters ?? []).filter((f) => f.filter_type !== "search");
 
   return (
 

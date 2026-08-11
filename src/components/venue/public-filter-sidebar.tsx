@@ -4,6 +4,7 @@ import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PublicFilterDef } from "@/components/venue/public-filter-bar";
 import { FilterOptionList } from "@/components/venue/filter-option-list";
+import { FilterRangeSelect } from "@/components/venue/filter-range-select";
 import { countSelectedFilters } from "@/lib/filter-params";
 
 type Props = {
@@ -46,16 +47,28 @@ export function PublicFilterSidebar({
       </div>
 
       <div className="max-h-[calc(100vh-12rem)] space-y-0 overflow-y-auto pr-1">
-        {filters.map((f, i) => (
-          <FilterOptionList
-            key={f.key}
-            label={f.label}
-            options={f.options}
-            value={values[f.key]}
-            defaultOpen={i === 0}
-            onChange={(next) => onFilterChange(f.key, next)}
-          />
-        ))}
+        {filters.map((f, i) =>
+          f.filter_type === "range" ? (
+            <FilterRangeSelect
+              key={f.key}
+              label={f.label}
+              minOptions={f.min_options ?? []}
+              maxOptions={f.max_options ?? []}
+              value={values[f.key]}
+              defaultOpen={i === 0}
+              onChange={(next) => onFilterChange(f.key, next)}
+            />
+          ) : (
+            <FilterOptionList
+              key={f.key}
+              label={f.label}
+              options={f.options}
+              value={values[f.key]}
+              defaultOpen={i === 0}
+              onChange={(next) => onFilterChange(f.key, next)}
+            />
+          ),
+        )}
       </div>
 
       {hasActive ? (

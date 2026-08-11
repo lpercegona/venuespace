@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { exploreFiltersQuery } from "@/lib/public-queries";
 import { FilterOptionList } from "@/components/venue/filter-option-list";
+import { FilterRangeSelect } from "@/components/venue/filter-range-select";
 import { countSelectedFilters } from "@/lib/filter-params";
 
 type Props = {
@@ -29,7 +30,7 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
     exploreFiltersQuery({ scope: "organization", categoryId, q: term, filters: values, enabled: !!categoryId }),
   );
   const filters = useMemo(
-    () => (filtersQ.data?.filters ?? []).filter((f: any) => f.filter_type === "select"),
+    () => (filtersQ.data?.filters ?? []).filter((f: any) => f.filter_type === "select" || f.filter_type === "range"),
     [filtersQ.data],
   );
   const activeCount = countSelectedFilters(values);
@@ -79,23 +80,35 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
           <PopoverContent align="end" className="w-80 p-0">
             <ScrollArea className="max-h-[70vh]">
               <div className="space-y-0 p-3 text-left">
-                {filters.map((f: any, i: number) => (
-                  <FilterOptionList
-                    key={f.key}
-                    label={f.label}
-                    options={f.options}
-                    value={values[f.key]}
-                    defaultOpen={i === 0}
-                    onChange={(next) =>
-                      setValues((prev) => {
-                        const copy = { ...prev };
-                        if (next) copy[f.key] = next;
-                        else delete copy[f.key];
-                        return copy;
-                      })
-                    }
-                  />
-                ))}
+                {filters.map((f: any, i: number) => {
+                  const change = (next: string) =>
+                    setValues((prev) => {
+                      const copy = { ...prev };
+                      if (next) copy[f.key] = next;
+                      else delete copy[f.key];
+                      return copy;
+                    });
+                  return f.filter_type === "range" ? (
+                    <FilterRangeSelect
+                      key={f.key}
+                      label={f.label}
+                      minOptions={f.min_options ?? []}
+                      maxOptions={f.max_options ?? []}
+                      value={values[f.key]}
+                      defaultOpen={i === 0}
+                      onChange={change}
+                    />
+                  ) : (
+                    <FilterOptionList
+                      key={f.key}
+                      label={f.label}
+                      options={f.options}
+                      value={values[f.key]}
+                      defaultOpen={i === 0}
+                      onChange={change}
+                    />
+                  );
+                })}
               </div>
             </ScrollArea>
 

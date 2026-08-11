@@ -6,13 +6,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FilterOptionList } from "@/components/venue/filter-option-list";
+import { FilterRangeSelect } from "@/components/venue/filter-range-select";
 import { countSelectedFilters } from "@/lib/filter-params";
 
 export type PublicFilterDef = {
   key: string;
   label: string;
-  filter_type: "search" | "select";
+  filter_type: "search" | "select" | "range";
   options: string[];
+  min_options?: number[];
+  max_options?: number[];
 };
 
 type Props = {
@@ -71,16 +74,28 @@ export function PublicFilterBar({
           <PopoverContent align="end" className="w-80 p-0">
             <ScrollArea className="max-h-[70vh]">
               <div className="space-y-0 p-3">
-                {filters.map((f, i) => (
-                  <FilterOptionList
-                    key={f.key}
-                    label={f.label}
-                    options={f.options}
-                    value={values[f.key]}
-                    defaultOpen={i === 0}
-                    onChange={(next) => onFilterChange(f.key, next)}
-                  />
-                ))}
+                {filters.map((f, i) =>
+                  f.filter_type === "range" ? (
+                    <FilterRangeSelect
+                      key={f.key}
+                      label={f.label}
+                      minOptions={f.min_options ?? []}
+                      maxOptions={f.max_options ?? []}
+                      value={values[f.key]}
+                      defaultOpen={i === 0}
+                      onChange={(next) => onFilterChange(f.key, next)}
+                    />
+                  ) : (
+                    <FilterOptionList
+                      key={f.key}
+                      label={f.label}
+                      options={f.options}
+                      value={values[f.key]}
+                      defaultOpen={i === 0}
+                      onChange={(next) => onFilterChange(f.key, next)}
+                    />
+                  ),
+                )}
               </div>
             </ScrollArea>
           </PopoverContent>
