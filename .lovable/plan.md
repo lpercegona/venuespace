@@ -24,8 +24,11 @@ Base existente que será estendida (não recriada): rota `/app/$orgSlug/calendar
 
 - Server function autenticada gera o PDF da reserva e o salva no bucket privado existente `venue-uploads`, em `orcamentos/<organization_id>/<record_id>/<timestamp>.pdf`.
 - Conteúdo: nome/logo da organização, número e data do orçamento, recurso reservado, período, dados de contato do interessado, itens/valores dos campos de moeda da reserva, valor total proposto e observações.
-- O caminho gerado é registrado no `system_data` do registro (histórico de orçamentos), e a tela oferece link assinado para download; cada geração adiciona uma nova versão.
-- Opcionalmente registra a proposta na conversa com o valor, mantendo o fluxo de aceite existente.
+- O caminho gerado é registrado em `records.system_data` (coluna jsonb já existente no banco) sob a chave `quotes`, como **array de versões**: `{ "quotes": [{ "path": "...", "created_at": "...", "created_by": "<uuid>", "total": 0 }] }`. Cada geração acrescenta um item; nenhuma coluna nova é criada.
+- A tela oferece link assinado temporário para download de qualquer versão.
+- Ao gerar, registra também uma mensagem `type = 'proposal'` na conversa da reserva com o valor total, mantendo o fluxo de aceite existente (é o passo "envio de proposta" do ciclo de vida).
+- **Escopo do orçamento (decisão explícita)**: v1 soma apenas os campos de moeda do próprio registro da reserva (recurso único). Orçamento multi-item pelo padrão relacional (tabela de itens + `computed`) fica **fora do escopo** desta iteração e entra como pendência declarada.
+
 
 ## 4. Ciclo de vida da reserva
 
