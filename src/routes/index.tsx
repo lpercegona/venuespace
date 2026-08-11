@@ -162,7 +162,9 @@ function Landing() {
                   data={byBlock.get(block.id)}
                   isLoading={dataQ.isLoading}
                   layout={block.source === "records" ? recLayoutQ.data : orgLayoutQ.data}
+                  categorySlug={activeCategorySlug}
                 />
+
               ))
             )
           ) : (
