@@ -88,8 +88,12 @@ function Landing() {
 
   // Layouts configurados pelo super admin — usados para o skeleton refletir o card real.
   const categoryId = activeGrouping?.category_ids?.[0];
+  const catsQ = usePublicCategories();
+  const activeCategory = (catsQ.data ?? []).find((c) => c.id === categoryId);
+  const activeCategorySlug = activeCategory ? categorySlug(activeCategory) : undefined;
   const orgLayoutQ = useQuery(categoryLayoutQuery(categoryId, "organization_card"));
   const recLayoutQ = useQuery(categoryLayoutQuery(categoryId, "record_card"));
+
 
   const data = dataQ.data as GroupingData | undefined;
   const byBlock = new Map((data?.blocks ?? []).map((b) => [b.id, b]));
