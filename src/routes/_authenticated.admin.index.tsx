@@ -3,7 +3,21 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Save, Trash2, Pencil, ArrowLeft, Shield, FileText, Check, Settings2, Layers, LayoutGrid, Menu } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Save,
+  Trash2,
+  Pencil,
+  ArrowLeft,
+  Shield,
+  FileText,
+  Check,
+  Settings2,
+  Layers,
+  LayoutGrid,
+  Menu,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactElement } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -22,16 +36,22 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useLabels } from "@/hooks/use-instance-context";
 
-import {
-  amISuperAdmin,
-  getInstanceSettingsPublic,
-  updateInstanceSettings,
-} from "@/lib/instance-settings.functions";
+import { amISuperAdmin, getInstanceSettingsPublic, updateInstanceSettings } from "@/lib/instance-settings.functions";
 import {
   listPlatformLabelsPublic,
   upsertPlatformLabel,
@@ -85,14 +105,9 @@ import {
   deleteCategoryFilterField,
   type CategoryFilterField,
 } from "@/lib/category-filters.functions";
-import {
-  listPendingReviewsAdmin,
-  moderateReviewAdmin,
-  type ReviewModerationItem,
-} from "@/lib/reviews.functions";
+import { listPendingReviewsAdmin, moderateReviewAdmin, type ReviewModerationItem } from "@/lib/reviews.functions";
 import { HomeGroupingsSection } from "@/components/admin/home-groupings-section";
 import { HomeBlocksSection } from "@/components/admin/home-blocks-section";
-
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({ meta: [{ title: "Admin — Venuespace" }, { name: "robots", content: "noindex" }] }),
@@ -123,18 +138,9 @@ function AdminPage() {
   if (!gate.data.is_super_admin) return null;
 
   return (
-    <AppShell
-      title="Configurações da instância"
-      subtitle={`Ajustes globais que valem para todas as ${organizationsLabel}.`}
-      actions={
-        <Button variant="outline" size="sm" className="rounded-full" asChild>
-          <Link to="/app"><ArrowLeft className="h-4 w-4" />Voltar</Link>
-        </Button>
-      }
-    >
+    <AppShell title="Configurações" subtitle={``} actions={}>
       <AdminWorkspace />
     </AppShell>
-
   );
 }
 
@@ -159,10 +165,10 @@ const ADMIN_GROUPS: AdminGroup[] = [
     icon: Layers,
     sections: [
       { value: "categories", label: "Categorias", render: () => <CategoriesSection /> },
-      { value: "defaults", label: "Campos padrão", render: () => <DefaultFieldsSection /> },
-      { value: "standard-tables", label: "Tabelas padrão", render: () => <StandardTablesSection /> },
-      { value: "standard-forms", label: "Formulários padrão", render: () => <StandardFormsSection /> },
-      { value: "filters", label: "Filtros públicos", render: () => <FilterFieldsSection /> },
+      { value: "defaults", label: "Campos", render: () => <DefaultFieldsSection /> },
+      { value: "standard-tables", label: "Tabelas", render: () => <StandardTablesSection /> },
+      { value: "standard-forms", label: "Formulários", render: () => <StandardFormsSection /> },
+      { value: "filters", label: "Filtros", render: () => <FilterFieldsSection /> },
     ],
   },
   {
@@ -172,7 +178,7 @@ const ADMIN_GROUPS: AdminGroup[] = [
     sections: [
       { value: "layouts", label: "Layout público", render: () => <LayoutsSection /> },
       { value: "home-groupings", label: "Agrupamentos", render: () => <HomeGroupingsSection /> },
-      { value: "home-blocks", label: "Blocos da home", render: () => <HomeBlocksSection /> },
+      { value: "home-blocks", label: "Seções home", render: () => <HomeBlocksSection /> },
     ],
   },
   {
@@ -237,7 +243,12 @@ function AdminWorkspace() {
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" aria-label="Abrir menu" className="h-10 w-10 rounded-full min-[860px]:hidden">
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Abrir menu"
+                className="h-10 w-10 rounded-full min-[860px]:hidden"
+              >
                 <Menu className="h-4 w-4" />
               </Button>
             </SheetTrigger>
@@ -264,7 +275,6 @@ function AdminWorkspace() {
     </div>
   );
 }
-
 
 // ---------- General ----------
 
@@ -314,11 +324,18 @@ function GeneralSection() {
     }
   }
 
-  if (s.isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (s.isLoading)
+    return (
+      <div className="flex justify-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
 
   return (
     <Card>
-      <CardHeader><CardTitle className="font-display">Geral</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle className="font-display">Geral</CardTitle>
+      </CardHeader>
       <CardContent>
         <form onSubmit={handleSave} className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
@@ -328,7 +345,13 @@ function GeneralSection() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="ccy">Código de moeda (ISO 4217)</Label>
-            <Input id="ccy" value={ccy} onChange={(e) => setCcy(e.target.value.toUpperCase())} placeholder="BRL" maxLength={8} />
+            <Input
+              id="ccy"
+              value={ccy}
+              onChange={(e) => setCcy(e.target.value.toUpperCase())}
+              placeholder="BRL"
+              maxLength={8}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="sym">Símbolo</Label>
@@ -337,7 +360,9 @@ function GeneralSection() {
           <div className="space-y-2">
             <Label>Posição do símbolo</Label>
             <Select value={pos} onValueChange={(v) => setPos(v as any)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="before">Antes (R$ 1.234,56)</SelectItem>
                 <SelectItem value="after">Depois (1.234,56 R$)</SelectItem>
@@ -355,13 +380,23 @@ function GeneralSection() {
           <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-4">
             <div>
               <p className="font-medium">Permitir gestão de campos por usuários</p>
-              <p className="text-sm text-muted-foreground">Quando desligado, apenas o super admin pode criar/editar/apagar {t("fields", "campos").toLowerCase()} em {t("tables", "tabelas").toLowerCase()}.</p>
+              <p className="text-sm text-muted-foreground">
+                Quando desligado, apenas o super admin pode criar/editar/apagar {t("fields", "campos").toLowerCase()} em{" "}
+                {t("tables", "tabelas").toLowerCase()}.
+              </p>
             </div>
             <Switch checked={allow} onCheckedChange={setAllow} />
           </div>
           <div className="sm:col-span-2 flex justify-end">
             <Button type="submit" disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4" />Salvar</>}
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Salvar
+                </>
+              )}
             </Button>
           </div>
         </form>
@@ -403,13 +438,11 @@ function LabelsSection() {
   const [drafts, setDrafts] = useState<Record<string, { label: string; icon: string }>>({});
   useEffect(() => {
     if (!labels.data) return;
-    const overrides = new Map(
-      (catLabels.data ?? []).filter((c) => c.category_id === scope).map((c) => [c.key, c]),
-    );
+    const overrides = new Map((catLabels.data ?? []).filter((c) => c.category_id === scope).map((c) => [c.key, c]));
     const d: Record<string, { label: string; icon: string }> = {};
     for (const l of labels.data) {
       const o = isGlobal ? undefined : overrides.get(l.key);
-      d[l.key] = { label: o?.label ?? l.label, icon: (o?.icon ?? l.icon) ?? "" };
+      d[l.key] = { label: o?.label ?? l.label, icon: o?.icon ?? l.icon ?? "" };
     }
     setDrafts(d);
   }, [labels.data, catLabels.data, scope, isGlobal]);
@@ -431,7 +464,9 @@ function LabelsSection() {
       else await upsertCategoryLabel({ data: { category_id: scope, key, label: d.label, icon: d.icon || null } });
       toast.success("Rótulo salvo");
       await refresh();
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   async function resetLabel(key: string) {
@@ -440,35 +475,50 @@ function LabelsSection() {
       await deleteCategoryLabel({ data: { category_id: scope, key } });
       toast.success("Rótulo da categoria removido");
       await refresh();
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
-  const overriddenKeys = new Set(
-    (catLabels.data ?? []).filter((c) => c.category_id === scope).map((c) => c.key),
-  );
+  const overriddenKeys = new Set((catLabels.data ?? []).filter((c) => c.category_id === scope).map((c) => c.key));
 
   return (
     <Card>
       <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <CardTitle className="font-display">Termos-núcleo</CardTitle>
+          <CardTitle className="font-display">Termos</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Globais valem para toda a plataforma. Ao escolher uma categoria, os rótulos definidos sobrepõem os globais apenas nela.
+            Ao escolher uma categoria, os rótulos definidos sobrepõem os globais apenas nela.
           </p>
         </div>
         <Select value={scope} onValueChange={setScope}>
-          <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-64">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="global">Global (todas as categorias)</SelectItem>
-            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {(cats.data ?? []).map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </CardHeader>
       <CardContent>
-        {labels.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : (
+        {labels.isLoading ? (
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        ) : (
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader><TableRow><TableHead>Chave</TableHead><TableHead>Rótulo</TableHead><TableHead>Ícone (lucide)</TableHead><TableHead className="w-32"></TableHead></TableRow></TableHeader>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Chave</TableHead>
+                  <TableHead>Rótulo</TableHead>
+                  <TableHead>Ícone (lucide)</TableHead>
+                  <TableHead className="w-32"></TableHead>
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {(labels.data ?? []).map((l) => (
                   <TableRow key={l.key}>
@@ -478,13 +528,41 @@ function LabelsSection() {
                         {!isGlobal && overriddenKeys.has(l.key) ? <Badge variant="secondary">categoria</Badge> : null}
                       </span>
                     </TableCell>
-                    <TableCell><Input value={drafts[l.key]?.label ?? ""} onChange={(e) => setDrafts((s) => ({ ...s, [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), label: e.target.value } }))} /></TableCell>
-                    <TableCell><Input value={drafts[l.key]?.icon ?? ""} onChange={(e) => setDrafts((s) => ({ ...s, [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), icon: e.target.value } }))} placeholder="Building2" /></TableCell>
+                    <TableCell>
+                      <Input
+                        value={drafts[l.key]?.label ?? ""}
+                        onChange={(e) =>
+                          setDrafts((s) => ({
+                            ...s,
+                            [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), label: e.target.value },
+                          }))
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={drafts[l.key]?.icon ?? ""}
+                        onChange={(e) =>
+                          setDrafts((s) => ({
+                            ...s,
+                            [l.key]: { ...(s[l.key] ?? { label: "", icon: "" }), icon: e.target.value },
+                          }))
+                        }
+                        placeholder="Building2"
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button size="sm" variant="outline" onClick={() => saveLabel(l.key)}><Save className="h-4 w-4" /></Button>
+                        <Button size="sm" variant="outline" onClick={() => saveLabel(l.key)}>
+                          <Save className="h-4 w-4" />
+                        </Button>
                         {!isGlobal && overriddenKeys.has(l.key) ? (
-                          <Button size="sm" variant="outline" onClick={() => resetLabel(l.key)} aria-label="Remover rótulo da categoria">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => resetLabel(l.key)}
+                            aria-label="Remover rótulo da categoria"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         ) : null}
@@ -500,7 +578,6 @@ function LabelsSection() {
     </Card>
   );
 }
-
 
 // ---------- Categories ----------
 
@@ -520,15 +597,29 @@ function CategoriesSection() {
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
 
-  function openNew() { setEditing(null); setName(""); setIcon(""); setDescription(""); setOpen(true); }
-  function openEdit(c: OrganizationCategory) { setEditing(c); setName(c.name); setIcon(c.icon ?? ""); setDescription(c.description ?? ""); setOpen(true); }
+  function openNew() {
+    setEditing(null);
+    setName("");
+    setIcon("");
+    setDescription("");
+    setOpen(true);
+  }
+  function openEdit(c: OrganizationCategory) {
+    setEditing(c);
+    setName(c.name);
+    setIcon(c.icon ?? "");
+    setDescription(c.description ?? "");
+    setOpen(true);
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
       if (editing) {
-        await updateOrganizationCategory({ data: { id: editing.id, name, icon: icon || null, description: description || null } });
+        await updateOrganizationCategory({
+          data: { id: editing.id, name, icon: icon || null, description: description || null },
+        });
         toast.success("Categoria atualizada");
       } else {
         await createOrganizationCategory({ data: { name, icon: icon || null, description: description || null } });
@@ -539,7 +630,11 @@ function CategoriesSection() {
         qc.invalidateQueries({ queryKey: ["admin-org-cats"] }),
         qc.invalidateQueries({ queryKey: ["organization-categories"] }),
       ]);
-    } catch (err) { toast.error((err as Error).message); } finally { setSaving(false); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function remove(c: OrganizationCategory) {
@@ -551,7 +646,9 @@ function CategoriesSection() {
         qc.invalidateQueries({ queryKey: ["admin-org-cat-counts"] }),
         qc.invalidateQueries({ queryKey: ["organization-categories"] }),
       ]);
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   return (
@@ -559,40 +656,84 @@ function CategoriesSection() {
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="font-display">Categorias de {organizationLabel}</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button size="sm" onClick={openNew}><Plus className="h-4 w-4" />Nova</Button></DialogTrigger>
+          <DialogTrigger asChild>
+            <Button size="sm" onClick={openNew}>
+              <Plus className="h-4 w-4" />
+              Nova
+            </Button>
+          </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle className="font-display">{editing ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="font-display">{editing ? "Editar categoria" : "Nova categoria"}</DialogTitle>
+            </DialogHeader>
             <form onSubmit={save} className="space-y-4">
-              <div className="space-y-2"><Label htmlFor="c-name">Nome</Label><Input id="c-name" required value={name} onChange={(e) => setName(e.target.value)} /></div>
-              <div className="space-y-2"><Label htmlFor="c-icon">Ícone (lucide)</Label><Input id="c-icon" value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="Tag" /></div>
-              <div className="space-y-2"><Label htmlFor="c-desc">Descrição</Label><Textarea id="c-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+              <div className="space-y-2">
+                <Label htmlFor="c-name">Nome</Label>
+                <Input id="c-name" required value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="c-icon">Ícone (lucide)</Label>
+                <Input id="c-icon" value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="Tag" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="c-desc">Descrição</Label>
+                <Textarea id="c-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+              </div>
               <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}</Button>
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
       </CardHeader>
       <CardContent>
-        {cats.isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : (cats.data ?? []).length === 0 ? (
-          <EmptyState icon={<Shield className="h-5 w-5" />} title="Nenhuma categoria criada" description={`Crie a primeira categoria para começar a classificar ${organizationsLabel}.`} />
+        {cats.isLoading ? (
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        ) : (cats.data ?? []).length === 0 ? (
+          <EmptyState
+            icon={<Shield className="h-5 w-5" />}
+            title="Nenhuma categoria criada"
+            description={`Crie a primeira categoria para começar a classificar ${organizationsLabel}.`}
+          />
         ) : (
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Ícone</TableHead><TableHead>Descrição</TableHead><TableHead>{t("organizations", "Organizações")}</TableHead><TableHead className="w-32"></TableHead></TableRow></TableHeader>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Ícone</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>{t("organizations", "Organizações")}</TableHead>
+                  <TableHead className="w-32"></TableHead>
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {(cats.data ?? []).map((c) => (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.name}</TableCell>
                     <TableCell className="font-mono text-xs">{c.icon ?? "—"}</TableCell>
-                    <TableCell className="max-w-xs truncate text-sm text-muted-foreground">{c.description ?? "—"}</TableCell>
-                    <TableCell><Badge variant="secondary">{counts.data?.[c.id] ?? 0}</Badge></TableCell>
+                    <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
+                      {c.description ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{counts.data?.[c.id] ?? 0}</Badge>
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button size="sm" variant="outline" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                        <Button size="sm" variant="outline" onClick={() => openEdit(c)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <AlertDialog>
-                          <AlertDialogTrigger asChild><Button size="sm" variant="outline"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>Excluir categoria?</AlertDialogTitle>
@@ -624,7 +765,23 @@ function CategoriesSection() {
 // ---------- Default fields per category (unified: org / table / record) ----------
 
 const FIELD_TYPES = [
-  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file","relation","computed",
+  "text",
+  "long_text",
+  "number",
+  "currency",
+  "boolean",
+  "date",
+  "datetime",
+  "select",
+  "multiselect",
+  "email",
+  "phone",
+  "url",
+  "image",
+  "gallery",
+  "file",
+  "relation",
+  "computed",
 ] as const;
 
 type DefaultsScope = "org" | "table" | "record";
@@ -661,8 +818,14 @@ const BASE_FIELDS: Record<DefaultsScope, Array<{ key: string; label: string; typ
 };
 
 function toSnake(s: string) {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60);
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60);
 }
 
 function DefaultFieldsSection() {
@@ -678,7 +841,11 @@ function DefaultFieldsSection() {
   }, [cats.data, selected]);
 
   const [reconciling, setReconciling] = useState(false);
-  const [lastReconcile, setLastReconcile] = useState<{ organizations: number; tables_touched: number; fields_added: number } | null>(null);
+  const [lastReconcile, setLastReconcile] = useState<{
+    organizations: number;
+    tables_touched: number;
+    fields_added: number;
+  } | null>(null);
 
   async function reconcile() {
     if (!selected) return;
@@ -686,9 +853,14 @@ function DefaultFieldsSection() {
     try {
       const r = await reconcileCategoryAllOrganizations({ data: { category_id: selected } });
       setLastReconcile(r);
-      toast.success(`${r.fields_added} ${fieldsLabel} em ${r.tables_touched} ${tablesLabel} de ${r.organizations} ${t("organizations", "organizações").toLowerCase()}.`);
-    } catch (err) { toast.error((err as Error).message); }
-    finally { setReconciling(false); }
+      toast.success(
+        `${r.fields_added} ${fieldsLabel} em ${r.tables_touched} ${tablesLabel} de ${r.organizations} ${t("organizations", "organizações").toLowerCase()}.`,
+      );
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setReconciling(false);
+    }
   }
 
   return (
@@ -697,13 +869,20 @@ function DefaultFieldsSection() {
         <div>
           <CardTitle className="font-display">Campos padrão por categoria</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Definição obrigatória por categoria. Determina os {fieldsLabel} exibidos ao criar {organizationLabel}, {t("table", "tabela").toLowerCase()} e {t("record", "registro").toLowerCase()}.
+            Definição obrigatória por categoria. Determina os {fieldsLabel} exibidos ao criar {organizationLabel},{" "}
+            {t("table", "tabela").toLowerCase()} e {t("record", "registro").toLowerCase()}.
           </p>
         </div>
         <Select value={selected ?? ""} onValueChange={setSelected}>
-          <SelectTrigger className="w-64"><SelectValue placeholder="Selecione categoria" /></SelectTrigger>
+          <SelectTrigger className="w-64">
+            <SelectValue placeholder="Selecione categoria" />
+          </SelectTrigger>
           <SelectContent>
-            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {(cats.data ?? []).map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </CardHeader>
@@ -717,9 +896,15 @@ function DefaultFieldsSection() {
               <TabsTrigger value="table">Tabela</TabsTrigger>
               <TabsTrigger value="record">Registro</TabsTrigger>
             </TabsList>
-            <TabsContent value="org"><ScopeEditor categoryId={selected} scope="org" /></TabsContent>
-            <TabsContent value="table"><ScopeEditor categoryId={selected} scope="table" /></TabsContent>
-            <TabsContent value="record"><ScopeEditor categoryId={selected} scope="record" /></TabsContent>
+            <TabsContent value="org">
+              <ScopeEditor categoryId={selected} scope="org" />
+            </TabsContent>
+            <TabsContent value="table">
+              <ScopeEditor categoryId={selected} scope="table" />
+            </TabsContent>
+            <TabsContent value="record">
+              <ScopeEditor categoryId={selected} scope="record" />
+            </TabsContent>
           </Tabs>
         )}
 
@@ -735,7 +920,8 @@ function DefaultFieldsSection() {
               </Button>
               {lastReconcile ? (
                 <span className="text-xs text-muted-foreground">
-                  Última execução: {lastReconcile.fields_added} {fieldsLabel} em {lastReconcile.tables_touched} {tablesLabel} de {lastReconcile.organizations} {t("organizations", "organizações").toLowerCase()}.
+                  Última execução: {lastReconcile.fields_added} {fieldsLabel} em {lastReconcile.tables_touched}{" "}
+                  {tablesLabel} de {lastReconcile.organizations} {t("organizations", "organizações").toLowerCase()}.
                 </span>
               ) : null}
             </div>
@@ -754,14 +940,24 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
       if (scope === "record") {
         const rows = await listCategoryDefaultFields({ data: { category_id: categoryId } });
         return (rows as CategoryDefaultField[]).map((r) => ({
-          id: r.id, field_key: r.field_key, label: r.label, field_type: r.field_type,
-          required: r.required, order_index: r.order_index, config: (r.config ?? {}) as Record<string, any>,
+          id: r.id,
+          field_key: r.field_key,
+          label: r.label,
+          field_type: r.field_type,
+          required: r.required,
+          order_index: r.order_index,
+          config: (r.config ?? {}) as Record<string, any>,
         }));
       }
       const rows = await listCategoryCascadeFields({ data: { category_id: categoryId, scope } });
       return (rows as CategoryCascadeField[]).map((r) => ({
-        id: r.id, field_key: r.field_key, label: r.label, field_type: r.field_type,
-        required: r.required, order_index: r.order_index, config: (r.config ?? {}) as Record<string, any>,
+        id: r.id,
+        field_key: r.field_key,
+        label: r.label,
+        field_type: r.field_type,
+        required: r.required,
+        order_index: r.order_index,
+        config: (r.config ?? {}) as Record<string, any>,
       }));
     },
   });
@@ -779,8 +975,15 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
   const [saving, setSaving] = useState(false);
 
   function reset() {
-    setEditing(null); setLabel(""); setKey(""); setKeyTouched(false);
-    setType("text"); setRequired(false); setOrder(0); setOptionsText(""); setCepRole(false);
+    setEditing(null);
+    setLabel("");
+    setKey("");
+    setKeyTouched(false);
+    setType("text");
+    setRequired(false);
+    setOrder(0);
+    setOptionsText("");
+    setCepRole(false);
   }
 
   function uniqueKey(base: string) {
@@ -793,7 +996,9 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     );
     if (!base) return base;
     if (!existing.has(base)) return base;
-    let i = 2; while (existing.has(`${base}_${i}`)) i++; return `${base}_${i}`;
+    let i = 2;
+    while (existing.has(`${base}_${i}`)) i++;
+    return `${base}_${i}`;
   }
 
   function openNew() {
@@ -802,8 +1007,13 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setOpen(true);
   }
   function openEdit(f: UnifiedField) {
-    setEditing(f); setLabel(f.label); setKey(f.field_key); setKeyTouched(true);
-    setType(f.field_type as any); setRequired(f.required); setOrder(f.order_index);
+    setEditing(f);
+    setLabel(f.label);
+    setKey(f.field_key);
+    setKeyTouched(true);
+    setType(f.field_type as any);
+    setRequired(f.required);
+    setOrder(f.order_index);
     const cfg = f.config ?? {};
     const opts = Array.isArray(cfg.options) ? (cfg.options as any[]).map(String) : [];
     setOptionsText(formatOptionLines(opts, cfg.option_icons as Record<string, string> | undefined));
@@ -832,22 +1042,42 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
       if (type === "text" && cepRole) config.role = "cep";
       else if (config.role === "cep") delete config.role;
       if (scope === "record") {
-        await upsertCategoryDefaultField({ data: {
-          id: editing?.id, category_id: categoryId,
-          field_key: finalKey, label, field_type: type, required, order_index: order, config,
-        } });
+        await upsertCategoryDefaultField({
+          data: {
+            id: editing?.id,
+            category_id: categoryId,
+            field_key: finalKey,
+            label,
+            field_type: type,
+            required,
+            order_index: order,
+            config,
+          },
+        });
       } else {
-        await upsertCategoryCascadeField({ data: {
-          id: editing?.id, scope, category_id: categoryId,
-          field_key: finalKey, label, field_type: type, required, order_index: order, config,
-        } });
+        await upsertCategoryCascadeField({
+          data: {
+            id: editing?.id,
+            scope,
+            category_id: categoryId,
+            field_key: finalKey,
+            label,
+            field_type: type,
+            required,
+            order_index: order,
+            config,
+          },
+        });
       }
       toast.success(editing ? "Campo atualizado" : "Campo criado");
-      setOpen(false); reset();
+      setOpen(false);
+      reset();
       qc.invalidateQueries({ queryKey: ["admin-defaults", scope, categoryId] });
     } catch (err) {
       toast.error((err as Error).message);
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function remove(id: string) {
@@ -859,7 +1089,9 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
       }
       toast.success("Campo removido");
       qc.invalidateQueries({ queryKey: ["admin-defaults", scope, categoryId] });
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   const baseFields = BASE_FIELDS[scope];
@@ -868,65 +1100,119 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          Campos-base (fixos) aparecem no topo somente como referência. Campos adicionais definidos aqui são semeados retroativamente.
+          Campos-base (fixos) aparecem no topo somente como referência. Campos adicionais definidos aqui são semeados
+          retroativamente.
         </p>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
-          <DialogTrigger asChild><Button size="sm" onClick={openNew}><Plus className="h-4 w-4" />Novo campo</Button></DialogTrigger>
+        <Dialog
+          open={open}
+          onOpenChange={(v) => {
+            setOpen(v);
+            if (!v) reset();
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button size="sm" onClick={openNew}>
+              <Plus className="h-4 w-4" />
+              Novo campo
+            </Button>
+          </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo"}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo"}</DialogTitle>
+            </DialogHeader>
             <form onSubmit={submit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="df-label">Rótulo</Label>
-                <Input id="df-label" required value={label} onChange={(e) => {
-                  setLabel(e.target.value);
-                  if (!keyTouched && !editing) setKey(uniqueKey(toSnake(e.target.value)));
-                }} />
+                <Input
+                  id="df-label"
+                  required
+                  value={label}
+                  onChange={(e) => {
+                    setLabel(e.target.value);
+                    if (!keyTouched && !editing) setKey(uniqueKey(toSnake(e.target.value)));
+                  }}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="df-key">Chave</Label>
-                <Input id="df-key" required pattern="^[a-z][a-z0-9_]*$" value={key}
-                  readOnly={!!editing} disabled={!!editing}
-                  onChange={(e) => { setKey(e.target.value); setKeyTouched(true); }} />
+                <Input
+                  id="df-key"
+                  required
+                  pattern="^[a-z][a-z0-9_]*$"
+                  value={key}
+                  readOnly={!!editing}
+                  disabled={!!editing}
+                  onChange={(e) => {
+                    setKey(e.target.value);
+                    setKeyTouched(true);
+                  }}
+                />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Tipo</Label>
                   <Select value={type} onValueChange={(v) => setType(v as any)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {FIELD_TYPES.map((tp) => <SelectItem key={tp} value={tp}>{tp}</SelectItem>)}
+                      {FIELD_TYPES.map((tp) => (
+                        <SelectItem key={tp} value={tp}>
+                          {tp}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="df-order">Ordem</Label>
-                  <Input id="df-order" type="number" min={0} value={order} onChange={(e) => setOrder(Number(e.target.value))} />
+                  <Input
+                    id="df-order"
+                    type="number"
+                    min={0}
+                    value={order}
+                    onChange={(e) => setOrder(Number(e.target.value))}
+                  />
                 </div>
                 <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
-                  <Label htmlFor="df-req" className="text-sm">Obrigatório</Label>
+                  <Label htmlFor="df-req" className="text-sm">
+                    Obrigatório
+                  </Label>
                   <Switch id="df-req" checked={required} onCheckedChange={setRequired} />
                 </div>
-                {(type === "select" || type === "multiselect") ? (
+                {type === "select" || type === "multiselect" ? (
                   <div className="sm:col-span-2 space-y-2">
                     <Label htmlFor="df-options">Opções (uma por linha — use "Opção | Icone" para ícone)</Label>
-                    <Textarea id="df-options" rows={4} value={optionsText}
+                    <Textarea
+                      id="df-options"
+                      rows={4}
+                      value={optionsText}
                       onChange={(e) => setOptionsText(e.target.value)}
-                      placeholder="Ex: Aluguel&#10;Venda&#10;Temporada" />
+                      placeholder="Ex: Aluguel&#10;Venda&#10;Temporada"
+                    />
                   </div>
                 ) : null}
                 {type === "text" ? (
                   <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
                     <div>
-                      <Label htmlFor="df-cep" className="text-sm">Autocompletar via ViaCEP</Label>
-                      <p className="text-xs text-muted-foreground">Ao preencher, busca endereço e preenche logradouro/bairro/cidade/estado.</p>
+                      <Label htmlFor="df-cep" className="text-sm">
+                        Autocompletar via ViaCEP
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Ao preencher, busca endereço e preenche logradouro/bairro/cidade/estado.
+                      </p>
                     </div>
                     <Switch id="df-cep" checked={cepRole} onCheckedChange={setCepRole} />
                   </div>
                 ) : null}
               </div>
               <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : (editing ? "Salvar" : "Criar")}</Button>
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? "Salvar" : "Criar"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -950,16 +1236,28 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
               <TableRow key={`base-${b.key}`} className="bg-muted/40">
                 <TableCell className="text-muted-foreground">—</TableCell>
                 <TableCell className="font-mono text-xs">{b.key}</TableCell>
-                <TableCell className="flex items-center gap-2">{b.label} <Badge variant="outline">base</Badge></TableCell>
-                <TableCell><Badge variant="secondary">{b.type}</Badge></TableCell>
+                <TableCell className="flex items-center gap-2">
+                  {b.label} <Badge variant="outline">base</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="secondary">{b.type}</Badge>
+                </TableCell>
                 <TableCell>{b.required ? "sim" : "—"}</TableCell>
                 <TableCell></TableCell>
               </TableRow>
             ))}
             {list.isLoading ? (
-              <TableRow><TableCell colSpan={6} className="py-6 text-center"><Loader2 className="inline h-4 w-4 animate-spin text-muted-foreground" /></TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={6} className="py-6 text-center">
+                  <Loader2 className="inline h-4 w-4 animate-spin text-muted-foreground" />
+                </TableCell>
+              </TableRow>
             ) : (list.data ?? []).length === 0 && baseFields.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo definido.</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={6} className="py-6 text-center text-sm text-muted-foreground">
+                  Nenhum campo definido.
+                </TableCell>
+              </TableRow>
             ) : (
               (list.data ?? []).map((f) => (
                 <TableRow key={f.id}>
@@ -972,17 +1270,25 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                         {f.config.options.length} opções: {(f.config.options as any[]).slice(0, 4).join(", ")}
                         {f.config.options.length > 4 ? "…" : ""}
                       </span>
-                    ) : (f.field_type === "select" || f.field_type === "multiselect") ? (
+                    ) : f.field_type === "select" || f.field_type === "multiselect" ? (
                       <span className="block text-xs text-destructive">sem opções configuradas</span>
                     ) : null}
                   </TableCell>
-                  <TableCell><Badge variant="secondary">{f.field_type}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{f.field_type}</Badge>
+                  </TableCell>
                   <TableCell>{f.required ? "sim" : "—"}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button size="sm" variant="outline" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="outline" onClick={() => openEdit(f)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <AlertDialog>
-                        <AlertDialogTrigger asChild><Button size="sm" variant="outline"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>Remover campo?</AlertDialogTitle>
@@ -1047,12 +1353,20 @@ function LayoutsSection() {
       <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle className="font-display">Layout dos cards públicos</CardTitle>
-          <p className="text-sm text-muted-foreground">Escolha quais campos aparecem no card da organização e do registro, e em que largura.</p>
+          <p className="text-sm text-muted-foreground">
+            Escolha quais campos aparecem no card da organização e do registro, e em que largura.
+          </p>
         </div>
         <Select value={selected ?? ""} onValueChange={setSelected}>
-          <SelectTrigger className="w-64"><SelectValue placeholder="Selecione categoria" /></SelectTrigger>
+          <SelectTrigger className="w-64">
+            <SelectValue placeholder="Selecione categoria" />
+          </SelectTrigger>
           <SelectContent>
-            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {(cats.data ?? []).map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </CardHeader>
@@ -1066,9 +1380,15 @@ function LayoutsSection() {
               <TabsTrigger value="record_card">Card de registro</TabsTrigger>
               <TabsTrigger value="organization_page">Página de organização</TabsTrigger>
             </TabsList>
-            <TabsContent value="organization_card"><LayoutEditor categoryId={selected} scope="organization_card" /></TabsContent>
-            <TabsContent value="record_card"><LayoutEditor categoryId={selected} scope="record_card" /></TabsContent>
-            <TabsContent value="organization_page"><PageStyleSelector categoryId={selected} /></TabsContent>
+            <TabsContent value="organization_card">
+              <LayoutEditor categoryId={selected} scope="organization_card" />
+            </TabsContent>
+            <TabsContent value="record_card">
+              <LayoutEditor categoryId={selected} scope="record_card" />
+            </TabsContent>
+            <TabsContent value="organization_page">
+              <PageStyleSelector categoryId={selected} />
+            </TabsContent>
           </Tabs>
         )}
       </CardContent>
@@ -1134,24 +1454,35 @@ function PageStyleSelector({ categoryId }: { categoryId: string }) {
   async function save() {
     setSaving(true);
     try {
-      await saveCategoryLayout({ data: { category_id: categoryId, scope: "organization_page", card_style: style, fields: [] } });
+      await saveCategoryLayout({
+        data: { category_id: categoryId, scope: "organization_page", card_style: style, fields: [] },
+      });
       toast.success("Estilo da página salvo");
       qc.invalidateQueries({ queryKey: ["admin-layout", "organization_page", categoryId] });
-    } catch (err) { toast.error((err as Error).message); }
-    finally { setSaving(false); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (src.isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
 
   const options: Array<{ value: "standard" | "immersive"; title: string; desc: string; thumb: ReactNode }> = [
     { value: "standard", title: "Layout 1", desc: "Cabeçalho com logo e duas colunas.", thumb: <LayoutOneThumb /> },
-    { value: "immersive", title: "Layout 2", desc: "Faixa hero com galeria e card de interesse sobreposto.", thumb: <LayoutTwoThumb /> },
+    {
+      value: "immersive",
+      title: "Layout 2",
+      desc: "Faixa hero com galeria e card de interesse sobreposto.",
+      thumb: <LayoutTwoThumb />,
+    },
   ];
 
   return (
     <div className="mt-4 space-y-4">
       <p className="text-sm text-muted-foreground">
-        Escolha a estrutura da página individual de organização. Os dois layouts têm estrutura fixa e usam os campos já cadastrados.
+        Escolha a estrutura da página individual de organização. Os dois layouts têm estrutura fixa e usam os campos já
+        cadastrados.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         {options.map((o) => {
@@ -1182,7 +1513,13 @@ function PageStyleSelector({ categoryId }: { categoryId: string }) {
   );
 }
 
-function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organization_card" | "record_card" | "organization_page" }) {
+function LayoutEditor({
+  categoryId,
+  scope,
+}: {
+  categoryId: string;
+  scope: "organization_card" | "record_card" | "organization_page";
+}) {
   const qc = useQueryClient();
   const src = useQuery({
     queryKey: ["admin-layout", scope, categoryId],
@@ -1190,9 +1527,10 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
       const layout = await listCategoryLayout({ data: { category_id: categoryId, scope } });
       const isOrgScope = scope === "organization_card" || scope === "organization_page";
       const scopeArg = isOrgScope ? "org" : "record";
-      const cascadeFields = scopeArg === "record"
-        ? await listCategoryDefaultFields({ data: { category_id: categoryId } })
-        : await listCategoryCascadeFields({ data: { category_id: categoryId, scope: "org" } });
+      const cascadeFields =
+        scopeArg === "record"
+          ? await listCategoryDefaultFields({ data: { category_id: categoryId } })
+          : await listCategoryCascadeFields({ data: { category_id: categoryId, scope: "org" } });
       const baseFields: Array<{ field_key: string; label: string }> = isOrgScope
         ? [
             { field_key: "name", label: "Nome (base)" },
@@ -1212,10 +1550,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
             { field_key: "table_name", label: "Tabela (base)" },
             { field_key: "deal_status", label: "Status (base)" },
           ];
-      const fields = [
-        ...baseFields,
-        ...(cascadeFields as Array<{ field_key: string; label: string }>),
-      ];
+      const fields = [...baseFields, ...(cascadeFields as Array<{ field_key: string; label: string }>)];
       return { layout: layout.fields as LayoutField[], card_style: layout.card_style ?? "standard", fields };
     },
   });
@@ -1226,25 +1561,27 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
   useEffect(() => {
     if (src.data) {
       setCardStyle((src.data.card_style as "standard" | "immersive") ?? "standard");
-      setRows(src.data.layout.map((r) => ({
-        field_key: r.field_key,
-        width_percent: r.width_percent,
-        order_index: r.order_index,
-        label_override: (r.config?.label_override as string) ?? "",
-        prefix: (r.config?.prefix as string) ?? "",
-        icon: (r.config?.icon as string) ?? "",
-        bleed: (r.config?.bleed as boolean) ?? false,
-        style: ((r.config?.style as EditorRow["style"]) ?? (r.field_key === "name" ? "title" : "normal")),
-        slot: ((r.config?.slot as EditorRow["slot"]) ?? undefined),
-        display: ((r.config?.display as EditorRow["display"]) ?? "icons"),
-      })));
+      setRows(
+        src.data.layout.map((r) => ({
+          field_key: r.field_key,
+          width_percent: r.width_percent,
+          order_index: r.order_index,
+          label_override: (r.config?.label_override as string) ?? "",
+          prefix: (r.config?.prefix as string) ?? "",
+          icon: (r.config?.icon as string) ?? "",
+          bleed: (r.config?.bleed as boolean) ?? false,
+          style: (r.config?.style as EditorRow["style"]) ?? (r.field_key === "name" ? "title" : "normal"),
+          slot: (r.config?.slot as EditorRow["slot"]) ?? undefined,
+          display: (r.config?.display as EditorRow["display"]) ?? "icons",
+        })),
+      );
     }
   }, [src.data]);
 
   const available = (src.data?.fields ?? []).filter((f) => !rows.some((r) => r.field_key === f.field_key));
 
   function updateRow(i: number, patch: Partial<EditorRow>) {
-    setRows((prev) => prev.map((r, idx) => idx === i ? { ...r, ...patch } : r));
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   }
   function moveRow(i: number, dir: -1 | 1) {
     setRows((prev) => {
@@ -1264,25 +1601,34 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
   async function save() {
     setSaving(true);
     try {
-      await saveCategoryLayout({ data: {
-        category_id: categoryId, scope, card_style: cardStyle,
-        fields: rows.map((r, i) => ({
-          field_key: r.field_key, width_percent: r.width_percent, order_index: i,
-          config: {
-            ...(r.label_override ? { label_override: r.label_override } : {}),
-            ...(r.prefix?.trim() ? { prefix: r.prefix.trim() } : {}),
-            ...(r.icon ? { icon: r.icon } : {}),
-            ...(r.bleed && r.width_percent === 100 ? { bleed: true } : {}),
-            ...(r.style ? { style: r.style } : {}),
-            ...(cardStyle === "immersive" && r.slot ? { slot: r.slot } : {}),
-            ...(cardStyle === "immersive" && r.slot === "features" && r.display ? { display: r.display } : {}),
-          },
-        })),
-      } });
+      await saveCategoryLayout({
+        data: {
+          category_id: categoryId,
+          scope,
+          card_style: cardStyle,
+          fields: rows.map((r, i) => ({
+            field_key: r.field_key,
+            width_percent: r.width_percent,
+            order_index: i,
+            config: {
+              ...(r.label_override ? { label_override: r.label_override } : {}),
+              ...(r.prefix?.trim() ? { prefix: r.prefix.trim() } : {}),
+              ...(r.icon ? { icon: r.icon } : {}),
+              ...(r.bleed && r.width_percent === 100 ? { bleed: true } : {}),
+              ...(r.style ? { style: r.style } : {}),
+              ...(cardStyle === "immersive" && r.slot ? { slot: r.slot } : {}),
+              ...(cardStyle === "immersive" && r.slot === "features" && r.display ? { display: r.display } : {}),
+            },
+          })),
+        },
+      });
       toast.success("Layout salvo");
       qc.invalidateQueries({ queryKey: ["admin-layout", scope, categoryId] });
-    } catch (err) { toast.error((err as Error).message); }
-    finally { setSaving(false); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (src.isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
@@ -1293,9 +1639,7 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
     <div className="mt-4 space-y-4">
       <div className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-medium">
-            {scope === "organization_page" ? "Estilo da página" : "Estilo do card"}
-          </p>
+          <p className="text-sm font-medium">{scope === "organization_page" ? "Estilo da página" : "Estilo do card"}</p>
           <p className="text-xs text-muted-foreground">
             {immersive
               ? "Layout 2: faixa hero com imagem de fundo e informações sobrepostas."
@@ -1303,7 +1647,9 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
           </p>
         </div>
         <Select value={cardStyle} onValueChange={(v) => setCardStyle(v as "standard" | "immersive")}>
-          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-56">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="standard">Layout 1</SelectItem>
             <SelectItem value="immersive">Layout 2</SelectItem>
@@ -1336,120 +1682,188 @@ function LayoutEditor({ categoryId, scope }: { categoryId: string; scope: "organ
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
-              <TableRow><TableCell colSpan={immersive ? 8 : 9} className="py-6 text-center text-sm text-muted-foreground">Nenhum campo no layout. Adicione abaixo.</TableCell></TableRow>
-            ) : rows.map((r, i) => {
-              const bleedable = isMediaFieldKey(r.field_key) && r.width_percent === 100;
-              return (
-              <TableRow key={i}>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="outline" onClick={() => moveRow(i, -1)} disabled={i === 0}>↑</Button>
-                    <Button size="sm" variant="outline" onClick={() => moveRow(i, 1)} disabled={i === rows.length - 1}>↓</Button>
-                  </div>
-                </TableCell>
-                <TableCell className="font-mono text-xs">{r.field_key}</TableCell>
-                <TableCell><Input value={r.label_override ?? ""} onChange={(e) => updateRow(i, { label_override: e.target.value })} placeholder="—" /></TableCell>
-                <TableCell><Input value={r.prefix ?? ""} onChange={(e) => updateRow(i, { prefix: e.target.value })} placeholder="ATÉ" /></TableCell>
-                <TableCell><Input value={r.icon ?? ""} onChange={(e) => updateRow(i, { icon: e.target.value })} placeholder="Home, MapPin..." /></TableCell>
-                {immersive ? (
-                  <>
-                    <TableCell>
-                      <Select value={r.slot ?? "title"} onValueChange={(v) => updateRow(i, { slot: v as EditorRow["slot"] })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {IMMERSIVE_SLOTS.map((sl) => <SelectItem key={sl.value} value={sl.value}>{sl.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      {r.slot === "features" ? (
-                        <Select value={r.display ?? "icons"} onValueChange={(v) => updateRow(i, { display: v as EditorRow["display"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="icons">Somente ícones</SelectItem>
-                            <SelectItem value="text">Texto</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                  </>
-                ) : (
-                <TableCell>
-                  <Select value={r.style ?? "normal"} onValueChange={(v) => updateRow(i, { style: v as EditorRow["style"] })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="title">Título (H3)</SelectItem>
-                      <SelectItem value="subtitle">Subtítulo</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                )}
-                {immersive ? null : (
-                <>
-                <TableCell>
-                  <Select value={String(r.width_percent)} onValueChange={(v) => updateRow(i, { width_percent: Number(v) as any })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="25">25%</SelectItem>
-                      <SelectItem value="50">50%</SelectItem>
-                      <SelectItem value="75">75%</SelectItem>
-                      <SelectItem value="100">100%</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  {bleedable ? (
-                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-border accent-primary"
-                        checked={!!r.bleed}
-                        onChange={(e) => updateRow(i, { bleed: e.target.checked })}
-                      />
-                      Ignorar padding
-                    </label>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                </>
-                )}
-                <TableCell>
-                  <Button size="sm" variant="outline" onClick={() => removeRow(i)}><Trash2 className="h-4 w-4" /></Button>
+              <TableRow>
+                <TableCell colSpan={immersive ? 8 : 9} className="py-6 text-center text-sm text-muted-foreground">
+                  Nenhum campo no layout. Adicione abaixo.
                 </TableCell>
               </TableRow>
-              );
-            })}
+            ) : (
+              rows.map((r, i) => {
+                const bleedable = isMediaFieldKey(r.field_key) && r.width_percent === 100;
+                return (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="outline" onClick={() => moveRow(i, -1)} disabled={i === 0}>
+                          ↑
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => moveRow(i, 1)}
+                          disabled={i === rows.length - 1}
+                        >
+                          ↓
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{r.field_key}</TableCell>
+                    <TableCell>
+                      <Input
+                        value={r.label_override ?? ""}
+                        onChange={(e) => updateRow(i, { label_override: e.target.value })}
+                        placeholder="—"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={r.prefix ?? ""}
+                        onChange={(e) => updateRow(i, { prefix: e.target.value })}
+                        placeholder="ATÉ"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={r.icon ?? ""}
+                        onChange={(e) => updateRow(i, { icon: e.target.value })}
+                        placeholder="Home, MapPin..."
+                      />
+                    </TableCell>
+                    {immersive ? (
+                      <>
+                        <TableCell>
+                          <Select
+                            value={r.slot ?? "title"}
+                            onValueChange={(v) => updateRow(i, { slot: v as EditorRow["slot"] })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {IMMERSIVE_SLOTS.map((sl) => (
+                                <SelectItem key={sl.value} value={sl.value}>
+                                  {sl.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          {r.slot === "features" ? (
+                            <Select
+                              value={r.display ?? "icons"}
+                              onValueChange={(v) => updateRow(i, { display: v as EditorRow["display"] })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="icons">Somente ícones</SelectItem>
+                                <SelectItem value="text">Texto</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      </>
+                    ) : (
+                      <TableCell>
+                        <Select
+                          value={r.style ?? "normal"}
+                          onValueChange={(v) => updateRow(i, { style: v as EditorRow["style"] })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="title">Título (H3)</SelectItem>
+                            <SelectItem value="subtitle">Subtítulo</SelectItem>
+                            <SelectItem value="normal">Normal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    )}
+                    {immersive ? null : (
+                      <>
+                        <TableCell>
+                          <Select
+                            value={String(r.width_percent)}
+                            onValueChange={(v) => updateRow(i, { width_percent: Number(v) as any })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="25">25%</SelectItem>
+                              <SelectItem value="50">50%</SelectItem>
+                              <SelectItem value="75">75%</SelectItem>
+                              <SelectItem value="100">100%</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          {bleedable ? (
+                            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-border accent-primary"
+                                checked={!!r.bleed}
+                                onChange={(e) => updateRow(i, { bleed: e.target.checked })}
+                              />
+                              Ignorar padding
+                            </label>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      </>
+                    )}
+                    <TableCell>
+                      <Button size="sm" variant="outline" onClick={() => removeRow(i)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-muted-foreground">Adicionar campo:</span>
-        {available.length === 0 ? <span className="text-xs text-muted-foreground">Todos os campos da categoria já foram incluídos.</span> : (
+        {available.length === 0 ? (
+          <span className="text-xs text-muted-foreground">Todos os campos da categoria já foram incluídos.</span>
+        ) : (
           available.map((f) => (
             <Button key={f.field_key} size="sm" variant="outline" onClick={() => addField(f.field_key)}>
-              <Plus className="h-3 w-3" />{f.label}
+              <Plus className="h-3 w-3" />
+              {f.label}
             </Button>
           ))
         )}
       </div>
       <div className="flex justify-end">
         <Button onClick={save} disabled={saving}>
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4" />Salvar layout</>}
+          {saving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              Salvar layout
+            </>
+          )}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
         {immersive
-          ? "No Layout 2 a largura é ignorada: cada campo é posicionado pela posição escolhida. Comodidades usam os ícones definidos nas opções do campo (\"Opção | Icone\")."
+          ? 'No Layout 2 a largura é ignorada: cada campo é posicionado pela posição escolhida. Comodidades usam os ícones definidos nas opções do campo ("Opção | Icone").'
           : "As larguras devem somar 100% por linha (25+75, 50+50, 25+25+50, ou 100). O motor agrupa os campos em linhas automaticamente."}
       </p>
     </div>
   );
 }
-
 
 function BlogSection() {
   const qc = useQueryClient();
@@ -1460,21 +1874,32 @@ function BlogSection() {
       toast.success("Post removido");
       qc.invalidateQueries({ queryKey: ["admin-blog-posts"] });
       qc.invalidateQueries({ queryKey: ["public-blog"] });
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   }
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-3">
         <CardTitle className="font-display">Posts do blog</CardTitle>
         <Button size="sm" asChild>
-          <Link to="/admin/blog/$postId" params={{ postId: "new" }}><Plus className="h-4 w-4" />Novo post</Link>
+          <Link to="/admin/blog/$postId" params={{ postId: "new" }}>
+            <Plus className="h-4 w-4" />
+            Novo post
+          </Link>
         </Button>
       </CardHeader>
       <CardContent>
         {q.isLoading ? (
-          <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          <div className="flex justify-center py-10">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
         ) : (q.data ?? []).length === 0 ? (
-          <EmptyState icon={<FileText className="h-6 w-6" />} title="Nenhum post ainda" description="Crie o primeiro post do blog." />
+          <EmptyState
+            icon={<FileText className="h-6 w-6" />}
+            title="Nenhum post ainda"
+            description="Crie o primeiro post do blog."
+          />
         ) : (
           <Table>
             <TableHeader>
@@ -1505,11 +1930,15 @@ function BlogSection() {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button size="sm" variant="ghost" asChild>
-                        <Link to="/admin/blog/$postId" params={{ postId: p.id }}><Pencil className="h-4 w-4" /></Link>
+                        <Link to="/admin/blog/$postId" params={{ postId: p.id }}>
+                          <Pencil className="h-4 w-4" />
+                        </Link>
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="ghost"><Trash2 className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="ghost">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
@@ -1534,7 +1963,6 @@ function BlogSection() {
   );
 }
 
-
 // ---------- Filter fields (explore) ----------
 
 function FilterFieldsSection() {
@@ -1556,9 +1984,15 @@ function FilterFieldsSection() {
           </p>
         </div>
         <Select value={selected ?? ""} onValueChange={setSelected}>
-          <SelectTrigger className="w-64"><SelectValue placeholder="Selecione categoria" /></SelectTrigger>
+          <SelectTrigger className="w-64">
+            <SelectValue placeholder="Selecione categoria" />
+          </SelectTrigger>
           <SelectContent>
-            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {(cats.data ?? []).map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </CardHeader>
@@ -1571,8 +2005,12 @@ function FilterFieldsSection() {
               <TabsTrigger value="organization">{t("organization", "Organização")}</TabsTrigger>
               <TabsTrigger value="record">{t("record", "Registro")}</TabsTrigger>
             </TabsList>
-            <TabsContent value="organization"><FilterScopeEditor categoryId={selected} scope="organization" /></TabsContent>
-            <TabsContent value="record"><FilterScopeEditor categoryId={selected} scope="record" /></TabsContent>
+            <TabsContent value="organization">
+              <FilterScopeEditor categoryId={selected} scope="organization" />
+            </TabsContent>
+            <TabsContent value="record">
+              <FilterScopeEditor categoryId={selected} scope="record" />
+            </TabsContent>
           </Tabs>
         )}
       </CardContent>
@@ -1631,21 +2069,36 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
       toast.success("Filtro adicionado");
       setNewKey("");
       qc.invalidateQueries({ queryKey: ["admin-filters", scope, categoryId] });
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   async function updateType(f: CategoryFilterField, filter_type: "search" | "select") {
     try {
-      await upsertCategoryFilterField({ data: { id: f.id, category_id: f.category_id, scope: f.scope, field_key: f.field_key, filter_type, order_index: f.order_index } });
+      await upsertCategoryFilterField({
+        data: {
+          id: f.id,
+          category_id: f.category_id,
+          scope: f.scope,
+          field_key: f.field_key,
+          filter_type,
+          order_index: f.order_index,
+        },
+      });
       qc.invalidateQueries({ queryKey: ["admin-filters", scope, categoryId] });
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   async function remove(id: string) {
     try {
       await deleteCategoryFilterField({ data: { id } });
       qc.invalidateQueries({ queryKey: ["admin-filters", scope, categoryId] });
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   const labelFor = (key: string) => availableKeys.find((f) => f.key === key)?.label ?? key;
@@ -1656,20 +2109,30 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
         <div className="min-w-[240px] flex-1 space-y-1">
           <Label>Campo</Label>
           <Select value={newKey} onValueChange={setNewKey}>
-            <SelectTrigger><SelectValue placeholder="Selecione um campo" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione um campo" />
+            </SelectTrigger>
             <SelectContent>
               {pickable.length === 0 ? (
-                <SelectItem value="__none" disabled>Todos os campos já foram adicionados.</SelectItem>
-              ) : pickable.map((f) => (
-                <SelectItem key={f.key} value={f.key}>{f.label} <span className="text-muted-foreground">({f.key})</span></SelectItem>
-              ))}
+                <SelectItem value="__none" disabled>
+                  Todos os campos já foram adicionados.
+                </SelectItem>
+              ) : (
+                pickable.map((f) => (
+                  <SelectItem key={f.key} value={f.key}>
+                    {f.label} <span className="text-muted-foreground">({f.key})</span>
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
         <div className="w-48 space-y-1">
           <Label>Comportamento</Label>
           <Select value={newType} onValueChange={(v) => setNewType(v as any)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="select">Filtro (lista)</SelectItem>
               <SelectItem value="search">Busca (texto livre)</SelectItem>
@@ -1693,9 +2156,17 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
           </TableHeader>
           <TableBody>
             {list.isLoading ? (
-              <TableRow><TableCell colSpan={4} className="py-6 text-center"><Loader2 className="inline h-4 w-4 animate-spin text-muted-foreground" /></TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={4} className="py-6 text-center">
+                  <Loader2 className="inline h-4 w-4 animate-spin text-muted-foreground" />
+                </TableCell>
+              </TableRow>
             ) : (list.data ?? []).length === 0 ? (
-              <TableRow><TableCell colSpan={4} className="py-6 text-center text-sm text-muted-foreground">Nenhum filtro configurado.</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={4} className="py-6 text-center text-sm text-muted-foreground">
+                  Nenhum filtro configurado.
+                </TableCell>
+              </TableRow>
             ) : (
               (list.data ?? []).map((f) => (
                 <TableRow key={f.id}>
@@ -1703,7 +2174,9 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
                   <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
                   <TableCell>
                     <Select value={f.filter_type} onValueChange={(v) => updateType(f, v as any)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="select">Filtro (lista)</SelectItem>
                         <SelectItem value="search">Busca (texto livre)</SelectItem>
@@ -1711,7 +2184,9 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <Button size="sm" variant="outline" onClick={() => remove(f.id)}><Trash2 className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="outline" onClick={() => remove(f.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -1726,16 +2201,44 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
 // ---------- Standard tables per category ----------
 
 const ST_FIELD_TYPES = [
-  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file","relation","computed",
+  "text",
+  "long_text",
+  "number",
+  "currency",
+  "boolean",
+  "date",
+  "datetime",
+  "select",
+  "multiselect",
+  "email",
+  "phone",
+  "url",
+  "image",
+  "gallery",
+  "file",
+  "relation",
+  "computed",
 ] as const;
 
 function stSnake(s: string) {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60);
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60);
 }
 function stSlug(s: string) {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
 }
 
 function StandardTablesSection() {
@@ -1748,56 +2251,90 @@ function StandardTablesSection() {
 
   const tables = useQuery({
     queryKey: ["admin-std-tables", selectedCat],
-    queryFn: () => selectedCat ? listCategoryStandardTables({ data: { category_id: selectedCat } }) : Promise.resolve([] as CategoryStandardTable[]),
+    queryFn: () =>
+      selectedCat
+        ? listCategoryStandardTables({ data: { category_id: selectedCat } })
+        : Promise.resolve([] as CategoryStandardTable[]),
     enabled: !!selectedCat,
   });
 
   const [openTable, setOpenTable] = useState(false);
   const [editingTable, setEditingTable] = useState<CategoryStandardTable | null>(null);
-  const [tName, setTName] = useState(""); const [tSlugV, setTSlugV] = useState("");
-  const [tIcon, setTIcon] = useState(""); const [tDesc, setTDesc] = useState(""); const [tOrder, setTOrder] = useState(0);
+  const [tName, setTName] = useState("");
+  const [tSlugV, setTSlugV] = useState("");
+  const [tIcon, setTIcon] = useState("");
+  const [tDesc, setTDesc] = useState("");
+  const [tOrder, setTOrder] = useState(0);
   const [tPub, setTPub] = useState(false);
   const [tBook, setTBook] = useState(false);
   const [tBusy, setTBusy] = useState(false);
 
   function openNewTable() {
-    setEditingTable(null); setTName(""); setTSlugV(""); setTIcon(""); setTDesc("");
-    setTOrder((tables.data ?? []).length); setTPub(false); setTBook(false); setOpenTable(true);
+    setEditingTable(null);
+    setTName("");
+    setTSlugV("");
+    setTIcon("");
+    setTDesc("");
+    setTOrder((tables.data ?? []).length);
+    setTPub(false);
+    setTBook(false);
+    setOpenTable(true);
   }
   function openEditTable(t: CategoryStandardTable) {
-    setEditingTable(t); setTName(t.name); setTSlugV(t.slug); setTIcon(t.icon ?? "");
-    setTDesc(t.description ?? ""); setTOrder(t.order_index); setTPub(!!t.is_public); setTBook(!!(t as any).bookable); setOpenTable(true);
+    setEditingTable(t);
+    setTName(t.name);
+    setTSlugV(t.slug);
+    setTIcon(t.icon ?? "");
+    setTDesc(t.description ?? "");
+    setTOrder(t.order_index);
+    setTPub(!!t.is_public);
+    setTBook(!!(t as any).bookable);
+    setOpenTable(true);
   }
   async function saveTable(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedCat) return;
     setTBusy(true);
     try {
-      await upsertCategoryStandardTable({ data: {
-        id: editingTable?.id, category_id: selectedCat,
-        name: tName, slug: tSlugV || stSlug(tName),
-        icon: tIcon || null, description: tDesc || null, order_index: tOrder,
-        is_public: tPub,
-        bookable: tBook,
-      } });
+      await upsertCategoryStandardTable({
+        data: {
+          id: editingTable?.id,
+          category_id: selectedCat,
+          name: tName,
+          slug: tSlugV || stSlug(tName),
+          icon: tIcon || null,
+          description: tDesc || null,
+          order_index: tOrder,
+          is_public: tPub,
+          bookable: tBook,
+        },
+      });
       toast.success(editingTable ? "Tabela atualizada" : "Tabela criada");
       setOpenTable(false);
       qc.invalidateQueries({ queryKey: ["admin-std-tables", selectedCat] });
-    } catch (err) { toast.error((err as Error).message); }
-    finally { setTBusy(false); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setTBusy(false);
+    }
   }
   async function removeTable(id: string) {
     try {
       await deleteCategoryStandardTable({ data: { id } });
       toast.success("Tabela removida");
       qc.invalidateQueries({ queryKey: ["admin-std-tables", selectedCat] });
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   useEffect(() => {
     const list = tables.data ?? [];
-    if (list.length === 0) { setSelectedTable(null); return; }
+    if (list.length === 0) {
+      setSelectedTable(null);
+      return;
+    }
     if (!selectedTable || !list.find((t) => t.id === selectedTable)) setSelectedTable(list[0].id);
   }, [tables.data, selectedTable]);
 
@@ -1807,56 +2344,112 @@ function StandardTablesSection() {
         <div>
           <CardTitle className="font-display">Tabelas padrão por categoria</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Estruturas de tabela criadas automaticamente em cada nova organização da categoria. As tabelas nascem travadas — só o super admin edita a estrutura. Não retroage a organizações já existentes.
+            Estruturas de tabela criadas automaticamente em cada nova organização da categoria. As tabelas nascem
+            travadas — só o super admin edita a estrutura. Não retroage a organizações já existentes.
           </p>
         </div>
         <Select value={selectedCat ?? ""} onValueChange={setSelectedCat}>
-          <SelectTrigger className="w-64"><SelectValue placeholder="Selecione categoria" /></SelectTrigger>
+          <SelectTrigger className="w-64">
+            <SelectValue placeholder="Selecione categoria" />
+          </SelectTrigger>
           <SelectContent>
-            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {(cats.data ?? []).map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </CardHeader>
       <CardContent className="space-y-6">
-        {!selectedCat ? <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p> : (
+        {!selectedCat ? (
+          <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p>
+        ) : (
           <>
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Tabelas-modelo</p>
-              <Dialog open={openTable} onOpenChange={(v) => { setOpenTable(v); }}>
-                <DialogTrigger asChild><Button size="sm" onClick={openNewTable}><Plus className="h-4 w-4" />Nova tabela</Button></DialogTrigger>
+              <Dialog
+                open={openTable}
+                onOpenChange={(v) => {
+                  setOpenTable(v);
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button size="sm" onClick={openNewTable}>
+                    <Plus className="h-4 w-4" />
+                    Nova tabela
+                  </Button>
+                </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle className="font-display">{editingTable ? "Editar tabela" : "Nova tabela"}</DialogTitle></DialogHeader>
+                  <DialogHeader>
+                    <DialogTitle className="font-display">{editingTable ? "Editar tabela" : "Nova tabela"}</DialogTitle>
+                  </DialogHeader>
                   <form onSubmit={saveTable} className="space-y-4">
                     <div className="space-y-2">
                       <Label>Nome</Label>
-                      <Input required value={tName} onChange={(e) => { setTName(e.target.value); if (!editingTable && !tSlugV) setTSlugV(stSlug(e.target.value)); }} />
+                      <Input
+                        required
+                        value={tName}
+                        onChange={(e) => {
+                          setTName(e.target.value);
+                          if (!editingTable && !tSlugV) setTSlugV(stSlug(e.target.value));
+                        }}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Slug</Label>
-                      <Input required pattern="^[a-z0-9-]+$" value={tSlugV} onChange={(e) => setTSlugV(e.target.value)} />
+                      <Input
+                        required
+                        pattern="^[a-z0-9-]+$"
+                        value={tSlugV}
+                        onChange={(e) => setTSlugV(e.target.value)}
+                      />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2"><Label>Ícone (lucide)</Label><Input value={tIcon} onChange={(e) => setTIcon(e.target.value)} placeholder="Home" /></div>
-                      <div className="space-y-2"><Label>Ordem</Label><Input type="number" min={0} value={tOrder} onChange={(e) => setTOrder(Number(e.target.value))} /></div>
+                      <div className="space-y-2">
+                        <Label>Ícone (lucide)</Label>
+                        <Input value={tIcon} onChange={(e) => setTIcon(e.target.value)} placeholder="Home" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Ordem</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={tOrder}
+                          onChange={(e) => setTOrder(Number(e.target.value))}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2"><Label>Descrição</Label><Textarea rows={3} value={tDesc} onChange={(e) => setTDesc(e.target.value)} /></div>
+                    <div className="space-y-2">
+                      <Label>Descrição</Label>
+                      <Textarea rows={3} value={tDesc} onChange={(e) => setTDesc(e.target.value)} />
+                    </div>
                     <div className="flex items-center justify-between rounded-md border border-border p-3">
                       <div>
                         <Label className="text-sm">Pública por padrão</Label>
-                        <p className="text-xs text-muted-foreground">Novas organizações desta categoria criam esta tabela já pública.</p>
+                        <p className="text-xs text-muted-foreground">
+                          Novas organizações desta categoria criam esta tabela já pública.
+                        </p>
                       </div>
                       <Switch checked={tPub} onCheckedChange={setTPub} />
                     </div>
                     <div className="flex items-center justify-between rounded-md border border-border p-3">
                       <div>
                         <Label className="text-sm">Recebe reservas</Label>
-                        <p className="text-xs text-muted-foreground">Controle mestre: quando desligado, nenhuma organização da categoria pode habilitar reservas nesta tabela.</p>
+                        <p className="text-xs text-muted-foreground">
+                          Controle mestre: quando desligado, nenhuma organização da categoria pode habilitar reservas
+                          nesta tabela.
+                        </p>
                       </div>
                       <Switch checked={tBook} onCheckedChange={setTBook} />
                     </div>
                     <DialogFooter>
-                      <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>Cancelar</Button>
-                      <Button type="submit" disabled={tBusy}>{tBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : (editingTable ? "Salvar" : "Criar")}</Button>
+                      <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={tBusy}>
+                        {tBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : editingTable ? "Salvar" : "Criar"}
+                      </Button>
                     </DialogFooter>
                   </form>
                 </DialogContent>
@@ -1886,14 +2479,25 @@ function StandardTablesSection() {
                         <TableCell className="text-xs text-muted-foreground">{t.icon ?? "—"}</TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => setSelectedTable(t.id)}>Campos</Button>
-                            <Button size="icon" variant="ghost" onClick={() => openEditTable(t)}><Pencil className="h-4 w-4" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => setSelectedTable(t.id)}>
+                              Campos
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => openEditTable(t)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                             <AlertDialog>
-                              <AlertDialogTrigger asChild><Button size="icon" variant="ghost" className="text-destructive"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                              <AlertDialogTrigger asChild>
+                                <Button size="icon" variant="ghost" className="text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Remover tabela-modelo?</AlertDialogTitle>
-                                  <AlertDialogDescription>Novas organizações da categoria deixarão de receber esta tabela. Organizações já criadas não são afetadas.</AlertDialogDescription>
+                                  <AlertDialogDescription>
+                                    Novas organizações da categoria deixarão de receber esta tabela. Organizações já
+                                    criadas não são afetadas.
+                                  </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -1935,11 +2539,27 @@ function StandardTableFieldsEditor({ standardTableId }: { standardTableId: strin
   const [optionsText, setOptionsText] = useState("");
   const [busy, setBusy] = useState(false);
 
-  function reset() { setEditing(null); setLabel(""); setKey(""); setType("text"); setRequired(false); setOrder(0); setOptionsText(""); }
-  function openNew() { reset(); setOrder((list.data ?? []).length); setOpen(true); }
+  function reset() {
+    setEditing(null);
+    setLabel("");
+    setKey("");
+    setType("text");
+    setRequired(false);
+    setOrder(0);
+    setOptionsText("");
+  }
+  function openNew() {
+    reset();
+    setOrder((list.data ?? []).length);
+    setOpen(true);
+  }
   function openEdit(f: CategoryStandardTableField) {
-    setEditing(f); setLabel(f.label); setKey(f.field_key); setType(f.field_type as any);
-    setRequired(f.required); setOrder(f.order_index);
+    setEditing(f);
+    setLabel(f.label);
+    setKey(f.field_key);
+    setType(f.field_type as any);
+    setRequired(f.required);
+    setOrder(f.order_index);
     const opts = (f.config?.options as string[] | undefined) ?? [];
     setOptionsText(formatOptionLines(opts, f.config?.option_icons as Record<string, string> | undefined));
     setOpen(true);
@@ -1959,49 +2579,106 @@ function StandardTableFieldsEditor({ standardTableId }: { standardTableId: strin
         delete config.options;
         delete config.option_icons;
       }
-      await upsertCategoryStandardTableField({ data: {
-        id: editing?.id, standard_table_id: standardTableId,
-        field_key: editing ? key : (key || stSnake(label)),
-        label, field_type: type, required, order_index: order, config,
-      } });
+      await upsertCategoryStandardTableField({
+        data: {
+          id: editing?.id,
+          standard_table_id: standardTableId,
+          field_key: editing ? key : key || stSnake(label),
+          label,
+          field_type: type,
+          required,
+          order_index: order,
+          config,
+        },
+      });
       toast.success(editing ? "Campo atualizado" : "Campo criado");
-      setOpen(false); reset();
+      setOpen(false);
+      reset();
       qc.invalidateQueries({ queryKey: ["admin-std-fields", standardTableId] });
-    } catch (err) { toast.error((err as Error).message); }
-    finally { setBusy(false); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
   async function remove(id: string) {
     try {
       await deleteCategoryStandardTableField({ data: { id } });
       qc.invalidateQueries({ queryKey: ["admin-std-fields", standardTableId] });
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   return (
     <div className="rounded-lg border border-border p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-medium">Campos da tabela-modelo</p>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
-          <DialogTrigger asChild><Button size="sm" onClick={openNew}><Plus className="h-4 w-4" />Novo campo</Button></DialogTrigger>
+        <Dialog
+          open={open}
+          onOpenChange={(v) => {
+            setOpen(v);
+            if (!v) reset();
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button size="sm" onClick={openNew}>
+              <Plus className="h-4 w-4" />
+              Novo campo
+            </Button>
+          </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo"}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo"}</DialogTitle>
+            </DialogHeader>
             <form onSubmit={submit} className="space-y-4">
-              <div className="space-y-2"><Label>Rótulo</Label><Input required value={label} onChange={(e) => { setLabel(e.target.value); if (!editing && !key) setKey(stSnake(e.target.value)); }} /></div>
-              <div className="space-y-2"><Label>Chave</Label><Input required pattern="^[a-z][a-z0-9_]*$" value={key} readOnly={!!editing} disabled={!!editing} onChange={(e) => setKey(e.target.value)} /></div>
+              <div className="space-y-2">
+                <Label>Rótulo</Label>
+                <Input
+                  required
+                  value={label}
+                  onChange={(e) => {
+                    setLabel(e.target.value);
+                    if (!editing && !key) setKey(stSnake(e.target.value));
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Chave</Label>
+                <Input
+                  required
+                  pattern="^[a-z][a-z0-9_]*$"
+                  value={key}
+                  readOnly={!!editing}
+                  disabled={!!editing}
+                  onChange={(e) => setKey(e.target.value)}
+                />
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Tipo</Label>
                   <Select value={type} onValueChange={(v) => setType(v as any)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{ST_FIELD_TYPES.map((tp) => <SelectItem key={tp} value={tp}>{tp}</SelectItem>)}</SelectContent>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ST_FIELD_TYPES.map((tp) => (
+                        <SelectItem key={tp} value={tp}>
+                          {tp}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label>Ordem</Label><Input type="number" min={0} value={order} onChange={(e) => setOrder(Number(e.target.value))} /></div>
+                <div className="space-y-2">
+                  <Label>Ordem</Label>
+                  <Input type="number" min={0} value={order} onChange={(e) => setOrder(Number(e.target.value))} />
+                </div>
                 <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
                   <Label className="text-sm">Obrigatório</Label>
                   <Switch checked={required} onCheckedChange={setRequired} />
                 </div>
-                {(type === "select" || type === "multiselect") ? (
+                {type === "select" || type === "multiselect" ? (
                   <div className="sm:col-span-2 space-y-2">
                     <Label>Opções (uma por linha)</Label>
                     <Textarea rows={4} value={optionsText} onChange={(e) => setOptionsText(e.target.value)} />
@@ -2009,8 +2686,12 @@ function StandardTableFieldsEditor({ standardTableId }: { standardTableId: strin
                 ) : null}
               </div>
               <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button type="submit" disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : (editing ? "Salvar" : "Criar")}</Button>
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={busy}>
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? "Salvar" : "Criar"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -2037,12 +2718,18 @@ function StandardTableFieldsEditor({ standardTableId }: { standardTableId: strin
                   <TableCell>{f.order_index}</TableCell>
                   <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
                   <TableCell>{f.label}</TableCell>
-                  <TableCell><Badge variant="secondary">{f.field_type}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{f.field_type}</Badge>
+                  </TableCell>
                   <TableCell>{f.required ? <Badge>sim</Badge> : "—"}</TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(f.id)}><Trash2 className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(f)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(f.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -2055,11 +2742,24 @@ function StandardTableFieldsEditor({ standardTableId }: { standardTableId: strin
   );
 }
 
-
 // ---------- Iteração 24: formulários padrão por categoria ----------
 
 const FORM_FIELD_TYPES = [
-  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file",
+  "text",
+  "long_text",
+  "number",
+  "currency",
+  "boolean",
+  "date",
+  "datetime",
+  "select",
+  "multiselect",
+  "email",
+  "phone",
+  "url",
+  "image",
+  "gallery",
+  "file",
 ] as const;
 
 function StandardFormsSection() {
@@ -2072,13 +2772,19 @@ function StandardFormsSection() {
 
   const stdTables = useQuery({
     queryKey: ["admin-std-tables", selectedCat],
-    queryFn: () => selectedCat ? listCategoryStandardTables({ data: { category_id: selectedCat } }) : Promise.resolve([] as CategoryStandardTable[]),
+    queryFn: () =>
+      selectedCat
+        ? listCategoryStandardTables({ data: { category_id: selectedCat } })
+        : Promise.resolve([] as CategoryStandardTable[]),
     enabled: !!selectedCat,
   });
 
   const forms = useQuery({
     queryKey: ["admin-std-forms", selectedCat],
-    queryFn: () => selectedCat ? listCategoryStandardForms({ data: { category_id: selectedCat } }) : Promise.resolve([] as CategoryStandardForm[]),
+    queryFn: () =>
+      selectedCat
+        ? listCategoryStandardForms({ data: { category_id: selectedCat } })
+        : Promise.resolve([] as CategoryStandardForm[]),
     enabled: !!selectedCat,
   });
 
@@ -2093,13 +2799,23 @@ function StandardFormsSection() {
   const [busy, setBusy] = useState(false);
 
   function openNew() {
-    setEditing(null); setScope("organization"); setStdTableId("");
-    setName("Fale com a organização"); setSubmitLabel("Enviar"); setTargetName("Contatos"); setActive(true);
+    setEditing(null);
+    setScope("organization");
+    setStdTableId("");
+    setName("Fale com a organização");
+    setSubmitLabel("Enviar");
+    setTargetName("Contatos");
+    setActive(true);
     setOpen(true);
   }
   function openEdit(f: CategoryStandardForm) {
-    setEditing(f); setScope(f.scope); setStdTableId(f.standard_table_id ?? "");
-    setName(f.name); setSubmitLabel(f.submit_label); setTargetName(f.target_table_name); setActive(f.is_active);
+    setEditing(f);
+    setScope(f.scope);
+    setStdTableId(f.standard_table_id ?? "");
+    setName(f.name);
+    setSubmitLabel(f.submit_label);
+    setTargetName(f.target_table_name);
+    setActive(f.is_active);
     setOpen(true);
   }
 
@@ -2108,16 +2824,26 @@ function StandardFormsSection() {
     if (!selectedCat) return;
     setBusy(true);
     try {
-      await upsertCategoryStandardForm({ data: {
-        id: editing?.id, category_id: selectedCat, scope,
-        standard_table_id: scope === "record" ? (stdTableId || null) : null,
-        name, submit_label: submitLabel, target_table_name: targetName, is_active: active,
-      } });
+      await upsertCategoryStandardForm({
+        data: {
+          id: editing?.id,
+          category_id: selectedCat,
+          scope,
+          standard_table_id: scope === "record" ? stdTableId || null : null,
+          name,
+          submit_label: submitLabel,
+          target_table_name: targetName,
+          is_active: active,
+        },
+      });
       toast.success(editing ? "Formulário atualizado" : "Formulário criado");
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["admin-std-forms", selectedCat] });
-    } catch (err) { toast.error((err as Error).message); }
-    finally { setBusy(false); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function remove(id: string) {
@@ -2126,13 +2852,18 @@ function StandardFormsSection() {
       toast.success("Formulário removido");
       qc.invalidateQueries({ queryKey: ["admin-std-forms", selectedCat] });
       if (selectedForm === id) setSelectedForm(null);
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   const [selectedForm, setSelectedForm] = useState<string | null>(null);
   useEffect(() => {
     const list = forms.data ?? [];
-    if (list.length === 0) { setSelectedForm(null); return; }
+    if (list.length === 0) {
+      setSelectedForm(null);
+      return;
+    }
     if (!selectedForm || !list.find((f) => f.id === selectedForm)) setSelectedForm(list[0].id);
   }, [forms.data, selectedForm]);
 
@@ -2144,30 +2875,50 @@ function StandardFormsSection() {
         <div>
           <CardTitle className="font-display">Formulários padrão por categoria</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Formulários públicos de contato/interesse criados automaticamente nas páginas públicas de organização e de registro. Alterações são aplicadas retroativamente a todas as organizações da categoria.
+            Formulários públicos de contato/interesse criados automaticamente nas páginas públicas de organização e de
+            registro. Alterações são aplicadas retroativamente a todas as organizações da categoria.
           </p>
         </div>
         <Select value={selectedCat ?? ""} onValueChange={setSelectedCat}>
-          <SelectTrigger className="w-64"><SelectValue placeholder="Selecione categoria" /></SelectTrigger>
+          <SelectTrigger className="w-64">
+            <SelectValue placeholder="Selecione categoria" />
+          </SelectTrigger>
           <SelectContent>
-            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {(cats.data ?? []).map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </CardHeader>
       <CardContent className="space-y-6">
-        {!selectedCat ? <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p> : (
+        {!selectedCat ? (
+          <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p>
+        ) : (
           <>
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Formulários</p>
               <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild><Button size="sm" onClick={openNew}><Plus className="h-4 w-4" />Novo formulário</Button></DialogTrigger>
+                <DialogTrigger asChild>
+                  <Button size="sm" onClick={openNew}>
+                    <Plus className="h-4 w-4" />
+                    Novo formulário
+                  </Button>
+                </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle className="font-display">{editing ? "Editar formulário" : "Novo formulário"}</DialogTitle></DialogHeader>
+                  <DialogHeader>
+                    <DialogTitle className="font-display">
+                      {editing ? "Editar formulário" : "Novo formulário"}
+                    </DialogTitle>
+                  </DialogHeader>
                   <form onSubmit={save} className="space-y-4">
                     <div className="space-y-2">
                       <Label>Escopo</Label>
                       <Select value={scope} onValueChange={(v) => setScope(v as "organization" | "record")}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="organization">Página pública da organização</SelectItem>
                           <SelectItem value="record">Página pública de registro</SelectItem>
@@ -2178,28 +2929,49 @@ function StandardFormsSection() {
                       <div className="space-y-2">
                         <Label>Tabela padrão de origem</Label>
                         <Select value={stdTableId} onValueChange={setStdTableId}>
-                          <SelectTrigger><SelectValue placeholder="Selecione a tabela padrão" /></SelectTrigger>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a tabela padrão" />
+                          </SelectTrigger>
                           <SelectContent>
-                            {(stdTables.data ?? []).map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                            {(stdTables.data ?? []).map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                     ) : null}
-                    <div className="space-y-2"><Label>Nome do formulário</Label><Input required value={name} onChange={(e) => setName(e.target.value)} /></div>
+                    <div className="space-y-2">
+                      <Label>Nome do formulário</Label>
+                      <Input required value={name} onChange={(e) => setName(e.target.value)} />
+                    </div>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2"><Label>Texto do botão</Label><Input required value={submitLabel} onChange={(e) => setSubmitLabel(e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Tabela de destino</Label><Input required value={targetName} onChange={(e) => setTargetName(e.target.value)} /></div>
+                      <div className="space-y-2">
+                        <Label>Texto do botão</Label>
+                        <Input required value={submitLabel} onChange={(e) => setSubmitLabel(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Tabela de destino</Label>
+                        <Input required value={targetName} onChange={(e) => setTargetName(e.target.value)} />
+                      </div>
                     </div>
                     <div className="flex items-center justify-between rounded-md border border-border p-3">
                       <div>
                         <Label className="text-sm">Ativo</Label>
-                        <p className="text-xs text-muted-foreground">Desativar remove o formulário das páginas públicas das organizações.</p>
+                        <p className="text-xs text-muted-foreground">
+                          Desativar remove o formulário das páginas públicas das organizações.
+                        </p>
                       </div>
                       <Switch checked={active} onCheckedChange={setActive} />
                     </div>
                     <DialogFooter>
-                      <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                      <Button type="submit" disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : (editing ? "Salvar" : "Criar")}</Button>
+                      <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={busy}>
+                        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? "Salvar" : "Criar"}
+                      </Button>
                     </DialogFooter>
                   </form>
                 </DialogContent>
@@ -2229,19 +3001,34 @@ function StandardFormsSection() {
                             {f.is_active ? null : <Badge variant="secondary">inativo</Badge>}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{f.scope === "organization" ? "Organização" : "Registro"}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{f.scope === "record" ? tableName(f.standard_table_id) : "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {f.scope === "organization" ? "Organização" : "Registro"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {f.scope === "record" ? tableName(f.standard_table_id) : "—"}
+                        </TableCell>
                         <TableCell className="text-xs text-muted-foreground">{f.target_table_name}</TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => setSelectedForm(f.id)}>Campos</Button>
-                            <Button size="icon" variant="ghost" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => setSelectedForm(f.id)}>
+                              Campos
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(f)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                             <AlertDialog>
-                              <AlertDialogTrigger asChild><Button size="icon" variant="ghost" className="text-destructive"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                              <AlertDialogTrigger asChild>
+                                <Button size="icon" variant="ghost" className="text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Remover formulário padrão?</AlertDialogTitle>
-                                  <AlertDialogDescription>O formulário deixa de aparecer nas páginas públicas das organizações desta categoria. As submissões já recebidas são preservadas.</AlertDialogDescription>
+                                  <AlertDialogDescription>
+                                    O formulário deixa de aparecer nas páginas públicas das organizações desta
+                                    categoria. As submissões já recebidas são preservadas.
+                                  </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -2284,32 +3071,57 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
   const [busy, setBusy] = useState(false);
 
   function openNew() {
-    setEditing(null); setLabel(""); setKey(""); setType("text"); setRequired(false);
-    setOptionsText(""); setOrder((list.data ?? []).length); setOpen(true);
+    setEditing(null);
+    setLabel("");
+    setKey("");
+    setType("text");
+    setRequired(false);
+    setOptionsText("");
+    setOrder((list.data ?? []).length);
+    setOpen(true);
   }
   function openEdit(f: CategoryStandardFormField) {
-    setEditing(f); setLabel(f.label); setKey(f.field_key); setType(f.field_type); setRequired(f.required);
+    setEditing(f);
+    setLabel(f.label);
+    setKey(f.field_key);
+    setType(f.field_type);
+    setRequired(f.required);
     setOptionsText(Array.isArray((f.config ?? {}).options) ? ((f.config as any).options as string[]).join("\n") : "");
-    setOrder(f.order_index); setOpen(true);
+    setOrder(f.order_index);
+    setOpen(true);
   }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
-      const options = optionsText.split("\n").map((o) => o.trim()).filter(Boolean);
+      const options = optionsText
+        .split("\n")
+        .map((o) => o.trim())
+        .filter(Boolean);
       const config: Record<string, any> = { ...(editing?.config ?? {}) };
       if (type === "select" || type === "multiselect") config.options = options;
       else delete config.options;
-      await upsertCategoryStandardFormField({ data: {
-        id: editing?.id, form_id: formId, field_key: key || toSnake(label), label,
-        field_type: type as any, required, config, order_index: order,
-      } });
+      await upsertCategoryStandardFormField({
+        data: {
+          id: editing?.id,
+          form_id: formId,
+          field_key: key || toSnake(label),
+          label,
+          field_type: type as any,
+          required,
+          config,
+          order_index: order,
+        },
+      });
       toast.success(editing ? "Campo atualizado" : "Campo criado");
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["admin-std-form-fields", formId] });
-    } catch (err) { toast.error((err as Error).message); }
-    finally { setBusy(false); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function remove(id: string) {
@@ -2317,7 +3129,9 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
       await deleteCategoryStandardFormField({ data: { id } });
       toast.success("Campo removido");
       qc.invalidateQueries({ queryKey: ["admin-std-form-fields", formId] });
-    } catch (err) { toast.error((err as Error).message); }
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   return (
@@ -2325,13 +3139,27 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium">Campos do formulário</p>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button size="sm" variant="outline" onClick={openNew}><Plus className="h-4 w-4" />Novo campo</Button></DialogTrigger>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline" onClick={openNew}>
+              <Plus className="h-4 w-4" />
+              Novo campo
+            </Button>
+          </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo"}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo"}</DialogTitle>
+            </DialogHeader>
             <form onSubmit={save} className="space-y-4">
               <div className="space-y-2">
                 <Label>Rótulo</Label>
-                <Input required value={label} onChange={(e) => { setLabel(e.target.value); if (!editing && !key) setKey(toSnake(e.target.value)); }} />
+                <Input
+                  required
+                  value={label}
+                  onChange={(e) => {
+                    setLabel(e.target.value);
+                    if (!editing && !key) setKey(toSnake(e.target.value));
+                  }}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Chave</Label>
@@ -2341,13 +3169,22 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
                 <div className="space-y-2">
                   <Label>Tipo</Label>
                   <Select value={type} onValueChange={setType}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {FORM_FIELD_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      {FORM_FIELD_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label>Ordem</Label><Input type="number" min={0} value={order} onChange={(e) => setOrder(Number(e.target.value))} /></div>
+                <div className="space-y-2">
+                  <Label>Ordem</Label>
+                  <Input type="number" min={0} value={order} onChange={(e) => setOrder(Number(e.target.value))} />
+                </div>
               </div>
               {type === "select" || type === "multiselect" ? (
                 <div className="space-y-2">
@@ -2360,8 +3197,12 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
                 <Switch checked={required} onCheckedChange={setRequired} />
               </div>
               <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button type="submit" disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : (editing ? "Salvar" : "Criar")}</Button>
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={busy}>
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? "Salvar" : "Criar"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -2395,8 +3236,12 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
                   <TableCell>{f.required ? "Sim" : "Não"}</TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(f)}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(f.id)}><Trash2 className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(f)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(f.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -2433,10 +3278,14 @@ function ReviewsSection() {
 
   return (
     <Card>
-      <CardHeader><CardTitle className="font-display">Moderação de avaliações</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle className="font-display">Moderação de avaliações</CardTitle>
+      </CardHeader>
       <CardContent>
         {list.isLoading ? (
-          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
         ) : items.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhuma avaliação pendente.</p>
         ) : (
@@ -2446,10 +3295,14 @@ function ReviewsSection() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-medium text-foreground">{r.user?.display_name || r.user?.email || "Usuário"}</span>
+                      <span className="font-medium text-foreground">
+                        {r.user?.display_name || r.user?.email || "Usuário"}
+                      </span>
                       <span className="text-muted-foreground">em</span>
                       <span className="font-medium text-foreground">{r.organization?.name || "Organização"}</span>
-                      <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                      </span>
                     </div>
                     <div className="mt-1 flex items-center gap-1">
                       {Array.from({ length: 5 }).map((_, i) => (
@@ -2473,11 +3326,7 @@ function ReviewsSection() {
                     >
                       Rejeitar
                     </Button>
-                    <Button
-                      size="sm"
-                      disabled={busy === r.id}
-                      onClick={() => handleModerate(r.id, "approved")}
-                    >
+                    <Button size="sm" disabled={busy === r.id} onClick={() => handleModerate(r.id, "approved")}>
                       Aprovar
                     </Button>
                   </div>
