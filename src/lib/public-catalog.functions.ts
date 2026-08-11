@@ -60,17 +60,25 @@ export const listPublicOrganizationsFn = createServerFn({ method: "GET" })
     return listPublicOrganizations(data);
   });
 
-/** Filtros configurados para a listagem pública. */
+/** Filtros configurados para a listagem pública (opções calculadas dinamicamente). */
 export const getExploreFiltersFn = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) =>
     z
       .object({
         scope: z.enum(["organization", "record"]).default("organization"),
         categoryId: z.string().optional(),
+        q: z.string().optional(),
+        filters: z.record(z.string(), z.string()).optional(),
       })
       .parse(data ?? {}),
   )
   .handler(async ({ data }) => {
     const { listExploreFilters } = await import("@/lib/explore-filters.server");
-    return listExploreFilters({ scope: data.scope, category_id: data.categoryId });
+    return listExploreFilters({
+      scope: data.scope,
+      category_id: data.categoryId,
+      q: data.q,
+      filters: data.filters,
+    });
   });
+
