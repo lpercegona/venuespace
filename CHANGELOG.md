@@ -1,3 +1,10 @@
+## 2026-08-11 18:55 (America/Sao_Paulo) — Correção/extensão da Iteração 33 — filtros laterais na categoria e multisseleção
+
+- **Categoria com coluna lateral**: `/categoria/$slug` adota o mesmo layout do `/explore` em `lg+` (`grid-cols-[280px_minmax(0,1fr)]`, sidebar sticky com filtros expandidos, listagem em 2 colunas e 3 em `xl`). Abaixo de `lg`, barra com busca + popover de filtros.
+- **Filtros por seleção**: novo `src/components/venue/filter-option-list.tsx` — opções em checkboxes (multisseleção) no lugar de `Select`. Listas curtas (até 8 opções) aparecem completas; listas maiores ganham busca interna e scroll. Usado pela sidebar, pela barra e pela busca da home.
+- **Multivalor na URL**: novo `src/lib/filter-params.ts` (`f_<campo>=A|B`); vários valores do mesmo campo combinam em OU, campos diferentes em E.
+- **Backend**: `listPublicOrganizations`/`listPublicRecords` (`public.server.ts`) e `listExploreFilters` (`explore-filters.server.ts`) passam a dividir os valores por `|` e casar por OU, mantendo a normalização sem acento/caixa e as facetas dinâmicas (valores selecionados permanecem visíveis).
+
 ## 2026-08-11 18:42 (America/Sao_Paulo) — Correção/extensão das Iterações 30 e 31 — "Ver todos", busca na home e filtros dinâmicos
 
 - **Home ("Ver todos")**: todo bloco de listagem exibe link "Ver todos" que encaminha para `/explore` já filtrado pela categoria do agrupamento e pelas regras `=` do bloco (`f_<key>=<valor>`).
