@@ -31,17 +31,94 @@ async function tableOrg(supabase: any, tableId: string) {
   return data as { id: string; name: string; organization_id: string; bookable: boolean };
 }
 
-/** Metadados de reserva de uma tabela reservável + recursos disponíveis para seleção. */
+/** Contexto do formulário de reserva: período, itens selecionáveis e contatos. */
 export const getBookingContext = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ table_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadResourceLabels } = await import("./bookings.server");
+    const { loadBookingMeta, loadResourceLabels, loadBookableItems, loadContactSetup, loadContacts } =
+      await import("./bookings.server");
     const table = await tableOrg(context.supabase, data.table_id);
     const meta = await loadBookingMeta(context.supabase, data.table_id);
     const resources = await loadResourceLabels(context.supabase, meta.targetTableId);
-    return { table, meta, resources };
+    const items = await loadBookableItems(context.supabase, data.table_id);
+    const setup = await loadContactSetup(context.supabase, table.organization_id);
+    const contacts = await loadContacts(context.supabase, setup.contactsTableId, setup.fields);
+    const periodFields = meta.fields.filter(
+      (f) => f.config?.booking_role === "start" || f.config?.booking_role === "end",
+    );
+    return {
+      table,
+      meta,
+      resources,
+      items,
+      periodFields,
+      contacts,
+      contactSchema: setup.standard.length > 0 ? setup.standard : setup.fields.map((f) => ({
+        key: f.key, label: f.label, type: f.type, required: f.required, config: f.config, position: f.position,
+      })),
+    };
   });
+
+/** Cria um contato na tabela de Contatos da organização (campos do formulário padrão da categoria). */
+export const createBookingContact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      organization_id: z.string().uuid(),
+      values: z.record(z.string(), z.any()),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { loadContactSetup, contactLabel } = await import("./bookings.server");
+    await assertCanEdit(context.supabase, data.organization_id, context.userId);
+
+    let setup = await loadContactSetup(context.supabase, data.organization_id);
+    let contactsTableId = setup.contactsTableId;
+    if (!contactsTableId) {
+      const { data: ensured, error: ensureErr } = await context.supabase
+        .rpc("ensure_contacts_table", { _org_id: data.organization_id });
+      if (ensureErr) throw new Error(ensureErr.message);
+      contactsTableId = ensured as string;
+      setup = await loadContactSetup(context.supabase, data.organization_id);
+      setup.contactsTableId = contactsTableId;
+    }
+
+    // garante os campos do formulário padrão na tabela de contatos
+    const existing = new Set(setup.fields.map((f) => f.key));
+    const missing = setup.standard.filter((f) => !existing.has(f.key));
+    if (missing.length > 0) {
+      const base = setup.fields.length;
+      const { error: fErr } = await context.supabase.from("fields").insert(
+        missing.map((f, i) => ({
+          table_id: contactsTableId,
+          key: f.key,
+          label: f.label,
+          type: f.type,
+          required: false,
+          position: base + i,
+          config: f.config ?? {},
+        })) as any,
+      );
+      if (fErr) throw new Error(fErr.message);
+      setup = await loadContactSetup(context.supabase, data.organization_id);
+    }
+
+    const { data: row, error } = await context.supabase
+      .from("records")
+      .insert({
+        table_id: contactsTableId,
+        organization_id: data.organization_id,
+        data: data.values as any,
+        created_by: context.userId,
+      } as any)
+      .select("id, data")
+      .single();
+    if (error) throw new Error(error.message);
+    const { label, email } = contactLabel(setup.fields, (row.data ?? {}) as any);
+    return { id: row.id as string, label, email };
+  });
+
 
 const rangeSchema = z.object({
   table_id: z.string().uuid(),
