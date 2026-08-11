@@ -54,7 +54,7 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
       <div className="relative min-w-0 grow">
         <Search className="rounded-full pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          className="h-11 border-transparent bg-transparent pl-9 text-foreground shadow-none focus-visible:ring-0"
+          className="h-11 border bg-muted pl-9 text-foreground shadow-none focus-visible:ring-0"
           type="search"
           placeholder="Buscar por nome, cidade ou característica"
           aria-label="Buscar"
@@ -66,7 +66,7 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
       {filters.length > 0 ? (
         <Popover>
           <PopoverTrigger asChild>
-            <Button type="button" variant="outline" className="h-11 shrink-0 gap-2">
+            <Button type="button" variant="outline" className="h-11 shrink-0 gap-2 text-foreground">
               <SlidersHorizontal className="h-4 w-4" />
               <span className="hidden sm:inline">Filtros</span>
               {activeCount > 0 ? (
