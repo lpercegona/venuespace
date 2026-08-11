@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    resolve: {
+      // Force a single tslib (2.x, ESM with named exports). tslib 1.x is CJS-only and
+      // breaks pdf-lib at runtime with "Cannot destructure property '__extends'".
+      alias: { tslib: "tslib" },
+    },
+  },
 });
