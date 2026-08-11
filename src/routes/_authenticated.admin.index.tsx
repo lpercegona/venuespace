@@ -122,42 +122,14 @@ function AdminPage() {
       title="Configurações da instância"
       subtitle={`Ajustes globais que valem para todas as ${organizationsLabel}.`}
       actions={
-        <Button variant="outline" size="sm" asChild>
+        <Button variant="outline" size="sm" className="rounded-full" asChild>
           <Link to="/app"><ArrowLeft className="h-4 w-4" />Voltar</Link>
         </Button>
       }
     >
-      <Tabs defaultValue="general">
-        <TabsList className="mb-6 w-full max-w-full flex-nowrap justify-start overflow-x-auto">
-          <TabsTrigger value="general">Geral</TabsTrigger>
-          <TabsTrigger value="labels">Rótulos</TabsTrigger>
-          <TabsTrigger value="categories">Categorias</TabsTrigger>
-          <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
-          <TabsTrigger value="standard-tables">Tabelas padrão</TabsTrigger>
-          <TabsTrigger value="standard-forms">Formulários padrão</TabsTrigger>
-          <TabsTrigger value="filters">Filtros públicos</TabsTrigger>
-          <TabsTrigger value="layouts">Layout público</TabsTrigger>
-          <TabsTrigger value="home-groupings">Agrupamentos</TabsTrigger>
-          <TabsTrigger value="home-blocks">Blocos da home</TabsTrigger>
-          <TabsTrigger value="blog">Blog</TabsTrigger>
-          <TabsTrigger value="reviews">Avaliações</TabsTrigger>
-        </TabsList>
-        <TabsContent value="general"><GeneralSection /></TabsContent>
-        <TabsContent value="labels"><LabelsSection /></TabsContent>
-        <TabsContent value="categories"><CategoriesSection /></TabsContent>
-        <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
-        <TabsContent value="standard-tables"><StandardTablesSection /></TabsContent>
-        <TabsContent value="standard-forms"><StandardFormsSection /></TabsContent>
-        <TabsContent value="filters"><FilterFieldsSection /></TabsContent>
-        <TabsContent value="layouts"><LayoutsSection /></TabsContent>
-        <TabsContent value="home-groupings"><HomeGroupingsSection /></TabsContent>
-        <TabsContent value="home-blocks"><HomeBlocksSection /></TabsContent>
-        <TabsContent value="blog"><BlogSection /></TabsContent>
-        <TabsContent value="reviews"><ReviewsSection /></TabsContent>
-      </Tabs>
-
-
+      <AdminWorkspace />
     </AppShell>
+
   );
 }
 
