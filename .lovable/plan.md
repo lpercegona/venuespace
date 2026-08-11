@@ -54,6 +54,14 @@ fechada (accepted)
 
 - **PDF**: `pdf-lib` (compatível com o runtime edge do servidor; sem dependências nativas). Geração dentro do handler de `createServerFn`, upload via cliente Supabase autenticado; leitura por URL assinada temporária.
 - **Server functions** (novo `src/lib/bookings.functions.ts`): `createBooking`, `listBookingsForRange`, `listAvailableResources`, `generateBookingQuote`, `archiveBooking`/`unarchiveBooking`. Todas com `requireSupabaseAuth`; escrita restrita a owner/editor.
-- **Migração**: política de storage para o prefixo `orcamentos/` no bucket `venue-uploads` (leitura/escrita apenas por membros da organização). Sem novas tabelas — reservas continuam em `records`, usando `deal_status`, `status` e `system_data`.
+- **Transições de estágio — sem função nova**: "negociação → fechada" (`accepted`) e "fechada → encerrada" (`closed`) reaproveitam o `setDealStatus` existente (Iteração 4), que já revalida conflito de datas via `runBookingCheck` em ambas as transições e já copia `agreed_value`. A tela de reservas apenas o chama; nenhuma lógica de negociação é duplicada em `bookings.functions.ts`.
+- **Modelo de dados — nada novo**: verificado no banco que `record_status` já contém `draft | published | archived` e que `records.system_data` (jsonb) já existe. Portanto esta iteração **não altera schema de tabelas**; apenas passa a usar `archived` e a chave `system_data.quotes`.
+- **Migração**: apenas políticas de storage para o prefixo `orcamentos/` no bucket privado `venue-uploads` (leitura/escrita restritas a membros da organização dona do caminho).
 - **UI**: `src/routes/_authenticated.app.$orgSlug.calendar.tsx` reescrita como painel de gestão; novos componentes `src/components/venue/booking-form-dialog.tsx`, `booking-availability-filter.tsx`, `booking-status-actions.tsx`, todos sobre primitives shadcn já presentes (Dialog, Calendar/Popover, Table, Badge, Tabs) e tokens semânticos existentes.
 - **Governança (§0)**: validação em 360/768/1280, light+dark, sem regressão nas Iterações 4/5/7; entrada em `CHANGELOG.md` como "Iteração 32 — extensão da Iteração 7".
+
+## Pendências declaradas (não resolvidas nesta iteração)
+
+- **Condição de corrida na checagem de conflito** (débito herdado da Iteração 7): a verificação continua em nível de aplicação, sem constraint de exclusão no banco (`EXCLUDE USING gist` sobre recurso + período). Esta iteração adiciona uma segunda superfície dependente do mesmo mecanismo (criação manual + revalidação no fechamento). Fica registrado como débito técnico crescente, a resolver em iteração própria com migração dedicada.
+- **Orçamento multi-item relacional** (espaço + serviços adicionais) usando tabela de itens + `computed`: fora do escopo, a definir em iteração futura.
+
