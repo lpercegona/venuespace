@@ -12,6 +12,7 @@ import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/publi
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { PublicFilterBar } from "@/components/venue/public-filter-bar";
+import { PublicFilterSidebar } from "@/components/venue/public-filter-sidebar";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
@@ -238,11 +239,11 @@ function ExplorePage() {
 
           <TabsContent value="orgs" className="mt-6">
             {orgsQ.isPending ? (
-              <PublicCardSkeletonGrid count={6} withLogo layout={orgLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+              <PublicCardSkeletonGrid count={6} withLogo layout={orgLayoutQ.data} className="grid gap-4 sm:grid-cols-2" />
             ) : (orgsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 {(orgsQ.data?.items ?? []).map((o) => (
                   <Link
                     key={o.id}
@@ -279,11 +280,11 @@ function ExplorePage() {
 
           <TabsContent value="records" className="mt-6">
             {recsQ.isPending ? (
-              <PublicCardSkeletonGrid count={6} layout={recLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+              <PublicCardSkeletonGrid count={6} layout={recLayoutQ.data} className="grid gap-4 sm:grid-cols-2" />
             ) : (recsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 {(recsQ.data?.items ?? []).map((r) => {
                   const hasLayout = (r.layout ?? []).length > 0;
                   const title = getPublicCardTitle({
