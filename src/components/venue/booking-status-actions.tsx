@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { Archive, ArchiveRestore, FileText, Loader2, MessageSquare } from "lucide-react";
+import { Archive, ArchiveRestore, FileText, Loader2, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { setDealStatus } from "@/lib/messages.functions";
-import { archiveBooking, generateBookingQuote, getQuoteUrl } from "@/lib/bookings.functions";
+import { archiveBooking, deleteBooking, generateBookingQuote, getQuoteUrl } from "@/lib/bookings.functions";
 
 export type BookingItem = {
   id: string;
@@ -47,15 +51,32 @@ export function BookingStatusActions({
   orgSlug,
   canEdit,
   onChanged,
+  onEdit,
 }: {
   booking: BookingItem;
   orgSlug: string;
   canEdit: boolean;
   onChanged: () => void;
+  onEdit?: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [notes, setNotes] = useState("");
+
+  async function remove() {
+    setBusy(true);
+    try {
+      await deleteBooking({ data: { id: booking.id } });
+      toast.success("Reserva excluída.");
+      setConfirmDelete(false);
+      onChanged();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function move(status: "negotiating" | "accepted" | "declined" | "closed") {
     setBusy(true);
@@ -137,6 +158,12 @@ export function BookingStatusActions({
 
       {canEdit ? (
         <>
+          {onEdit ? (
+            <Button size="sm" variant="ghost" className="h-9" disabled={busy} onClick={onEdit}>
+              <Pencil className="h-4 w-4" />Editar
+            </Button>
+          ) : null}
+
           <Button size="sm" variant="outline" className="h-9" disabled={busy} onClick={() => setQuoteOpen(true)}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
             Gerar orçamento
@@ -169,8 +196,41 @@ export function BookingStatusActions({
               <Archive className="h-4 w-4" />Arquivar
             </Button>
           ) : null}
+
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            disabled={busy}
+            onClick={() => setConfirmDelete(true)}
+          >
+            <Trash2 className="h-4 w-4" />Excluir
+          </Button>
         </>
       ) : null}
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Excluir esta reserva?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A reserva, a conversa vinculada, as mensagens e os orçamentos gerados serão removidos
+              definitivamente. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); remove(); }}
+              disabled={busy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={quoteOpen} onOpenChange={setQuoteOpen}>
         <DialogContent>
