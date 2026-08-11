@@ -75,11 +75,22 @@ async function fetchRecords(q: string, offset: number, filters: Record<string, s
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
-async function fetchFilters(scope: "organization" | "record", categoryId?: string): Promise<{ filters: FilterDef[] }> {
-  const res = await fetch(`/api/public/explore-filters?scope=${scope}${categoryId ? `&category=${encodeURIComponent(categoryId)}` : ""}`);
+async function fetchFilters(
+  scope: "organization" | "record",
+  categoryId: string | undefined,
+  q: string,
+  filters: Record<string, string>,
+): Promise<{ filters: FilterDef[] }> {
+  const p = new URLSearchParams();
+  p.set("scope", scope);
+  if (categoryId) p.set("category", categoryId);
+  if (q) p.set("q", q);
+  for (const [k, v] of Object.entries(filters)) if (v) p.set(`f_${k}`, v);
+  const res = await fetch(`/api/public/explore-filters?${p.toString()}`);
   if (!res.ok) return { filters: [] };
   return res.json();
 }
+
 
 function extractFilters(search: Record<string, any>): Record<string, string> {
   const out: Record<string, string> = {};
