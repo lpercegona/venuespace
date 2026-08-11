@@ -106,6 +106,7 @@ function ExplorePage() {
   const offset = (page - 1) * PAGE_SIZE;
 
   const [term, setTerm] = useState(q);
+  const debouncedTerm = useDebouncedValue(term, 300);
 
   const catsQ = usePublicCategories();
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
@@ -129,25 +130,35 @@ function ExplorePage() {
     queryFn: () => fetchOrgs(q, offset, currentFilters, catId),
     enabled: activeTab === "orgs",
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
   const recsQ = useQuery({
     queryKey: ["explore-records", q, offset, currentFilters, catId],
     queryFn: () => fetchRecords(q, offset, currentFilters, catId),
     enabled: activeTab === "records",
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 
   const active = activeTab === "orgs" ? orgsQ : recsQ;
   const total = active.data?.total ?? 0;
 
-  function updateSearch(patch: Record<string, string | undefined>) {
+  function updateSearch(patch: Record<string, string | number | undefined>) {
     const next: Record<string, any> = { ...search };
     for (const [k, v] of Object.entries(patch)) {
       if (v === undefined || v === "") delete next[k];
       else next[k] = v;
     }
-    navigate({ search: next as any });
+    navigate({ search: next as any, replace: true });
   }
+
+  // Busca instantânea (debounce).
+  useEffect(() => {
+    const value = debouncedTerm.trim();
+    if (value === q) return;
+    updateSearch({ q: value || undefined, page: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedTerm]);
 
   function setTab(v: string) {
     // Reset page + free-text + filters when switching tabs (filters are scope-specific).
@@ -172,9 +183,9 @@ function ExplorePage() {
   }
 
   const availableFilters = (filtersQ.data?.filters ?? []).filter((f) => f.filter_type === "select");
-  const hasFilters = availableFilters.length > 0 || Object.keys(currentFilters).length > 0 || q;
 
   return (
+
     <div className="min-h-screen bg-background">
       <PublicHeader />
 
