@@ -59,7 +59,7 @@ export const Route = createFileRoute("/categoria/$slug")({
     const search = deps.search ?? {};
     const page = Math.max(1, Number(search.page ?? 1));
     qc.prefetchQuery(categoryLayoutQuery(category.id, "organization_card"));
-    qc.prefetchQuery(categoryFiltersQuery(category.id));
+    qc.prefetchQuery(categoryFiltersQuery(category.id, String(search.q ?? ""), extractFilters(search)));
     await qc.ensureQueryData(
       categoryOrganizationsQuery({
         categoryId: category.id,
@@ -95,7 +95,7 @@ function CategoryPage() {
   const debouncedTerm = useDebouncedValue(term, 300);
 
   const layoutQ = useQuery(categoryLayoutQuery(catId, "organization_card"));
-  const filtersQ = useQuery(categoryFiltersQuery(catId));
+  const filtersQ = useQuery({ ...categoryFiltersQuery(catId, q, currentFilters), placeholderData: keepPreviousData });
   const orgsQ = useQuery({
     ...categoryOrganizationsQuery({ categoryId: catId, q, limit: PAGE_SIZE, offset, filters: currentFilters }),
     placeholderData: keepPreviousData,

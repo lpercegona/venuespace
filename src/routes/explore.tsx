@@ -12,6 +12,7 @@ import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/publi
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { PublicFilterBar } from "@/components/venue/public-filter-bar";
+import { PublicFilterSidebar } from "@/components/venue/public-filter-sidebar";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
@@ -75,11 +76,22 @@ async function fetchRecords(q: string, offset: number, filters: Record<string, s
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
-async function fetchFilters(scope: "organization" | "record", categoryId?: string): Promise<{ filters: FilterDef[] }> {
-  const res = await fetch(`/api/public/explore-filters?scope=${scope}${categoryId ? `&category=${encodeURIComponent(categoryId)}` : ""}`);
+async function fetchFilters(
+  scope: "organization" | "record",
+  categoryId: string | undefined,
+  q: string,
+  filters: Record<string, string>,
+): Promise<{ filters: FilterDef[] }> {
+  const p = new URLSearchParams();
+  p.set("scope", scope);
+  if (categoryId) p.set("category", categoryId);
+  if (q) p.set("q", q);
+  for (const [k, v] of Object.entries(filters)) if (v) p.set(`f_${k}`, v);
+  const res = await fetch(`/api/public/explore-filters?${p.toString()}`);
   if (!res.ok) return { filters: [] };
   return res.json();
 }
+
 
 function extractFilters(search: Record<string, any>): Record<string, string> {
   const out: Record<string, string> = {};
@@ -115,10 +127,12 @@ function ExplorePage() {
 
 
   const filtersQ = useQuery({
-    queryKey: ["explore-filters", scope, catId],
-    queryFn: () => fetchFilters(scope, catId),
-    staleTime: 5 * 60_000,
+    queryKey: ["explore-filters", scope, catId, q, currentFilters],
+    queryFn: () => fetchFilters(scope, catId, q, currentFilters),
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
+
 
   const orgsQ = useQuery({
     queryKey: ["explore-orgs", q, offset, currentFilters, catId],
@@ -197,13 +211,9 @@ function ExplorePage() {
           onSelect={(s) => navigate({ search: { tab: activeTab, categoria: s } as any })}
         />
 
-        <Tabs value={activeTab} onValueChange={setTab} className="mt-4">
-          {/* Alternância Organizações/Registros removida temporariamente. */}
-
-
-
-          <PublicFilterBar
-            className="mt-4"
+        <div className="mt-6 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-8">
+          <PublicFilterSidebar
+            className="hidden lg:sticky lg:top-24 lg:block"
             term={term}
             onTermChange={setTerm}
             filters={availableFilters as any}
@@ -212,14 +222,28 @@ function ExplorePage() {
             onClear={clearFilters}
           />
 
+          <div className="min-w-0">
+            <PublicFilterBar
+              className="lg:hidden"
+              term={term}
+              onTermChange={setTerm}
+              filters={availableFilters as any}
+              values={currentFilters}
+              onFilterChange={setFilter}
+              onClear={clearFilters}
+            />
+
+        <Tabs value={activeTab} onValueChange={setTab} className="mt-4">
+
+
 
           <TabsContent value="orgs" className="mt-6">
             {orgsQ.isPending ? (
-              <PublicCardSkeletonGrid count={6} withLogo layout={orgLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+              <PublicCardSkeletonGrid count={6} withLogo layout={orgLayoutQ.data} className="grid gap-4 sm:grid-cols-2" />
             ) : (orgsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 {(orgsQ.data?.items ?? []).map((o) => (
                   <Link
                     key={o.id}
@@ -256,11 +280,11 @@ function ExplorePage() {
 
           <TabsContent value="records" className="mt-6">
             {recsQ.isPending ? (
-              <PublicCardSkeletonGrid count={6} layout={recLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+              <PublicCardSkeletonGrid count={6} layout={recLayoutQ.data} className="grid gap-4 sm:grid-cols-2" />
             ) : (recsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 {(recsQ.data?.items ?? []).map((r) => {
                   const hasLayout = (r.layout ?? []).length > 0;
                   const title = getPublicCardTitle({
@@ -328,7 +352,10 @@ function ExplorePage() {
             </Button>
           </div>
         ) : null}
+          </div>
+        </div>
       </section>
+
       <PublicFooter />
     </div>
 

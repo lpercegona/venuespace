@@ -9,6 +9,8 @@ import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
+import { HomeSearchBar } from "@/components/venue/home-search-bar";
+
 import {
   categoryLayoutQuery,
   homeGroupingDataQuery,
@@ -88,8 +90,12 @@ function Landing() {
 
   // Layouts configurados pelo super admin — usados para o skeleton refletir o card real.
   const categoryId = activeGrouping?.category_ids?.[0];
+  const catsQ = usePublicCategories();
+  const activeCategory = (catsQ.data ?? []).find((c) => c.id === categoryId);
+  const activeCategorySlug = activeCategory ? categorySlug(activeCategory) : undefined;
   const orgLayoutQ = useQuery(categoryLayoutQuery(categoryId, "organization_card"));
   const recLayoutQ = useQuery(categoryLayoutQuery(categoryId, "record_card"));
+
 
   const data = dataQ.data as GroupingData | undefined;
   const byBlock = new Map((data?.blocks ?? []).map((b) => [b.id, b]));
@@ -110,6 +116,10 @@ function Landing() {
           <h1 className="mx-auto max-w-3xl font-display text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
             Encontre espaços e fornecedores de eventos
           </h1>
+
+          <HomeSearchBar categoryId={categoryId} categorySlug={activeCategorySlug} />
+
+
 
           {/* Pill toggle */}
           {groupings.length > 1 ? (
@@ -152,7 +162,9 @@ function Landing() {
                   data={byBlock.get(block.id)}
                   isLoading={dataQ.isLoading}
                   layout={block.source === "records" ? recLayoutQ.data : orgLayoutQ.data}
+                  categorySlug={activeCategorySlug}
                 />
+
               ))
             )
           ) : (
@@ -171,19 +183,37 @@ function HomeBlockSection({
   data,
   isLoading,
   layout,
+  categorySlug: catSlug,
 }: {
   block: HomeBlockDTO;
   data: GroupingData["blocks"][number] | undefined;
   isLoading: boolean;
   layout?: LayoutItem[] | null;
+  categorySlug?: string;
 }) {
   const columns = (block.columns ?? 3) as 3 | 4;
+
+  // "Ver todos" reaplica as regras "=" do bloco como filtros na listagem.
+  const seeAllSearch: Record<string, string> = {};
+  for (const rule of block.rules ?? []) {
+    if (rule.operator === "=" && rule.field_key && rule.value) seeAllSearch[`f_${rule.field_key}`] = rule.value;
+  }
+  if (catSlug) seeAllSearch.categoria = catSlug;
 
   return (
     <section>
       <div className="mb-5 flex items-end justify-between gap-4">
         <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">{block.title}</h2>
+        <Link
+          to="/explore"
+          search={seeAllSearch as any}
+          preload="intent"
+          className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Ver todos
+        </Link>
       </div>
+
 
       {isLoading ? (
         block.block_type === "links" ? (

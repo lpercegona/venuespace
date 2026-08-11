@@ -1,3 +1,10 @@
+## 2026-08-11 18:42 (America/Sao_Paulo) — Correção/extensão das Iterações 30 e 31 — "Ver todos", busca na home e filtros dinâmicos
+
+- **Home ("Ver todos")**: todo bloco de listagem exibe link "Ver todos" que encaminha para `/explore` já filtrado pela categoria do agrupamento e pelas regras `=` do bloco (`f_<key>=<valor>`).
+- **Busca na hero**: novo `src/components/venue/home-search-bar.tsx` — campo de busca + popover de filtros logo abaixo do título; ao enviar, navega para `/explore` com `q`, `categoria` e filtros selecionados.
+- **Filtros dinâmicos (facetas)**: `listExploreFilters` (`src/lib/explore-filters.server.ts`) passa a receber `q` e `filters` e calcular as opções sobre os itens realmente disponíveis (ignorando o próprio campo); opções sem resultado são omitidas e filtros de seleção vazios não são exibidos. Repassado por `getExploreFiltersFn` e por `/api/public/explore-filters`.
+- **Consumo**: `exploreFiltersQuery` em `src/lib/public-queries.ts` (usada pela home, `/explore` e `/categoria/$slug`), com `placeholderData` para evitar piscar durante a digitação.
+- **Explorar (desktop)**: novo `src/components/venue/public-filter-sidebar.tsx` — coluna lateral esquerda com filtros expandidos em `lg+` (`grid-cols-[260px_minmax(0,1fr)]`, sticky); listagem em duas colunas. Em telas menores permanece a barra com popover.
 ## 2026-08-11 15:05 (America/Sao_Paulo) — Correção/extensão da Iteração 32 — edição e exclusão de reservas
 
 - **Editar reserva**: `BookingFormDialog` passa a operar em modo de edição (período, itens do orçamento e contato pré-carregados); novo botão "Editar" em cada reserva da página de Reservas.

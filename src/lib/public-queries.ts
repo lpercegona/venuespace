@@ -43,13 +43,31 @@ export const categoryLayoutQuery = (
     staleTime: FIVE_MIN,
   });
 
-export const categoryFiltersQuery = (categoryId: string | undefined) =>
-  queryOptions({
-    queryKey: ["category-filters", categoryId],
-    queryFn: () => getExploreFiltersFn({ data: { scope: "organization" as const, categoryId } }),
-    enabled: !!categoryId,
-    staleTime: FIVE_MIN,
+/** Filtros dinâmicos: as opções variam conforme busca e demais filtros ativos. */
+export const exploreFiltersQuery = (args: {
+  scope?: "organization" | "record";
+  categoryId: string | undefined;
+  q?: string;
+  filters?: Record<string, string>;
+  enabled?: boolean;
+}) => {
+  const scope = args.scope ?? "organization";
+  const q = args.q ?? "";
+  const filters = args.filters ?? {};
+  return queryOptions({
+    queryKey: ["explore-filters", scope, args.categoryId, q, filters],
+    queryFn: () => getExploreFiltersFn({ data: { scope, categoryId: args.categoryId, q, filters } }),
+    enabled: args.enabled ?? true,
+    staleTime: 60_000,
   });
+};
+
+export const categoryFiltersQuery = (
+  categoryId: string | undefined,
+  q = "",
+  filters: Record<string, string> = {},
+) => exploreFiltersQuery({ scope: "organization", categoryId, q, filters, enabled: !!categoryId });
+
 
 export const categoryOrganizationsQuery = (args: {
   categoryId: string | undefined;
