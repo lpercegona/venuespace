@@ -138,7 +138,7 @@ function AdminPage() {
   if (!gate.data.is_super_admin) return null;
 
   return (
-    <AppShell title="Configurações" subtitle={``} actions={}>
+    <AppShell title="Configurações" subtitle="Ajustes globais que valem para todas as organizações.">
       <AdminWorkspace />
     </AppShell>
   );
