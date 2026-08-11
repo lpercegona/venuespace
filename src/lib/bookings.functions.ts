@@ -318,7 +318,11 @@ export const createBooking = createServerFn({ method: "POST" })
       .insert({
         table_id: data.table_id,
         organization_id: table.organization_id,
-        data: data.data as any,
+        data: values as any,
+        system_data: {
+          items: bookingItems,
+          contact_record_id: data.contact_record_id ?? null,
+        } as any,
         deal_status: "negotiating",
         created_by: context.userId,
       } as any)
@@ -326,8 +330,7 @@ export const createBooking = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    const resources = await loadResourceLabels(context.supabase, meta.targetTableId);
-    const label = resources.find((r) => r.id === resourceId)?.label ?? table.name;
+    const label = chosen.map((c) => c.label).slice(0, 2).join(", ") || table.name;
     const { data: conv } = await context.supabase
       .from("conversations")
       .insert({
@@ -335,6 +338,7 @@ export const createBooking = createServerFn({ method: "POST" })
         record_id: row.id,
         title: (data.title ?? `Reserva — ${label}`).slice(0, 160),
       } as any)
+
       .select("id")
       .maybeSingle();
 
