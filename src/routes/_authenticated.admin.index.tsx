@@ -3,7 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Save, Trash2, Pencil, ArrowLeft, Shield, FileText, Check } from "lucide-react";
+import { Loader2, Plus, Save, Trash2, Pencil, ArrowLeft, Shield, FileText, Check, Settings2, Layers, LayoutGrid, Menu } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { ReactElement } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { SegmentedToggle } from "@/components/venue/segmented-toggle";
+import { cn } from "@/lib/utils";
 import { listBlogPostsAdmin, deleteBlogPost, type BlogPostListItem } from "@/lib/blog.functions";
 
 import { AppShell } from "@/components/venue/app-shell";
@@ -135,7 +140,7 @@ function AdminPage() {
 
 // ---------- Workspace (sidebar + toggle segmentado) ----------
 
-type AdminSection = { value: string; label: string; render: () => JSX.Element };
+type AdminSection = { value: string; label: string; render: () => ReactElement };
 type AdminGroup = { value: string; label: string; icon: LucideIcon; sections: AdminSection[] };
 
 const ADMIN_GROUPS: AdminGroup[] = [
