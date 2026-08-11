@@ -112,7 +112,7 @@ function OrgsPage() {
 
   return (
     <AppShell
-      title={`Empresas`}
+      title={`Organizações`}
       subtitle={``}
       actions={
         <Dialog open={open} onOpenChange={setOpen}>
