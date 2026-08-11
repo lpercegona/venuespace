@@ -92,24 +92,33 @@ function CategoryPage() {
   const page: number = Math.max(1, Number(search.page ?? 1));
   const offset = (page - 1) * PAGE_SIZE;
   const [term, setTerm] = useState(q);
+  const debouncedTerm = useDebouncedValue(term, 300);
 
   const layoutQ = useQuery(categoryLayoutQuery(catId, "organization_card"));
   const filtersQ = useQuery(categoryFiltersQuery(catId));
-  const orgsQ = useQuery(
-    categoryOrganizationsQuery({ categoryId: catId, q, limit: PAGE_SIZE, offset, filters: currentFilters }),
-  );
-
+  const orgsQ = useQuery({
+    ...categoryOrganizationsQuery({ categoryId: catId, q, limit: PAGE_SIZE, offset, filters: currentFilters }),
+    placeholderData: keepPreviousData,
+  });
 
   const total = orgsQ.data?.total ?? 0;
 
-  function updateSearch(patch: Record<string, string | undefined>) {
+  function updateSearch(patch: Record<string, string | number | undefined>) {
     const next: Record<string, any> = { ...search };
     for (const [k, v] of Object.entries(patch)) {
       if (v === undefined || v === "") delete next[k];
       else next[k] = v;
     }
-    navigate({ search: next as any });
+    navigate({ search: next as any, replace: true });
   }
+
+  // Busca instantânea: sincroniza o termo com a URL após o debounce.
+  useEffect(() => {
+    const value = debouncedTerm.trim();
+    if (value === q) return;
+    updateSearch({ q: value || undefined, page: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedTerm]);
 
   function setFilter(key: string, value: string) {
     const next: Record<string, any> = { ...search, page: undefined };
@@ -124,27 +133,6 @@ function CategoryPage() {
   }
 
   const availableFilters = (filtersQ.data?.filters ?? []).filter((f) => f.filter_type === "select");
-  const hasActive = Object.keys(currentFilters).length > 0 || !!q;
-
-  const filterSelects = availableFilters.map((f) => (
-    <Select
-      key={f.key}
-      value={currentFilters[f.key] ?? "__any"}
-      onValueChange={(v) => setFilter(f.key, v === "__any" ? "" : v)}
-    >
-      <SelectTrigger className="h-10 w-full gap-2 sm:w-auto sm:min-w-[150px]">
-        <SelectValue placeholder={f.label} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__any">{f.label}: todos</SelectItem>
-        {f.options.map((opt) => (
-          <SelectItem key={opt} value={opt}>
-            {opt}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  ));
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -155,58 +143,16 @@ function CategoryPage() {
           {category?.name ?? "Categoria"}
         </h1>
 
-        {/* Busca + filtros em uma única linha (desktop); filtros em dropdown no mobile */}
-        <div className="mt-6 flex items-center gap-2">
-          <form
-            className="flex min-w-0 grow items-center gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              updateSearch({ q: term.trim() || undefined, page: undefined });
-            }}
-          >
-            <div className="relative min-w-0 grow">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="h-10 pl-9"
-                placeholder="Buscar"
-                value={term}
-                onChange={(e) => setTerm(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="h-10 shrink-0">
-              Buscar
-            </Button>
-          </form>
+        <PublicFilterBar
+          className="mt-6"
+          term={term}
+          onTermChange={setTerm}
+          filters={availableFilters as any}
+          values={currentFilters}
+          onFilterChange={setFilter}
+          onClear={clearFilters}
+        />
 
-          {availableFilters.length > 0 ? (
-            <>
-              <div className="hidden items-center gap-2 lg:flex">{filterSelects}</div>
-              <div className="lg:hidden">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" aria-label="Filtros">
-                      <SlidersHorizontal className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-64 space-y-2">
-                    {filterSelects}
-                    {hasActive ? (
-                      <Button variant="ghost" size="sm" className="w-full" onClick={clearFilters}>
-                        <X className="h-4 w-4" /> Limpar
-                      </Button>
-                    ) : null}
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </>
-          ) : null}
-
-          {hasActive ? (
-            <Button variant="ghost" size="sm" className="hidden h-10 shrink-0 lg:inline-flex" onClick={clearFilters}>
-              <X className="h-4 w-4" /> Limpar
-            </Button>
-          ) : null}
-        </div>
 
         <div className="mt-8">
           {catsQ.isLoading || orgsQ.isLoading ? (
