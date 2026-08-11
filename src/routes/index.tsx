@@ -115,6 +115,10 @@ function Landing() {
             Encontre espaços e fornecedores de eventos
           </h1>
 
+          <HomeSearchBar categoryId={categoryId} categorySlug={activeCategorySlug} />
+
+
+
           {/* Pill toggle */}
           {groupings.length > 1 ? (
             <div className="mt-8 inline-flex rounded-full bg-primary-foreground/15 p-1 backdrop-blur-sm">
