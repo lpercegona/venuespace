@@ -78,13 +78,15 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 p-0">
             <ScrollArea className="max-h-[70vh]">
-              <div className="space-y-4 p-3 text-left">
-                {filters.map((f: any) => (
+              <div className="space-y-0 p-3 text-left">
+                {filters.map((f: any, i: number) => (
                   <FilterOptionList
                     key={f.key}
                     label={f.label}
                     options={f.options}
                     value={values[f.key]}
+            defaultOpen={i === 0}
+                    defaultOpen={i === 0}
                     onChange={(next) =>
                       setValues((prev) => {
                         const copy = { ...prev };
