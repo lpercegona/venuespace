@@ -35,7 +35,6 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
   );
   const activeCount = countSelectedFilters(values);
 
-
   function submit() {
     const search: Record<string, string> = {};
     if (term.trim()) search.q = term.trim();
@@ -50,7 +49,7 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
         e.preventDefault();
         submit();
       }}
-      className="mx-auto mt-8 flex w-full max-w-2xl items-center gap-2 rounded-2xl bg-background p-2 shadow-elegant"
+      className="mx-auto mt-8 flex w-full max-w-2xl items-center gap-2 rounded-full bg-background p-2 shadow-elegant"
     >
       <div className="relative min-w-0 grow">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -111,7 +110,6 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
                 })}
               </div>
             </ScrollArea>
-
           </PopoverContent>
         </Popover>
       ) : null}
