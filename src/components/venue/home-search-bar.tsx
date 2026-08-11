@@ -85,7 +85,6 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
                     label={f.label}
                     options={f.options}
                     value={values[f.key]}
-            defaultOpen={i === 0}
                     defaultOpen={i === 0}
                     onChange={(next) =>
                       setValues((prev) => {

@@ -77,7 +77,6 @@ export function PublicFilterBar({
                     label={f.label}
                     options={f.options}
                     value={values[f.key]}
-            defaultOpen={i === 0}
                     defaultOpen={i === 0}
                     onChange={(next) => onFilterChange(f.key, next)}
                   />
