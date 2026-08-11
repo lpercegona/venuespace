@@ -132,10 +132,15 @@ export const listBookings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => rangeSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadResourceLabels, overlaps } = await import("./bookings.server");
+    const { loadBookingMeta, loadResourceLabels, loadContactSetup, loadContacts, overlaps } =
+      await import("./bookings.server");
     const meta = await loadBookingMeta(context.supabase, data.table_id);
     const resources = await loadResourceLabels(context.supabase, meta.targetTableId);
     const labels = new Map(resources.map((r) => [r.id, r.label]));
+    const table = await tableOrg(context.supabase, data.table_id);
+    const setup = await loadContactSetup(context.supabase, table.organization_id);
+    const contacts = await loadContacts(context.supabase, setup.contactsTableId, setup.fields);
+    const contactMap = new Map(contacts.map((c) => [c.id, c]));
 
     const { data: rows, error } = await context.supabase
       .from("records")
@@ -144,7 +149,12 @@ export const listBookings = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
-    const ids = ((rows ?? []) as any[]).map((r) => r.id).slice(0, 500);
+    // uma reserva é um registro com itens selecionados ou com negociação iniciada
+    const bookingRows = ((rows ?? []) as any[]).filter(
+      (r) => Array.isArray((r.system_data as any)?.items) || (r.deal_status && r.deal_status !== "none"),
+    );
+
+    const ids = bookingRows.map((r) => r.id).slice(0, 500);
     const convMap = new Map<string, string>();
     if (ids.length > 0) {
       const { data: convs } = await context.supabase
@@ -157,22 +167,36 @@ export const listBookings = createServerFn({ method: "GET" })
     const from = data.from ?? null;
     const to = data.to ?? from;
 
-    const items = ((rows ?? []) as any[])
+    const items = bookingRows
       .filter((r) => (data.include_archived ? true : r.status !== "archived"))
       .map((r) => {
+        const sd = (r.system_data ?? {}) as any;
         const start = meta.startKey ? (r.data?.[meta.startKey] ?? null) : null;
         const end = meta.endKey ? (r.data?.[meta.endKey] ?? null) : null;
         const resourceId = meta.relKey ? (r.data?.[meta.relKey] ?? null) : null;
+        const bookingItems = (Array.isArray(sd.items) ? sd.items : []) as Array<{
+          record_id: string; label: string; value: number;
+        }>;
+        const contact = sd.contact_record_id ? (contactMap.get(sd.contact_record_id) ?? null) : null;
+        const itemsLabel =
+          bookingItems.length > 0
+            ? bookingItems.slice(0, 2).map((i) => i.label).join(", ") +
+              (bookingItems.length > 2 ? ` +${bookingItems.length - 2}` : "")
+            : null;
         return {
           id: r.id as string,
           start,
           end,
           resource_id: typeof resourceId === "string" ? resourceId : null,
-          resource_label: typeof resourceId === "string" ? (labels.get(resourceId) ?? null) : null,
+          resource_label:
+            itemsLabel ?? (typeof resourceId === "string" ? (labels.get(resourceId) ?? null) : null),
+          items: bookingItems,
+          items_total: bookingItems.reduce((s, i) => s + (Number(i.value) || 0), 0),
+          contact,
           deal_status: r.deal_status as string,
           status: r.status as string,
           agreed_value: r.agreed_value as number | null,
-          quotes: ((r.system_data as any)?.quotes ?? []) as any[],
+          quotes: (sd.quotes ?? []) as any[],
           conversation_id: convMap.get(r.id) ?? null,
           data: r.data as Record<string, any>,
           created_at: r.created_at as string,
@@ -187,6 +211,7 @@ export const listBookings = createServerFn({ method: "GET" })
 
     return { meta, resources, items };
   });
+
 
 /** Recursos sem reserva aceita/fechada sobreposta ao período informado. */
 export const listAvailableResources = createServerFn({ method: "GET" })
