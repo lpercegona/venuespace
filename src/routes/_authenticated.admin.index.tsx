@@ -133,6 +133,134 @@ function AdminPage() {
   );
 }
 
+// ---------- Workspace (sidebar + toggle segmentado) ----------
+
+type AdminSection = { value: string; label: string; render: () => JSX.Element };
+type AdminGroup = { value: string; label: string; icon: LucideIcon; sections: AdminSection[] };
+
+const ADMIN_GROUPS: AdminGroup[] = [
+  {
+    value: "settings",
+    label: "Configurações",
+    icon: Settings2,
+    sections: [
+      { value: "general", label: "Geral", render: () => <GeneralSection /> },
+      { value: "labels", label: "Rótulos", render: () => <LabelsSection /> },
+    ],
+  },
+  {
+    value: "structure",
+    label: "Estrutura",
+    icon: Layers,
+    sections: [
+      { value: "categories", label: "Categorias", render: () => <CategoriesSection /> },
+      { value: "defaults", label: "Campos padrão", render: () => <DefaultFieldsSection /> },
+      { value: "standard-tables", label: "Tabelas padrão", render: () => <StandardTablesSection /> },
+      { value: "standard-forms", label: "Formulários padrão", render: () => <StandardFormsSection /> },
+      { value: "filters", label: "Filtros públicos", render: () => <FilterFieldsSection /> },
+    ],
+  },
+  {
+    value: "layout",
+    label: "Layout",
+    icon: LayoutGrid,
+    sections: [
+      { value: "layouts", label: "Layout público", render: () => <LayoutsSection /> },
+      { value: "home-groupings", label: "Agrupamentos", render: () => <HomeGroupingsSection /> },
+      { value: "home-blocks", label: "Blocos da home", render: () => <HomeBlocksSection /> },
+    ],
+  },
+  {
+    value: "content",
+    label: "Conteúdo",
+    icon: FileText,
+    sections: [
+      { value: "blog", label: "Blog", render: () => <BlogSection /> },
+      { value: "reviews", label: "Avaliações", render: () => <ReviewsSection /> },
+    ],
+  },
+];
+
+function AdminWorkspace() {
+  const [groupValue, setGroupValue] = useState(ADMIN_GROUPS[0].value);
+  const [sectionValue, setSectionValue] = useState(ADMIN_GROUPS[0].sections[0].value);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const group = ADMIN_GROUPS.find((g) => g.value === groupValue) ?? ADMIN_GROUPS[0];
+  const section = group.sections.find((s) => s.value === sectionValue) ?? group.sections[0];
+
+  function selectGroup(value: string) {
+    const g = ADMIN_GROUPS.find((x) => x.value === value) ?? ADMIN_GROUPS[0];
+    setGroupValue(g.value);
+    setSectionValue(g.sections[0].value);
+    setMenuOpen(false);
+  }
+
+  const nav = (
+    <nav className="flex flex-col gap-1" aria-label="Áreas da administração">
+      {ADMIN_GROUPS.map((g) => {
+        const active = g.value === group.value;
+        const Icon = g.icon;
+        return (
+          <button
+            key={g.value}
+            type="button"
+            onClick={() => selectGroup(g.value)}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "flex items-center gap-2 rounded-full px-4 py-2 text-left text-sm font-medium transition-colors outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              active
+                ? "bg-primary text-primary-foreground shadow-elegant"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{g.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+
+  return (
+    <div className="flex gap-6">
+      <aside className="hidden w-56 shrink-0 rounded-2xl border border-border bg-card p-2 shadow-soft min-[860px]:block">
+        {nav}
+      </aside>
+
+      <div className="min-w-0 grow">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" aria-label="Abrir menu" className="h-10 w-10 rounded-full min-[860px]:hidden">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 p-4">
+              <SheetHeader className="p-0 pb-4">
+                <SheetTitle>Administração</SheetTitle>
+              </SheetHeader>
+              {nav}
+            </SheetContent>
+          </Sheet>
+
+          {group.sections.length > 1 ? (
+            <SegmentedToggle
+              ariaLabel={group.label}
+              value={section.value}
+              onValueChange={setSectionValue}
+              options={group.sections.map((s) => ({ value: s.value, label: s.label }))}
+            />
+          ) : null}
+        </div>
+
+        {section.render()}
+      </div>
+    </div>
+  );
+}
+
+
 // ---------- General ----------
 
 function GeneralSection() {
