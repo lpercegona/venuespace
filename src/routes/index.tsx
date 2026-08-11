@@ -22,7 +22,6 @@ import type { LayoutItem } from "@/components/venue/public-card-renderer";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import type { HomeGroupingDTO, HomeBlockDTO } from "@/lib/home-config.functions";
 
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -75,9 +74,7 @@ type GroupingData = {
 };
 
 function gridClass(columns: 3 | 4) {
-  return columns === 4
-    ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-    : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
+  return columns === 4 ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-4" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
 }
 
 function Landing() {
@@ -95,7 +92,6 @@ function Landing() {
   const activeCategorySlug = activeCategory ? categorySlug(activeCategory) : undefined;
   const orgLayoutQ = useQuery(categoryLayoutQuery(categoryId, "organization_card"));
   const recLayoutQ = useQuery(categoryLayoutQuery(categoryId, "record_card"));
-
 
   const data = dataQ.data as GroupingData | undefined;
   const byBlock = new Map((data?.blocks ?? []).map((b) => [b.id, b]));
@@ -117,9 +113,7 @@ function Landing() {
             Encontre espaços e fornecedores de eventos
           </h1>
 
-          <HomeSearchBar categoryId={categoryId} categorySlug={activeCategorySlug} />
-
-
+          <HomeSearchBar className="rounded-full" categoryId={categoryId} categorySlug={activeCategorySlug} />
 
           {/* Pill toggle */}
           {groupings.length > 1 ? (
@@ -131,7 +125,9 @@ function Landing() {
                     key={g.slug}
                     onClick={() => setActiveSlug(g.slug)}
                     className={`rounded-full px-5 py-2 text-sm font-medium transition-colors sm:px-7 sm:text-base ${
-                      active ? "bg-primary-foreground text-primary" : "text-primary-foreground hover:bg-primary-foreground/10"
+                      active
+                        ? "bg-primary-foreground text-primary"
+                        : "text-primary-foreground hover:bg-primary-foreground/10"
                     }`}
                   >
                     {g.label}
@@ -164,7 +160,6 @@ function Landing() {
                   layout={block.source === "records" ? recLayoutQ.data : orgLayoutQ.data}
                   categorySlug={activeCategorySlug}
                 />
-
               ))
             )
           ) : (
@@ -213,7 +208,6 @@ function HomeBlockSection({
           Ver todos
         </Link>
       </div>
-
 
       {isLoading ? (
         block.block_type === "links" ? (
@@ -319,7 +313,9 @@ function OrganizationCard({ org }: { org: PublicOrganizationSummary }) {
               <OrgLogo src={org.logo_url} alt={`Logo ${org.name}`} className="h-10 w-10" />
               <h3 className="font-display text-base font-semibold line-clamp-2">{org.name}</h3>
             </div>
-            {org.description ? <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{org.description}</p> : null}
+            {org.description ? (
+              <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{org.description}</p>
+            ) : null}
           </div>
         )}
       </Card>
