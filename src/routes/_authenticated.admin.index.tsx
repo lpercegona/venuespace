@@ -235,7 +235,7 @@ function AdminWorkspace() {
 
   return (
     <div className="flex gap-6">
-      <aside className="hidden w-56 shrink-0 rounded-2xl border border-border bg-card p-2 shadow-soft min-[860px]:block">
+      <aside className="hidden w-56 shrink-0 rounded-2xl border border-transparent bg-transparent p-2 min-[860px]:block">
         {nav}
       </aside>
 
