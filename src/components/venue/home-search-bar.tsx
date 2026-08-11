@@ -52,7 +52,7 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
       className="mx-auto mt-8 flex w-full max-w-2xl items-center gap-2 rounded-full bg-background/50 p-2 shadow-elegant"
     >
       <div className="relative min-w-0 grow">
-        <Search className=" border rounded-full pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className=" rounded-full pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           className="h-11 pl-9 text-foreground shadow-none focus-visible:ring-0"
           type="search"
