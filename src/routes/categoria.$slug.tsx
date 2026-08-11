@@ -11,6 +11,8 @@ import { PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { PublicFilterBar } from "@/components/venue/public-filter-bar";
+import { PublicFilterSidebar } from "@/components/venue/public-filter-sidebar";
+
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { categorySlug } from "@/components/venue/category-tabs";
 import {
@@ -143,62 +145,76 @@ function CategoryPage() {
           {category?.name ?? "Categoria"}
         </h1>
 
-        <PublicFilterBar
-          className="mt-6"
-          term={term}
-          onTermChange={setTerm}
-          filters={availableFilters as any}
-          values={currentFilters}
-          onFilterChange={setFilter}
-          onClear={clearFilters}
-        />
+        <div className="mt-6 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
+          <PublicFilterSidebar
+            className="hidden lg:sticky lg:top-24 lg:block"
+            term={term}
+            onTermChange={setTerm}
+            filters={availableFilters as any}
+            values={currentFilters}
+            onFilterChange={setFilter}
+            onClear={clearFilters}
+          />
 
-
-        <div className="mt-8">
-          {catsQ.isLoading || orgsQ.isPending ? (
-            <PublicCardSkeletonGrid
-              count={6}
-              withLogo
-              layout={layoutQ.data}
-              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          <div className="min-w-0">
+            <PublicFilterBar
+              className="lg:hidden"
+              term={term}
+              onTermChange={setTerm}
+              filters={availableFilters as any}
+              values={currentFilters}
+              onFilterChange={setFilter}
+              onClear={clearFilters}
             />
-          ) : (orgsQ.data?.items ?? []).length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {(orgsQ.data?.items ?? []).map((o) => (
-                <Link
-                  key={o.id}
-                  to="/public/$slug"
-                  params={{ slug: o.slug }}
-                  className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                >
-                  <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
-                    {o.layout && o.layout.length > 0 ? (
-                      <div className="p-4">
-                        <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} orgName={o.name} />
-                      </div>
-                    ) : (
-                      <>
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center gap-2">
-                            <OrgLogo src={(o as any).logo_url} alt={`Logo ${o.name}`} className="h-10 w-10" />
-                            <CardTitle className="font-display text-lg line-clamp-2">{o.name}</CardTitle>
+
+            <div className="mt-8">
+              {catsQ.isLoading || orgsQ.isPending ? (
+                <PublicCardSkeletonGrid
+                  count={6}
+                  withLogo
+                  layout={layoutQ.data}
+                  className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                />
+              ) : (orgsQ.data?.items ?? []).length === 0 ? (
+                <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {(orgsQ.data?.items ?? []).map((o) => (
+                    <Link
+                      key={o.id}
+                      to="/public/$slug"
+                      params={{ slug: o.slug }}
+                      className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                      <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
+                        {o.layout && o.layout.length > 0 ? (
+                          <div className="p-4">
+                            <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} orgName={o.name} />
                           </div>
-                        </CardHeader>
-                        {o.description ? (
-                          <CardContent>
-                            <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
-                          </CardContent>
-                        ) : null}
-                      </>
-                    )}
-                  </Card>
-                </Link>
-              ))}
+                        ) : (
+                          <>
+                            <CardHeader className="pb-2">
+                              <div className="flex items-center gap-2">
+                                <OrgLogo src={(o as any).logo_url} alt={`Logo ${o.name}`} className="h-10 w-10" />
+                                <CardTitle className="font-display text-lg line-clamp-2">{o.name}</CardTitle>
+                              </div>
+                            </CardHeader>
+                            {o.description ? (
+                              <CardContent>
+                                <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
+                              </CardContent>
+                            ) : null}
+                          </>
+                        )}
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
+
 
         {total > PAGE_SIZE ? (
           <div className="mt-8 flex items-center justify-between">
