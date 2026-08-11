@@ -44,9 +44,8 @@ export const getBookingContext = createServerFn({ method: "GET" })
     const items = await loadBookableItems(context.supabase, data.table_id);
     const setup = await loadContactSetup(context.supabase, table.organization_id);
     const contacts = await loadContacts(context.supabase, setup.contactsTableId, setup.fields);
-    const periodFields = meta.fields.filter(
-      (f) => f.config?.booking_role === "start" || f.config?.booking_role === "end",
-    );
+    const periodFields = meta.periodFields;
+
     return {
       table,
       meta,
