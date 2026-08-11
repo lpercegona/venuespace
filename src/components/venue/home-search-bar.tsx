@@ -3,13 +3,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { exploreFiltersQuery } from "@/lib/public-queries";
+import { FilterOptionList } from "@/components/venue/filter-option-list";
+import { countSelectedFilters } from "@/lib/filter-params";
 
 type Props = {
   categoryId: string | undefined;
@@ -32,7 +32,8 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
     () => (filtersQ.data?.filters ?? []).filter((f: any) => f.filter_type === "select"),
     [filtersQ.data],
   );
-  const activeCount = Object.values(values).filter(Boolean).length;
+  const activeCount = countSelectedFilters(values);
+
 
   function submit() {
     const search: Record<string, string> = {};
