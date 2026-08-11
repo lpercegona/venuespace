@@ -31,17 +31,94 @@ async function tableOrg(supabase: any, tableId: string) {
   return data as { id: string; name: string; organization_id: string; bookable: boolean };
 }
 
-/** Metadados de reserva de uma tabela reservável + recursos disponíveis para seleção. */
+/** Contexto do formulário de reserva: período, itens selecionáveis e contatos. */
 export const getBookingContext = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ table_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadResourceLabels } = await import("./bookings.server");
+    const { loadBookingMeta, loadResourceLabels, loadBookableItems, loadContactSetup, loadContacts } =
+      await import("./bookings.server");
     const table = await tableOrg(context.supabase, data.table_id);
     const meta = await loadBookingMeta(context.supabase, data.table_id);
     const resources = await loadResourceLabels(context.supabase, meta.targetTableId);
-    return { table, meta, resources };
+    const items = await loadBookableItems(context.supabase, data.table_id);
+    const setup = await loadContactSetup(context.supabase, table.organization_id);
+    const contacts = await loadContacts(context.supabase, setup.contactsTableId, setup.fields);
+    const periodFields = meta.fields.filter(
+      (f) => f.config?.booking_role === "start" || f.config?.booking_role === "end",
+    );
+    return {
+      table,
+      meta,
+      resources,
+      items,
+      periodFields,
+      contacts,
+      contactSchema: setup.standard.length > 0 ? setup.standard : setup.fields.map((f) => ({
+        key: f.key, label: f.label, type: f.type, required: f.required, config: f.config, position: f.position,
+      })),
+    };
   });
+
+/** Cria um contato na tabela de Contatos da organização (campos do formulário padrão da categoria). */
+export const createBookingContact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      organization_id: z.string().uuid(),
+      values: z.record(z.string(), z.any()),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { loadContactSetup, contactLabel } = await import("./bookings.server");
+    await assertCanEdit(context.supabase, data.organization_id, context.userId);
+
+    let setup = await loadContactSetup(context.supabase, data.organization_id);
+    let contactsTableId = setup.contactsTableId;
+    if (!contactsTableId) {
+      const { data: ensured, error: ensureErr } = await context.supabase
+        .rpc("ensure_contacts_table", { _org_id: data.organization_id });
+      if (ensureErr) throw new Error(ensureErr.message);
+      contactsTableId = ensured as string;
+      setup = await loadContactSetup(context.supabase, data.organization_id);
+      setup.contactsTableId = contactsTableId;
+    }
+
+    // garante os campos do formulário padrão na tabela de contatos
+    const existing = new Set(setup.fields.map((f) => f.key));
+    const missing = setup.standard.filter((f) => !existing.has(f.key));
+    if (missing.length > 0) {
+      const base = setup.fields.length;
+      const { error: fErr } = await context.supabase.from("fields").insert(
+        missing.map((f, i) => ({
+          table_id: contactsTableId,
+          key: f.key,
+          label: f.label,
+          type: f.type,
+          required: false,
+          position: base + i,
+          config: f.config ?? {},
+        })) as any,
+      );
+      if (fErr) throw new Error(fErr.message);
+      setup = await loadContactSetup(context.supabase, data.organization_id);
+    }
+
+    const { data: row, error } = await context.supabase
+      .from("records")
+      .insert({
+        table_id: contactsTableId,
+        organization_id: data.organization_id,
+        data: data.values as any,
+        created_by: context.userId,
+      } as any)
+      .select("id, data")
+      .single();
+    if (error) throw new Error(error.message);
+    const { label, email } = contactLabel(setup.fields, (row.data ?? {}) as any);
+    return { id: row.id as string, label, email };
+  });
+
 
 const rangeSchema = z.object({
   table_id: z.string().uuid(),
@@ -55,10 +132,15 @@ export const listBookings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => rangeSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadResourceLabels, overlaps } = await import("./bookings.server");
+    const { loadBookingMeta, loadResourceLabels, loadContactSetup, loadContacts, overlaps } =
+      await import("./bookings.server");
     const meta = await loadBookingMeta(context.supabase, data.table_id);
     const resources = await loadResourceLabels(context.supabase, meta.targetTableId);
     const labels = new Map(resources.map((r) => [r.id, r.label]));
+    const table = await tableOrg(context.supabase, data.table_id);
+    const setup = await loadContactSetup(context.supabase, table.organization_id);
+    const contacts = await loadContacts(context.supabase, setup.contactsTableId, setup.fields);
+    const contactMap = new Map(contacts.map((c) => [c.id, c]));
 
     const { data: rows, error } = await context.supabase
       .from("records")
@@ -67,7 +149,12 @@ export const listBookings = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
-    const ids = ((rows ?? []) as any[]).map((r) => r.id).slice(0, 500);
+    // uma reserva é um registro com itens selecionados ou com negociação iniciada
+    const bookingRows = ((rows ?? []) as any[]).filter(
+      (r) => Array.isArray((r.system_data as any)?.items) || (r.deal_status && r.deal_status !== "none"),
+    );
+
+    const ids = bookingRows.map((r) => r.id).slice(0, 500);
     const convMap = new Map<string, string>();
     if (ids.length > 0) {
       const { data: convs } = await context.supabase
@@ -80,22 +167,36 @@ export const listBookings = createServerFn({ method: "GET" })
     const from = data.from ?? null;
     const to = data.to ?? from;
 
-    const items = ((rows ?? []) as any[])
+    const items = bookingRows
       .filter((r) => (data.include_archived ? true : r.status !== "archived"))
       .map((r) => {
+        const sd = (r.system_data ?? {}) as any;
         const start = meta.startKey ? (r.data?.[meta.startKey] ?? null) : null;
         const end = meta.endKey ? (r.data?.[meta.endKey] ?? null) : null;
         const resourceId = meta.relKey ? (r.data?.[meta.relKey] ?? null) : null;
+        const bookingItems = (Array.isArray(sd.items) ? sd.items : []) as Array<{
+          record_id: string; label: string; value: number;
+        }>;
+        const contact = sd.contact_record_id ? (contactMap.get(sd.contact_record_id) ?? null) : null;
+        const itemsLabel =
+          bookingItems.length > 0
+            ? bookingItems.slice(0, 2).map((i) => i.label).join(", ") +
+              (bookingItems.length > 2 ? ` +${bookingItems.length - 2}` : "")
+            : null;
         return {
           id: r.id as string,
           start,
           end,
           resource_id: typeof resourceId === "string" ? resourceId : null,
-          resource_label: typeof resourceId === "string" ? (labels.get(resourceId) ?? null) : null,
+          resource_label:
+            itemsLabel ?? (typeof resourceId === "string" ? (labels.get(resourceId) ?? null) : null),
+          items: bookingItems,
+          items_total: bookingItems.reduce((s, i) => s + (Number(i.value) || 0), 0),
+          contact,
           deal_status: r.deal_status as string,
           status: r.status as string,
           agreed_value: r.agreed_value as number | null,
-          quotes: ((r.system_data as any)?.quotes ?? []) as any[],
+          quotes: (sd.quotes ?? []) as any[],
           conversation_id: convMap.get(r.id) ?? null,
           data: r.data as Record<string, any>,
           created_at: r.created_at as string,
@@ -111,21 +212,26 @@ export const listBookings = createServerFn({ method: "GET" })
     return { meta, resources, items };
   });
 
-/** Recursos sem reserva aceita/fechada sobreposta ao período informado. */
+
+/** Itens sem reserva aceita/fechada sobreposta ao período informado. */
 export const listAvailableResources = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({ table_id: z.string().uuid(), from: z.string().min(1), to: z.string().min(1) }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadResourceLabels, overlaps } = await import("./bookings.server");
+    const { loadBookingMeta, loadResourceLabels, loadBookableItems, overlaps } =
+      await import("./bookings.server");
     const meta = await loadBookingMeta(context.supabase, data.table_id);
-    const resources = await loadResourceLabels(context.supabase, meta.targetTableId);
-    if (!meta.startKey || !meta.endKey || !meta.relKey) return { available: [], busy: [] };
+    const relResources = await loadResourceLabels(context.supabase, meta.targetTableId);
+    const itemResources = (await loadBookableItems(context.supabase, data.table_id))
+      .map((i) => ({ id: i.id, label: i.label }));
+    const resources = relResources.length > 0 ? relResources : itemResources;
+    if (!meta.startKey || !meta.endKey || resources.length === 0) return { available: [], busy: [] };
 
     const { data: rows } = await context.supabase
       .from("records")
-      .select("id, data, deal_status, status")
+      .select("id, data, system_data, deal_status, status")
       .eq("table_id", data.table_id)
       .in("deal_status", ["accepted", "closed"]);
 
@@ -134,9 +240,13 @@ export const listAvailableResources = createServerFn({ method: "GET" })
       if (r.status === "archived") continue;
       const s = r.data?.[meta.startKey];
       const e = r.data?.[meta.endKey];
-      const res = r.data?.[meta.relKey];
-      if (!s || !e || typeof res !== "string") continue;
-      if (overlaps(String(s), String(e), data.from, data.to + "\uffff")) busyIds.add(res);
+      if (!s || !e) continue;
+      if (!overlaps(String(s), String(e), data.from, data.to + "\uffff")) continue;
+      const res = meta.relKey ? r.data?.[meta.relKey] : null;
+      if (typeof res === "string") busyIds.add(res);
+      for (const it of ((r.system_data as any)?.items ?? []) as any[]) {
+        if (it?.record_id) busyIds.add(String(it.record_id));
+      }
     }
     return {
       available: resources.filter((r) => !busyIds.has(r.id)),
@@ -150,48 +260,69 @@ export const createBooking = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
       table_id: z.string().uuid(),
-      data: z.record(z.string(), z.any()),
+      data: z.record(z.string(), z.any()).optional(),
+      item_record_ids: z.array(z.string().uuid()).min(1, "Selecione ao menos um item."),
+      contact_record_id: z.string().uuid().nullable().optional(),
       title: z.string().max(160).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadResourceLabels, overlaps } = await import("./bookings.server");
+    const { loadBookingMeta, loadBookableItems, overlaps } = await import("./bookings.server");
     const table = await tableOrg(context.supabase, data.table_id);
     await assertCanEdit(context.supabase, table.organization_id, context.userId);
 
     const meta = await loadBookingMeta(context.supabase, data.table_id);
-    const start = meta.startKey ? data.data?.[meta.startKey] : null;
-    const end = meta.endKey ? data.data?.[meta.endKey] : null;
-    const resourceId = meta.relKey ? data.data?.[meta.relKey] : null;
+    const values = (data.data ?? {}) as Record<string, any>;
+    const start = meta.startKey ? values[meta.startKey] : null;
+    const end = meta.endKey ? values[meta.endKey] : null;
 
     if (start && end && String(start) >= String(end)) {
       throw new Error("A data final deve ser posterior à data inicial.");
     }
 
-    if (start && end && typeof resourceId === "string" && meta.startKey && meta.endKey && meta.relKey) {
+    const catalog = await loadBookableItems(context.supabase, data.table_id);
+    const chosen = data.item_record_ids
+      .map((id) => catalog.find((c) => c.id === id))
+      .filter(Boolean) as Array<{ id: string; label: string; value: number }>;
+    if (chosen.length === 0) throw new Error("Itens inválidos para esta tabela.");
+    const bookingItems = chosen.map((c) => ({ record_id: c.id, label: c.label, value: c.value }));
+
+    if (start && end && meta.startKey && meta.endKey) {
+      const chosenIds = new Set(chosen.map((c) => c.id));
       const { data: others } = await context.supabase
         .from("records")
-        .select("id, data, status")
+        .select("id, data, system_data, status")
         .eq("table_id", data.table_id)
-        .in("deal_status", ["accepted", "closed"])
-        .contains("data", { [meta.relKey]: resourceId } as any);
+        .in("deal_status", ["accepted", "closed"]);
       for (const o of (others ?? []) as any[]) {
         if (o.status === "archived") continue;
         const os = o.data?.[meta.startKey];
         const oe = o.data?.[meta.endKey];
         if (!os || !oe) continue;
-        if (overlaps(String(start), String(end), String(os), String(oe))) {
-          throw new Error(`Conflito de reserva: o recurso já está ocupado entre ${os} e ${oe}.`);
+        if (!overlaps(String(start), String(end), String(os), String(oe))) continue;
+        const busy = [
+          ...(meta.relKey && typeof o.data?.[meta.relKey] === "string" ? [String(o.data[meta.relKey])] : []),
+          ...(((o.system_data as any)?.items ?? []) as any[]).map((i) => String(i?.record_id ?? "")),
+        ];
+        const clash = busy.find((id) => chosenIds.has(id));
+        if (clash) {
+          const label = chosen.find((c) => c.id === clash)?.label ?? "Item";
+          throw new Error(`Conflito de reserva: "${label}" já está reservado entre ${os} e ${oe}.`);
         }
       }
     }
+
 
     const { data: row, error } = await context.supabase
       .from("records")
       .insert({
         table_id: data.table_id,
         organization_id: table.organization_id,
-        data: data.data as any,
+        data: values as any,
+        system_data: {
+          items: bookingItems,
+          contact_record_id: data.contact_record_id ?? null,
+        } as any,
         deal_status: "negotiating",
         created_by: context.userId,
       } as any)
@@ -199,8 +330,7 @@ export const createBooking = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    const resources = await loadResourceLabels(context.supabase, meta.targetTableId);
-    const label = resources.find((r) => r.id === resourceId)?.label ?? table.name;
+    const label = chosen.map((c) => c.label).slice(0, 2).join(", ") || table.name;
     const { data: conv } = await context.supabase
       .from("conversations")
       .insert({
@@ -208,6 +338,7 @@ export const createBooking = createServerFn({ method: "POST" })
         record_id: row.id,
         title: (data.title ?? `Reserva — ${label}`).slice(0, 160),
       } as any)
+
       .select("id")
       .maybeSingle();
 
@@ -238,7 +369,8 @@ export const generateBookingQuote = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadResourceLabels, buildQuotePdf } = await import("./bookings.server");
+    const { loadBookingMeta, loadResourceLabels, loadContactSetup, loadContacts, buildQuotePdf } =
+      await import("./bookings.server");
 
     const { data: rec, error } = await context.supabase
       .from("records")
@@ -258,25 +390,48 @@ export const generateBookingQuote = createServerFn({ method: "POST" })
     const meta = await loadBookingMeta(context.supabase, rec.table_id);
     const resources = await loadResourceLabels(context.supabase, meta.targetTableId);
     const recData = (rec.data ?? {}) as Record<string, any>;
+    const sdRec = (rec.system_data ?? {}) as any;
     const resourceId = meta.relKey ? recData[meta.relKey] : null;
 
-    const items = meta.fields
-      .filter((f) => f.type === "currency" || f.type === "number")
-      .map((f) => ({ label: f.label, value: Number(recData[f.key]) || 0 }))
-      .filter((i) => i.value > 0);
+    const bookingItems = (Array.isArray(sdRec.items) ? sdRec.items : []) as Array<{
+      record_id: string; label: string; value: number;
+    }>;
 
-    const contactField = meta.fields.find(
-      (f) => f.type === "email" || f.key.includes("email") || f.key.includes("contato"),
-    );
+    const items =
+      bookingItems.length > 0
+        ? bookingItems.map((i) => ({ label: i.label, value: Number(i.value) || 0 }))
+        : meta.fields
+            .filter((f) => f.type === "currency" || f.type === "number")
+            .map((f) => ({ label: f.label, value: Number(recData[f.key]) || 0 }))
+            .filter((i) => i.value > 0);
+
+    let contactText: string | null = null;
+    if (sdRec.contact_record_id) {
+      const setup = await loadContactSetup(context.supabase, rec.organization_id);
+      const contacts = await loadContacts(context.supabase, setup.contactsTableId, setup.fields);
+      const c = contacts.find((x) => x.id === sdRec.contact_record_id);
+      if (c) contactText = c.email ? `${c.label} — ${c.email}` : c.label;
+    }
+    if (!contactText) {
+      const contactField = meta.fields.find(
+        (f) => f.type === "email" || f.key.includes("email") || f.key.includes("contato"),
+      );
+      contactText = contactField ? (recData[contactField.key] ?? null) : null;
+    }
 
     const { bytes, total } = await buildQuotePdf({
       orgName: org?.name ?? "Venuespace",
       recordId: rec.id,
       resourceLabel:
-        typeof resourceId === "string" ? (resources.find((r) => r.id === resourceId)?.label ?? null) : null,
+        bookingItems.length > 0
+          ? bookingItems.map((i) => i.label).join(", ").slice(0, 140)
+          : typeof resourceId === "string"
+            ? (resources.find((r) => r.id === resourceId)?.label ?? null)
+            : null,
       periodStart: meta.startKey ? (recData[meta.startKey] ?? null) : null,
       periodEnd: meta.endKey ? (recData[meta.endKey] ?? null) : null,
-      contact: contactField ? (recData[contactField.key] ?? null) : null,
+      contact: contactText,
+
       items,
       notes: data.notes ?? null,
     });

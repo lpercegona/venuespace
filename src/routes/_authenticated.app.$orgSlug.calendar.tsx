@@ -194,12 +194,25 @@ function BookingTablePanel({
               {items.map((b) => (
                 <li key={b.id} className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                   <div className="min-w-0 space-y-1">
-                    <p className="truncate font-medium">{b.resource_label ?? "Recurso não informado"}</p>
+                    <p className="truncate font-medium">{b.resource_label ?? "Itens não informados"}</p>
                     <p className="text-sm text-muted-foreground">
                       {b.start && b.end ? `${b.start} → ${b.end}` : "Período não informado"}
                     </p>
+                    {b.contact ? (
+                      <p className="truncate text-sm text-muted-foreground">
+                        Contato: {b.contact.label}{b.contact.email ? ` — ${b.contact.email}` : ""}
+                      </p>
+                    ) : null}
                     <div className="flex flex-wrap items-center gap-2">
                       <DealBadge dealStatus={b.deal_status} archived={b.status === "archived"} />
+                      {b.items.length > 0 ? (
+                        <Badge variant="outline">{b.items.length} item(ns)</Badge>
+                      ) : null}
+                      {b.items_total > 0 ? (
+                        <Badge variant="secondary">
+                          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(b.items_total)}
+                        </Badge>
+                      ) : null}
                       {b.agreed_value != null ? (
                         <Badge variant="secondary">
                           {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(b.agreed_value)}
@@ -210,6 +223,7 @@ function BookingTablePanel({
                       ) : null}
                     </div>
                   </div>
+
                   <BookingStatusActions booking={b as any} orgSlug={orgSlug} canEdit={canEdit} onChanged={refresh} />
                 </li>
               ))}
