@@ -1,4 +1,13 @@
+## 2026-08-11 (America/Sao_Paulo) — Correção/extensão das Iterações 26, 30 e 31 — busca, paginação e navegação da administração
+
+- **Busca pública instantânea**: novo `src/hooks/use-debounced-value.ts` e `src/components/venue/public-filter-bar.tsx` (campo de busca + popover "Filtros" em linha única, mesmo padrão em desktop e mobile). Aplicado em `src/routes/categoria.$slug.tsx` e `src/routes/explore.tsx`; consultas usam `keepPreviousData` para evitar flicker.
+- **Paginação corrigida** em `/explore` e `/categoria/$slug`: `page` passa a ser gravado na URL como número (antes `String(...)`, rejeitado pelo `z.number()` do `validateSearch`, que revertia para a página 1). Skeleton usa `isPending` para não reaparecer entre páginas.
+- **Header público** (`src/components/venue/public-header.tsx` + novo `src/components/venue/venuespace-logo.tsx`): logo inline com `fill-current` (branca sobre o hero, cor de marca sobre a superfície) e "Cadastrar empresa" ao lado do ícone de login.
+- **Administração** (`src/routes/_authenticated.admin.index.tsx`): abas substituídas por sidebar com 4 grupos (Configurações, Estrutura, Layout, Conteúdo) em pílula, com `SegmentedToggle` (novo `src/components/venue/segmented-toggle.tsx`) para as seções do grupo; abaixo de 860px a navegação vira menu hambúrguer em `Sheet`.
+- **Topbar** (`src/components/venue/app-shell.tsx`): marca "VENUESPACE" unificada ao seletor de organização (pílula com dropdown), busca central instantânea de organizações e item de menu "Minhas candidaturas" renomeado para "Interações".
+
 ## 2026-08-10 (America/Sao_Paulo) — Otimização de páginas públicas, skeleton dinâmico e header
+
 
 - Novo `src/lib/public-catalog.functions.ts`: server functions (`getPublicCategoriesFn`, `getHomeGroupingsFn`, `getHomeGroupingDataFn`, `getCategoryLayoutFn`, `listPublicOrganizationsFn`, `getExploreFiltersFn`) para leitura pública direta no servidor, sem round-trip HTTP durante o SSR.
 - Novo `src/lib/public-queries.ts`: `queryOptions` compartilhados (categorias, home, layout, filtros e listagem por categoria) usados tanto nos loaders quanto nos componentes.

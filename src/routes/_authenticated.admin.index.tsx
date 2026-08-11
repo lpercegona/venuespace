@@ -3,7 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Save, Trash2, Pencil, ArrowLeft, Shield, FileText, Check } from "lucide-react";
+import { Loader2, Plus, Save, Trash2, Pencil, ArrowLeft, Shield, FileText, Check, Settings2, Layers, LayoutGrid, Menu } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { ReactElement } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { SegmentedToggle } from "@/components/venue/segmented-toggle";
+import { cn } from "@/lib/utils";
 import { listBlogPostsAdmin, deleteBlogPost, type BlogPostListItem } from "@/lib/blog.functions";
 
 import { AppShell } from "@/components/venue/app-shell";
@@ -122,44 +127,144 @@ function AdminPage() {
       title="Configurações da instância"
       subtitle={`Ajustes globais que valem para todas as ${organizationsLabel}.`}
       actions={
-        <Button variant="outline" size="sm" asChild>
+        <Button variant="outline" size="sm" className="rounded-full" asChild>
           <Link to="/app"><ArrowLeft className="h-4 w-4" />Voltar</Link>
         </Button>
       }
     >
-      <Tabs defaultValue="general">
-        <TabsList className="mb-6 w-full max-w-full flex-nowrap justify-start overflow-x-auto">
-          <TabsTrigger value="general">Geral</TabsTrigger>
-          <TabsTrigger value="labels">Rótulos</TabsTrigger>
-          <TabsTrigger value="categories">Categorias</TabsTrigger>
-          <TabsTrigger value="defaults">Campos padrão</TabsTrigger>
-          <TabsTrigger value="standard-tables">Tabelas padrão</TabsTrigger>
-          <TabsTrigger value="standard-forms">Formulários padrão</TabsTrigger>
-          <TabsTrigger value="filters">Filtros públicos</TabsTrigger>
-          <TabsTrigger value="layouts">Layout público</TabsTrigger>
-          <TabsTrigger value="home-groupings">Agrupamentos</TabsTrigger>
-          <TabsTrigger value="home-blocks">Blocos da home</TabsTrigger>
-          <TabsTrigger value="blog">Blog</TabsTrigger>
-          <TabsTrigger value="reviews">Avaliações</TabsTrigger>
-        </TabsList>
-        <TabsContent value="general"><GeneralSection /></TabsContent>
-        <TabsContent value="labels"><LabelsSection /></TabsContent>
-        <TabsContent value="categories"><CategoriesSection /></TabsContent>
-        <TabsContent value="defaults"><DefaultFieldsSection /></TabsContent>
-        <TabsContent value="standard-tables"><StandardTablesSection /></TabsContent>
-        <TabsContent value="standard-forms"><StandardFormsSection /></TabsContent>
-        <TabsContent value="filters"><FilterFieldsSection /></TabsContent>
-        <TabsContent value="layouts"><LayoutsSection /></TabsContent>
-        <TabsContent value="home-groupings"><HomeGroupingsSection /></TabsContent>
-        <TabsContent value="home-blocks"><HomeBlocksSection /></TabsContent>
-        <TabsContent value="blog"><BlogSection /></TabsContent>
-        <TabsContent value="reviews"><ReviewsSection /></TabsContent>
-      </Tabs>
-
-
+      <AdminWorkspace />
     </AppShell>
+
   );
 }
+
+// ---------- Workspace (sidebar + toggle segmentado) ----------
+
+type AdminSection = { value: string; label: string; render: () => ReactElement };
+type AdminGroup = { value: string; label: string; icon: LucideIcon; sections: AdminSection[] };
+
+const ADMIN_GROUPS: AdminGroup[] = [
+  {
+    value: "settings",
+    label: "Configurações",
+    icon: Settings2,
+    sections: [
+      { value: "general", label: "Geral", render: () => <GeneralSection /> },
+      { value: "labels", label: "Rótulos", render: () => <LabelsSection /> },
+    ],
+  },
+  {
+    value: "structure",
+    label: "Estrutura",
+    icon: Layers,
+    sections: [
+      { value: "categories", label: "Categorias", render: () => <CategoriesSection /> },
+      { value: "defaults", label: "Campos padrão", render: () => <DefaultFieldsSection /> },
+      { value: "standard-tables", label: "Tabelas padrão", render: () => <StandardTablesSection /> },
+      { value: "standard-forms", label: "Formulários padrão", render: () => <StandardFormsSection /> },
+      { value: "filters", label: "Filtros públicos", render: () => <FilterFieldsSection /> },
+    ],
+  },
+  {
+    value: "layout",
+    label: "Layout",
+    icon: LayoutGrid,
+    sections: [
+      { value: "layouts", label: "Layout público", render: () => <LayoutsSection /> },
+      { value: "home-groupings", label: "Agrupamentos", render: () => <HomeGroupingsSection /> },
+      { value: "home-blocks", label: "Blocos da home", render: () => <HomeBlocksSection /> },
+    ],
+  },
+  {
+    value: "content",
+    label: "Conteúdo",
+    icon: FileText,
+    sections: [
+      { value: "blog", label: "Blog", render: () => <BlogSection /> },
+      { value: "reviews", label: "Avaliações", render: () => <ReviewsSection /> },
+    ],
+  },
+];
+
+function AdminWorkspace() {
+  const [groupValue, setGroupValue] = useState(ADMIN_GROUPS[0].value);
+  const [sectionValue, setSectionValue] = useState(ADMIN_GROUPS[0].sections[0].value);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const group = ADMIN_GROUPS.find((g) => g.value === groupValue) ?? ADMIN_GROUPS[0];
+  const section = group.sections.find((s) => s.value === sectionValue) ?? group.sections[0];
+
+  function selectGroup(value: string) {
+    const g = ADMIN_GROUPS.find((x) => x.value === value) ?? ADMIN_GROUPS[0];
+    setGroupValue(g.value);
+    setSectionValue(g.sections[0].value);
+    setMenuOpen(false);
+  }
+
+  const nav = (
+    <nav className="flex flex-col gap-1" aria-label="Áreas da administração">
+      {ADMIN_GROUPS.map((g) => {
+        const active = g.value === group.value;
+        const Icon = g.icon;
+        return (
+          <button
+            key={g.value}
+            type="button"
+            onClick={() => selectGroup(g.value)}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "flex items-center gap-2 rounded-full px-4 py-2 text-left text-sm font-medium transition-colors outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              active
+                ? "bg-primary text-primary-foreground shadow-elegant"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{g.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+
+  return (
+    <div className="flex gap-6">
+      <aside className="hidden w-56 shrink-0 rounded-2xl border border-border bg-card p-2 shadow-soft min-[860px]:block">
+        {nav}
+      </aside>
+
+      <div className="min-w-0 grow">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" aria-label="Abrir menu" className="h-10 w-10 rounded-full min-[860px]:hidden">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 p-4">
+              <SheetHeader className="p-0 pb-4">
+                <SheetTitle>Administração</SheetTitle>
+              </SheetHeader>
+              {nav}
+            </SheetContent>
+          </Sheet>
+
+          {group.sections.length > 1 ? (
+            <SegmentedToggle
+              ariaLabel={group.label}
+              value={section.value}
+              onValueChange={setSectionValue}
+              options={group.sections.map((s) => ({ value: s.value, label: s.label }))}
+            />
+          ) : null}
+        </div>
+
+        {section.render()}
+      </div>
+    </div>
+  );
+}
+
 
 // ---------- General ----------
 

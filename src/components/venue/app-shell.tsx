@@ -3,12 +3,13 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building2, Check, List, Shield } from "lucide-react";
+import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building2, Check, List, Shield, Search } from "lucide-react";
 import { getOrganizationBySlug, listMyOrganizations } from "@/lib/orgs.functions";
 import { getMyProfile } from "@/lib/profile.functions";
 import { amISuperAdmin } from "@/lib/instance-settings.functions";
@@ -42,58 +43,95 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
 
   const initial = (me.data?.display_name ?? me.data?.email ?? "?").slice(0, 1).toUpperCase();
 
+  const orgList = (myOrgs.data ?? []) as Array<{ id: string; name: string; slug: string }>;
+  const [orgQuery, setOrgQuery] = useState("");
+  const filteredOrgs = orgList.filter((o) =>
+    o.name.toLowerCase().includes(orgQuery.trim().toLowerCase()),
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-surface/60 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <Link to="/app" className="flex items-center gap-2">
-            
-            <span className="font-display text-lg font-semibold tracking-tight text-foreground">
-              VENUESPACE
-            </span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size={org.data?.name ? "sm" : "icon"}
-                  aria-label={org.data?.name ? org.data.name : `Selecionar ${t("organization", "organização").toLowerCase()}`}
-                  className={org.data?.name ? "w-[200px] gap-1.5" : "h-9 w-9"}
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 sm:px-6">
+          {/* Marca + seletor de organização unificados */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-10 gap-2 rounded-full pl-2 pr-3 shadow-soft"
+                aria-label={`Selecionar ${t("organization", "organização").toLowerCase()}`}
+              >
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted text-foreground">
+                  <Building2 className="h-3.5 w-3.5" />
+                </span>
+                <span className="max-w-[10rem] truncate font-display text-sm font-semibold tracking-tight">
+                  {org.data?.name ?? "VENUESPACE"}
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64">
+              <DropdownMenuLabel>{t("organizations", "Organizações")}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {orgList.map((o) => (
+                <DropdownMenuItem
+                  key={o.id}
+                  onSelect={() => navigate({ to: "/app/$orgSlug", params: { orgSlug: o.slug } })}
                 >
-                  <Building2 className="h-4 w-4 shrink-0" />
-                  {org.data?.name ? (
-                    <>
-                      <span className="w-0 grow truncate">{org.data.name}</span>
-                      <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
-                    </>
-                  ) : null}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>{t("organizations", "Organizações")}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {(myOrgs.data ?? []).map((o: any) => (
-                  <DropdownMenuItem
-                    key={o.id}
-                    onSelect={() => navigate({ to: "/app/$orgSlug", params: { orgSlug: o.slug } })}
-                  >
-                    <span className="truncate">{o.name}</span>
-                    {o.slug === orgSlug ? <Check className="ml-auto h-4 w-4" /> : null}
-                  </DropdownMenuItem>
-                ))}
-                {(myOrgs.data ?? []).length === 0 ? (
-                  <DropdownMenuItem disabled>Nenhuma {t("organization", "organização").toLowerCase()}</DropdownMenuItem>
-                ) : null}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => navigate({ to: "/app" })}>
-                  <List className="h-4 w-4" />Ver todas as {t("organizations", "organizações").toLowerCase()}
+                  <span className="truncate">{o.name}</span>
+                  {o.slug === orgSlug ? <Check className="ml-auto h-4 w-4" /> : null}
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              ))}
+              {orgList.length === 0 ? (
+                <DropdownMenuItem disabled>Nenhuma {t("organization", "organização").toLowerCase()}</DropdownMenuItem>
+              ) : null}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => navigate({ to: "/app" })}>
+                <List className="h-4 w-4" />Ver todas as {t("organizations", "organizações").toLowerCase()}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Busca instantânea de organizações */}
+          <div className="relative mx-auto w-full max-w-xl">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={orgQuery}
+              onChange={(e) => setOrgQuery(e.target.value)}
+              placeholder={`Buscar ${t("organizations", "organizações").toLowerCase()}`}
+              aria-label={`Buscar ${t("organizations", "organizações").toLowerCase()}`}
+              className="h-10 rounded-lg pl-9 shadow-soft"
+            />
+            {orgQuery.trim() ? (
+              <div className="absolute left-0 right-0 top-11 z-50 max-h-72 overflow-auto rounded-lg border border-border bg-popover p-1 shadow-elegant">
+                {filteredOrgs.length === 0 ? (
+                  <p className="px-3 py-2 text-sm text-muted-foreground">Nenhum resultado.</p>
+                ) : (
+                  filteredOrgs.map((o) => (
+                    <button
+                      key={o.id}
+                      type="button"
+                      className="block w-full truncate rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                      onClick={() => {
+                        setOrgQuery("");
+                        navigate({ to: "/app/$orgSlug", params: { orgSlug: o.slug } });
+                      }}
+                    >
+                      {o.name}
+                    </button>
+                  ))
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex items-center gap-2">
             {orgSlug && org.data ? (
               <NotificationsBell organizationId={org.data.id} orgSlug={orgSlug} />
             ) : null}
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -116,7 +154,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                   <Settings className="h-4 w-4" />Configurações
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => navigate({ to: "/me/applications" })}>
-                  <FileHeart className="h-4 w-4" />Minhas candidaturas
+                  <FileHeart className="h-4 w-4" />Interações
                 </DropdownMenuItem>
                 {orgSlug ? (
                   <>

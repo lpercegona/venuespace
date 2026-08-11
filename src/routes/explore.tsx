@@ -1,27 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Building2, FileText, X } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { FileText } from "lucide-react";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
+import { PublicFilterBar } from "@/components/venue/public-filter-bar";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
-import { useCategoryLayout, useHasPublicRecords } from "@/hooks/use-public-catalog";
+import { useCategoryLayout } from "@/hooks/use-public-catalog";
 
 
-import { useLabels } from "@/hooks/use-instance-context";
+
 
 // Filter values are encoded in the URL as f_<key>=value.
 const searchSchema = z.object({
@@ -90,14 +90,10 @@ function extractFilters(search: Record<string, any>): Record<string, string> {
 }
 
 function ExplorePage() {
-  const { t } = useLabels();
   const search = Route.useSearch() as Record<string, any>;
   const navigate = Route.useNavigate();
-  const requestedTab = search.tab === "records" ? "records" : "orgs";
 
 
-  const orgsPlural = t("organizations", "Organizações");
-  const recordsPlural = t("records", "Registros");
 
   const currentFilters = useMemo(() => extractFilters(search), [search]);
   const q: string = search.q ?? "";
@@ -105,6 +101,7 @@ function ExplorePage() {
   const offset = (page - 1) * PAGE_SIZE;
 
   const [term, setTerm] = useState(q);
+  const debouncedTerm = useDebouncedValue(term, 300);
 
   const catsQ = usePublicCategories();
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
@@ -128,25 +125,35 @@ function ExplorePage() {
     queryFn: () => fetchOrgs(q, offset, currentFilters, catId),
     enabled: activeTab === "orgs",
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
   const recsQ = useQuery({
     queryKey: ["explore-records", q, offset, currentFilters, catId],
     queryFn: () => fetchRecords(q, offset, currentFilters, catId),
     enabled: activeTab === "records",
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 
   const active = activeTab === "orgs" ? orgsQ : recsQ;
   const total = active.data?.total ?? 0;
 
-  function updateSearch(patch: Record<string, string | undefined>) {
+  function updateSearch(patch: Record<string, string | number | undefined>) {
     const next: Record<string, any> = { ...search };
     for (const [k, v] of Object.entries(patch)) {
       if (v === undefined || v === "") delete next[k];
       else next[k] = v;
     }
-    navigate({ search: next as any });
+    navigate({ search: next as any, replace: true });
   }
+
+  // Busca instantânea (debounce).
+  useEffect(() => {
+    const value = debouncedTerm.trim();
+    if (value === q) return;
+    updateSearch({ q: value || undefined, page: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedTerm]);
 
   function setTab(v: string) {
     // Reset page + free-text + filters when switching tabs (filters are scope-specific).
@@ -171,9 +178,9 @@ function ExplorePage() {
   }
 
   const availableFilters = (filtersQ.data?.filters ?? []).filter((f) => f.filter_type === "select");
-  const hasFilters = availableFilters.length > 0 || Object.keys(currentFilters).length > 0 || q;
 
   return (
+
     <div className="min-h-screen bg-background">
       <PublicHeader />
 
@@ -195,51 +202,19 @@ function ExplorePage() {
 
 
 
-          <form
-            className="mt-4 flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              updateSearch({ q: term.trim() || undefined, page: undefined });
-            }}
-          >
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Buscar" value={term} onChange={(e) => setTerm(e.target.value)} />
-            </div>
-            <Button type="submit">BUSCAR</Button>
-          </form>
+          <PublicFilterBar
+            className="mt-4"
+            term={term}
+            onTermChange={setTerm}
+            filters={availableFilters as any}
+            values={currentFilters}
+            onFilterChange={setFilter}
+            onClear={clearFilters}
+          />
 
-          {availableFilters.length > 0 ? (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {availableFilters.map((f) => (
-                <Select
-                  key={f.key}
-                  value={currentFilters[f.key] ?? "__any"}
-                  onValueChange={(v) => setFilter(f.key, v === "__any" ? "" : v)}
-                >
-                  <SelectTrigger className="h-9 w-auto min-w-[160px] gap-2">
-                    <SelectValue placeholder={f.label} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__any">{f.label}: todos</SelectItem>
-                    {f.options.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ))}
-              {hasFilters ? (
-                <Button variant="ghost" size="sm" onClick={clearFilters}>
-                  <X className="h-4 w-4" /> Limpar
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
 
           <TabsContent value="orgs" className="mt-6">
-            {orgsQ.isLoading ? (
+            {orgsQ.isPending ? (
               <PublicCardSkeletonGrid count={6} withLogo layout={orgLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
             ) : (orgsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
@@ -280,7 +255,7 @@ function ExplorePage() {
           </TabsContent>
 
           <TabsContent value="records" className="mt-6">
-            {recsQ.isLoading ? (
+            {recsQ.isPending ? (
               <PublicCardSkeletonGrid count={6} layout={recLayoutQ.data} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
             ) : (recsQ.data?.items ?? []).length === 0 ? (
               <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
@@ -336,7 +311,7 @@ function ExplorePage() {
               variant="outline"
               size="sm"
               disabled={page <= 1}
-              onClick={() => updateSearch({ page: page > 2 ? String(page - 1) : undefined })}
+              onClick={() => updateSearch({ page: page > 2 ? page - 1 : undefined })}
             >
               Anterior
             </Button>
@@ -347,7 +322,7 @@ function ExplorePage() {
               variant="outline"
               size="sm"
               disabled={offset + PAGE_SIZE >= total}
-              onClick={() => updateSearch({ page: String(page + 1) })}
+              onClick={() => updateSearch({ page: page + 1 })}
             >
               Próxima
             </Button>

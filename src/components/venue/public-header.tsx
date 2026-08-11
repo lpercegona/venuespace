@@ -9,6 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
+import { VenuespaceLogo } from "@/components/venue/venuespace-logo";
+
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -60,13 +62,13 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
           : "border-border bg-surface/90 text-foreground backdrop-blur",
       )}
     >
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3 sm:flex sm:justify-between sm:gap-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6">
         {/* Logo: apenas em telas maiores */}
-        <Link to="/" className="hidden min-w-0 items-center gap-2 sm:flex">
-          <img src="/Venuespace logo1.svg" alt="Venuespace Logo" className="h-5 w-auto" />
+        <Link to="/" className="hidden min-w-0 items-center gap-2 sm:flex" aria-label="Venuespace — início">
+          <VenuespaceLogo className={cn("h-5 w-auto", onHero ? "text-primary-foreground" : "text-brand")} />
         </Link>
 
-        <div className="justify-self-start sm:justify-self-auto">
+        <div className="min-w-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -104,7 +106,7 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
           </DropdownMenu>
         </div>
 
-        <div className="justify-self-center sm:justify-self-auto">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Link to="/auth">
             <Button
               size="sm"
@@ -114,9 +116,6 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
               Cadastrar empresa
             </Button>
           </Link>
-        </div>
-
-        <div className="justify-self-end sm:justify-self-auto">
           {showAuthActions ? (
             <Link to="/auth" aria-label="Entrar">
               <Button
@@ -134,6 +133,7 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
           ) : null}
         </div>
       </div>
+
     </header>
   );
 }
