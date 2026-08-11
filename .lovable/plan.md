@@ -29,18 +29,23 @@ Base existente que será estendida (não recriada): rota `/app/$orgSlug/calendar
 
 ## 4. Ciclo de vida da reserva
 
-Transições explícitas na tela de reservas e na conversa:
+Estágios com o valor de `deal_status` declarado explicitamente:
 
 ```text
-negociação  --(envio de orçamento/proposta)-->  negociação
-negociação  --(aceite da proposta)----------->  fechada
-fechada     --(serviço entregue)-------------->  encerrada
-negociação  --(recusa)------------------------>  recusada + arquivada
+negociação (deal_status = 'negotiating')
+   --(envio de orçamento/proposta)-->  permanece 'negotiating'
+   --(aceite da proposta)----------->  fechada   (deal_status = 'accepted')
+   --(recusa)------------------------> recusada  (deal_status = 'declined' + status = 'archived')
+
+fechada (accepted)
+   --(serviço entregue)-------------->  encerrada (deal_status = 'closed')
 ```
 
-- "Fechar negócio" só é permitido se não houver conflito de datas (revalidação no servidor).
-- Recusa: `deal_status = 'declined'` **e** `status = 'archived'`; some da lista padrão, aparece apenas no filtro "Arquivadas", com ação de desarquivar.
-- Encerramento: `deal_status = 'closed'`, mantendo o valor acordado.
+- **Fechada = `accepted`** (não `closed`). É nesse momento que `agreed_value` é gravado, copiado da última proposta aceita — comportamento já existente em `setDealStatus`.
+- **Encerrada = `closed`**, significando serviço entregue; `agreed_value` é preservado, não recalculado. Isto redefine o significado anterior de `closed` (antes "negócio concluído"); registros existentes em `closed` são lidos como encerrados, sem migração de dados.
+- "Fechar negócio" (→ `accepted`) revalida conflito de datas no servidor e bloqueia em caso de sobreposição.
+- Recusa: `deal_status = 'declined'` **e** `status = 'archived'`; some da lista padrão, aparece apenas no filtro "Arquivadas", com ação de desarquivar (volta a `status = 'draft'`, mantendo `declined`).
+
 
 ## Detalhes técnicos
 
