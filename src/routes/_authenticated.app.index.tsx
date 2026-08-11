@@ -52,10 +52,11 @@ function OrgsPage() {
   const [orgSearch, setOrgSearch] = useState("");
   const visibleOrgs = ((data ?? []) as any[]).filter((o) =>
     isSuperAdmin.data?.is_super_admin && orgSearch.trim()
-      ? String(o.name ?? "").toLowerCase().includes(orgSearch.trim().toLowerCase())
+      ? String(o.name ?? "")
+          .toLowerCase()
+          .includes(orgSearch.trim().toLowerCase())
       : true,
   );
-
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -111,8 +112,8 @@ function OrgsPage() {
 
   return (
     <AppShell
-      title={organizationLabel}
-      subtitle={`Cada item abaixo é uma listagem isolada com ${tablesLabel}, membros e páginas públicas.`}
+      title={`Empresas`}
+      subtitle={``}
       actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -223,9 +224,7 @@ function OrgsPage() {
             </div>
           ) : null}
           {visibleOrgs.length === 0 ? (
-            <p className="py-12 text-center text-sm text-muted-foreground">
-              Nenhum resultado para “{orgSearch}”.
-            </p>
+            <p className="py-12 text-center text-sm text-muted-foreground">Nenhum resultado para “{orgSearch}”.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {visibleOrgs.map((org: any) => (
@@ -254,7 +253,6 @@ function OrgsPage() {
           )}
         </>
       )}
-
     </AppShell>
   );
 }
