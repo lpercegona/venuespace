@@ -2037,44 +2037,57 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
     queryFn: async () => {
       if (scope === "record") {
         const rows = await listCategoryDefaultFields({ data: { category_id: categoryId } });
-        return (rows as CategoryDefaultField[]).map((r) => ({ key: r.field_key, label: r.label }));
+        return (rows as CategoryDefaultField[]).map((r) => ({ key: r.field_key, label: r.label, type: r.field_type }));
       }
       const rows = await listCategoryCascadeFields({ data: { category_id: categoryId, scope: "org" } });
-      return (rows as CategoryCascadeField[]).map((r) => ({ key: r.field_key, label: r.label }));
+      return (rows as CategoryCascadeField[]).map((r) => ({ key: r.field_key, label: r.label, type: r.field_type }));
     },
   });
 
   const availableKeys = [
     ...(scope === "organization" ? ORG_BASE_FILTER_KEYS : []),
-    ...((catFields.data ?? []) as Array<{ key: string; label: string }>),
+    ...((catFields.data ?? []) as Array<{ key: string; label: string; type?: string }>),
   ];
+  const numericKeys = ((catFields.data ?? []) as Array<{ key: string; label: string; type?: string }>).filter(
+    (f) => f.type === "number" || f.type === "currency",
+  );
   const usedKeys = new Set((list.data ?? []).map((f) => f.field_key));
   const pickable = availableKeys.filter((f) => !usedKeys.has(f.key));
 
   const [newKey, setNewKey] = useState<string>("");
-  const [newType, setNewType] = useState<"search" | "select">("select");
+  const [newType, setNewType] = useState<"search" | "select" | "range">("select");
+  const [minKey, setMinKey] = useState<string>("");
+  const [maxKey, setMaxKey] = useState<string>("");
+  const [rangeLabel, setRangeLabel] = useState<string>("");
 
   async function add() {
-    if (!newKey) return;
+    const isRange = newType === "range";
+    if (isRange ? !(minKey && maxKey && rangeLabel.trim()) : !newKey) return;
     try {
       await upsertCategoryFilterField({
         data: {
           category_id: categoryId,
           scope,
-          field_key: newKey,
+          field_key: isRange ? `${minKey}__${maxKey}__range` : newKey,
           filter_type: newType,
+          label_override: isRange ? rangeLabel.trim() : null,
+          min_field_key: isRange ? minKey : null,
+          max_field_key: isRange ? maxKey : null,
           order_index: (list.data ?? []).length,
         },
       });
       toast.success("Filtro adicionado");
       setNewKey("");
+      setMinKey("");
+      setMaxKey("");
+      setRangeLabel("");
       qc.invalidateQueries({ queryKey: ["admin-filters", scope, categoryId] });
     } catch (err) {
       toast.error((err as Error).message);
     }
   }
 
-  async function updateType(f: CategoryFilterField, filter_type: "search" | "select") {
+  async function updateType(f: CategoryFilterField, filter_type: "search" | "select" | "range") {
     try {
       await upsertCategoryFilterField({
         data: {
@@ -2083,6 +2096,9 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
           scope: f.scope,
           field_key: f.field_key,
           filter_type,
+          label_override: f.label_override ?? null,
+          min_field_key: f.min_field_key ?? null,
+          max_field_key: f.max_field_key ?? null,
           order_index: f.order_index,
         },
       });
@@ -2106,7 +2122,7 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
-        <div className="min-w-[240px] flex-1 space-y-1">
+        <div className={cn("min-w-[240px] flex-1 space-y-1", newType === "range" && "hidden")}>
           <Label>Campo</Label>
           <Select value={newKey} onValueChange={setNewKey}>
             <SelectTrigger>
@@ -2127,7 +2143,7 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
             </SelectContent>
           </Select>
         </div>
-        <div className="w-48 space-y-1">
+        <div className="w-56 space-y-1">
           <Label>Comportamento</Label>
           <Select value={newType} onValueChange={(v) => setNewType(v as any)}>
             <SelectTrigger>
@@ -2136,10 +2152,75 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
             <SelectContent>
               <SelectItem value="select">Filtro (lista)</SelectItem>
               <SelectItem value="search">Busca (texto livre)</SelectItem>
+              <SelectItem value="range">Faixa numérica (a partir de / até)</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <Button size="sm" onClick={add} disabled={!newKey || newKey === "__none"}>
+
+        {newType === "range" ? (
+          <>
+            <div className="min-w-[180px] flex-1 space-y-1">
+              <Label>Campo mínimo</Label>
+              <Select value={minKey} onValueChange={setMinKey}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Campo numérico" />
+                </SelectTrigger>
+                <SelectContent>
+                  {numericKeys.length === 0 ? (
+                    <SelectItem value="__none" disabled>
+                      Nenhum campo numérico nesta categoria.
+                    </SelectItem>
+                  ) : (
+                    numericKeys.map((f) => (
+                      <SelectItem key={f.key} value={f.key}>
+                        {f.label} <span className="text-muted-foreground">({f.key})</span>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[180px] flex-1 space-y-1">
+              <Label>Campo máximo</Label>
+              <Select value={maxKey} onValueChange={setMaxKey}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Campo numérico" />
+                </SelectTrigger>
+                <SelectContent>
+                  {numericKeys.length === 0 ? (
+                    <SelectItem value="__none" disabled>
+                      Nenhum campo numérico nesta categoria.
+                    </SelectItem>
+                  ) : (
+                    numericKeys.map((f) => (
+                      <SelectItem key={f.key} value={f.key}>
+                        {f.label} <span className="text-muted-foreground">({f.key})</span>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[180px] flex-1 space-y-1">
+              <Label>Rótulo</Label>
+              <Input
+                value={rangeLabel}
+                onChange={(e) => setRangeLabel(e.target.value)}
+                placeholder="Ex.: Capacidade"
+              />
+            </div>
+          </>
+        ) : null}
+
+        <Button
+          size="sm"
+          onClick={add}
+          disabled={
+            newType === "range"
+              ? !minKey || !maxKey || minKey === "__none" || maxKey === "__none" || !rangeLabel.trim()
+              : !newKey || newKey === "__none"
+          }
+        >
           <Plus className="h-4 w-4" /> Adicionar
         </Button>
       </div>
@@ -2170,8 +2251,12 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
             ) : (
               (list.data ?? []).map((f) => (
                 <TableRow key={f.id}>
-                  <TableCell>{labelFor(f.field_key)}</TableCell>
-                  <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
+                  <TableCell>{f.label_override ?? labelFor(f.field_key)}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {f.filter_type === "range"
+                      ? `${f.min_field_key ?? "?"} → ${f.max_field_key ?? "?"}`
+                      : f.field_key}
+                  </TableCell>
                   <TableCell>
                     <Select value={f.filter_type} onValueChange={(v) => updateType(f, v as any)}>
                       <SelectTrigger>
@@ -2180,6 +2265,9 @@ function FilterScopeEditor({ categoryId, scope }: { categoryId: string; scope: "
                       <SelectContent>
                         <SelectItem value="select">Filtro (lista)</SelectItem>
                         <SelectItem value="search">Busca (texto livre)</SelectItem>
+                        <SelectItem value="range" disabled={f.filter_type !== "range"}>
+                          Faixa numérica (a partir de / até)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
