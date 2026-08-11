@@ -369,7 +369,8 @@ export const generateBookingQuote = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadResourceLabels, buildQuotePdf } = await import("./bookings.server");
+    const { loadBookingMeta, loadResourceLabels, loadContactSetup, loadContacts, buildQuotePdf } =
+      await import("./bookings.server");
 
     const { data: rec, error } = await context.supabase
       .from("records")
@@ -389,25 +390,48 @@ export const generateBookingQuote = createServerFn({ method: "POST" })
     const meta = await loadBookingMeta(context.supabase, rec.table_id);
     const resources = await loadResourceLabels(context.supabase, meta.targetTableId);
     const recData = (rec.data ?? {}) as Record<string, any>;
+    const sdRec = (rec.system_data ?? {}) as any;
     const resourceId = meta.relKey ? recData[meta.relKey] : null;
 
-    const items = meta.fields
-      .filter((f) => f.type === "currency" || f.type === "number")
-      .map((f) => ({ label: f.label, value: Number(recData[f.key]) || 0 }))
-      .filter((i) => i.value > 0);
+    const bookingItems = (Array.isArray(sdRec.items) ? sdRec.items : []) as Array<{
+      record_id: string; label: string; value: number;
+    }>;
 
-    const contactField = meta.fields.find(
-      (f) => f.type === "email" || f.key.includes("email") || f.key.includes("contato"),
-    );
+    const items =
+      bookingItems.length > 0
+        ? bookingItems.map((i) => ({ label: i.label, value: Number(i.value) || 0 }))
+        : meta.fields
+            .filter((f) => f.type === "currency" || f.type === "number")
+            .map((f) => ({ label: f.label, value: Number(recData[f.key]) || 0 }))
+            .filter((i) => i.value > 0);
+
+    let contactText: string | null = null;
+    if (sdRec.contact_record_id) {
+      const setup = await loadContactSetup(context.supabase, rec.organization_id);
+      const contacts = await loadContacts(context.supabase, setup.contactsTableId, setup.fields);
+      const c = contacts.find((x) => x.id === sdRec.contact_record_id);
+      if (c) contactText = c.email ? `${c.label} — ${c.email}` : c.label;
+    }
+    if (!contactText) {
+      const contactField = meta.fields.find(
+        (f) => f.type === "email" || f.key.includes("email") || f.key.includes("contato"),
+      );
+      contactText = contactField ? (recData[contactField.key] ?? null) : null;
+    }
 
     const { bytes, total } = await buildQuotePdf({
       orgName: org?.name ?? "Venuespace",
       recordId: rec.id,
       resourceLabel:
-        typeof resourceId === "string" ? (resources.find((r) => r.id === resourceId)?.label ?? null) : null,
+        bookingItems.length > 0
+          ? bookingItems.map((i) => i.label).join(", ").slice(0, 140)
+          : typeof resourceId === "string"
+            ? (resources.find((r) => r.id === resourceId)?.label ?? null)
+            : null,
       periodStart: meta.startKey ? (recData[meta.startKey] ?? null) : null,
       periodEnd: meta.endKey ? (recData[meta.endKey] ?? null) : null,
-      contact: contactField ? (recData[contactField.key] ?? null) : null,
+      contact: contactText,
+
       items,
       notes: data.notes ?? null,
     });
