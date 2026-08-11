@@ -1,24 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Building2, FileText, X } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { FileText } from "lucide-react";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
+import { PublicFilterBar } from "@/components/venue/public-filter-bar";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
-import { useCategoryLayout, useHasPublicRecords } from "@/hooks/use-public-catalog";
+import { useCategoryLayout } from "@/hooks/use-public-catalog";
+
 
 
 import { useLabels } from "@/hooks/use-instance-context";
