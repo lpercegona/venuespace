@@ -351,7 +351,10 @@ function ExplorePage() {
             </Button>
           </div>
         ) : null}
+          </div>
+        </div>
       </section>
+
       <PublicFooter />
     </div>
 
