@@ -203,3 +203,116 @@ function wrap(s: string, max: number): string[] {
   if (cur.trim()) out.push(cur.trim());
   return out.slice(0, 12);
 }
+
+// ============ Correção/extensão da Iteração 32 — itens e contato ============
+
+export type ItemMeta = { labelKey: string | null; valueKey: string | null; imageKey: string | null };
+
+export function pickItemMeta(fields: Array<{ key: string; type: string }>): ItemMeta {
+  return {
+    labelKey: fields.find((f) => f.type === "text")?.key ?? null,
+    valueKey: fields.find((f) => f.type === "currency")?.key
+      ?? fields.find((f) => f.type === "number")?.key
+      ?? null,
+    imageKey: fields.find((f) => f.type === "image")?.key ?? null,
+  };
+}
+
+export type BookableItem = { id: string; label: string; value: number; image: string | null };
+
+/** Registros da própria tabela reservável, usados como itens do orçamento. */
+export async function loadBookableItems(supabase: any, tableId: string): Promise<BookableItem[]> {
+  const { data: fields } = await supabase
+    .from("fields").select("key, type, position").eq("table_id", tableId)
+    .order("position", { ascending: true });
+  const m = pickItemMeta((fields ?? []) as any[]);
+  const { data: rows } = await supabase
+    .from("records").select("id, data, system_data").eq("table_id", tableId)
+    .order("created_at", { ascending: true });
+  return ((rows ?? []) as any[])
+    // uma reserva também é um registro desta tabela: itens são só os registros "puros"
+    .filter((r) => !Array.isArray((r.system_data as any)?.items))
+    .map((r) => ({
+      id: r.id as string,
+      label: String((m.labelKey ? r.data?.[m.labelKey] : null) ?? "Sem título").slice(0, 140),
+      value: Number(m.valueKey ? r.data?.[m.valueKey] : 0) || 0,
+      image: (m.imageKey ? (r.data?.[m.imageKey] ?? null) : null) as string | null,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+}
+
+export type ContactFieldDef = {
+  id: string; key: string; label: string; type: string; required: boolean; position: number; config: any;
+};
+
+/** Tabela de contatos da organização + campos do formulário padrão da categoria. */
+export async function loadContactSetup(supabase: any, orgId: string): Promise<{
+  contactsTableId: string | null;
+  fields: ContactFieldDef[];
+  standard: Array<{ key: string; label: string; type: string; required: boolean; config: any; position: number }>;
+}> {
+  const { data: tbl } = await supabase
+    .from("tables").select("id, system_data").eq("organization_id", orgId);
+  const contactsTableId =
+    ((tbl ?? []) as any[]).find((t) => (t.system_data ?? {}).kind === "contacts")?.id ?? null;
+
+  let fields: ContactFieldDef[] = [];
+  if (contactsTableId) {
+    const { data: fl } = await supabase
+      .from("fields").select("id, key, label, type, required, position, config")
+      .eq("table_id", contactsTableId).order("position", { ascending: true });
+    fields = ((fl ?? []) as any[]).map((f) => ({ ...f, config: f.config ?? {} }));
+  }
+
+  const { data: org } = await supabase
+    .from("organizations").select("category_id").eq("id", orgId).maybeSingle();
+  let standard: any[] = [];
+  if (org?.category_id) {
+    const { data: forms } = await supabase
+      .from("category_standard_forms")
+      .select("id, scope, is_active")
+      .eq("category_id", org.category_id)
+      .eq("scope", "organization")
+      .eq("is_active", true)
+      .limit(1);
+    const formId = ((forms ?? []) as any[])[0]?.id ?? null;
+    if (formId) {
+      const { data: ff } = await supabase
+        .from("category_standard_form_fields")
+        .select("field_key, label, field_type, required, config, order_index")
+        .eq("form_id", formId)
+        .order("order_index", { ascending: true });
+      standard = ((ff ?? []) as any[]).map((f, i) => ({
+        key: f.field_key, label: f.label, type: f.field_type,
+        required: !!f.required, config: f.config ?? {}, position: f.order_index ?? i,
+      }));
+    }
+  }
+  return { contactsTableId, fields, standard };
+}
+
+export type ContactRow = { id: string; label: string; email: string | null };
+
+export function contactLabel(fields: ContactFieldDef[], data: Record<string, any>) {
+  const nameKey =
+    fields.find((f) => /nome|name/i.test(f.key) && f.type === "text")?.key ??
+    fields.find((f) => f.type === "text")?.key ?? null;
+  const emailKey =
+    fields.find((f) => f.type === "email")?.key ??
+    fields.find((f) => /email/i.test(f.key))?.key ?? null;
+  const label = String((nameKey ? data?.[nameKey] : null) ?? (emailKey ? data?.[emailKey] : null) ?? "Contato");
+  return { label: label.slice(0, 140), email: (emailKey ? (data?.[emailKey] ?? null) : null) as string | null };
+}
+
+export async function loadContacts(
+  supabase: any, contactsTableId: string | null, fields: ContactFieldDef[],
+): Promise<ContactRow[]> {
+  if (!contactsTableId) return [];
+  const { data: rows } = await supabase
+    .from("records").select("id, data").eq("table_id", contactsTableId)
+    .order("created_at", { ascending: false }).limit(500);
+  return ((rows ?? []) as any[]).map((r) => {
+    const { label, email } = contactLabel(fields, (r.data ?? {}) as any);
+    return { id: r.id as string, label, email };
+  });
+}
