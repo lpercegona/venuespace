@@ -1,13 +1,18 @@
 import { cached, TTL_SHORT } from "@/lib/server-cache";
-import { parseFilterValues } from "@/lib/filter-params";
+import { parseFilterValues, parseRangeValue, toFilterNumber } from "@/lib/filter-params";
 // Server-only helper computing explore filter definitions + distinct option values.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type ExploreFilterDef = {
   key: string;
   label: string;
-  filter_type: "search" | "select";
+  filter_type: "search" | "select" | "range";
   options: string[]; // only for select
+  /** Faixa numérica: chaves vinculadas e opções de cada lado. */
+  min_field_key?: string | null;
+  max_field_key?: string | null;
+  min_options?: number[];
+  max_options?: number[];
 };
 
 function resolveOrgValue(org: any, key: string): unknown {
@@ -85,7 +90,7 @@ export async function listExploreFilters(opts: {
   if (opts.category_id) {
     const { data } = await sb
       .from("category_filter_fields")
-      .select("field_key, filter_type, label_override, order_index, scope, category_id")
+      .select("field_key, filter_type, label_override, order_index, scope, category_id, min_field_key, max_field_key")
       .eq("category_id", opts.category_id)
       .eq("scope", opts.scope)
       .order("order_index");
@@ -93,7 +98,7 @@ export async function listExploreFilters(opts: {
   } else {
     const { data } = await sb
       .from("category_filter_fields")
-      .select("field_key, filter_type, label_override, order_index, scope, category_id")
+      .select("field_key, filter_type, label_override, order_index, scope, category_id, min_field_key, max_field_key")
       .eq("scope", opts.scope)
       .order("order_index");
     filterRows = data ?? [];
