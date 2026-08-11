@@ -2,7 +2,7 @@
 // Uses the service-role admin client since anon RLS reads on org/tables/fields/views
 // were removed; scoping (published status, org/table match) is enforced in code here.
 
-import { parseFilterValues } from "@/lib/filter-params";
+import { parseFilterValues, parseRangeValue, toFilterNumber } from "@/lib/filter-params";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { cached, cacheGet, cacheSet, TTL_MEDIUM, TTL_SHORT, TTL_SIGNED } from "@/lib/server-cache";
 
@@ -496,7 +496,8 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   };
 
   const { loadFilterKeys } = await import("@/lib/explore-filters.server");
-  const { searchKeys } = await loadFilterKeys("organization", categoryId);
+  const { searchKeys, ranges } = await loadFilterKeys("organization", categoryId);
+  const rangeByKey = new Map(ranges.map((r) => [r.key, r]));
 
   let base = ((data ?? []) as any[]).map((o) => ({
     id: o.id, slug: o.slug, name: o.name,
@@ -512,6 +513,20 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   );
 
   for (const [key, val] of Object.entries(filters)) {
+    // Faixa numérica vinculada a dois campos: exige a faixa do item contida na pedida.
+    const rangeDef = rangeByKey.get(key);
+    if (rangeDef) {
+      const { min, max } = parseRangeValue(String(val));
+      if (min == null && max == null) continue;
+      base = base.filter((o) => {
+        const lo = toFilterNumber(resolveOrgVal(o, rangeDef.min_field_key));
+        const hi = toFilterNumber(resolveOrgVal(o, rangeDef.max_field_key));
+        if (min != null && (lo == null || lo < min)) return false;
+        if (max != null && (hi == null || hi > max)) return false;
+        return true;
+      });
+      continue;
+    }
     // Multivalor: `A|B` combina em OU dentro do mesmo campo.
     const parts = parseFilterValues(String(val));
     if (parts.length === 0) continue;
@@ -726,12 +741,29 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   if (categoryId) base = base.filter((i) => i.org_category_id === categoryId);
   if (slug) base = base.filter((i) => i.org_slug === slug);
 
+  const { loadFilterKeys: loadRecFilterKeys } = await import("@/lib/explore-filters.server");
+  const recFilterKeys = await loadRecFilterKeys("record", categoryId);
+  const recRangeByKey = new Map(recFilterKeys.ranges.map((r) => [r.key, r]));
+
   const recAliases = await loadOptionAliases(
     "category_standard_table_fields",
     [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
   );
 
   for (const [key, val] of Object.entries(filters)) {
+    const rangeDef = recRangeByKey.get(key);
+    if (rangeDef) {
+      const { min, max } = parseRangeValue(String(val));
+      if (min == null && max == null) continue;
+      base = base.filter((r) => {
+        const lo = toFilterNumber((r.data ?? {})[rangeDef.min_field_key]);
+        const hi = toFilterNumber((r.data ?? {})[rangeDef.max_field_key]);
+        if (min != null && (lo == null || lo < min)) return false;
+        if (max != null && (hi == null || hi > max)) return false;
+        return true;
+      });
+      continue;
+    }
     const parts = parseFilterValues(String(val));
     if (parts.length === 0) continue;
     const targets = parts.flatMap((p) => ruleTargets({ field_key: key, operator: "=", value: p }, recAliases));
@@ -745,8 +777,7 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     base = base.filter((r) => !skip.has(r.record_id));
   }
 
-  const { loadFilterKeys } = await import("@/lib/explore-filters.server");
-  const { searchKeys } = await loadFilterKeys("record", categoryId);
+  const { searchKeys } = recFilterKeys;
 
   if (q) {
     base = base.filter((i) => {
