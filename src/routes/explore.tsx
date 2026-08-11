@@ -126,10 +126,12 @@ function ExplorePage() {
 
 
   const filtersQ = useQuery({
-    queryKey: ["explore-filters", scope, catId],
-    queryFn: () => fetchFilters(scope, catId),
-    staleTime: 5 * 60_000,
+    queryKey: ["explore-filters", scope, catId, q, currentFilters],
+    queryFn: () => fetchFilters(scope, catId, q, currentFilters),
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
+
 
   const orgsQ = useQuery({
     queryKey: ["explore-orgs", q, offset, currentFilters, catId],
