@@ -195,48 +195,16 @@ function ExplorePage() {
 
 
 
-          <form
-            className="mt-4 flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              updateSearch({ q: term.trim() || undefined, page: undefined });
-            }}
-          >
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Buscar" value={term} onChange={(e) => setTerm(e.target.value)} />
-            </div>
-            <Button type="submit">BUSCAR</Button>
-          </form>
+          <PublicFilterBar
+            className="mt-4"
+            term={term}
+            onTermChange={setTerm}
+            filters={availableFilters as any}
+            values={currentFilters}
+            onFilterChange={setFilter}
+            onClear={clearFilters}
+          />
 
-          {availableFilters.length > 0 ? (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {availableFilters.map((f) => (
-                <Select
-                  key={f.key}
-                  value={currentFilters[f.key] ?? "__any"}
-                  onValueChange={(v) => setFilter(f.key, v === "__any" ? "" : v)}
-                >
-                  <SelectTrigger className="h-9 w-auto min-w-[160px] gap-2">
-                    <SelectValue placeholder={f.label} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__any">{f.label}: todos</SelectItem>
-                    {f.options.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ))}
-              {hasFilters ? (
-                <Button variant="ghost" size="sm" onClick={clearFilters}>
-                  <X className="h-4 w-4" /> Limpar
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
 
           <TabsContent value="orgs" className="mt-6">
             {orgsQ.isLoading ? (
