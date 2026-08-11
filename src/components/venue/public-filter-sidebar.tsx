@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PublicFilterDef } from "@/components/venue/public-filter-bar";
+import { FilterOptionList } from "@/components/venue/filter-option-list";
+import { countSelectedFilters } from "@/lib/filter-params";
 
 type Props = {
   term: string;
@@ -17,7 +17,7 @@ type Props = {
 };
 
 /**
- * Coluna lateral de filtros expandidos (desktop).
+ * Coluna lateral de filtros expandidos (desktop), em multisseleção.
  * As opções chegam já facetadas pelo servidor.
  */
 export function PublicFilterSidebar({
@@ -29,7 +29,7 @@ export function PublicFilterSidebar({
   onClear,
   className,
 }: Props) {
-  const hasActive = !!term || Object.values(values).some(Boolean);
+  const hasActive = !!term || countSelectedFilters(values) > 0;
 
   return (
     <aside className={cn("space-y-5", className)} aria-label="Filtros">
@@ -45,27 +45,17 @@ export function PublicFilterSidebar({
         />
       </div>
 
-      {filters.map((f) => (
-        <div key={f.key} className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">{f.label}</Label>
-          <Select
-            value={values[f.key] ?? "__any"}
-            onValueChange={(v) => onFilterChange(f.key, v === "__any" ? "" : v)}
-          >
-            <SelectTrigger className="h-10 w-full">
-              <SelectValue placeholder={f.label} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__any">Todos</SelectItem>
-              {f.options.map((opt) => (
-                <SelectItem key={opt} value={opt}>
-                  {opt}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ))}
+      <div className="max-h-[calc(100vh-12rem)] space-y-5 overflow-y-auto pr-1">
+        {filters.map((f) => (
+          <FilterOptionList
+            key={f.key}
+            label={f.label}
+            options={f.options}
+            value={values[f.key]}
+            onChange={(next) => onFilterChange(f.key, next)}
+          />
+        ))}
+      </div>
 
       {hasActive ? (
         <Button variant="ghost" size="sm" className="h-10 w-full justify-start" onClick={onClear}>
