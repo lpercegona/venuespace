@@ -164,7 +164,7 @@ function Landing() {
         </div>
       </main>
 
-      {/* NOVO BLOCO: Dúvidas Frequentes */}
+      {/* Dúvidas Frequentes — exatamente como no site original */}
       <FaqSection />
 
       <PublicFooter />
@@ -359,58 +359,65 @@ function RecordCard({ record }: { record: PublicRecordSummary }) {
   );
 }
 
-/* ===================================================
-   NOVO COMPONENTE - DÚVIDAS FREQUENTES
-   =================================================== */
+/* ============================================================
+   DÚVIDAS FREQUENTES — VERSÃO EXATA DO HTML ORIGINAL
+   ============================================================ */
 function FaqSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  const faqs = [
+  const faqItems = [
     {
-      question: "O Venuespace cobra comissão?",
+      question: "O que é um espaço para eventos?",
       answer:
-        "Não. O fechamento e o pagamento ocorrem diretamente entre as partes, sem qualquer taxa de intermediação.",
+        "Um espaço para eventos é qualquer local — salão de festas, sítio, espaço gourmet, rooftop ou área corporativa — disponível para locação para sediar festas, casamentos, confraternizações e eventos corporativos.",
     },
     {
-      question: "Posso anunciar meu espaço gratuitamente?",
+      question: "Como funciona a busca por espaços para eventos em Curitiba?",
       answer:
-        "Sim, qualquer proprietário pode publicar seu espaço sem custo algum. A publicação é gratuita e você negocia diretamente com os clientes.",
+        "Você explora espaços publicados por proprietários em Curitiba e em outras cidades, filtra por categoria e região, e entra em contato diretamente pelo chat da plataforma para negociar data, valor e detalhes.",
     },
     {
-      question: "Como entro em contato com o proprietário?",
+      question: "O Venuespace cobra comissão sobre o valor negociado?",
       answer:
-        "Basta acessar o perfil do espaço e utilizar o chat da plataforma para enviar sua proposta diretamente ao administrador.",
+        "Não. O Venuespace é um venue space brasileiro que conecta as partes e organiza a negociação — o fechamento e o pagamento acontecem diretamente entre quem procura e quem oferece o espaço, sem intermediação financeira.",
     },
     {
-      question: "Preciso me cadastrar para buscar espaços?",
+      question: "Posso anunciar meu espaço para eventos gratuitamente?",
       answer:
-        "Sim, é necessário criar uma conta para enviar mensagens e fechar negócios, garantindo mais segurança para ambas as partes.",
+        "Sim. Qualquer proprietário pode publicar seu espaço para eventos — sítio, salão, espaço gourmet ou área corporativa — e receber solicitações diretamente de interessados.",
     },
   ];
 
   return (
-    <section className="mx-auto w-full max-w-4xl px-4 py-16 sm:py-20">
-      <div className="text-center">
-        <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Dúvidas Frequentes</h2>
-        <p className="mt-2 text-muted-foreground">Tire suas principais dúvidas sobre a plataforma</p>
-      </div>
+    <section id="faq" className="py-16 sm:py-20">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        {/* Cabeçalho igual ao HTML: "eyebrow" + título */}
+        <div className="mb-10 max-w-[56ch]">
+          <p className="text-xs font-medium uppercase tracking-widest text-primary">Dúvidas frequentes</p>
+          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            Sobre espaços para eventos no Venuespace
+          </h2>
+        </div>
 
-      <div className="mt-10 space-y-3">
-        {faqs.map((faq, index) => (
-          <Card key={index} className="overflow-hidden">
-            <button
-              onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              className="flex w-full items-center justify-between p-5 text-left font-medium"
-              aria-expanded={openIndex === index}
+        {/* Lista de perguntas usando <details> nativo */}
+        <div className="max-w-[760px] space-y-0 divide-y divide-[rgba(113,127,191,.28)]">
+          {faqItems.map((item, index) => (
+            <details
+              key={index}
+              className="faq-item group py-5 [&_summary::-webkit-details-marker]:hidden"
+              // Primeiro item aberto por padrão (como no HTML)
+              open={index === 0}
             >
-              <span className="text-base">{faq.question}</span>
-              <span className="ml-4 shrink-0 text-xl transition-transform duration-200">
-                {openIndex === index ? "−" : "+"}
-              </span>
-            </button>
-            {openIndex === index && <div className="px-5 pb-5 pt-0 text-sm text-muted-foreground">{faq.answer}</div>}
-          </Card>
-        ))}
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-lg font-semibold text-[#202332]">
+                {item.question}
+                {/* Ícone "+"/"–" que troca com o estado do details */}
+                <span className="ml-4 shrink-0 font-mono text-xl text-[#5F6FB0] transition-transform duration-200 group-open:rotate-0">
+                  <span className="block group-open:hidden">+</span>
+                  <span className="hidden group-open:block">–</span>
+                </span>
+              </summary>
+              <p className="mt-3 max-w-[64ch] text-[#202332]/80">{item.answer}</p>
+            </details>
+          ))}
+        </div>
       </div>
     </section>
   );
