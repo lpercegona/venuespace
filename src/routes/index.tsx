@@ -46,8 +46,6 @@ export const Route = createFileRoute("/")({
     qc.prefetchQuery(publicCategoriesQuery());
     const config = await qc.ensureQueryData(homeGroupingsQuery());
     const first = (config as { groupings: HomeGroupingDTO[] }).groupings?.[0];
-    // Não bloqueia o HTML: os blocos chegam via streaming enquanto o skeleton
-    // já reflete o layout configurado.
     if (first) qc.prefetchQuery(homeGroupingDataQuery(first.id));
   },
   errorComponent: ({ error }) => (
@@ -85,7 +83,6 @@ function Landing() {
 
   const dataQ = useQuery(homeGroupingDataQuery(activeGrouping?.id));
 
-  // Layouts configurados pelo super admin — usados para o skeleton refletir o card real.
   const categoryId = activeGrouping?.category_ids?.[0];
   const catsQ = usePublicCategories();
   const activeCategory = (catsQ.data ?? []).find((c) => c.id === categoryId);
@@ -115,7 +112,6 @@ function Landing() {
 
           <HomeSearchBar categoryId={categoryId} categorySlug={activeCategorySlug} />
 
-          {/* Pill toggle */}
           {groupings.length > 1 ? (
             <div className="mt-8 inline-flex rounded-full bg-primary-foreground/15 p-1 backdrop-blur-sm">
               {groupings.map((g) => {
@@ -168,6 +164,9 @@ function Landing() {
         </div>
       </main>
 
+      {/* NOVO BLOCO: Dúvidas Frequentes */}
+      <FaqSection />
+
       <PublicFooter />
     </div>
   );
@@ -188,14 +187,11 @@ function HomeBlockSection({
 }) {
   const columns = (block.columns ?? 3) as 3 | 4;
 
-  // "Ver todos" reaplica as regras "=" do bloco como filtros na listagem.
   const seeAllSearch: Record<string, string> = {};
   for (const rule of block.rules ?? []) {
     if (rule.operator === "=" && rule.field_key && rule.value) seeAllSearch[`f_${rule.field_key}`] = rule.value;
   }
-  // Sem categoria definida, o destino é /explore e a categoria vai na URL.
   const exploreSearch = catSlug ? { ...seeAllSearch, categoria: catSlug } : seeAllSearch;
-
 
   return (
     <section>
@@ -224,7 +220,6 @@ function HomeBlockSection({
           )
         ) : null}
       </div>
-
 
       {isLoading ? (
         block.block_type === "links" ? (
@@ -361,5 +356,62 @@ function RecordCard({ record }: { record: PublicRecordSummary }) {
         )}
       </Card>
     </Link>
+  );
+}
+
+/* ===================================================
+   NOVO COMPONENTE - DÚVIDAS FREQUENTES
+   =================================================== */
+function FaqSection() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      question: "O Venuespace cobra comissão?",
+      answer:
+        "Não. O fechamento e o pagamento ocorrem diretamente entre as partes, sem qualquer taxa de intermediação.",
+    },
+    {
+      question: "Posso anunciar meu espaço gratuitamente?",
+      answer:
+        "Sim, qualquer proprietário pode publicar seu espaço sem custo algum. A publicação é gratuita e você negocia diretamente com os clientes.",
+    },
+    {
+      question: "Como entro em contato com o proprietário?",
+      answer:
+        "Basta acessar o perfil do espaço e utilizar o chat da plataforma para enviar sua proposta diretamente ao administrador.",
+    },
+    {
+      question: "Preciso me cadastrar para buscar espaços?",
+      answer:
+        "Sim, é necessário criar uma conta para enviar mensagens e fechar negócios, garantindo mais segurança para ambas as partes.",
+    },
+  ];
+
+  return (
+    <section className="mx-auto w-full max-w-4xl px-4 py-16 sm:py-20">
+      <div className="text-center">
+        <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Dúvidas Frequentes</h2>
+        <p className="mt-2 text-muted-foreground">Tire suas principais dúvidas sobre a plataforma</p>
+      </div>
+
+      <div className="mt-10 space-y-3">
+        {faqs.map((faq, index) => (
+          <Card key={index} className="overflow-hidden">
+            <button
+              onClick={() => setOpenIndex(openIndex === index ? null : index)}
+              className="flex w-full items-center justify-between p-5 text-left font-medium"
+              aria-expanded={openIndex === index}
+            >
+              <span className="text-base">{faq.question}</span>
+              <span className="ml-4 shrink-0 text-xl transition-transform duration-200">
+                {openIndex === index ? "−" : "+"}
+              </span>
+            </button>
+            {openIndex === index && <div className="px-5 pb-5 pt-0 text-sm text-muted-foreground">{faq.answer}</div>}
+          </Card>
+        ))}
+      </div>
+    </section>
   );
 }
