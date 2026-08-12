@@ -447,10 +447,8 @@ function ComoFuncionaSection() {
       <div>
         <div className="mb-8 max-w-[56ch]">
           <p className="text-xs font-medium uppercase tracking-widest text-primary">Como funciona</p>
-          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-            Da busca ao acordo fechado, em três passos
-          </h2>
-          <p className="mt-1 text-[#202332]/75">Sem intermediário cobrando comissão sobre o valor combinado.</p>
+          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Da busca a reserva.</h2>
+          <p className="mt-1 text-[#202332]/75">Sem cobranças sobre o valor combinado.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
@@ -458,8 +456,7 @@ function ComoFuncionaSection() {
             <span className="font-display text-3xl font-semibold italic text-primary">01</span>
             <h3 className="mt-2 font-display text-xl font-bold">Buscar espaço para evento</h3>
             <p className="mt-1 text-[#202332]/80">
-              Filtre espaços para eventos por categoria e região — de salões de festa em Curitiba a sítios na região
-              metropolitana.
+              Filtre espaços para eventos por categoria, região, comodidades e capacidade para encontrar o espaço ideal.
             </p>
           </div>
           <div className="border-t border-[rgba(113,127,191,.28)] pt-6">
@@ -488,7 +485,7 @@ function ComoFuncionaSection() {
 function TituloDestaque() {
   return (
     <div className="py-8 text-center">
-      <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Espaços do jeito que você procura!</h2>
+      <h2 className="font-display text-6xl font-bold tracking-tight sm:text-4xl">Espaços do jeito que você busca!</h2>
     </div>
   );
 }
@@ -501,7 +498,7 @@ function FaqSection() {
     {
       question: "O que é um espaço para eventos?",
       answer:
-        "Um espaço para eventos é qualquer local — salão de festas, sítio, espaço gourmet, rooftop ou área corporativa — disponível para locação para sediar festas, casamentos, confraternizações e eventos corporativos.",
+        "Um espaço para eventos é qualquer local — salão de festas, hoteis, espaço gourmet, rooftop ou área corporativa — disponível para locação para sediar festas, casamentos, confraternizações e eventos corporativos.",
     },
     {
       question: "Como funciona a busca por espaços para eventos em Curitiba?",
@@ -516,7 +513,7 @@ function FaqSection() {
     {
       question: "Posso anunciar meu espaço para eventos gratuitamente?",
       answer:
-        "Sim. Qualquer proprietário pode publicar seu espaço para eventos — sítio, salão, espaço gourmet ou área corporativa — e receber solicitações diretamente de interessados.",
+        "Sim. Qualquer proprietário pode publicar seu espaço para eventos — hoteis, salão, espaço gourmet ou área corporativa — e receber solicitações diretamente de interessados.",
     },
   ];
 
