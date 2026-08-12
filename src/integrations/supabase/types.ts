@@ -632,6 +632,7 @@ export type Database = {
           order_by: string | null
           order_index: number
           rules: Json
+          show_see_all: boolean
           source: string
           title: string
           updated_at: string
@@ -648,6 +649,7 @@ export type Database = {
           order_by?: string | null
           order_index?: number
           rules?: Json
+          show_see_all?: boolean
           source: string
           title: string
           updated_at?: string
@@ -664,6 +666,7 @@ export type Database = {
           order_by?: string | null
           order_index?: number
           rules?: Json
+          show_see_all?: boolean
           source?: string
           title?: string
           updated_at?: string

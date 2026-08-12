@@ -1,0 +1,1 @@
+ALTER TABLE public.home_blocks ADD COLUMN IF NOT EXISTS show_see_all boolean NOT NULL DEFAULT true;
