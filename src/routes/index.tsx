@@ -23,48 +23,50 @@ import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/publi
 import type { HomeGroupingDTO, HomeBlockDTO } from "@/lib/home-config.functions";
 
 // ------------------------------------------------------------
-// Query para obter bairros e cidades (mock + integração futura)
+// Query para obter bairros e cidades a partir de /organizations
 // ------------------------------------------------------------
 async function fetchLocalidades() {
-  // 🔁 Substitua esta chamada pela sua API real:
-  // const response = await fetch('/api/localidades');
-  // const data = await response.json();
-  // return data;
+  try {
+    const response = await fetch("/api/public/organizations?limit=1000");
+    if (!response.ok) {
+      console.warn("⚠️ Erro ao buscar organizações, status:", response.status);
+      return { bairros: [], cidades: [] };
+    }
+    const data = await response.json();
 
-  // Dados mockados para exemplo (substitua pelos dados reais)
-  return {
-    bairros: [
-      "Água Verde",
-      "Batel",
-      "Bigorrilho",
-      "Cabral",
-      "Centro",
-      "Centro Cívico",
-      "Cristo Rei",
-      "Jardim Botânico",
-      "Mercês",
-      "Portão",
-      "Rebouças",
-      "Santa Felicidade",
-      "São Lourenço",
-      "Seminário",
-    ],
-    cidades: [
-      "Almirante Tamandaré",
-      "Araucária",
-      "Campo Largo",
-      "Campo Magro",
-      "Colombo",
-      "Curitiba",
-      "Fazenda Rio Grande",
-      "Pinhais",
-      "Piraquara",
-      "Quatro Barras",
-      "Rio Branco do Sul",
-      "São José dos Pinhais",
-      "Tijucas do Sul",
-    ],
-  };
+    // Detecta a estrutura da resposta
+    let orgs: any[] = [];
+    if (Array.isArray(data)) {
+      orgs = data;
+    } else if (data.data && Array.isArray(data.data)) {
+      orgs = data.data;
+    } else if (data.items && Array.isArray(data.items)) {
+      orgs = data.items;
+    } else if (data.organizations && Array.isArray(data.organizations)) {
+      orgs = data.organizations;
+    } else {
+      console.warn("⚠️ Estrutura de resposta desconhecida", data);
+      return { bairros: [], cidades: [] };
+    }
+
+    const bairrosSet = new Set<string>();
+    const cidadesSet = new Set<string>();
+
+    orgs.forEach((org: any) => {
+      const bairro = org.neighborhood || org.bairro;
+      const cidade = org.city || org.cidade;
+      if (bairro) bairrosSet.add(bairro);
+      if (cidade) cidadesSet.add(cidade);
+    });
+
+    return {
+      bairros: Array.from(bairrosSet).sort((a, b) => a.localeCompare(b)),
+      cidades: Array.from(cidadesSet).sort((a, b) => a.localeCompare(b)),
+    };
+  } catch (error) {
+    console.error("❌ Erro ao buscar localidades:", error);
+    return { bairros: [], cidades: [] };
+  }
 }
 
 export const localidadesQuery = () => ({
@@ -98,7 +100,6 @@ export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
     const qc = context.queryClient;
     qc.prefetchQuery(publicCategoriesQuery());
-    // Pré-carrega também as localidades (opcional)
     qc.prefetchQuery(localidadesQuery());
     const config = await qc.ensureQueryData(homeGroupingsQuery());
     const first = (config as { groupings: HomeGroupingDTO[] }).groupings?.[0];
@@ -155,7 +156,6 @@ function Landing() {
     return b.block_type === "links" ? d.links.length > 0 : d.items.length > 0;
   });
 
-  // Query para localidades (bairros e cidades)
   const localidadesQ = useQuery(localidadesQuery());
   const bairros = (localidadesQ.data?.bairros ?? []) as string[];
   const cidades = (localidadesQ.data?.cidades ?? []) as string[];
@@ -209,6 +209,7 @@ function Landing() {
               <p className="text-center text-sm text-muted-foreground">Nenhum bloco configurado para esta aba.</p>
             ) : (
               // Intercala os blocos dinâmicos com a seção "Como funciona" após o SEGUNDO bloco
+              // e em seguida o título de destaque
               visibleBlocks.flatMap((block, index) => {
                 const elements = [
                   <HomeBlockSection
@@ -222,6 +223,7 @@ function Landing() {
                 ];
                 if (index === 1) {
                   elements.push(<ComoFuncionaSection key="como-funciona" />);
+                  elements.push(<TituloDestaque key="titulo-destaque" />);
                 }
                 return elements;
               })
@@ -235,7 +237,7 @@ function Landing() {
       {/* Dúvidas Frequentes */}
       <FaqSection />
 
-      {/* NOVA SEÇÃO: Localidades (bairros e cidades) */}
+      {/* Localidades (bairros e cidades) */}
       <LocalidadesSection bairros={bairros} cidades={cidades} isLoading={localidadesQ.isLoading} />
 
       <PublicFooter />
@@ -244,7 +246,7 @@ function Landing() {
 }
 
 // ------------------------------------------------------------
-// Componente HomeBlockSection (não alterado)
+// Componente HomeBlockSection
 // ------------------------------------------------------------
 function HomeBlockSection({
   block,
@@ -334,7 +336,7 @@ function HomeBlockSection({
 }
 
 // ------------------------------------------------------------
-// Componentes auxiliares (ShortcutCard, OrganizationCard, RecordCard)
+// Componentes auxiliares
 // ------------------------------------------------------------
 function ShortcutCard({
   link,
@@ -445,10 +447,10 @@ function ComoFuncionaSection() {
       <div>
         <div className="mb-8 max-w-[56ch]">
           <p className="text-xs font-medium uppercase tracking-widest text-primary">Como funciona</p>
-          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Da busca ao acordo fechado</h2>
-          <p className="mt-1 text-[#202332]/75">
-            Conheça o espaço, negocie e agende sua reserva. tudo através da Venuespace .
-          </p>
+          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            Da busca ao acordo fechado, em três passos
+          </h2>
+          <p className="mt-1 text-[#202332]/75">Sem intermediário cobrando comissão sobre o valor combinado.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
@@ -456,7 +458,7 @@ function ComoFuncionaSection() {
             <span className="font-display text-3xl font-semibold italic text-primary">01</span>
             <h3 className="mt-2 font-display text-xl font-bold">Buscar espaço para evento</h3>
             <p className="mt-1 text-[#202332]/80">
-              Filtre espaços para eventos por categoria e região — de salões de festa em Curitiba a hotéis na região
+              Filtre espaços para eventos por categoria e região — de salões de festa em Curitiba a sítios na região
               metropolitana.
             </p>
           </div>
@@ -477,6 +479,17 @@ function ComoFuncionaSection() {
         </div>
       </div>
     </section>
+  );
+}
+
+// ------------------------------------------------------------
+// TÍTULO DE DESTAQUE
+// ------------------------------------------------------------
+function TituloDestaque() {
+  return (
+    <div className="py-8 text-center">
+      <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Espaços do jeito que você procura!</h2>
+    </div>
   );
 }
 
@@ -541,7 +554,7 @@ function FaqSection() {
 }
 
 // ------------------------------------------------------------
-// NOVA SEÇÃO: LOCALIDADES (bairros e cidades)
+// SEÇÃO: LOCALIDADES (bairros e cidades)
 // ------------------------------------------------------------
 function LocalidadesSection({
   bairros,
@@ -552,16 +565,22 @@ function LocalidadesSection({
   cidades: string[];
   isLoading: boolean;
 }) {
-  // Ordena alfabeticamente
   const bairrosSorted = [...bairros].sort((a, b) => a.localeCompare(b));
   const cidadesSorted = [...cidades].sort((a, b) => a.localeCompare(b));
 
-  // Renderiza um item de link
   const renderLink = (label: string, filterKey: string, filterValue: string) => (
     <Link
       key={`${filterKey}-${filterValue}`}
       to="/explore"
-      search={{ [`f_${filterKey}`]: filterValue } as any}
+      search={
+        {
+          tab: "orgs",
+          categoria: "",
+          q: "",
+          page: 1,
+          [filterKey]: filterValue,
+        } as any
+      }
       preload="intent"
       className="block text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline transition-colors"
     >
@@ -602,7 +621,9 @@ function LocalidadesSection({
             <div>
               <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Bairros</h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
-                {bairrosSorted.map((bairro) => renderLink(`Espaço de eventos no ${bairro}`, "bairro", bairro))}
+                {bairrosSorted.map((bairro) =>
+                  renderLink(`Espaço de eventos no ${bairro}`, "f_address.neighborhood", bairro),
+                )}
               </div>
             </div>
           )}
@@ -612,7 +633,7 @@ function LocalidadesSection({
             <div>
               <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Cidades</h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
-                {cidadesSorted.map((cidade) => renderLink(`Espaço de eventos em ${cidade}`, "cidade", cidade))}
+                {cidadesSorted.map((cidade) => renderLink(`Espaço de eventos em ${cidade}`, "f_address.city", cidade))}
               </div>
             </div>
           )}
