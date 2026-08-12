@@ -35,6 +35,7 @@ export type HomeBlockDTO = {
   block_type: "cards" | "links";
   columns: 3 | 4;
   items: HomeBlockLink[];
+  show_see_all: boolean;
 };
 
 export type HomeGroupingDTO = {
@@ -68,7 +69,7 @@ export const listHomeGroupingsPublic = createServerFn({ method: "GET" }).handler
     groupingIds.length
       ? sb
           .from("home_blocks")
-          .select("id, grouping_id, title, source, rules, order_by, limit_count, order_index, is_active, block_type, columns, items")
+          .select("id, grouping_id, title, source, rules, order_by, limit_count, order_index, is_active, block_type, columns, items, show_see_all")
           .in("grouping_id", groupingIds)
           .eq("is_active", true)
           .order("order_index", { ascending: true })
@@ -99,6 +100,7 @@ export const listHomeGroupingsPublic = createServerFn({ method: "GET" }).handler
       block_type: (b.block_type ?? "cards") as "cards" | "links",
       columns: (b.columns === 4 ? 4 : 3) as 3 | 4,
       items: (Array.isArray(b.items) ? b.items : []) as HomeBlockLink[],
+      show_see_all: b.show_see_all ?? true,
     });
     blocksByGrouping.set(b.grouping_id, arr);
   }
@@ -154,7 +156,7 @@ export const listHomeBlocksAdmin = createServerFn({ method: "GET" })
     await requireSuperAdmin(context);
     const { data: blocks, error } = await context.supabase
       .from("home_blocks")
-      .select("id, grouping_id, title, source, rules, order_by, limit_count, order_index, is_active, block_type, columns, items, created_at, updated_at, grouping:home_groupings(id, label, slug)")
+      .select("id, grouping_id, title, source, rules, order_by, limit_count, order_index, is_active, block_type, columns, items, show_see_all, created_at, updated_at, grouping:home_groupings(id, label, slug)")
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
     return { blocks: blocks ?? [] };
@@ -189,6 +191,7 @@ const homeBlockSchema = z.object({
       }),
     )
     .default([]),
+  show_see_all: z.boolean().default(true),
 });
 
 export const saveHomeBlock = createServerFn({ method: "POST" })
@@ -208,6 +211,7 @@ export const saveHomeBlock = createServerFn({ method: "POST" })
       block_type: data.block_type,
       columns: data.columns,
       items: data.items as any,
+      show_see_all: data.show_see_all,
     };
     if (data.id) {
       const { error } = await context.supabase.from("home_blocks").update(payload as any).eq("id", data.id);
