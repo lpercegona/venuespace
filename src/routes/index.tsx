@@ -485,7 +485,9 @@ function ComoFuncionaSection() {
 function TituloDestaque() {
   return (
     <div className="py-8 text-center">
-      <h2 className="font-display text-6xl font-bold tracking-tight sm:text-4xl">Espaços do jeito que você busca!</h2>
+      <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+        Espaços do jeito que você busca!
+      </h2>
     </div>
   );
 }
