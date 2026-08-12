@@ -8,6 +8,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { LazyImage } from "@/components/venue/lazy-image";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 type Props = {
   urls: string[];
@@ -24,6 +25,8 @@ type Props = {
   preloadCount?: number;
   /** Shows the "1/5" slide counter (default true). */
   showCounter?: boolean;
+  /** Abre a imagem em lightbox ao clicar (usado nas páginas de perfil). */
+  enableLightbox?: boolean;
 };
 
 const REVEAL_CLS =
@@ -49,9 +52,11 @@ export function GalleryCarousel({
   itemBasisClassName,
   preloadCount = 5,
   showCounter = true,
+  enableLightbox = false,
 }: Props) {
   const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(0);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => {
     if (!api) return;
@@ -69,12 +74,16 @@ export function GalleryCarousel({
   const fillCls = fillContainer ? "h-full w-full" : `${aspectClassName} w-full`;
   if (urls.length === 1) {
     return (
-      <LazyImage
-        src={urls[0]}
-        alt={alt}
-        containerClassName={`${fillCls} ${roundedClassName} ${className ?? ""}`.trim()}
-        className="h-full w-full object-cover object-center"
-      />
+      <>
+        <LazyImage
+          src={urls[0]}
+          alt={alt}
+          onClick={enableLightbox ? (e) => { stopNav(e); setLightbox(urls[0]!); } : undefined}
+          containerClassName={`${fillCls} ${roundedClassName} ${className ?? ""} ${enableLightbox ? "cursor-zoom-in" : ""}`.trim()}
+          className="h-full w-full object-cover object-center"
+        />
+        <ImageLightbox src={lightbox} alt={alt} onClose={() => setLightbox(null)} />
+      </>
     );
   }
 
@@ -100,9 +109,10 @@ export function GalleryCarousel({
                 <LazyImage
                   src={u}
                   alt={`${alt} ${i + 1}`}
+                  onClick={enableLightbox ? (e) => { stopNav(e); setLightbox(u); } : undefined}
                   loading={eager ? "eager" : "lazy"}
                   fetchPriority={i === nextIdx ? "high" : undefined}
-                  containerClassName={`${fillCls} ${roundedClassName}`.trim()}
+                  containerClassName={`${fillCls} ${roundedClassName} ${enableLightbox ? "cursor-zoom-in" : ""}`.trim()}
                   className="h-full w-full object-cover object-center"
                 />
               </CarouselItem>
@@ -127,6 +137,21 @@ export function GalleryCarousel({
           {index + 1}/{total}
         </div>
       ) : null}
+
+      <ImageLightbox src={lightbox} alt={alt} onClose={() => setLightbox(null)} />
     </div>
+  );
+}
+
+function ImageLightbox({ src, alt, onClose }: { src: string | null; alt: string; onClose: () => void }) {
+  return (
+    <Dialog open={!!src} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-5xl border-0 bg-transparent p-0 shadow-none">
+        <DialogTitle className="sr-only">{alt}</DialogTitle>
+        {src ? (
+          <img src={src} alt={alt} className="max-h-[85vh] w-full rounded-lg object-contain" />
+        ) : null}
+      </DialogContent>
+    </Dialog>
   );
 }

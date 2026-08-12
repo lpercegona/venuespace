@@ -193,21 +193,38 @@ function HomeBlockSection({
   for (const rule of block.rules ?? []) {
     if (rule.operator === "=" && rule.field_key && rule.value) seeAllSearch[`f_${rule.field_key}`] = rule.value;
   }
-  if (catSlug) seeAllSearch.categoria = catSlug;
+  // Sem categoria definida, o destino é /explore e a categoria vai na URL.
+  const exploreSearch = catSlug ? { ...seeAllSearch, categoria: catSlug } : seeAllSearch;
+
 
   return (
     <section>
       <div className="mb-5 flex items-end justify-between gap-4">
         <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">{block.title}</h2>
-        <Link
-          to="/explore"
-          search={seeAllSearch as any}
-          preload="intent"
-          className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          Ver todos
-        </Link>
+        {block.show_see_all !== false ? (
+          catSlug ? (
+            <Link
+              to="/categoria/$slug"
+              params={{ slug: catSlug }}
+              search={seeAllSearch as any}
+              preload="intent"
+              className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Ver todos
+            </Link>
+          ) : (
+            <Link
+              to="/explore"
+              search={exploreSearch as any}
+              preload="intent"
+              className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Ver todos
+            </Link>
+          )
+        ) : null}
       </div>
+
 
       {isLoading ? (
         block.block_type === "links" ? (

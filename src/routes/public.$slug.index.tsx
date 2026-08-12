@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
 import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
@@ -293,6 +294,7 @@ function PublicOrgPage() {
           tableName={org.name}
         />
       ) : null}
+      <PublicFooter />
     </div>
   );
 }

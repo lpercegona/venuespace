@@ -134,6 +134,7 @@ export function HomeBlocksSection() {
   const [blockType, setBlockType] = useState<"cards" | "links">("cards");
   const [columns, setColumns] = useState<3 | 4>(3);
   const [items, setItems] = useState<HomeBlockLink[]>([]);
+  const [showSeeAll, setShowSeeAll] = useState(true);
   const [saving, setSaving] = useState(false);
 
   function reset(dto?: HomeBlockDTO) {
@@ -149,6 +150,7 @@ export function HomeBlocksSection() {
     setBlockType(dto?.block_type ?? "cards");
     setColumns(dto?.columns ?? 3);
     setItems(dto?.items ?? []);
+    setShowSeeAll(dto?.show_see_all ?? true);
   }
 
   function openNew() {
@@ -179,6 +181,7 @@ export function HomeBlocksSection() {
           block_type: blockType,
           columns,
           items: blockType === "links" ? items.filter((i) => i.title.trim() !== "") : [],
+          show_see_all: showSeeAll,
         },
       });
       toast.success(editing ? "Bloco atualizado" : "Bloco criado");
@@ -304,9 +307,15 @@ export function HomeBlocksSection() {
                   <Input id="b-order" type="number" value={orderIndex} onChange={(e) => setOrderIndex(Number(e.target.value))} />
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Switch id="b-active" checked={isActive} onCheckedChange={setIsActive} />
-                <Label htmlFor="b-active">Ativo</Label>
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Switch id="b-active" checked={isActive} onCheckedChange={setIsActive} />
+                  <Label htmlFor="b-active">Ativo</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch id="b-see-all" checked={showSeeAll} onCheckedChange={setShowSeeAll} />
+                  <Label htmlFor="b-see-all">Exibir "Ver todos"</Label>
+                </div>
               </div>
 
               {blockType === "cards" ? (

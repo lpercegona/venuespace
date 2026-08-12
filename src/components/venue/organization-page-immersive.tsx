@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/venue/empty-state";
 import { RichTextView } from "@/components/venue/rich-text-view";
 import { InterestForm } from "@/components/venue/interest-form";
 import { PublicHeader } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
 import { getPublicCardTitle, OptionIconList, PublicCardBody } from "@/components/venue/public-card-renderer";
 
 type PublicRendererField = { key: string; label: string; type: string; config?: Record<string, any> };
@@ -159,6 +160,7 @@ export function OrganizationPageImmersive({
             fillContainer
             roundedClassName=""
             preloadCount={5}
+            enableLightbox
             itemBasisClassName="basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 2xl:basis-1/5"
           />
         ) : (
@@ -255,6 +257,18 @@ export function OrganizationPageImmersive({
             para reivindicar a propriedade e assumir o perfil.
           </p>
 
+          <p className="text-[10px] leading-snug text-muted-foreground">
+            Fotos indexadas de sites de espaços ou de buscadores na internet. Para reivindicar autoria ou solicitar
+            remoção,{" "}
+            <a
+              href={`mailto:contato@venuespace.com.br?subject=${encodeURIComponent(`Autoria de fotos — ${org.name}`)}`}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              clique aqui
+            </a>
+            .
+          </p>
+
 
 
           {/* Mobile: bloco de contato logo abaixo de Site/Telefone */}
@@ -322,20 +336,11 @@ export function OrganizationPageImmersive({
         {/* Coluna direita: card de interesse sobreposto à faixa hero (desktop) */}
         <aside className="hidden pt-8 lg:col-span-2 lg:-mt-24 lg:block lg:pt-0">
           <ContactCard org={org} slug={slug} contact={{ email, whatsapp, phone, websiteHref }} />
-          <p className="mt-3 text-[10px] leading-snug text-muted-foreground">
-            Fotos indexadas de sites de espaços ou de buscadores na internet. Para reivindicar autoria ou solicitar
-            remoção,{" "}
-            <a
-              href={`mailto:contato@venuespace.com.br?subject=${encodeURIComponent(`Autoria de fotos — ${org.name}`)}`}
-              className="underline underline-offset-2 hover:text-foreground"
-            >
-              clique aqui
-            </a>
-            .
-          </p>
         </aside>
 
       </main>
+
+      <PublicFooter />
     </div>
   );
 }
