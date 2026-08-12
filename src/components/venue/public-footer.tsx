@@ -4,6 +4,7 @@ const links = [
   { to: "/termos-e-condicoes", label: "Termos e condições" },
   { to: "/politica-de-privacidade", label: "Política de Privacidade" },
   { to: "/contestacao-de-espacos", label: "Contestações de espaços" },
+  { to: "/tools", label: "Ferramentas" },
   { to: "/blog", label: "Blog" },
 ];
 
