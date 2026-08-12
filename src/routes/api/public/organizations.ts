@@ -1,60 +1,644 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PublicHeader } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
+import { PublicCardBody } from "@/components/venue/public-card-renderer";
+import { OrgLogo } from "@/components/venue/org-logo";
+import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
+import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
+import { HomeSearchBar } from "@/components/venue/home-search-bar";
 
-function parseFilters(sp: URLSearchParams): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [k, v] of sp.entries()) {
-    if (k.startsWith("f_") && v) out[k.slice(2)] = v;
-  }
-  return out;
-}
+import {
+  categoryLayoutQuery,
+  homeGroupingDataQuery,
+  homeGroupingsQuery,
+  publicCategoriesQuery,
+} from "@/lib/public-queries";
+import type { LayoutItem } from "@/components/venue/public-card-renderer";
 
-const ALLOWED_OPERATORS = new Set(["=", "!=", ">", ">=", "<", "<=", "contains", "filled"]);
+import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
+import type { HomeGroupingDTO, HomeBlockDTO } from "@/lib/home-config.functions";
 
-function parseRules(sp: URLSearchParams): Array<{ field_key: string; operator: string; value?: string }> {
-  const raw = sp.get("rules");
-  if (!raw) return [];
+// ------------------------------------------------------------
+// Query para obter bairros e cidades a partir de /organizations
+// ------------------------------------------------------------
+async function fetchLocalidades() {
   try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter((r) => r && typeof r.field_key === "string" && ALLOWED_OPERATORS.has(r.operator))
-      .map((r) => ({ field_key: r.field_key, operator: r.operator, value: typeof r.value === "string" ? r.value : undefined }));
-  } catch {
-    return [];
+    const response = await fetch("/api/public/organizations?limit=1000");
+    if (!response.ok) {
+      console.warn("⚠️ Erro ao buscar organizações, status:", response.status);
+      return { bairros: [], cidades: [] };
+    }
+    const data = await response.json();
+
+    // Detecta a estrutura da resposta
+    let orgs: any[] = [];
+    if (Array.isArray(data)) {
+      orgs = data;
+    } else if (data.data && Array.isArray(data.data)) {
+      orgs = data.data;
+    } else if (data.items && Array.isArray(data.items)) {
+      orgs = data.items;
+    } else if (data.organizations && Array.isArray(data.organizations)) {
+      orgs = data.organizations;
+    } else {
+      console.warn("⚠️ Estrutura de resposta desconhecida", data);
+      return { bairros: [], cidades: [] };
+    }
+
+    const bairrosSet = new Set<string>();
+    const cidadesSet = new Set<string>();
+
+    orgs.forEach((org: any) => {
+      const bairro = org.neighborhood || org.bairro;
+      const cidade = org.city || org.cidade;
+      if (bairro) bairrosSet.add(bairro);
+      if (cidade) cidadesSet.add(cidade);
+    });
+
+    return {
+      bairros: Array.from(bairrosSet).sort((a, b) => a.localeCompare(b)),
+      cidades: Array.from(cidadesSet).sort((a, b) => a.localeCompare(b)),
+    };
+  } catch (error) {
+    console.error("❌ Erro ao buscar localidades:", error);
+    return { bairros: [], cidades: [] };
   }
 }
 
-export const Route = createFileRoute("/api/public/organizations")({
-  server: {
-    handlers: {
-      GET: async ({ request }) => {
-        const url = new URL(request.url);
-        const limit = Math.min(Number(url.searchParams.get("limit") ?? "12"), 50);
-        const offset = Number(url.searchParams.get("offset") ?? "0");
-        const q = url.searchParams.get("q") ?? undefined;
-        const category_id = url.searchParams.get("category") ?? undefined;
-        const filters = parseFilters(url.searchParams);
-        const rules = parseRules(url.searchParams);
-        const { listPublicOrganizations } = await import("@/lib/public.server");
-        try {
-          const payload = await listPublicOrganizations({
-            rules: rules as any,
-            limit: Number.isFinite(limit) ? limit : 12,
-            offset: Number.isFinite(offset) ? offset : 0,
-            q,
-            category_id,
-            filters,
-          });
-          return new Response(JSON.stringify(payload), {
-            headers: {
-              "content-type": "application/json",
-              "cache-control": "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
-            },
-          });
-        } catch (e) {
-          return Response.json({ error: (e as Error).message }, { status: 500 });
-        }
-      },
-    },
-  },
+export const localidadesQuery = () => ({
+  queryKey: ["localidades"],
+  queryFn: fetchLocalidades,
+  staleTime: 1000 * 60 * 15, // 15 minutos
 });
+
+// ------------------------------------------------------------
+// Rota principal
+// ------------------------------------------------------------
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Venuespace — espaços para eventos" },
+      {
+        name: "description",
+        content:
+          "Encontre e publique espaços e fornecedores de eventos. Perfis, fotos, propostas e negociação em um só lugar.",
+      },
+      { property: "og:title", content: "Venuespace — espaços para eventos" },
+      {
+        property: "og:description",
+        content:
+          "Encontre e publique espaços e fornecedores de eventos. Perfis, fotos, propostas e negociação em um só lugar.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  loader: async ({ context }) => {
+    const qc = context.queryClient;
+    qc.prefetchQuery(publicCategoriesQuery());
+    qc.prefetchQuery(localidadesQuery());
+    const config = await qc.ensureQueryData(homeGroupingsQuery());
+    const first = (config as { groupings: HomeGroupingDTO[] }).groupings?.[0];
+    if (first) qc.prefetchQuery(homeGroupingDataQuery(first.id));
+  },
+  errorComponent: ({ error }) => (
+    <div className="p-8 text-center text-sm text-muted-foreground" role="alert">
+      {(error as Error).message}
+    </div>
+  ),
+  component: Landing,
+});
+
+type GroupingData = {
+  blocks: Array<{
+    id: string;
+    items: (PublicOrganizationSummary | PublicRecordSummary)[];
+    links: Array<{
+      title: string;
+      image_url?: string | null;
+      field_key?: string | null;
+      value?: string | null;
+      category_id?: string | null;
+      category_slug?: string | null;
+    }>;
+  }>;
+};
+
+function gridClass(columns: 3 | 4) {
+  return columns === 4 ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-4" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
+}
+
+function Landing() {
+  const groupingsQ = useQuery(homeGroupingsQuery());
+  const groupings = (groupingsQ.data?.groupings ?? []) as HomeGroupingDTO[];
+  const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const activeGrouping = groupings.find((g) => g.slug === (activeSlug ?? groupings[0]?.slug)) ?? groupings[0];
+
+  const dataQ = useQuery(homeGroupingDataQuery(activeGrouping?.id));
+
+  const categoryId = activeGrouping?.category_ids?.[0];
+  const catsQ = usePublicCategories();
+  const activeCategory = (catsQ.data ?? []).find((c) => c.id === categoryId);
+  const activeCategorySlug = activeCategory ? categorySlug(activeCategory) : undefined;
+  const orgLayoutQ = useQuery(categoryLayoutQuery(categoryId, "organization_card"));
+  const recLayoutQ = useQuery(categoryLayoutQuery(categoryId, "record_card"));
+
+  const data = dataQ.data as GroupingData | undefined;
+  const byBlock = new Map((data?.blocks ?? []).map((b) => [b.id, b]));
+  const visibleBlocks = (activeGrouping?.blocks ?? []).filter((b) => {
+    if (dataQ.isLoading) return true;
+    const d = byBlock.get(b.id);
+    if (!d) return false;
+    return b.block_type === "links" ? d.links.length > 0 : d.items.length > 0;
+  });
+
+  const localidadesQ = useQuery(localidadesQuery());
+  const bairros = (localidadesQ.data?.bairros ?? []) as string[];
+  const cidades = (localidadesQ.data?.cidades ?? []) as string[];
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <PublicHeader />
+
+      {/* Hero */}
+      <section className="relative -mt-[57px] bg-primary pb-24 pt-[85px] text-primary-foreground sm:pb-32 sm:pt-24">
+        <div className="mx-auto w-full max-w-6xl px-4 text-center sm:px-6">
+          <h1 className="mx-auto max-w-3xl font-display text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
+            Encontre espaços e fornecedores de eventos
+          </h1>
+
+          <HomeSearchBar categoryId={categoryId} categorySlug={activeCategorySlug} />
+
+          {groupings.length > 1 ? (
+            <div className="mt-8 inline-flex rounded-full bg-primary-foreground/15 p-1 backdrop-blur-sm">
+              {groupings.map((g) => {
+                const active = activeGrouping?.slug === g.slug;
+                return (
+                  <button
+                    key={g.slug}
+                    onClick={() => setActiveSlug(g.slug)}
+                    className={`rounded-full px-5 py-2 text-sm font-medium transition-colors sm:px-7 sm:text-base ${
+                      active
+                        ? "bg-primary-foreground text-primary"
+                        : "text-primary-foreground hover:bg-primary-foreground/10"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {/* Content panel */}
+      <main className="relative -mt-16 flex-1 rounded-t-3xl bg-background px-4 pb-16 pt-8 sm:-mt-20 sm:rounded-t-[2rem] sm:px-6 sm:pt-12">
+        <div className="mx-auto w-full max-w-6xl space-y-14">
+          {groupingsQ.isLoading ? (
+            <div className="space-y-6">
+              <Skeleton className="h-8 w-48" />
+              <PublicCardSkeletonGrid count={3} withLogo />
+            </div>
+          ) : activeGrouping ? (
+            visibleBlocks.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground">Nenhum bloco configurado para esta aba.</p>
+            ) : (
+              // Intercala os blocos dinâmicos com a seção "Como funciona" após o SEGUNDO bloco
+              // e em seguida o título de destaque
+              visibleBlocks.flatMap((block, index) => {
+                const elements = [
+                  <HomeBlockSection
+                    key={block.id}
+                    block={block}
+                    data={byBlock.get(block.id)}
+                    isLoading={dataQ.isLoading}
+                    layout={block.source === "records" ? recLayoutQ.data : orgLayoutQ.data}
+                    categorySlug={activeCategorySlug}
+                  />,
+                ];
+                if (index === 1) {
+                  elements.push(<ComoFuncionaSection key="como-funciona" />);
+                  elements.push(<TituloDestaque key="titulo-destaque" />);
+                }
+                return elements;
+              })
+            )
+          ) : (
+            <p className="text-center text-sm text-muted-foreground">Nenhuma categoria configurada.</p>
+          )}
+        </div>
+      </main>
+
+      {/* Dúvidas Frequentes */}
+      <FaqSection />
+
+      {/* Localidades (bairros e cidades) */}
+      <LocalidadesSection bairros={bairros} cidades={cidades} isLoading={localidadesQ.isLoading} />
+
+      <PublicFooter />
+    </div>
+  );
+}
+
+// ------------------------------------------------------------
+// Componente HomeBlockSection
+// ------------------------------------------------------------
+function HomeBlockSection({
+  block,
+  data,
+  isLoading,
+  layout,
+  categorySlug: catSlug,
+}: {
+  block: HomeBlockDTO;
+  data: GroupingData["blocks"][number] | undefined;
+  isLoading: boolean;
+  layout?: LayoutItem[] | null;
+  categorySlug?: string;
+}) {
+  const columns = (block.columns ?? 3) as 3 | 4;
+
+  const seeAllSearch: Record<string, string> = {};
+  for (const rule of block.rules ?? []) {
+    if (rule.operator === "=" && rule.field_key && rule.value) seeAllSearch[`f_${rule.field_key}`] = rule.value;
+  }
+  const exploreSearch = catSlug ? { ...seeAllSearch, categoria: catSlug } : seeAllSearch;
+
+  return (
+    <section>
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <h2 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">{block.title}</h2>
+        {block.show_see_all !== false ? (
+          catSlug ? (
+            <Link
+              to="/categoria/$slug"
+              params={{ slug: catSlug }}
+              search={seeAllSearch as any}
+              preload="intent"
+              className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Ver todos
+            </Link>
+          ) : (
+            <Link
+              to="/explore"
+              search={exploreSearch as any}
+              preload="intent"
+              className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Ver todos
+            </Link>
+          )
+        ) : null}
+      </div>
+
+      {isLoading ? (
+        block.block_type === "links" ? (
+          <div className={gridClass(columns)}>
+            {Array.from({ length: block.limit_count }).map((_, i) => (
+              <Skeleton key={i} className="h-40 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : (
+          <PublicCardSkeletonGrid
+            count={block.limit_count}
+            withLogo={block.source !== "records"}
+            layout={layout}
+            className={gridClass(columns)}
+          />
+        )
+      ) : block.block_type === "links" ? (
+        <div className={gridClass(columns)}>
+          {(data?.links ?? []).map((link, i) => (
+            <ShortcutCard key={`${link.title}-${i}`} link={link} />
+          ))}
+        </div>
+      ) : (data?.items ?? []).length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum resultado nesta seção.</p>
+      ) : (
+        <div className={gridClass(columns)}>
+          {(data?.items ?? []).map((item) =>
+            "slug" in item ? (
+              <OrganizationCard key={item.id} org={item as PublicOrganizationSummary} />
+            ) : (
+              <RecordCard key={(item as PublicRecordSummary).record_id} record={item as PublicRecordSummary} />
+            ),
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ------------------------------------------------------------
+// Componentes auxiliares
+// ------------------------------------------------------------
+function ShortcutCard({
+  link,
+}: {
+  link: {
+    title: string;
+    image_url?: string | null;
+    field_key?: string | null;
+    value?: string | null;
+    category_slug?: string | null;
+  };
+}) {
+  const search: Record<string, string> = {};
+  if (link.field_key && link.value) search[`f_${link.field_key}`] = link.value;
+
+  const catsQ = usePublicCategories();
+  const fallbackSlug = (catsQ.data ?? [])[0] ? categorySlug((catsQ.data ?? [])[0]!) : "";
+  const slug = link.category_slug || fallbackSlug;
+
+  if (!slug) return null;
+
+  return (
+    <Link
+      to="/categoria/$slug"
+      params={{ slug }}
+      search={search as any}
+      preload="intent"
+      className="group block overflow-hidden rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <div className="relative h-40 w-full overflow-hidden rounded-xl bg-muted">
+        {link.image_url ? (
+          <img
+            src={link.image_url}
+            alt={link.title}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-foreground/40" />
+        <span className="absolute inset-x-0 bottom-0 p-4 font-display text-lg font-semibold text-background">
+          {link.title}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function OrganizationCard({ org }: { org: PublicOrganizationSummary }) {
+  return (
+    <Link
+      to="/public/$slug"
+      params={{ slug: org.slug }}
+      preload="intent"
+      className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
+        {org.layout && org.layout.length > 0 ? (
+          <div className="p-4">
+            <PublicCardBody layout={org.layout as any} fields={org.fields as any} data={org.data} orgName={org.name} />
+          </div>
+        ) : (
+          <div className="flex h-full flex-col p-4">
+            <div className="flex items-center gap-3">
+              <OrgLogo src={org.logo_url} alt={`Logo ${org.name}`} className="h-10 w-10" />
+              <h3 className="font-display text-base font-semibold line-clamp-2">{org.name}</h3>
+            </div>
+            {org.description ? (
+              <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{org.description}</p>
+            ) : null}
+          </div>
+        )}
+      </Card>
+    </Link>
+  );
+}
+
+function RecordCard({ record }: { record: PublicRecordSummary }) {
+  return (
+    <Link
+      to="/public/$slug/$tableId"
+      params={{ slug: record.org_slug, tableId: record.table_id }}
+      preload="intent"
+      className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
+        {record.layout && record.layout.length > 0 ? (
+          <div className="p-4">
+            <PublicCardBody layout={record.layout as any} fields={record.fields as any} data={record.data} />
+          </div>
+        ) : (
+          <div className="p-4">
+            <h3 className="font-display text-base font-semibold">{record.table_name}</h3>
+            <p className="text-sm text-muted-foreground">{record.org_name}</p>
+          </div>
+        )}
+      </Card>
+    </Link>
+  );
+}
+
+// ------------------------------------------------------------
+// SEÇÃO "COMO FUNCIONA"
+// ------------------------------------------------------------
+function ComoFuncionaSection() {
+  return (
+    <section id="como-funciona" className="py-8">
+      <div>
+        <div className="mb-8 max-w-[56ch]">
+          <p className="text-xs font-medium uppercase tracking-widest text-primary">Como funciona</p>
+          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            Da busca ao acordo fechado, em três passos
+          </h2>
+          <p className="mt-1 text-[#202332]/75">Sem intermediário cobrando comissão sobre o valor combinado.</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+          <div className="border-t border-[rgba(113,127,191,.28)] pt-6">
+            <span className="font-display text-3xl font-semibold italic text-primary">01</span>
+            <h3 className="mt-2 font-display text-xl font-bold">Buscar espaço para evento</h3>
+            <p className="mt-1 text-[#202332]/80">
+              Filtre espaços para eventos por categoria e região — de salões de festa em Curitiba a sítios na região
+              metropolitana.
+            </p>
+          </div>
+          <div className="border-t border-[rgba(113,127,191,.28)] pt-6">
+            <span className="font-display text-3xl font-semibold italic text-primary">02</span>
+            <h3 className="mt-2 font-display text-xl font-bold">Conversar direto</h3>
+            <p className="mt-1 text-[#202332]/80">
+              Envie sua data e proposta pelo chat da plataforma, direto com quem administra o espaço.
+            </p>
+          </div>
+          <div className="border-t border-[rgba(113,127,191,.28)] pt-6">
+            <span className="font-display text-3xl font-semibold italic text-primary">03</span>
+            <h3 className="mt-2 font-display text-xl font-bold">Fechar o acordo</h3>
+            <p className="mt-1 text-[#202332]/80">
+              Combine valor e condições diretamente com a outra parte, sem taxa de intermediação sobre o negócio.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------
+// TÍTULO DE DESTAQUE
+// ------------------------------------------------------------
+function TituloDestaque() {
+  return (
+    <div className="py-8 text-center">
+      <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Espaços do jeito que você procura!</h2>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------
+// SEÇÃO "DÚVIDAS FREQUENTES"
+// ------------------------------------------------------------
+function FaqSection() {
+  const faqItems = [
+    {
+      question: "O que é um espaço para eventos?",
+      answer:
+        "Um espaço para eventos é qualquer local — salão de festas, sítio, espaço gourmet, rooftop ou área corporativa — disponível para locação para sediar festas, casamentos, confraternizações e eventos corporativos.",
+    },
+    {
+      question: "Como funciona a busca por espaços para eventos em Curitiba?",
+      answer:
+        "Você explora espaços publicados por proprietários em Curitiba e em outras cidades, filtra por categoria e região, e entra em contato diretamente pelo chat da plataforma para negociar data, valor e detalhes.",
+    },
+    {
+      question: "O Venuespace cobra comissão sobre o valor negociado?",
+      answer:
+        "Não. O Venuespace é um venue space brasileiro que conecta as partes e organiza a negociação — o fechamento e o pagamento acontecem diretamente entre quem procura e quem oferece o espaço, sem intermediação financeira.",
+    },
+    {
+      question: "Posso anunciar meu espaço para eventos gratuitamente?",
+      answer:
+        "Sim. Qualquer proprietário pode publicar seu espaço para eventos — sítio, salão, espaço gourmet ou área corporativa — e receber solicitações diretamente de interessados.",
+    },
+  ];
+
+  return (
+    <section id="faq" className="py-16 sm:py-20">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <div className="mb-10 max-w-[56ch]">
+          <p className="text-xs font-medium uppercase tracking-widest text-primary">Dúvidas frequentes</p>
+          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            Sobre espaços para eventos no Venuespace
+          </h2>
+        </div>
+
+        <div className="max-w-[760px] space-y-0 divide-y divide-[rgba(113,127,191,.28)]">
+          {faqItems.map((item, index) => (
+            <details
+              key={index}
+              className="faq-item group py-5 [&_summary::-webkit-details-marker]:hidden"
+              open={index === 0}
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-lg font-semibold text-[#202332]">
+                {item.question}
+                <span className="ml-4 shrink-0 font-mono text-xl text-[#5F6FB0] transition-transform duration-200 group-open:rotate-0">
+                  <span className="block group-open:hidden">+</span>
+                  <span className="hidden group-open:block">–</span>
+                </span>
+              </summary>
+              <p className="mt-3 max-w-[64ch] text-[#202332]/80">{item.answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------
+// SEÇÃO: LOCALIDADES (bairros e cidades)
+// ------------------------------------------------------------
+function LocalidadesSection({
+  bairros,
+  cidades,
+  isLoading,
+}: {
+  bairros: string[];
+  cidades: string[];
+  isLoading: boolean;
+}) {
+  const bairrosSorted = [...bairros].sort((a, b) => a.localeCompare(b));
+  const cidadesSorted = [...cidades].sort((a, b) => a.localeCompare(b));
+
+  const renderLink = (label: string, filterKey: string, filterValue: string) => (
+    <Link
+      key={`${filterKey}-${filterValue}`}
+      to="/explore"
+      search={
+        {
+          tab: "orgs",
+          categoria: "",
+          q: "",
+          page: 1,
+          [filterKey]: filterValue,
+        } as any
+      }
+      preload="intent"
+      className="block text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline transition-colors"
+    >
+      {label}
+    </Link>
+  );
+
+  if (isLoading) {
+    return (
+      <section className="py-12">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <div className="mb-6">
+            <Skeleton className="h-8 w-56" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-5 w-full" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const hasContent = bairrosSorted.length > 0 || cidadesSorted.length > 0;
+  if (!hasContent) return null;
+
+  return (
+    <section className="py-12">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <h2 className="mb-6 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          Encontre espaços para eventos por localidade
+        </h2>
+
+        <div className="space-y-6">
+          {/* Bairros */}
+          {bairrosSorted.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Bairros</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+                {bairrosSorted.map((bairro) =>
+                  renderLink(`Espaço de eventos no ${bairro}`, "f_address.neighborhood", bairro),
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Cidades */}
+          {cidadesSorted.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Cidades</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+                {cidadesSorted.map((cidade) => renderLink(`Espaço de eventos em ${cidade}`, "f_address.city", cidade))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
