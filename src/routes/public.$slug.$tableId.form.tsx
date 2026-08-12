@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
 const searchSchema = z.object({
@@ -44,6 +45,7 @@ function PublicFormPage() {
         viewId={viewId}
         recordId={recordId}
       />
+      <PublicFooter />
     </div>
   );
 }

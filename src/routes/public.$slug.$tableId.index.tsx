@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
 import { PublicCardBody } from "@/components/venue/public-card-renderer";
 
@@ -170,6 +171,7 @@ function PublicListPage() {
           tableName={table.name}
         />
       ) : null}
+      <PublicFooter />
     </div>
   );
 }

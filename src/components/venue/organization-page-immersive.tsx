@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/venue/empty-state";
 import { RichTextView } from "@/components/venue/rich-text-view";
 import { InterestForm } from "@/components/venue/interest-form";
 import { PublicHeader } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
 import { getPublicCardTitle, OptionIconList, PublicCardBody } from "@/components/venue/public-card-renderer";
 
 type PublicRendererField = { key: string; label: string; type: string; config?: Record<string, any> };
@@ -338,6 +339,8 @@ export function OrganizationPageImmersive({
         </aside>
 
       </main>
+
+      <PublicFooter />
     </div>
   );
 }

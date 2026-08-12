@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
 import { useFormatContext } from "@/hooks/use-instance-context";
 import { formatCurrency } from "@/lib/formatting";
 
@@ -155,6 +156,7 @@ function CampaignPage() {
           </CardContent>
         </Card>
       </main>
+      <PublicFooter />
     </div>
   );
 }

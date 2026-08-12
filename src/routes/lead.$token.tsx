@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ConversationThread, type ThreadMessage } from "@/components/venue/conversation-thread";
 import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
 import { useFormatContext } from "@/hooks/use-instance-context";
 import { formatCurrency } from "@/lib/formatting";
 
@@ -134,6 +135,7 @@ function LeadPage() {
           </CardContent>
         </Card>
       </main>
+      <PublicFooter />
     </div>
   );
 }

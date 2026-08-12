@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
+import { PublicFooter } from "@/components/venue/public-footer";
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
 type Payload = {
@@ -178,6 +179,7 @@ function PublicRecordDetail() {
           tableName={table.name}
         />
       ) : null}
+      <PublicFooter />
     </div>
   );
 }
