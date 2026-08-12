@@ -91,8 +91,8 @@ export function PublicListing({
             <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
           ) : (
             <div className={GRID_CLS}>
-              {items.map((o, i) => (
-                <PublicOrgCard key={o.id} org={o} priority={i < 3} />
+              {items.map((o) => (
+                <PublicOrgCard key={o.id} org={o} />
               ))}
             </div>
           )}
@@ -131,7 +131,7 @@ export function PublicListing({
   );
 }
 
-export function PublicOrgCard({ org, priority }: { org: OrgItem; priority?: boolean }) {
+export function PublicOrgCard({ org }: { org: OrgItem }) {
   return (
     <Link
       to="/public/$slug"
@@ -147,7 +147,6 @@ export function PublicOrgCard({ org, priority }: { org: OrgItem; priority?: bool
               fields={org.fields as any}
               data={org.data}
               orgName={org.name}
-              priority={priority}
             />
           </div>
         ) : (
