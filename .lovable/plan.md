@@ -12,6 +12,7 @@ Hoje as duas páginas repetem o mesmo código (grid, cards, paginação, filtros
 - O link passa a apontar para `/categoria/$slug` (slug da categoria do bloco), levando as regras "=" do bloco como pré-filtros na URL (`f_<campo>=<valor>`) e o termo, quando houver.
 - Blocos sem categoria definida continuam indo para `/explore` com os mesmos pré-filtros.
 - Blocos de atalho (links) continuam com o comportamento atual de cada card.
+- Na edição de blocos do super admin, uma caixa de seleção "Exibir 'Ver todos'" liga ou desliga o link por bloco (ativada por padrão); requer um novo campo na tabela de blocos da home.
 
 ## 3. Busca e filtros flutuantes no mobile
 - Nas páginas de listagem (explorar e categorias), no mobile a barra de busca/filtros sai do topo e vira um botão flutuante fixo no rodapé da tela ("Buscar e filtrar", com contador de filtros ativos).
