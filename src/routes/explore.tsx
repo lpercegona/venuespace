@@ -1,36 +1,25 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { FileText } from "lucide-react";
-import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
+import type { PublicOrganizationSummary } from "@/lib/public.server";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
-import { PublicFilterBar } from "@/components/venue/public-filter-bar";
-import { PublicFilterSidebar } from "@/components/venue/public-filter-sidebar";
+import { PublicListing, PUBLIC_LISTING_PAGE_SIZE } from "@/components/venue/public-listing";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-
-import { getPublicCardTitle, PublicCardBody } from "@/components/venue/public-card-renderer";
-import { OrgLogo } from "@/components/venue/org-logo";
-import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
 import { useCategoryLayout } from "@/hooks/use-public-catalog";
 
-
-
-
 // Filter values are encoded in the URL as f_<key>=value.
-const searchSchema = z.object({
-  tab: fallback(z.string(), "orgs").default("orgs"),
-  categoria: fallback(z.string(), "").default(""),
-  q: fallback(z.string(), "").default(""),
-  page: fallback(z.number().int(), 1).default(1),
-}).catchall(fallback(z.string(), "").default(""));
+const searchSchema = z
+  .object({
+    tab: fallback(z.string(), "orgs").default("orgs"),
+    categoria: fallback(z.string(), "").default(""),
+    q: fallback(z.string(), "").default(""),
+    page: fallback(z.number().int(), 1).default(1),
+  })
+  .catchall(fallback(z.string(), "").default(""));
 
 export const Route = createFileRoute("/explore")({
   validateSearch: zodValidator(searchSchema as any),
@@ -47,7 +36,7 @@ export const Route = createFileRoute("/explore")({
   component: ExplorePage,
 });
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = PUBLIC_LISTING_PAGE_SIZE;
 
 type FilterDef = {
   key: string;
@@ -58,12 +47,7 @@ type FilterDef = {
   max_options?: number[];
 };
 
-function buildQuery(opts: {
-  q: string;
-  offset: number;
-  filters: Record<string, string>;
-  extra?: Record<string, string>;
-}): string {
+function buildQuery(opts: { q: string; offset: number; filters: Record<string, string>; extra?: Record<string, string> }): string {
   const p = new URLSearchParams();
   p.set("limit", String(PAGE_SIZE));
   p.set("offset", String(opts.offset));
@@ -73,16 +57,17 @@ function buildQuery(opts: {
   return p.toString();
 }
 
-async function fetchOrgs(q: string, offset: number, filters: Record<string, string>, categoryId?: string): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
+async function fetchOrgs(
+  q: string,
+  offset: number,
+  filters: Record<string, string>,
+  categoryId?: string,
+): Promise<{ items: PublicOrganizationSummary[]; total: number }> {
   const res = await fetch(`/api/public/organizations?${buildQuery({ q, offset, filters, extra: { category: categoryId ?? "" } })}`);
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
-async function fetchRecords(q: string, offset: number, filters: Record<string, string>, categoryId?: string): Promise<{ items: PublicRecordSummary[]; total: number }> {
-  const res = await fetch(`/api/public/records?${buildQuery({ q, offset, filters, extra: { category: categoryId ?? "" } })}`);
-  if (!res.ok) throw new Error("Falha ao carregar");
-  return res.json();
-}
+
 async function fetchFilters(
   scope: "organization" | "record",
   categoryId: string | undefined,
@@ -99,7 +84,6 @@ async function fetchFilters(
   return res.json();
 }
 
-
 function extractFilters(search: Record<string, any>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(search)) {
@@ -112,8 +96,6 @@ function ExplorePage() {
   const search = Route.useSearch() as Record<string, any>;
   const navigate = Route.useNavigate();
 
-
-
   const currentFilters = useMemo(() => extractFilters(search), [search]);
   const q: string = search.q ?? "";
   const page: number = Math.max(1, Number(search.page ?? 1));
@@ -125,39 +107,21 @@ function ExplorePage() {
   const catsQ = usePublicCategories();
   const activeCat = resolveCategory(catsQ.data, search.categoria || undefined);
   const catId = activeCat?.id;
-  // Alternância Organizações/Registros removida temporariamente.
-  const activeTab = "orgs" as "orgs" | "records";
-
-  const scope: "organization" | "record" = activeTab === "orgs" ? "organization" : "record";
   const orgLayoutQ = useCategoryLayout(catId, "organization_card");
-  const recLayoutQ = useCategoryLayout(catId, "record_card");
-
 
   const filtersQ = useQuery({
-    queryKey: ["explore-filters", scope, catId, q, currentFilters],
-    queryFn: () => fetchFilters(scope, catId, q, currentFilters),
+    queryKey: ["explore-filters", "organization", catId, q, currentFilters],
+    queryFn: () => fetchFilters("organization", catId, q, currentFilters),
     staleTime: 60_000,
     placeholderData: keepPreviousData,
   });
 
-
   const orgsQ = useQuery({
     queryKey: ["explore-orgs", q, offset, currentFilters, catId],
     queryFn: () => fetchOrgs(q, offset, currentFilters, catId),
-    enabled: activeTab === "orgs",
     staleTime: 30_000,
     placeholderData: keepPreviousData,
   });
-  const recsQ = useQuery({
-    queryKey: ["explore-records", q, offset, currentFilters, catId],
-    queryFn: () => fetchRecords(q, offset, currentFilters, catId),
-    enabled: activeTab === "records",
-    staleTime: 30_000,
-    placeholderData: keepPreviousData,
-  });
-
-  const active = activeTab === "orgs" ? orgsQ : recsQ;
-  const total = active.data?.total ?? 0;
 
   function updateSearch(patch: Record<string, string | number | undefined>) {
     const next: Record<string, any> = { ...search };
@@ -176,14 +140,6 @@ function ExplorePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedTerm]);
 
-  function setTab(v: string) {
-    // Reset page + free-text + filters when switching tabs (filters are scope-specific).
-    const next: Record<string, any> = { tab: v };
-    if (search.q) next.q = search.q;
-    if (search.categoria) next.categoria = search.categoria;
-    navigate({ search: next as any });
-  }
-
   function setFilter(key: string, value: string) {
     const next: Record<string, any> = { ...search, page: undefined };
     if (value) next[`f_${key}`] = value;
@@ -192,7 +148,7 @@ function ExplorePage() {
   }
 
   function clearFilters() {
-    const next: Record<string, any> = { tab: activeTab };
+    const next: Record<string, any> = {};
     if (search.categoria) next.categoria = search.categoria;
     navigate({ search: next as any });
     setTerm("");
@@ -201,170 +157,37 @@ function ExplorePage() {
   const availableFilters = (filtersQ.data?.filters ?? []).filter((f) => f.filter_type !== "search");
 
   return (
-
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <PublicHeader />
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-        <BackLink to="/" label="Início" />
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">Explorar</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Navegue por espaços de eventos e ambientes publicados.</p>
-
-        <CategoryTabs
-          className="mt-6"
-          categories={catsQ.data}
-          isLoading={catsQ.isLoading}
-          activeSlug={search.categoria || undefined}
-          onSelect={(s) => navigate({ search: { tab: activeTab, categoria: s } as any })}
-        />
-
-        <div className="mt-6 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-8">
-          <PublicFilterSidebar
-            className="hidden lg:sticky lg:top-24 lg:block"
-            term={term}
-            onTermChange={setTerm}
-            filters={availableFilters as any}
-            values={currentFilters}
-            onFilterChange={setFilter}
-            onClear={clearFilters}
+      <PublicListing
+        beforeTitle={<BackLink to="/" label="Início" />}
+        title="Explorar"
+        description="Navegue por espaços de eventos e ambientes publicados."
+        aboveContent={
+          <CategoryTabs
+            className="mt-6"
+            categories={catsQ.data}
+            isLoading={catsQ.isLoading}
+            activeSlug={search.categoria || undefined}
+            onSelect={(s) => navigate({ search: { categoria: s } as any })}
           />
-
-          <div className="min-w-0">
-            <PublicFilterBar
-              className="lg:hidden"
-              term={term}
-              onTermChange={setTerm}
-              filters={availableFilters as any}
-              values={currentFilters}
-              onFilterChange={setFilter}
-              onClear={clearFilters}
-            />
-
-        <Tabs value={activeTab} onValueChange={setTab} className="mt-4">
-
-
-
-          <TabsContent value="orgs" className="mt-6">
-            {orgsQ.isPending ? (
-              <PublicCardSkeletonGrid count={6} withLogo layout={orgLayoutQ.data} className="grid gap-4 sm:grid-cols-2" />
-            ) : (orgsQ.data?.items ?? []).length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {(orgsQ.data?.items ?? []).map((o) => (
-                  <Link
-                    key={o.id}
-                    to="/public/$slug"
-                    params={{ slug: o.slug }}
-                    className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  >
-                    <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
-                      {o.layout && o.layout.length > 0 ? (
-                        <div className="p-4">
-                          <PublicCardBody layout={o.layout as any} fields={o.fields as any} data={o.data} orgName={o.name} />
-                        </div>
-                      ) : (
-                        <>
-                          <CardHeader className="pb-2">
-                            <div className="flex items-center gap-2">
-                              <OrgLogo src={(o as any).logo_url} alt={`Logo ${o.name}`} className="h-10 w-10" />
-                              <CardTitle className="font-display text-lg line-clamp-2">{o.name}</CardTitle>
-                            </div>
-                          </CardHeader>
-                          {o.description ? (
-                            <CardContent>
-                              <p className="line-clamp-2 text-sm text-muted-foreground">{o.description}</p>
-                            </CardContent>
-                          ) : null}
-                        </>
-                      )}
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="records" className="mt-6">
-            {recsQ.isPending ? (
-              <PublicCardSkeletonGrid count={6} layout={recLayoutQ.data} className="grid gap-4 sm:grid-cols-2" />
-            ) : (recsQ.data?.items ?? []).length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {(recsQ.data?.items ?? []).map((r) => {
-                  const hasLayout = (r.layout ?? []).length > 0;
-                  const title = getPublicCardTitle({
-                    layout: r.layout ?? [],
-                    fields: r.fields ?? [],
-                    data: r.data,
-                    fallback: "Ambiente",
-                  });
-                  return (
-                    <Link
-                      key={r.record_id}
-                      to="/public/$slug/$tableId/$recordId"
-                      params={{ slug: r.org_slug, tableId: r.table_id, recordId: r.record_id }}
-                      className="block rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    >
-                      <Card className="h-full overflow-hidden transition-shadow hover:shadow-elegant">
-                        {hasLayout ? (
-                          <div className="p-4">
-                            <PublicCardBody layout={r.layout as any} fields={r.fields as any} data={r.data} />
-                          </div>
-                        ) : (
-                          <>
-                            <CardHeader className="pb-2">
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <FileText className="h-3.5 w-3.5" />
-                                <span className="truncate">{r.org_name}</span>
-                              </div>
-                              <CardTitle className="font-display text-lg line-clamp-2">{title || "Ambiente"}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <Badge variant="secondary">{new Date(r.created_at).toLocaleDateString("pt-BR")}</Badge>
-                            </CardContent>
-                          </>
-                        )}
-                      </Card>
-                    </Link>
-                  );
-                })}
-              </div>
-
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {total > PAGE_SIZE ? (
-          <div className="mt-8 flex items-center justify-between">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => updateSearch({ page: page > 2 ? page - 1 : undefined })}
-            >
-              Anterior
-            </Button>
-            <span className="text-xs text-muted-foreground">
-              {offset + 1}–{Math.min(offset + PAGE_SIZE, total)} de {total}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={offset + PAGE_SIZE >= total}
-              onClick={() => updateSearch({ page: page + 1 })}
-            >
-              Próxima
-            </Button>
-          </div>
-        ) : null}
-          </div>
-        </div>
-      </section>
+        }
+        term={term}
+        onTermChange={setTerm}
+        filters={availableFilters as any}
+        values={currentFilters}
+        onFilterChange={setFilter}
+        onClear={clearFilters}
+        items={(orgsQ.data?.items ?? []) as any}
+        isLoading={orgsQ.isPending}
+        layout={orgLayoutQ.data}
+        total={orgsQ.data?.total ?? 0}
+        page={page}
+        onPageChange={(p) => updateSearch({ page: p > 1 ? p : undefined })}
+      />
 
       <PublicFooter />
     </div>
-
   );
 }
