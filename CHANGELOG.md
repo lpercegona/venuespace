@@ -1,3 +1,12 @@
+## 2026-08-12 00:30 (America/Sao_Paulo) — Correção/extensão das Iterações 30, 31 e 33
+
+- Listagem pública unificada: novo `src/components/venue/public-listing.tsx` usado por `/explore` e `/categoria/$slug` (mesma grade 3 colunas, mesma sidebar de filtros, mesmo skeleton e mesma paginação).
+- Mobile: busca e filtros passam a ativo flutuante fixo no rodapé (`src/components/venue/mobile-filter-dock.tsx`).
+- Home: "Ver todos" aponta para `/categoria/$slug` com os pré-filtros do bloco; novo campo `home_blocks.show_see_all` (migration) e toggle "Exibir 'Ver todos'" na edição de blocos do super admin.
+- Galeria: `GalleryCarousel` ganha `enableLightbox`; perfil de organização (Layout 2) abre lightbox ao clicar na imagem.
+- Layout 2: aviso sobre fotos indexadas movido para junto do texto de reivindicação de propriedade.
+- Rodapé público presente em toda a navegação (perfis, registros, formulários, campanhas, lead e blog).
+
 ## 2026-08-11 19:16 (America/Sao_Paulo) — Correção/extensão da Iteração 33 — filtro de faixa numérica
 
 - **Novo comportamento `range` nas definições de filtro (super admin)**: em Filtros da categoria é possível vincular dois campos numéricos (Campo mínimo / Campo máximo) num único filtro, com rótulo próprio. Colunas `min_field_key`/`max_field_key` em `category_filter_fields` (`filter_type` aceita `range`).
