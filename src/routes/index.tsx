@@ -445,10 +445,10 @@ function ComoFuncionaSection() {
       <div>
         <div className="mb-8 max-w-[56ch]">
           <p className="text-xs font-medium uppercase tracking-widest text-primary">Como funciona</p>
-          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-            Da busca ao acordo fechado, em três passos
-          </h2>
-          <p className="mt-1 text-[#202332]/75">Sem intermediário cobrando comissão sobre o valor combinado.</p>
+          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Da busca ao acordo fechado</h2>
+          <p className="mt-1 text-[#202332]/75">
+            Conheça o espaço, negocie e agende sua reserva. tudo através da Venuespace .
+          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
@@ -456,7 +456,7 @@ function ComoFuncionaSection() {
             <span className="font-display text-3xl font-semibold italic text-primary">01</span>
             <h3 className="mt-2 font-display text-xl font-bold">Buscar espaço para evento</h3>
             <p className="mt-1 text-[#202332]/80">
-              Filtre espaços para eventos por categoria e região — de salões de festa em Curitiba a sítios na região
+              Filtre espaços para eventos por categoria e região — de salões de festa em Curitiba a hotéis na região
               metropolitana.
             </p>
           </div>
