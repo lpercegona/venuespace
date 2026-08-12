@@ -193,7 +193,9 @@ function HomeBlockSection({
   for (const rule of block.rules ?? []) {
     if (rule.operator === "=" && rule.field_key && rule.value) seeAllSearch[`f_${rule.field_key}`] = rule.value;
   }
-  if (catSlug) seeAllSearch.categoria = catSlug;
+  // Sem categoria definida, o destino é /explore e a categoria vai na URL.
+  const exploreSearch = catSlug ? { ...seeAllSearch, categoria: catSlug } : seeAllSearch;
+
 
   return (
     <section>
