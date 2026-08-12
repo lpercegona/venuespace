@@ -215,7 +215,7 @@ function HomeBlockSection({
           ) : (
             <Link
               to="/explore"
-              search={seeAllSearch as any}
+              search={exploreSearch as any}
               preload="intent"
               className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
