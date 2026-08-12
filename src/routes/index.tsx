@@ -22,6 +22,60 @@ import type { LayoutItem } from "@/components/venue/public-card-renderer";
 import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/public.server";
 import type { HomeGroupingDTO, HomeBlockDTO } from "@/lib/home-config.functions";
 
+// ------------------------------------------------------------
+// Query para obter bairros e cidades (mock + integração futura)
+// ------------------------------------------------------------
+async function fetchLocalidades() {
+  // 🔁 Substitua esta chamada pela sua API real:
+  // const response = await fetch('/api/localidades');
+  // const data = await response.json();
+  // return data;
+
+  // Dados mockados para exemplo (substitua pelos dados reais)
+  return {
+    bairros: [
+      "Água Verde",
+      "Batel",
+      "Bigorrilho",
+      "Cabral",
+      "Centro",
+      "Centro Cívico",
+      "Cristo Rei",
+      "Jardim Botânico",
+      "Mercês",
+      "Portão",
+      "Rebouças",
+      "Santa Felicidade",
+      "São Lourenço",
+      "Seminário",
+    ],
+    cidades: [
+      "Almirante Tamandaré",
+      "Araucária",
+      "Campo Largo",
+      "Campo Magro",
+      "Colombo",
+      "Curitiba",
+      "Fazenda Rio Grande",
+      "Pinhais",
+      "Piraquara",
+      "Quatro Barras",
+      "Rio Branco do Sul",
+      "São José dos Pinhais",
+      "Tijucas do Sul",
+    ],
+  };
+}
+
+export const localidadesQuery = () => ({
+  queryKey: ["localidades"],
+  queryFn: fetchLocalidades,
+  staleTime: 1000 * 60 * 15, // 15 minutos
+});
+
+// ------------------------------------------------------------
+// Rota principal
+// ------------------------------------------------------------
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -44,6 +98,8 @@ export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
     const qc = context.queryClient;
     qc.prefetchQuery(publicCategoriesQuery());
+    // Pré-carrega também as localidades (opcional)
+    qc.prefetchQuery(localidadesQuery());
     const config = await qc.ensureQueryData(homeGroupingsQuery());
     const first = (config as { groupings: HomeGroupingDTO[] }).groupings?.[0];
     if (first) qc.prefetchQuery(homeGroupingDataQuery(first.id));
@@ -99,6 +155,11 @@ function Landing() {
     return b.block_type === "links" ? d.links.length > 0 : d.items.length > 0;
   });
 
+  // Query para localidades (bairros e cidades)
+  const localidadesQ = useQuery(localidadesQuery());
+  const bairros = (localidadesQ.data?.bairros ?? []) as string[];
+  const cidades = (localidadesQ.data?.cidades ?? []) as string[];
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <PublicHeader />
@@ -147,7 +208,7 @@ function Landing() {
             visibleBlocks.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground">Nenhum bloco configurado para esta aba.</p>
             ) : (
-              // Intercala os blocos dinâmicos com a seção "Como funciona"
+              // Intercala os blocos dinâmicos com a seção "Como funciona" após o SEGUNDO bloco
               visibleBlocks.flatMap((block, index) => {
                 const elements = [
                   <HomeBlockSection
@@ -159,8 +220,7 @@ function Landing() {
                     categorySlug={activeCategorySlug}
                   />,
                 ];
-                // Insere o "Como funciona" após o primeiro bloco
-                if (index === 0) {
+                if (index === 1) {
                   elements.push(<ComoFuncionaSection key="como-funciona" />);
                 }
                 return elements;
@@ -172,14 +232,20 @@ function Landing() {
         </div>
       </main>
 
-      {/* Dúvidas Frequentes — fixo no final */}
+      {/* Dúvidas Frequentes */}
       <FaqSection />
+
+      {/* NOVA SEÇÃO: Localidades (bairros e cidades) */}
+      <LocalidadesSection bairros={bairros} cidades={cidades} isLoading={localidadesQ.isLoading} />
 
       <PublicFooter />
     </div>
   );
 }
 
+// ------------------------------------------------------------
+// Componente HomeBlockSection (não alterado)
+// ------------------------------------------------------------
 function HomeBlockSection({
   block,
   data,
@@ -267,6 +333,9 @@ function HomeBlockSection({
   );
 }
 
+// ------------------------------------------------------------
+// Componentes auxiliares (ShortcutCard, OrganizationCard, RecordCard)
+// ------------------------------------------------------------
 function ShortcutCard({
   link,
 }: {
@@ -367,9 +436,9 @@ function RecordCard({ record }: { record: PublicRecordSummary }) {
   );
 }
 
-/* ============================================================
-   COMO FUNCIONA — versão fiel ao HTML original
-   ============================================================ */
+// ------------------------------------------------------------
+// SEÇÃO "COMO FUNCIONA"
+// ------------------------------------------------------------
 function ComoFuncionaSection() {
   return (
     <section id="como-funciona" className="py-8">
@@ -383,7 +452,6 @@ function ComoFuncionaSection() {
         </div>
 
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-          {/* Passo 1 */}
           <div className="border-t border-[rgba(113,127,191,.28)] pt-6">
             <span className="font-display text-3xl font-semibold italic text-primary">01</span>
             <h3 className="mt-2 font-display text-xl font-bold">Buscar espaço para evento</h3>
@@ -392,8 +460,6 @@ function ComoFuncionaSection() {
               metropolitana.
             </p>
           </div>
-
-          {/* Passo 2 */}
           <div className="border-t border-[rgba(113,127,191,.28)] pt-6">
             <span className="font-display text-3xl font-semibold italic text-primary">02</span>
             <h3 className="mt-2 font-display text-xl font-bold">Conversar direto</h3>
@@ -401,8 +467,6 @@ function ComoFuncionaSection() {
               Envie sua data e proposta pelo chat da plataforma, direto com quem administra o espaço.
             </p>
           </div>
-
-          {/* Passo 3 */}
           <div className="border-t border-[rgba(113,127,191,.28)] pt-6">
             <span className="font-display text-3xl font-semibold italic text-primary">03</span>
             <h3 className="mt-2 font-display text-xl font-bold">Fechar o acordo</h3>
@@ -416,9 +480,9 @@ function ComoFuncionaSection() {
   );
 }
 
-/* ============================================================
-   DÚVIDAS FREQUENTES — versão fiel ao HTML original
-   ============================================================ */
+// ------------------------------------------------------------
+// SEÇÃO "DÚVIDAS FREQUENTES"
+// ------------------------------------------------------------
 function FaqSection() {
   const faqItems = [
     {
@@ -470,6 +534,88 @@ function FaqSection() {
               <p className="mt-3 max-w-[64ch] text-[#202332]/80">{item.answer}</p>
             </details>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------
+// NOVA SEÇÃO: LOCALIDADES (bairros e cidades)
+// ------------------------------------------------------------
+function LocalidadesSection({
+  bairros,
+  cidades,
+  isLoading,
+}: {
+  bairros: string[];
+  cidades: string[];
+  isLoading: boolean;
+}) {
+  // Ordena alfabeticamente
+  const bairrosSorted = [...bairros].sort((a, b) => a.localeCompare(b));
+  const cidadesSorted = [...cidades].sort((a, b) => a.localeCompare(b));
+
+  // Renderiza um item de link
+  const renderLink = (label: string, filterKey: string, filterValue: string) => (
+    <Link
+      key={`${filterKey}-${filterValue}`}
+      to="/explore"
+      search={{ [`f_${filterKey}`]: filterValue } as any}
+      preload="intent"
+      className="block text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline transition-colors"
+    >
+      {label}
+    </Link>
+  );
+
+  if (isLoading) {
+    return (
+      <section className="py-12">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <div className="mb-6">
+            <Skeleton className="h-8 w-56" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-5 w-full" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const hasContent = bairrosSorted.length > 0 || cidadesSorted.length > 0;
+  if (!hasContent) return null;
+
+  return (
+    <section className="py-12">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <h2 className="mb-6 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          Encontre espaços para eventos por localidade
+        </h2>
+
+        <div className="space-y-6">
+          {/* Bairros */}
+          {bairrosSorted.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Bairros</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+                {bairrosSorted.map((bairro) => renderLink(`Espaço de eventos no ${bairro}`, "bairro", bairro))}
+              </div>
+            </div>
+          )}
+
+          {/* Cidades */}
+          {cidadesSorted.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Cidades</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+                {cidadesSorted.map((cidade) => renderLink(`Espaço de eventos em ${cidade}`, "cidade", cidade))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>
