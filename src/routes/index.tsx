@@ -147,16 +147,24 @@ function Landing() {
             visibleBlocks.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground">Nenhum bloco configurado para esta aba.</p>
             ) : (
-              visibleBlocks.map((block) => (
-                <HomeBlockSection
-                  key={block.id}
-                  block={block}
-                  data={byBlock.get(block.id)}
-                  isLoading={dataQ.isLoading}
-                  layout={block.source === "records" ? recLayoutQ.data : orgLayoutQ.data}
-                  categorySlug={activeCategorySlug}
-                />
-              ))
+              // Intercala os blocos dinâmicos com a seção "Como funciona"
+              visibleBlocks.flatMap((block, index) => {
+                const elements = [
+                  <HomeBlockSection
+                    key={block.id}
+                    block={block}
+                    data={byBlock.get(block.id)}
+                    isLoading={dataQ.isLoading}
+                    layout={block.source === "records" ? recLayoutQ.data : orgLayoutQ.data}
+                    categorySlug={activeCategorySlug}
+                  />,
+                ];
+                // Insere o "Como funciona" após o primeiro bloco
+                if (index === 0) {
+                  elements.push(<ComoFuncionaSection key="como-funciona" />);
+                }
+                return elements;
+              })
             )
           ) : (
             <p className="text-center text-sm text-muted-foreground">Nenhuma categoria configurada.</p>
@@ -164,7 +172,7 @@ function Landing() {
         </div>
       </main>
 
-      {/* Dúvidas Frequentes — exatamente como no site original */}
+      {/* Dúvidas Frequentes — fixo no final */}
       <FaqSection />
 
       <PublicFooter />
@@ -360,7 +368,56 @@ function RecordCard({ record }: { record: PublicRecordSummary }) {
 }
 
 /* ============================================================
-   DÚVIDAS FREQUENTES — VERSÃO EXATA DO HTML ORIGINAL
+   COMO FUNCIONA — versão fiel ao HTML original
+   ============================================================ */
+function ComoFuncionaSection() {
+  return (
+    <section id="como-funciona" className="py-8">
+      <div>
+        <div className="mb-8 max-w-[56ch]">
+          <p className="text-xs font-medium uppercase tracking-widest text-primary">Como funciona</p>
+          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            Da busca ao acordo fechado, em três passos
+          </h2>
+          <p className="mt-1 text-[#202332]/75">Sem intermediário cobrando comissão sobre o valor combinado.</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+          {/* Passo 1 */}
+          <div className="border-t border-[rgba(113,127,191,.28)] pt-6">
+            <span className="font-display text-3xl font-semibold italic text-primary">01</span>
+            <h3 className="mt-2 font-display text-xl font-bold">Buscar espaço para evento</h3>
+            <p className="mt-1 text-[#202332]/80">
+              Filtre espaços para eventos por categoria e região — de salões de festa em Curitiba a sítios na região
+              metropolitana.
+            </p>
+          </div>
+
+          {/* Passo 2 */}
+          <div className="border-t border-[rgba(113,127,191,.28)] pt-6">
+            <span className="font-display text-3xl font-semibold italic text-primary">02</span>
+            <h3 className="mt-2 font-display text-xl font-bold">Conversar direto</h3>
+            <p className="mt-1 text-[#202332]/80">
+              Envie sua data e proposta pelo chat da plataforma, direto com quem administra o espaço.
+            </p>
+          </div>
+
+          {/* Passo 3 */}
+          <div className="border-t border-[rgba(113,127,191,.28)] pt-6">
+            <span className="font-display text-3xl font-semibold italic text-primary">03</span>
+            <h3 className="mt-2 font-display text-xl font-bold">Fechar o acordo</h3>
+            <p className="mt-1 text-[#202332]/80">
+              Combine valor e condições diretamente com a outra parte, sem taxa de intermediação sobre o negócio.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================
+   DÚVIDAS FREQUENTES — versão fiel ao HTML original
    ============================================================ */
 function FaqSection() {
   const faqItems = [
@@ -389,7 +446,6 @@ function FaqSection() {
   return (
     <section id="faq" className="py-16 sm:py-20">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        {/* Cabeçalho igual ao HTML: "eyebrow" + título */}
         <div className="mb-10 max-w-[56ch]">
           <p className="text-xs font-medium uppercase tracking-widest text-primary">Dúvidas frequentes</p>
           <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
@@ -397,18 +453,15 @@ function FaqSection() {
           </h2>
         </div>
 
-        {/* Lista de perguntas usando <details> nativo */}
         <div className="max-w-[760px] space-y-0 divide-y divide-[rgba(113,127,191,.28)]">
           {faqItems.map((item, index) => (
             <details
               key={index}
               className="faq-item group py-5 [&_summary::-webkit-details-marker]:hidden"
-              // Primeiro item aberto por padrão (como no HTML)
               open={index === 0}
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-lg font-semibold text-[#202332]">
                 {item.question}
-                {/* Ícone "+"/"–" que troca com o estado do details */}
                 <span className="ml-4 shrink-0 font-mono text-xl text-[#5F6FB0] transition-transform duration-200 group-open:rotate-0">
                   <span className="block group-open:hidden">+</span>
                   <span className="hidden group-open:block">–</span>
