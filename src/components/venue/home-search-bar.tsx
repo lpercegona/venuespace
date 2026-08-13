@@ -114,9 +114,10 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
         </Popover>
       ) : null}
 
-      <Button type="submit" className="h-11 shrink-0">
-        Buscar
+      <Button type="submit" size="icon" aria-label="Buscar" className="h-11 w-11 shrink-0 rounded-full">
+        <Search className="h-4 w-4" />
       </Button>
+
     </form>
   );
 }

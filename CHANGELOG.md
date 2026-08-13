@@ -1,3 +1,10 @@
+## 2026-08-12 — Correção/extensão da Iteração 32 — reservas apartadas, itens com desconto e novo PDF
+- Tabela de reservas dedicada por tabela reservável (`system_data.kind = 'bookings'`); catálogos voltam a ser apenas listagem.
+- Formulário de reserva: período primeiro, listagem apenas de itens disponíveis, valor de diária, nº de diárias, desconto (R$ ou %), observações e cortesia por item, além de observações gerais.
+- Configuração de orçamento na organização (CNPJ, site, condições de pagamento, validade) e novo layout do PDF.
+- Helpers de conflito e normalização de itens movidos para `bookings.server.ts` (arquivos de server function permanecem finos).
+- Busca mobile em explorar/categorias com aparência da home, botão apenas com ícone de lupa, dock centralizado.
+
 ## 2026-08-12 00:30 (America/Sao_Paulo) — Correção/extensão das Iterações 30, 31 e 33
 
 - Listagem pública unificada: novo `src/components/venue/public-listing.tsx` usado por `/explore` e `/categoria/$slug` (mesma grade 3 colunas, mesma sidebar de filtros, mesmo skeleton e mesma paginação).

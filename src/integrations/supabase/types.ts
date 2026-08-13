@@ -1552,6 +1552,10 @@ export type Database = {
           slug: string
         }[]
       }
+      ensure_bookings_table: {
+        Args: { _source_table_id: string }
+        Returns: string
+      }
       ensure_contacts_table: { Args: { _org_id: string }; Returns: string }
       has_role: {
         Args: {
