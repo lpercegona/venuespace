@@ -295,7 +295,7 @@ export const createBooking = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadBookableItems, daysBetween } = await import("./bookings.server");
+    const { loadBookingMeta, loadBookableItems, daysBetween, buildItems, assertNoConflict } = await import("./bookings.server");
     const { source, bookingsTableId } = await resolveBookings(context.supabase, data.table_id);
     await assertCanEdit(context.supabase, source.organization_id, context.userId);
 
@@ -371,7 +371,7 @@ export const updateBooking = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { loadBookingMeta, loadBookableItems, daysBetween } = await import("./bookings.server");
+    const { loadBookingMeta, loadBookableItems, daysBetween, buildItems, assertNoConflict } = await import("./bookings.server");
 
     const { data: rec, error: recErr } = await context.supabase
       .from("records")
