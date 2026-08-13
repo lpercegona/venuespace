@@ -599,3 +599,71 @@ export async function loadContacts(
     return { id: r.id as string, label, email };
   });
 }
+
+// ============ Conflito de datas e normalização de itens ============
+
+export type ItemInput = {
+  record_id: string;
+  daily_value?: number;
+  days?: number;
+  discount?: number;
+  discount_type?: "amount" | "percent";
+  note?: string | null;
+  courtesy?: string | null;
+};
+
+/** Lança erro quando algum item escolhido já está reservado (accepted/closed) no período. */
+export async function assertNoConflict(
+  supabase: any,
+  bookingsTableId: string,
+  meta: { startKey: string | null; endKey: string | null },
+  start: any,
+  end: any,
+  chosen: Array<{ id: string; label: string }>,
+  excludeId?: string,
+) {
+  if (!start || !end || !meta.startKey || !meta.endKey) return;
+  const chosenIds = new Set(chosen.map((c) => c.id));
+  let query = supabase
+    .from("records")
+    .select("id, data, system_data, status")
+    .eq("table_id", bookingsTableId)
+    .in("deal_status", ["accepted", "closed"]);
+  if (excludeId) query = query.neq("id", excludeId);
+  const { data: others } = await query;
+  for (const o of (others ?? []) as any[]) {
+    if (o.status === "archived") continue;
+    const os = o.data?.[meta.startKey];
+    const oe = o.data?.[meta.endKey];
+    if (!os || !oe) continue;
+    if (!overlaps(String(start), String(end), String(os), String(oe))) continue;
+    const busy = (((o.system_data as any)?.items ?? []) as any[]).map((i) => String(i?.record_id ?? ""));
+    const clash = busy.find((id) => chosenIds.has(id));
+    if (clash) {
+      const label = chosen.find((c) => c.id === clash)?.label ?? "Item";
+      throw new Error(`Conflito de reserva: "${label}" já está reservado entre ${os} e ${oe}.`);
+    }
+  }
+}
+
+/** Normaliza os itens enviados pelo formulário contra o catálogo. */
+export function buildItems(
+  catalog: Array<{ id: string; label: string; value: number }>,
+  input: ItemInput[],
+  days: number,
+): QuoteItem[] {
+  const chosen = input
+    .map((i) => ({ input: i, cat: catalog.find((c) => c.id === i.record_id) }))
+    .filter((x) => !!x.cat) as Array<{ input: ItemInput; cat: { id: string; label: string; value: number } }>;
+  if (chosen.length === 0) throw new Error("Itens inválidos para esta tabela.");
+  return chosen.map(({ input: i, cat }) => ({
+    record_id: cat.id,
+    label: cat.label,
+    daily_value: Number(i.daily_value ?? cat.value) || 0,
+    days: Number(i.days ?? days) || 1,
+    discount: Number(i.discount ?? 0) || 0,
+    discount_type: (i.discount_type ?? "amount") as "amount" | "percent",
+    note: i.note ?? null,
+    courtesy: i.courtesy ?? null,
+  }));
+}
