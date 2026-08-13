@@ -186,6 +186,59 @@ export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = fals
 
           {canManageMembers ? <OrgMembersManager organizationId={org.id} /> : null}
 
+          <div className="space-y-3 rounded-lg border border-dashed border-border p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Orçamento</p>
+            <p className="text-xs text-muted-foreground">
+              Dados do emissor usados no PDF de orçamento das reservas.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="q-cnpj">CNPJ</Label>
+                <Input
+                  id="q-cnpj"
+                  placeholder="00.000.000/0001-00"
+                  value={(sysData.quote?.cnpj as string) ?? ""}
+                  onChange={(e) => setSys("quote", { ...(sysData.quote ?? {}), cnpj: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="q-site">Site</Label>
+                <Input
+                  id="q-site"
+                  placeholder="www.exemplo.com.br"
+                  value={(sysData.quote?.site as string) ?? ""}
+                  onChange={(e) => setSys("quote", { ...(sysData.quote ?? {}), site: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="q-validity">Validade do orçamento (dias)</Label>
+              <Input
+                id="q-validity"
+                type="number"
+                min={1}
+                className="sm:max-w-40"
+                value={(sysData.quote?.validity_days as number) ?? 15}
+                onChange={(e) =>
+                  setSys("quote", {
+                    ...(sysData.quote ?? {}),
+                    validity_days: e.target.value === "" ? null : Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="q-terms">Condições de pagamento (uma por linha)</Label>
+              <Textarea
+                id="q-terms"
+                rows={4}
+                placeholder={"Sinal de 50% para garantir a reserva.\nPIX\nTransferência bancária"}
+                value={(sysData.quote?.payment_terms as string) ?? ""}
+                onChange={(e) => setSys("quote", { ...(sysData.quote ?? {}), payment_terms: e.target.value })}
+              />
+            </div>
+          </div>
+
 
           {sysFields.length > 0 ? (
             <div className="space-y-3 rounded-lg border border-dashed border-border p-4">
