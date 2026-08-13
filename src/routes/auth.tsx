@@ -81,77 +81,105 @@ function AuthPage() {
           <div className="max-w-lg space-y-3 rounded-2xl border border-border bg-card/80 p-5 shadow-elegant backdrop-blur">
             <p className="text-sm font-medium text-primary">Venuespace</p>
             <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Organize, publique e negocie em um só espaço.
+              Organize, publique e negocie a locação de espaços.
             </h1>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Área visual preparada para receber uma imagem institucional ou de produto sem alterar a estrutura da tela.
-            </p>
           </div>
         </section>
         <section className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
           <div className="w-full max-w-md">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-display text-xl">Acesse sua conta</CardTitle>
+                <CardDescription>Entre ou crie sua conta para começar.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="w-full h-11" onClick={handleGoogle} disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continuar com Google"}
+                </Button>
 
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">ou</span>
+                  </div>
+                </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-xl">Acesse sua conta</CardTitle>
-            <CardDescription>Entre ou crie sua conta para começar.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" className="w-full h-11" onClick={handleGoogle} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continuar com Google"}
-            </Button>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">ou</span>
-              </div>
-            </div>
-
-            <Tabs defaultValue="signin">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Entrar</TabsTrigger>
-                <TabsTrigger value="signup">Criar conta</TabsTrigger>
-              </TabsList>
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="in-email">E-mail</Label>
-                    <Input id="in-email" type="email" required value={signInEmail} onChange={(e) => setSignInEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="in-pass">Senha</Label>
-                    <Input id="in-pass" type="password" required minLength={8} value={signInPassword} onChange={(e) => setSignInPassword(e.target.value)} />
-                  </div>
-                  <Button type="submit" className="w-full h-11" disabled={loading}>
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
-                  </Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="up-name">Nome</Label>
-                    <Input id="up-name" required value={signUpName} onChange={(e) => setSignUpName(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="up-email">E-mail</Label>
-                    <Input id="up-email" type="email" required value={signUpEmail} onChange={(e) => setSignUpEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="up-pass">Senha</Label>
-                    <Input id="up-pass" type="password" required minLength={8} value={signUpPassword} onChange={(e) => setSignUpPassword(e.target.value)} />
-                  </div>
-                  <Button type="submit" className="w-full h-11" disabled={loading}>
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar conta"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-        </div>
+                <Tabs defaultValue="signin">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="signin">Entrar</TabsTrigger>
+                    <TabsTrigger value="signup">Criar conta</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="signin">
+                    <form onSubmit={handleSignIn} className="space-y-4 pt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="in-email">E-mail</Label>
+                        <Input
+                          id="in-email"
+                          type="email"
+                          required
+                          value={signInEmail}
+                          onChange={(e) => setSignInEmail(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="in-pass">Senha</Label>
+                        <Input
+                          id="in-pass"
+                          type="password"
+                          required
+                          minLength={8}
+                          value={signInPassword}
+                          onChange={(e) => setSignInPassword(e.target.value)}
+                        />
+                      </div>
+                      <Button type="submit" className="w-full h-11" disabled={loading}>
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                  <TabsContent value="signup">
+                    <form onSubmit={handleSignUp} className="space-y-4 pt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="up-name">Nome</Label>
+                        <Input
+                          id="up-name"
+                          required
+                          value={signUpName}
+                          onChange={(e) => setSignUpName(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="up-email">E-mail</Label>
+                        <Input
+                          id="up-email"
+                          type="email"
+                          required
+                          value={signUpEmail}
+                          onChange={(e) => setSignUpEmail(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="up-pass">Senha</Label>
+                        <Input
+                          id="up-pass"
+                          type="password"
+                          required
+                          minLength={8}
+                          value={signUpPassword}
+                          onChange={(e) => setSignUpPassword(e.target.value)}
+                        />
+                      </div>
+                      <Button type="submit" className="w-full h-11" disabled={loading}>
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar conta"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
         </section>
       </main>
     </div>
