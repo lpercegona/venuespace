@@ -161,9 +161,46 @@ function AuthPage() {
                 <CardDescription>Entre ou crie sua conta para começar.</CardDescription>
               </CardHeader>
               <CardContent>
+                {mfa ? (
+                  <form onSubmit={handleMfaVerify} className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Digite o código de 6 dígitos do seu aplicativo autenticador.
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="mfa-login-code">Código</Label>
+                      <Input
+                        id="mfa-login-code"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        required
+                        value={mfaCode}
+                        onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+                      />
+                    </div>
+                    <Button type="submit" className="h-11 w-full" disabled={loading || mfaCode.length !== 6}>
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verificar"}
+                    </Button>
+                  </form>
+                ) : pendingEmail ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Enviamos um link de confirmação para <strong className="text-foreground">{pendingEmail}</strong>.
+                      Confirme seu e-mail para acessar a plataforma.
+                    </p>
+                    <Button className="h-11 w-full" onClick={resendConfirmation} disabled={loading}>
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reenviar link de confirmação"}
+                    </Button>
+                    <Button variant="ghost" className="h-11 w-full" onClick={() => setPendingEmail(null)}>
+                      Voltar
+                    </Button>
+                  </div>
+                ) : (
+                  <>
                 <Button variant="outline" className="w-full h-11" onClick={handleGoogle} disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continuar com Google"}
                 </Button>
+
 
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
