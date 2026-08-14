@@ -932,6 +932,238 @@ function DefaultFieldsSection() {
   );
 }
 
+
+const SCOPE_BASE_KEY: Record<DefaultsScope, "organization" | "table" | null> = {
+  org: "organization",
+  table: "table",
+  record: null,
+};
+
+const TYPE_HELP: Record<string, string> = {
+  computed:
+    "Campo calculado: escolha o modo (soma, contagem ou soma de quantidade x valor), a tabela de origem e as chaves usadas no cálculo. O valor é resolvido na leitura e não é editável no formulário.",
+  relation:
+    "Campo de relação: aponta para registros de outra tabela padrão da categoria. Informe a tabela de destino e a chave do campo usado como texto de exibição.",
+  boolean:
+    "Campo sim/não: define os rótulos exibidos para verdadeiro e falso e o valor inicial do formulário.",
+};
+
+function FieldGroupsManager({ categoryId, scope }: { categoryId: string; scope: DefaultsScope }) {
+  const qc = useQueryClient();
+  const list = useQuery({
+    queryKey: ["admin-field-groups", scope, categoryId],
+    queryFn: () => listCategoryFieldGroups({ data: { category_id: categoryId, scope } }),
+  });
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<CategoryFieldGroup | null>(null);
+  const [title, setTitle] = useState("");
+  const [key, setKey] = useState("");
+  const [description, setDescription] = useState("");
+  const [order, setOrder] = useState(0);
+  const [saving, setSaving] = useState(false);
+
+  function reset() {
+    setEditing(null);
+    setTitle("");
+    setKey("");
+    setDescription("");
+    setOrder((list.data ?? []).length);
+  }
+
+  function openEdit(g: CategoryFieldGroup) {
+    setEditing(g);
+    setTitle(g.title);
+    setKey(g.key);
+    setDescription(g.description ?? "");
+    setOrder(g.order_index);
+    setOpen(true);
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await upsertCategoryFieldGroup({
+        data: {
+          id: editing?.id,
+          category_id: categoryId,
+          scope,
+          key: editing ? editing.key : toSnake(key || title),
+          title,
+          description: description.trim() ? description.trim() : null,
+          order_index: order,
+        },
+      });
+      toast.success(editing ? "Bloco atualizado" : "Bloco criado");
+      setOpen(false);
+      reset();
+      qc.invalidateQueries({ queryKey: ["admin-field-groups", scope, categoryId] });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove(id: string) {
+    try {
+      await deleteCategoryFieldGroup({ data: { id } });
+      toast.success("Bloco removido");
+      qc.invalidateQueries({ queryKey: ["admin-field-groups", scope, categoryId] });
+      qc.invalidateQueries({ queryKey: ["admin-defaults", scope, categoryId] });
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Blocos de campos</p>
+          <p className="text-xs text-muted-foreground">
+            Agrupam os campos no formulário com título e descrição próprios.
+          </p>
+        </div>
+        <Dialog
+          open={open}
+          onOpenChange={(v) => {
+            setOpen(v);
+            if (!v) reset();
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline" className="shrink-0" onClick={reset}>
+              <Plus className="h-4 w-4" />
+              Novo bloco
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-display">{editing ? "Editar bloco" : "Novo bloco"}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={submit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fg-title">Título</Label>
+                <Input id="fg-title" required value={title} onChange={(e) => setTitle(e.target.value)} />
+              </div>
+              {!editing ? (
+                <div className="space-y-2">
+                  <Label htmlFor="fg-key">Chave</Label>
+                  <Input
+                    id="fg-key"
+                    className="font-mono"
+                    placeholder="auto"
+                    value={key}
+                    onChange={(e) => setKey(e.target.value)}
+                  />
+                </div>
+              ) : null}
+              <div className="space-y-2">
+                <Label htmlFor="fg-desc">Descrição</Label>
+                <Textarea id="fg-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fg-order">Ordem</Label>
+                <Input id="fg-order" type="number" min={0} value={order} onChange={(e) => setOrder(Number(e.target.value))} />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? "Salvar" : "Criar"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {list.isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        ) : (list.data ?? []).length === 0 ? (
+          <p className="text-xs text-muted-foreground">Nenhum bloco definido. Campos aparecem em bloco único.</p>
+        ) : (
+          (list.data ?? []).map((g) => (
+            <div key={g.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-border p-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">
+                  {g.title} <span className="font-mono text-xs text-muted-foreground">{g.key}</span>
+                </p>
+                {g.description ? <p className="truncate text-xs text-muted-foreground">{g.description}</p> : null}
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <Button size="sm" variant="outline" onClick={() => openEdit(g)} aria-label="Editar bloco">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="outline" aria-label="Remover bloco">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover bloco?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Os campos deste bloco continuam existindo, apenas ficam sem agrupamento.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => remove(g.id)}>Remover</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BaseFieldRow({
+  base,
+  presentation,
+  onEdit,
+  groupTitle,
+}: {
+  base: { key: string; label: string; type: string; required: boolean };
+  presentation: BaseFieldPresentation | undefined;
+  onEdit: () => void;
+  groupTitle: string | null;
+}) {
+  const visible = presentation?.visible ?? true;
+  return (
+    <TableRow className="bg-muted/40">
+      <TableCell className="text-muted-foreground">{presentation?.order_index ?? "—"}</TableCell>
+      <TableCell className="font-mono text-xs">{base.key}</TableCell>
+      <TableCell>
+        <span className="flex flex-wrap items-center gap-2">
+          {presentation?.label || base.label} <Badge variant="outline">base</Badge>
+          {!visible ? <Badge variant="secondary">oculto</Badge> : null}
+          {groupTitle ? <Badge variant="secondary">{groupTitle}</Badge> : null}
+        </span>
+        {presentation?.tooltip ? (
+          <span className="block truncate text-xs text-muted-foreground">{presentation.tooltip}</span>
+        ) : null}
+      </TableCell>
+      <TableCell>
+        <Badge variant="secondary">{base.type}</Badge>
+      </TableCell>
+      <TableCell>{(presentation?.required ?? base.required) ? "sim" : "—"}</TableCell>
+      <TableCell>
+        <Button size="sm" variant="outline" onClick={onEdit} aria-label={`Editar ${base.label}`}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: DefaultsScope }) {
   const qc = useQueryClient();
   const list = useQuery({
@@ -947,6 +1179,8 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
           required: r.required,
           order_index: r.order_index,
           config: (r.config ?? {}) as Record<string, any>,
+          group_id: r.group_id ?? null,
+          is_base: r.is_base ?? false,
         }));
       }
       const rows = await listCategoryCascadeFields({ data: { category_id: categoryId, scope } });
@@ -958,32 +1192,77 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
         required: r.required,
         order_index: r.order_index,
         config: (r.config ?? {}) as Record<string, any>,
+        group_id: r.group_id ?? null,
+        is_base: r.is_base ?? false,
       }));
     },
   });
+
+  const groups = useQuery({
+    queryKey: ["admin-field-groups", scope, categoryId],
+    queryFn: () => listCategoryFieldGroups({ data: { category_id: categoryId, scope } }),
+  });
+  const groupTitle = (id?: string | null) =>
+    (groups.data ?? []).find((g) => g.id === id)?.title ?? null;
+
+  const baseKey = SCOPE_BASE_KEY[scope];
+  const baseCfg = useQuery({
+    queryKey: ["admin-base-field-config", categoryId],
+    queryFn: () => getCategoryBaseFieldConfig({ data: { category_id: categoryId } }),
+  });
+  const basePresentation = (key: string): BaseFieldPresentation | undefined =>
+    baseKey ? ((baseCfg.data as any)?.[baseKey]?.[key] as BaseFieldPresentation | undefined) : undefined;
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<UnifiedField | null>(null);
   const [label, setLabel] = useState("");
   const [key, setKey] = useState("");
-  const [keyTouched, setKeyTouched] = useState(false);
   const [type, setType] = useState<(typeof FIELD_TYPES)[number]>("text");
   const [required, setRequired] = useState(false);
   const [order, setOrder] = useState(0);
   const [optionsText, setOptionsText] = useState("");
   const [cepRole, setCepRole] = useState(false);
+  const [tooltip, setTooltip] = useState("");
+  const [groupId, setGroupId] = useState("__none__");
+  const [isBase, setIsBase] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // configuração por tipo
+  const [computedMode, setComputedMode] = useState("sum");
+  const [computedSource, setComputedSource] = useState("");
+  const [computedValueKey, setComputedValueKey] = useState("");
+  const [computedQtyKey, setComputedQtyKey] = useState("");
+  const [computedFilter, setComputedFilter] = useState("");
+  const [relationTarget, setRelationTarget] = useState("");
+  const [relationDisplay, setRelationDisplay] = useState("");
+  const [relationMultiple, setRelationMultiple] = useState(false);
+  const [boolTrue, setBoolTrue] = useState("");
+  const [boolFalse, setBoolFalse] = useState("");
+  const [boolDefault, setBoolDefault] = useState(false);
 
   function reset() {
     setEditing(null);
     setLabel("");
     setKey("");
-    setKeyTouched(false);
     setType("text");
     setRequired(false);
     setOrder(0);
     setOptionsText("");
     setCepRole(false);
+    setTooltip("");
+    setGroupId("__none__");
+    setIsBase(false);
+    setComputedMode("sum");
+    setComputedSource("");
+    setComputedValueKey("");
+    setComputedQtyKey("");
+    setComputedFilter("");
+    setRelationTarget("");
+    setRelationDisplay("");
+    setRelationMultiple(false);
+    setBoolTrue("");
+    setBoolFalse("");
+    setBoolDefault(false);
   }
 
   function uniqueKey(base: string) {
@@ -1006,11 +1285,12 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setOrder((list.data ?? []).length);
     setOpen(true);
   }
+
   function openEdit(f: UnifiedField) {
+    reset();
     setEditing(f);
     setLabel(f.label);
     setKey(f.field_key);
-    setKeyTouched(true);
     setType(f.field_type as any);
     setRequired(f.required);
     setOrder(f.order_index);
@@ -1018,6 +1298,21 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     const opts = Array.isArray(cfg.options) ? (cfg.options as any[]).map(String) : [];
     setOptionsText(formatOptionLines(opts, cfg.option_icons as Record<string, string> | undefined));
     setCepRole(cfg.role === "cep");
+    setTooltip(typeof cfg.tooltip === "string" ? cfg.tooltip : "");
+    setGroupId(f.group_id ?? "__none__");
+    setIsBase(!!f.is_base);
+    const comp = (cfg.compute ?? {}) as Record<string, any>;
+    setComputedMode(typeof comp.mode === "string" ? comp.mode : "sum");
+    setComputedSource(typeof comp.source_table === "string" ? comp.source_table : "");
+    setComputedValueKey(typeof comp.value_key === "string" ? comp.value_key : "");
+    setComputedQtyKey(typeof comp.qty_key === "string" ? comp.qty_key : "");
+    setComputedFilter(typeof comp.filter === "string" ? comp.filter : "");
+    setRelationTarget(typeof cfg.target_table === "string" ? cfg.target_table : "");
+    setRelationDisplay(typeof cfg.display_key === "string" ? cfg.display_key : "");
+    setRelationMultiple(!!cfg.multiple);
+    setBoolTrue(typeof cfg.true_label === "string" ? cfg.true_label : "");
+    setBoolFalse(typeof cfg.false_label === "string" ? cfg.false_label : "");
+    setBoolDefault(!!cfg.default);
     setOpen(true);
   }
 
@@ -1041,33 +1336,56 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
       }
       if (type === "text" && cepRole) config.role = "cep";
       else if (config.role === "cep") delete config.role;
-      if (scope === "record") {
-        await upsertCategoryDefaultField({
-          data: {
-            id: editing?.id,
-            category_id: categoryId,
-            field_key: finalKey,
-            label,
-            field_type: type,
-            required,
-            order_index: order,
-            config,
-          },
-        });
+
+      if (tooltip.trim()) config.tooltip = tooltip.trim();
+      else delete config.tooltip;
+
+      if (type === "computed") {
+        config.compute = {
+          mode: computedMode,
+          source_table: computedSource.trim() || null,
+          value_key: computedValueKey.trim() || null,
+          qty_key: computedQtyKey.trim() || null,
+          filter: computedFilter.trim() || null,
+        };
       } else {
-        await upsertCategoryCascadeField({
-          data: {
-            id: editing?.id,
-            scope,
-            category_id: categoryId,
-            field_key: finalKey,
-            label,
-            field_type: type,
-            required,
-            order_index: order,
-            config,
-          },
-        });
+        delete config.compute;
+      }
+      if (type === "relation") {
+        config.target_table = relationTarget.trim() || null;
+        config.display_key = relationDisplay.trim() || null;
+        config.multiple = relationMultiple;
+      } else {
+        delete config.target_table;
+        delete config.display_key;
+        delete config.multiple;
+      }
+      if (type === "boolean") {
+        config.true_label = boolTrue.trim() || null;
+        config.false_label = boolFalse.trim() || null;
+        config.default = boolDefault;
+      } else {
+        delete config.true_label;
+        delete config.false_label;
+        delete config.default;
+      }
+
+      const payload = {
+        id: editing?.id,
+        category_id: categoryId,
+        field_key: finalKey,
+        label,
+        field_type: type,
+        required,
+        order_index: order,
+        config,
+        group_id: groupId === "__none__" ? null : groupId,
+        is_base: isBase,
+      };
+      if (scope === "record") {
+        await upsertCategoryDefaultField({ data: payload });
+      } else {
+        await upsertCategoryCascadeField({ data: { ...payload, scope } });
       }
       toast.success(editing ? "Campo atualizado" : "Campo criado");
       setOpen(false);
@@ -1094,14 +1412,71 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     }
   }
 
+  // ----- edição de campo base (apresentação) -----
+  const [baseOpen, setBaseOpen] = useState(false);
+  const [baseEditing, setBaseEditing] = useState<{ key: string; label: string; type: string; required: boolean } | null>(null);
+  const [bLabel, setBLabel] = useState("");
+  const [bTooltip, setBTooltip] = useState("");
+  const [bRequired, setBRequired] = useState(false);
+  const [bVisible, setBVisible] = useState(true);
+  const [bOrder, setBOrder] = useState(0);
+  const [bGroup, setBGroup] = useState("__none__");
+  const [bSaving, setBSaving] = useState(false);
+
+  function openBaseEdit(b: { key: string; label: string; type: string; required: boolean }) {
+    const p = basePresentation(b.key);
+    setBaseEditing(b);
+    setBLabel(p?.label ?? b.label);
+    setBTooltip(p?.tooltip ?? "");
+    setBRequired(p?.required ?? b.required);
+    setBVisible(p?.visible ?? true);
+    setBOrder(p?.order_index ?? 0);
+    setBGroup(p?.group_id ?? "__none__");
+    setBaseOpen(true);
+  }
+
+  async function submitBase(e: React.FormEvent) {
+    e.preventDefault();
+    if (!baseEditing || !baseKey) return;
+    setBSaving(true);
+    try {
+      const current = (baseCfg.data ?? { organization: {}, table: {} }) as any;
+      const next = {
+        organization: { ...(current.organization ?? {}) },
+        table: { ...(current.table ?? {}) },
+      };
+      next[baseKey] = {
+        ...(next[baseKey] ?? {}),
+        [baseEditing.key]: {
+          visible: bVisible,
+          required: bRequired,
+          label: bLabel,
+          tooltip: bTooltip.trim(),
+          group_id: bGroup === "__none__" ? null : bGroup,
+          order_index: bOrder,
+        },
+      };
+      await updateCategoryBaseFieldConfig({ data: { category_id: categoryId, base_field_config: next } });
+      toast.success("Campo base atualizado");
+      setBaseOpen(false);
+      qc.invalidateQueries({ queryKey: ["admin-base-field-config", categoryId] });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBSaving(false);
+    }
+  }
+
   const baseFields = BASE_FIELDS[scope];
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          Campos-base (fixos) aparecem no topo somente como referência. Campos adicionais definidos aqui são semeados
-          retroativamente.
+      <FieldGroupsManager categoryId={categoryId} scope={scope} />
+
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <p className="min-w-0 text-xs text-muted-foreground">
+          Campos-base têm chave e tipo fixos, mas rótulo, ajuda, obrigatoriedade, bloco e visibilidade são editáveis.
+          Campos adicionais definidos aqui são semeados retroativamente.
         </p>
         <Dialog
           open={open}
@@ -1111,41 +1486,31 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
           }}
         >
           <DialogTrigger asChild>
-            <Button size="sm" onClick={openNew}>
+            <Button size="sm" className="shrink-0" onClick={openNew}>
               <Plus className="h-4 w-4" />
               Novo campo
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-display">{editing ? "Editar campo" : "Novo campo"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={submit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="df-label">Rótulo</Label>
-                <Input
-                  id="df-label"
-                  required
-                  value={label}
-                  onChange={(e) => {
-                    setLabel(e.target.value);
-                    if (!keyTouched && !editing) setKey(uniqueKey(toSnake(e.target.value)));
-                  }}
-                />
+                <Input id="df-label" required value={label} onChange={(e) => setLabel(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="df-key">Chave</Label>
                 <Input
                   id="df-key"
-                  required
+                  className="font-mono"
+                  placeholder="auto"
                   pattern="^[a-z][a-z0-9_]*$"
                   value={key}
                   readOnly={!!editing}
                   disabled={!!editing}
-                  onChange={(e) => {
-                    setKey(e.target.value);
-                    setKeyTouched(true);
-                  }}
+                  onChange={(e) => setKey(e.target.value)}
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1174,11 +1539,48 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                     onChange={(e) => setOrder(Number(e.target.value))}
                   />
                 </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Bloco</Label>
+                  <Select value={groupId} onValueChange={setGroupId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sem bloco" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Sem bloco</SelectItem>
+                      {(groups.data ?? []).map((g) => (
+                        <SelectItem key={g.id} value={g.id}>
+                          {g.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="df-tooltip">Texto de ajuda (tooltip)</Label>
+                  <Textarea
+                    id="df-tooltip"
+                    rows={2}
+                    value={tooltip}
+                    onChange={(e) => setTooltip(e.target.value)}
+                    placeholder="Exibido em ícone (i) ao lado do rótulo no formulário."
+                  />
+                </div>
                 <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
                   <Label htmlFor="df-req" className="text-sm">
                     Obrigatório
                   </Label>
                   <Switch id="df-req" checked={required} onCheckedChange={setRequired} />
+                </div>
+                <div className="sm:col-span-2 flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                  <div className="min-w-0">
+                    <Label htmlFor="df-base" className="text-sm">
+                      Campo base da instância
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Semeia este campo automaticamente em todas as categorias.
+                    </p>
+                  </div>
+                  <Switch id="df-base" checked={isBase} onCheckedChange={setIsBase} />
                 </div>
                 {type === "select" || type === "multiselect" ? (
                   <div className="sm:col-span-2 space-y-2">
@@ -1205,6 +1607,86 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                     <Switch id="df-cep" checked={cepRole} onCheckedChange={setCepRole} />
                   </div>
                 ) : null}
+                {type === "computed" ? (
+                  <div className="sm:col-span-2 space-y-3 rounded-lg border border-dashed border-border p-3">
+                    <p className="text-xs text-muted-foreground">{TYPE_HELP.computed}</p>
+                    <div className="space-y-2">
+                      <Label>Modo</Label>
+                      <Select value={computedMode} onValueChange={setComputedMode}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sum">Soma de um campo</SelectItem>
+                          <SelectItem value="count">Contagem de registros</SelectItem>
+                          <SelectItem value="sum_qty_value">Soma de quantidade × valor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="df-comp-src">Tabela de origem (slug)</Label>
+                        <Input id="df-comp-src" className="font-mono" value={computedSource} onChange={(e) => setComputedSource(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="df-comp-val">Campo de valor</Label>
+                        <Input id="df-comp-val" className="font-mono" value={computedValueKey} onChange={(e) => setComputedValueKey(e.target.value)} />
+                      </div>
+                      {computedMode === "sum_qty_value" ? (
+                        <div className="space-y-2">
+                          <Label htmlFor="df-comp-qty">Campo de quantidade</Label>
+                          <Input id="df-comp-qty" className="font-mono" value={computedQtyKey} onChange={(e) => setComputedQtyKey(e.target.value)} />
+                        </div>
+                      ) : null}
+                      <div className="space-y-2">
+                        <Label htmlFor="df-comp-filter">Filtro (opcional)</Label>
+                        <Input
+                          id="df-comp-filter"
+                          className="font-mono"
+                          placeholder="contribution_status=confirmed"
+                          value={computedFilter}
+                          onChange={(e) => setComputedFilter(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                {type === "relation" ? (
+                  <div className="sm:col-span-2 space-y-3 rounded-lg border border-dashed border-border p-3">
+                    <p className="text-xs text-muted-foreground">{TYPE_HELP.relation}</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="df-rel-target">Tabela de destino (slug)</Label>
+                        <Input id="df-rel-target" className="font-mono" value={relationTarget} onChange={(e) => setRelationTarget(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="df-rel-display">Campo de exibição</Label>
+                        <Input id="df-rel-display" className="font-mono" value={relationDisplay} onChange={(e) => setRelationDisplay(e.target.value)} />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between rounded-md border border-border p-3">
+                      <Label htmlFor="df-rel-multi" className="text-sm">Permitir múltiplos registros</Label>
+                      <Switch id="df-rel-multi" checked={relationMultiple} onCheckedChange={setRelationMultiple} />
+                    </div>
+                  </div>
+                ) : null}
+                {type === "boolean" ? (
+                  <div className="sm:col-span-2 space-y-3 rounded-lg border border-dashed border-border p-3">
+                    <p className="text-xs text-muted-foreground">{TYPE_HELP.boolean}</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="df-bool-true">Rótulo para verdadeiro</Label>
+                        <Input id="df-bool-true" value={boolTrue} onChange={(e) => setBoolTrue(e.target.value)} placeholder="Sim" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="df-bool-false">Rótulo para falso</Label>
+                        <Input id="df-bool-false" value={boolFalse} onChange={(e) => setBoolFalse(e.target.value)} placeholder="Não" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between rounded-md border border-border p-3">
+                      <Label htmlFor="df-bool-def" className="text-sm">Valor padrão ligado</Label>
+                      <Switch id="df-bool-def" checked={boolDefault} onCheckedChange={setBoolDefault} />
+                    </div>
+                  </div>
+                ) : null}
               </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
@@ -1218,6 +1700,66 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={baseOpen} onOpenChange={setBaseOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display">Editar campo base</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitBase} className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Chave</Label>
+                <Input className="font-mono" value={baseEditing?.key ?? ""} readOnly disabled />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Input value={baseEditing?.type ?? ""} readOnly disabled />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bf-label">Rótulo</Label>
+              <Input id="bf-label" required value={bLabel} onChange={(e) => setBLabel(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bf-tooltip">Texto de ajuda (tooltip)</Label>
+              <Textarea id="bf-tooltip" rows={2} value={bTooltip} onChange={(e) => setBTooltip(e.target.value)} />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Bloco</Label>
+                <Select value={bGroup} onValueChange={setBGroup}>
+                  <SelectTrigger><SelectValue placeholder="Sem bloco" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Sem bloco</SelectItem>
+                    {(groups.data ?? []).map((g) => (
+                      <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bf-order">Ordem</Label>
+                <Input id="bf-order" type="number" min={0} value={bOrder} onChange={(e) => setBOrder(Number(e.target.value))} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <Label htmlFor="bf-req" className="text-sm">Obrigatório</Label>
+              <Switch id="bf-req" checked={bRequired} onCheckedChange={setBRequired} />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <Label htmlFor="bf-vis" className="text-sm">Visível no formulário</Label>
+              <Switch id="bf-vis" checked={bVisible} onCheckedChange={setBVisible} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setBaseOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={bSaving}>
+                {bSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <div className="overflow-x-auto">
         <Table>
@@ -1233,18 +1775,13 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
           </TableHeader>
           <TableBody>
             {baseFields.map((b) => (
-              <TableRow key={`base-${b.key}`} className="bg-muted/40">
-                <TableCell className="text-muted-foreground">—</TableCell>
-                <TableCell className="font-mono text-xs">{b.key}</TableCell>
-                <TableCell className="flex items-center gap-2">
-                  {b.label} <Badge variant="outline">base</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{b.type}</Badge>
-                </TableCell>
-                <TableCell>{b.required ? "sim" : "—"}</TableCell>
-                <TableCell></TableCell>
-              </TableRow>
+              <BaseFieldRow
+                key={`base-${b.key}`}
+                base={b}
+                presentation={basePresentation(b.key)}
+                groupTitle={groupTitle(basePresentation(b.key)?.group_id)}
+                onEdit={() => openBaseEdit(b)}
+              />
             ))}
             {list.isLoading ? (
               <TableRow>
@@ -1264,7 +1801,14 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                   <TableCell>{f.order_index}</TableCell>
                   <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
                   <TableCell>
-                    <span>{f.label}</span>
+                    <span className="flex flex-wrap items-center gap-2">
+                      {f.label}
+                      {f.is_base ? <Badge variant="outline">instância</Badge> : null}
+                      {groupTitle(f.group_id) ? <Badge variant="secondary">{groupTitle(f.group_id)}</Badge> : null}
+                    </span>
+                    {f.config?.tooltip ? (
+                      <span className="block truncate text-xs text-muted-foreground">{String(f.config.tooltip)}</span>
+                    ) : null}
                     {Array.isArray(f.config?.options) && f.config.options.length > 0 ? (
                       <span className="block truncate text-xs text-muted-foreground">
                         {f.config.options.length} opções: {(f.config.options as any[]).slice(0, 4).join(", ")}
@@ -1311,6 +1855,7 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     </div>
   );
 }
+
 
 // ---------- Public card layout editor ----------
 
