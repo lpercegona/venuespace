@@ -596,8 +596,10 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     return { id: o.id, slug: o.slug, name: o.name, description: o.description, logo_url: o.logo_url, category_id: o.category_id, category_data: {}, updated_at: o.updated_at, data, fields, layout };
 
   });
+  trimListingPayload(items);
   await signImagePathsInItems(items, LISTING_GALLERY_LIMIT);
   return { items, total };
+
 }
 
 export async function getPublicOrganization(slug: string): Promise<any> {
