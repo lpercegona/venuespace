@@ -102,7 +102,7 @@ function CampaignPage() {
       <PublicBreadcrumbs
         items={[
           { label: "Home", to: "/" },
-          { label: q.data.organization.name, to: "/public/$slug", params: { slug } },
+          { label: q.data.organization.name, to: "/public/$slug", params: { slug: q.data.organization.slug } },
           { label: title },
         ]}
       />
