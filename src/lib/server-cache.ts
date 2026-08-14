@@ -21,6 +21,11 @@ export function cacheSet<T>(key: string, value: T, ttlMs: number): T {
   return value;
 }
 
+/** Remove uma chave do cache (usado para invalidar o sitemap ao publicar conteúdo). */
+export function cacheDelete(key: string) {
+  store.delete(key);
+}
+
 /** Executa `fn` no máximo uma vez por chave dentro do TTL (dedup de concorrência). */
 export async function cached<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
   const hit = cacheGet<T>(key);
