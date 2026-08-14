@@ -132,7 +132,9 @@ export function BookingFormDialog({
   }, [items, term, busyIds, values]);
 
   const selected = Object.values(values);
-  const total = selected.reduce((s, v) => s + itemTotal(v), 0);
+  const itemsTotal = selected.reduce((s, v) => s + itemTotal(v), 0);
+  const travelFee = Math.max(0, Number(period["travel_fee"] ?? 0) || 0);
+  const total = itemsTotal + travelFee;
 
   function toggle(id: string, defaultValue: number) {
     setValues((prev) => {
