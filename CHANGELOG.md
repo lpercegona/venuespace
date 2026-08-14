@@ -1,3 +1,10 @@
+## 2026-08-14 12:25 (America/Sao_Paulo) — Correção das Iterações 1, 4, 31 e 32 (estabilidade e performance — Iteração A do plano)
+- Hidratação SSR (Correção da Iteração 31): `setupRouterSsrQueryIntegration` em `src/router.tsx` desidrata o cache do servidor para o cliente, eliminando divergência de hidratação e refetch duplicado.
+- "JWT issued at future" (Correção da Iteração 1): `isTransientAuthError` + renovação de sessão em `src/hooks/use-auth.ts` (não derruba mais o usuário por desvio de relógio/rede) e novo `retryOnTokenError` (`src/lib/auth-retry-middleware.ts`) registrado em `src/start.ts`, que renova o token e repete a server function uma única vez.
+- Payload de galeria (Correção da Iteração 31): `signImagePathsInItems` aceita `maxGallery`; listagens públicas assinam no máximo 5 imagens por item (`LISTING_GALLERY_LIMIT`) em vez do álbum inteiro.
+- Concorrência no motor de reserva (Correção das Iterações 4/32): nova função de banco `set_deal_status_guarded` (advisory lock por agenda + reverificação de conflito + gravação na mesma transação); `setDealStatus` passa a usar a RPC, impedindo que duas confirmações simultâneas do mesmo item sejam aceitas.
+- Cache de borda: confirmado `s-maxage`/`stale-while-revalidate` em todas as rotas `/api/public/*` (cache compartilhado entre isolates).
+
 ## 2026-08-13 — Correção das Iterações 29/30/31 e Iteração 34 (verificação de e-mail + 2FA)
 - Rich text: `isRichTextHtml` reconhece h2/h3/blockquote/links; conteúdo do blog passa a usar a classe `.rich-content` (mesma tipografia das descrições).
 - Blog por link direto (Correção da Iteração 30): loaders passam a usar server functions (`listPublicBlogPostsFn`, `getPublicBlogPostFn`) em vez de `fetch` relativo, que falhava no SSR.
