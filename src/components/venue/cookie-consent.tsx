@@ -57,10 +57,10 @@ export function CookieConsent() {
           aria-label="Aviso de cookies"
           className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-6 sm:pb-6 animate-in slide-in-from-bottom-4 fade-in duration-300"
         >
-          <div className="mx-auto w-full max-w-4xl rounded-2xl border border-border bg-card/95 p-4 text-card-foreground shadow-elegant backdrop-blur-sm sm:p-5">
-            <div className="flex flex-col gap-4">
+          <div className="mx-auto w-full max-w-4xl rounded-2xl border border-border bg-card/95 p-3 text-card-foreground shadow-elegant backdrop-blur-sm sm:p-4">
+            <div className="flex flex-col gap-3">
               {/* Parágrafo */}
-              <p className="text-sm leading-relaxed text-muted-foreground">
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 Usamos cookies necessários para o funcionamento do site e, mediante seu consentimento, cookies
                 analíticos e de marketing para medir audiência e personalizar comunicação (LGPD, Lei nº 13.709/2018,
                 art. 7º). Você pode aceitar, recusar os não essenciais ou escolher por categoria a qualquer momento.
@@ -85,7 +85,7 @@ export function CookieConsent() {
               <div className="grid gap-2 sm:grid-cols-3">
                 <Button
                   variant="ghost"
-                  className="min-h-11 w-full px-4 text-sm hover:bg-muted/60 sm:order-1"
+                  className="h-8 w-full px-4 text-sm hover:bg-muted/60 sm:order-1"
                   onClick={() => {
                     setDraft(readConsent()?.categories ?? DENY_ALL);
                     setPrefsOpen(true);
@@ -95,13 +95,13 @@ export function CookieConsent() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="min-h-11 w-full px-4 text-sm sm:order-2"
+                  className="h-8 w-full px-4 text-sm sm:order-2"
                   onClick={() => save(DENY_ALL)}
                 >
                   Rejeitar não essenciais
                 </Button>
                 <Button
-                  className="min-h-11 w-full px-4 text-sm sm:order-3"
+                  className="h-8 w-full px-4 text-sm sm:order-3"
                   onClick={() => save(ALLOW_ALL)}
                 >
                   Aceitar todos
@@ -116,7 +116,7 @@ export function CookieConsent() {
       <Dialog open={prefsOpen} onOpenChange={setPrefsOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg rounded-2xl border-border/50 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">Preferências de cookies</DialogTitle>
+            <DialogTitle className="text-sm font-semibold">Preferências de cookies</DialogTitle>
             <DialogDescription className="text-xs leading-relaxed text-muted-foreground">
               Escolha quais categorias deseja permitir. Sua escolha é registrada neste navegador e vale por 12 meses;
               você pode alterá-la quando quiser pelo rodapé do site.
@@ -147,7 +147,7 @@ export function CookieConsent() {
             />
           </div>
 
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             Você pode revogar o consentimento a qualquer momento e exercer seus direitos de titular (acesso, correção,
             eliminação, portabilidade e oposição) pelo e-mail{" "}
             <a
@@ -162,19 +162,19 @@ export function CookieConsent() {
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button
               variant="ghost"
-              className="min-h-11 w-full px-4 text-sm hover:bg-muted/60 sm:w-auto"
+              className="h-8 w-full px-4 text-sm hover:bg-muted/60 sm:w-auto"
               onClick={() => save(DENY_ALL)}
             >
               Rejeitar não essenciais
             </Button>
             <Button
               variant="outline"
-              className="min-h-11 w-full px-4 text-sm sm:w-auto"
+              className="h-8 w-full px-4 text-sm sm:w-auto"
               onClick={() => save(ALLOW_ALL)}
             >
               Aceitar todos
             </Button>
-            <Button className="min-h-11 w-full px-4 text-sm sm:w-auto" onClick={() => save(draft)}>
+            <Button className="h-8 w-full px-4 text-sm sm:w-auto" onClick={() => save(draft)}>
               Salvar preferências
             </Button>
           </div>
@@ -202,7 +202,7 @@ function CategoryRow({
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl bg-muted/20 border border-border/50 p-3 transition-colors hover:bg-muted/30">
       <div className="min-w-0 space-y-1">
-        <Label htmlFor={id} className="cursor-pointer text-sm font-medium text-foreground">
+        <Label htmlFor={id} className="cursor-pointer text-xs font-medium text-foreground">
           {title}
         </Label>
         <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
