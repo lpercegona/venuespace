@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { publicImageUrl } from "@/lib/public-image";
 
 export type PublicBlogListItem = {
   id: string;
@@ -24,14 +25,11 @@ export type PublicBlogPost = {
   seo_description: string | null;
 };
 
+/** URLs públicas estáveis das capas (sem expiração, cacheáveis pelo navegador). */
 async function signCovers(paths: (string | null)[]): Promise<Map<string, string>> {
   const map = new Map<string, string>();
-  const list = Array.from(new Set(paths.filter((p): p is string => !!p)));
-  if (list.length === 0) return map;
-  const { data } = await supabaseAdmin.storage.from("venue-uploads").createSignedUrls(list, 60 * 60);
-  for (let i = 0; i < list.length; i += 1) {
-    const url = (data ?? [])[i]?.signedUrl;
-    if (url) map.set(list[i], url);
+  for (const p of Array.from(new Set(paths.filter((v): v is string => !!v)))) {
+    map.set(p, publicImageUrl(p));
   }
   return map;
 }

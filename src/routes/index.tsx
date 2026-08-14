@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -100,7 +100,7 @@ function Landing() {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const activeGrouping = groupings.find((g) => g.slug === (activeSlug ?? groupings[0]?.slug)) ?? groupings[0];
 
-  const dataQ = useQuery(homeGroupingDataQuery(activeGrouping?.id));
+  const dataQ = useQuery({ ...homeGroupingDataQuery(activeGrouping?.id), placeholderData: keepPreviousData });
 
   const categoryId = activeGrouping?.category_ids?.[0];
   const catsQ = usePublicCategories();

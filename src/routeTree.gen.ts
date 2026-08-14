@@ -51,6 +51,7 @@ import { Route as PublicSlugTableIdRecordIdRouteImport } from './routes/public.$
 import { Route as ApiPublicViacepCepRouteImport } from './routes/api/public/viacep.$cep'
 import { Route as ApiPublicOrganizationsSlugRouteImport } from './routes/api/public/organizations.$slug'
 import { Route as ApiPublicLeadTokenRouteImport } from './routes/api/public/lead/$token'
+import { Route as ApiPublicImgSplatRouteImport } from './routes/api/public/img/$'
 import { Route as ApiPublicFormSchemaViewIdRouteImport } from './routes/api/public/form-schema/$viewId'
 import { Route as ApiPublicCategorySchemaCategoryIdRouteImport } from './routes/api/public/category-schema.$categoryId'
 import { Route as ApiPublicCategoryLayoutCategoryIdRouteImport } from './routes/api/public/category-layout.$categoryId'
@@ -284,6 +285,11 @@ const ApiPublicLeadTokenRoute = ApiPublicLeadTokenRouteImport.update({
   path: '/api/public/lead/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicImgSplatRoute = ApiPublicImgSplatRouteImport.update({
+  id: '/api/public/img/$',
+  path: '/api/public/img/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicFormSchemaViewIdRoute =
   ApiPublicFormSchemaViewIdRouteImport.update({
     id: '/api/public/form-schema/$viewId',
@@ -416,6 +422,7 @@ export interface FileRoutesByFullPath {
   '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
+  '/api/public/img/$': typeof ApiPublicImgSplatRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
   '/api/public/organizations/$slug': typeof ApiPublicOrganizationsSlugRoute
   '/api/public/viacep/$cep': typeof ApiPublicViacepCepRoute
@@ -472,6 +479,7 @@ export interface FileRoutesByTo {
   '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
+  '/api/public/img/$': typeof ApiPublicImgSplatRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
   '/api/public/organizations/$slug': typeof ApiPublicOrganizationsSlugRoute
   '/api/public/viacep/$cep': typeof ApiPublicViacepCepRoute
@@ -532,6 +540,7 @@ export interface FileRoutesById {
   '/api/public/category-layout/$categoryId': typeof ApiPublicCategoryLayoutCategoryIdRoute
   '/api/public/category-schema/$categoryId': typeof ApiPublicCategorySchemaCategoryIdRoute
   '/api/public/form-schema/$viewId': typeof ApiPublicFormSchemaViewIdRoute
+  '/api/public/img/$': typeof ApiPublicImgSplatRoute
   '/api/public/lead/$token': typeof ApiPublicLeadTokenRoute
   '/api/public/organizations/$slug': typeof ApiPublicOrganizationsSlugRoute
   '/api/public/viacep/$cep': typeof ApiPublicViacepCepRoute
@@ -592,6 +601,7 @@ export interface FileRouteTypes {
     | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
+    | '/api/public/img/$'
     | '/api/public/lead/$token'
     | '/api/public/organizations/$slug'
     | '/api/public/viacep/$cep'
@@ -648,6 +658,7 @@ export interface FileRouteTypes {
     | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
+    | '/api/public/img/$'
     | '/api/public/lead/$token'
     | '/api/public/organizations/$slug'
     | '/api/public/viacep/$cep'
@@ -707,6 +718,7 @@ export interface FileRouteTypes {
     | '/api/public/category-layout/$categoryId'
     | '/api/public/category-schema/$categoryId'
     | '/api/public/form-schema/$viewId'
+    | '/api/public/img/$'
     | '/api/public/lead/$token'
     | '/api/public/organizations/$slug'
     | '/api/public/viacep/$cep'
@@ -758,6 +770,7 @@ export interface RootRouteChildren {
   ApiPublicCategoryLayoutCategoryIdRoute: typeof ApiPublicCategoryLayoutCategoryIdRoute
   ApiPublicCategorySchemaCategoryIdRoute: typeof ApiPublicCategorySchemaCategoryIdRoute
   ApiPublicFormSchemaViewIdRoute: typeof ApiPublicFormSchemaViewIdRoute
+  ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
   ApiPublicLeadTokenRoute: typeof ApiPublicLeadTokenRoute
   ApiPublicViacepCepRoute: typeof ApiPublicViacepCepRoute
   PublicSlugCampaignsRecordIdRoute: typeof PublicSlugCampaignsRecordIdRoute
@@ -1060,6 +1073,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLeadTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/img/$': {
+      id: '/api/public/img/$'
+      path: '/api/public/img/$'
+      fullPath: '/api/public/img/$'
+      preLoaderRoute: typeof ApiPublicImgSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/form-schema/$viewId': {
       id: '/api/public/form-schema/$viewId'
       path: '/api/public/form-schema/$viewId'
@@ -1307,6 +1327,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCategorySchemaCategoryIdRoute:
     ApiPublicCategorySchemaCategoryIdRoute,
   ApiPublicFormSchemaViewIdRoute: ApiPublicFormSchemaViewIdRoute,
+  ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
   ApiPublicLeadTokenRoute: ApiPublicLeadTokenRoute,
   ApiPublicViacepCepRoute: ApiPublicViacepCepRoute,
   PublicSlugCampaignsRecordIdRoute: PublicSlugCampaignsRecordIdRoute,

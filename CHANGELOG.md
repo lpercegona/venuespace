@@ -1,3 +1,12 @@
+## 2026-08-14 12:40 (America/Sao_Paulo) — Correção das Iterações 31 e 35 (estabilidade de imagens, header mobile e banner de cookies)
+
+- Origem do bug (Iteração 31/35): imagens públicas eram servidas por URLs assinadas de 1 h guardadas em cache SSR/memória de 5 min a mais, expirando durante a navegação (400) e provocando recarga/piscada a cada remontagem.
+- Novo `src/lib/public-image.ts` e rota `src/routes/api/public/img/$.ts`: proxy estável de storage com `cache-control` imutável, substituindo as URLs assinadas em `public.server.ts`, `blog-public.server.ts` e `org-logo.tsx`.
+- `lazy-image.tsx`: registro de URLs já carregadas na sessão — o skeleton não reaparece em remontagens, eliminando a piscada.
+- `index.tsx` (home): `placeholderData: keepPreviousData` nos dados de agrupamento, evitando que os blocos sumam durante a revalidação.
+- `public-header.tsx` (mobile): ícone Explore à esquerda, "Cadastrar empresa" centralizado e login à direita; alvos de toque em 40/44 px. Desktop mantém logo → Explore → ações.
+- `cookie-consent.tsx`: banner é retirado da tela enquanto o modal de preferências está aberto; textos em `text-sm`, botões com `min-h-11` (alvo mínimo de toque) e cores/sombras via tokens semânticos.
+
 ## 2026-08-14 11:20 (America/Sao_Paulo) — Iteração 35 (otimização de imagens e consentimento de cookies)
 
 - Novo `src/lib/image-optimizer.ts`: redimensiona (máx. 1920 px; 512 px para avatares) e reencoda para WebP (qualidade 0.80) no browser, mantendo o original quando o ganho é menor que 10% ou o formato não é suportado (SVG/GIF/AVIF).
