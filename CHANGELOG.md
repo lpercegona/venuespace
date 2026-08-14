@@ -1,3 +1,11 @@
+## 2026-08-14 13:20 (America/Sao_Paulo) — Correção da Iteração 35 (imagens, menu Explore, cookies e ícone do header)
+
+- Causa das imagens em branco: os componentes públicos validavam mídia com `^https?://`, descartando os caminhos internos do proxy `/api/public/img/*` criados na correção anterior. Novo helper `isImageSource` em `src/lib/public-image.ts`, aplicado em `public-card-renderer.tsx`, `organization-page-immersive.tsx` e `public.$slug.index.tsx` (inclusive `logo_url` e filtro de atributos em texto).
+- `lazy-image.tsx`: verificação periódica do estado nativo (`complete`/`naturalWidth`) quando a imagem termina de carregar antes da hidratação — o `onLoad` do React não era capturado e a imagem ficava em `opacity-0`.
+- Menu Explore: `usePublicCategories` com `staleTime` de 30 min, `gcTime` de 60 min, sem refetch em mount/foco e `placeholderData` da lista anterior; prefetch das categorias no loader da raiz e itens de esqueleto no dropdown durante o primeiro carregamento.
+- Banner e popup de cookies: todos os textos em `text-xs` (título do modal em `text-sm`) e botões com altura `h-8`, com paddings proporcionais.
+- `public-header.tsx`: fora da index, o ícone da direita passa a ser "Início" (casa) apontando para `/`; na index permanece o ícone de login para `/auth`.
+
 ## 2026-08-14 12:40 (America/Sao_Paulo) — Correção das Iterações 31 e 35 (estabilidade de imagens, header mobile e banner de cookies)
 
 - Origem do bug (Iteração 31/35): imagens públicas eram servidas por URLs assinadas de 1 h guardadas em cache SSR/memória de 5 min a mais, expirando durante a navegação (400) e provocando recarga/piscada a cada remontagem.
