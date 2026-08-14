@@ -2,15 +2,15 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { BackLink } from "@/components/venue/public-header";
 import { useFormatContext } from "@/hooks/use-instance-context";
 import { formatDate } from "@/lib/formatting";
+import { getPublicBlogPostFn } from "@/lib/blog.functions";
 
 export const Route = createFileRoute("/blog/$slug")({
   loader: async ({ params }) => {
-    const res = await fetch(`/api/public/blog/${encodeURIComponent(params.slug)}`);
-    if (res.status === 404) throw notFound();
-    if (!res.ok) throw new Error("Falha ao carregar post");
-    const { post } = await res.json();
+    const { post } = await getPublicBlogPostFn({ data: { slug: params.slug } });
+    if (!post) throw notFound();
     return { post };
   },
+
   head: ({ loaderData }) => {
     if (!loaderData) {
       return { meta: [{ title: "Post — Venuespace" }, { name: "robots", content: "noindex" }] };
