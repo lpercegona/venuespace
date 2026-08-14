@@ -3,6 +3,8 @@ import { useState } from "react";
 import { z } from "zod";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
+
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
 const searchSchema = z.object({
@@ -25,6 +27,13 @@ function PublicFormPage() {
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
+      <PublicBreadcrumbs
+        items={[
+          { label: "Home", to: "/" },
+          { label: slug, to: "/public/$slug", params: { slug } },
+          { label: "Contato" },
+        ]}
+      />
       <main className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
         <div className="mb-3 flex justify-center">
           <BackLink to="/public/$slug" params={{ slug }} label="Voltar" />

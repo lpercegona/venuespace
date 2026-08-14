@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
+
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
 import { PublicCardBody } from "@/components/venue/public-card-renderer";
 
@@ -69,6 +71,13 @@ function PublicListPage() {
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
+      <PublicBreadcrumbs
+        items={[
+          { label: "Home", to: "/" },
+          { label: organization.name, to: "/public/$slug", params: { slug } },
+          { label: table.name },
+        ]}
+      />
       <header className="border-b border-border/60 bg-surface">
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{organization.name}</p>
