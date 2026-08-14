@@ -34,6 +34,7 @@ import { Route as ApiPublicOrganizationsRouteImport } from './routes/api/public/
 import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/api/public/organization-categories'
 import { Route as ApiPublicLocalidadesRouteImport } from './routes/api/public/localidades'
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
+import { Route as ApiPublicImgBackfillTmpRouteImport } from './routes/api/public/img-backfill-tmp'
 import { Route as ApiPublicHomeGroupingDataRouteImport } from './routes/api/public/home-grouping-data'
 import { Route as ApiPublicHomeConfigRouteImport } from './routes/api/public/home-config'
 import { Route as ApiPublicHomeBlockDataRouteImport } from './routes/api/public/home-block-data'
@@ -192,6 +193,11 @@ const ApiPublicInstanceSettingsRoute =
     path: '/api/public/instance-settings',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicImgBackfillTmpRoute = ApiPublicImgBackfillTmpRouteImport.update({
+  id: '/api/public/img-backfill-tmp',
+  path: '/api/public/img-backfill-tmp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHomeGroupingDataRoute =
   ApiPublicHomeGroupingDataRouteImport.update({
     id: '/api/public/home-grouping-data',
@@ -387,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/api/public/home-block-data': typeof ApiPublicHomeBlockDataRoute
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
+  '/api/public/img-backfill-tmp': typeof ApiPublicImgBackfillTmpRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/localidades': typeof ApiPublicLocalidadesRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -443,6 +450,7 @@ export interface FileRoutesByTo {
   '/api/public/home-block-data': typeof ApiPublicHomeBlockDataRoute
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
+  '/api/public/img-backfill-tmp': typeof ApiPublicImgBackfillTmpRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/localidades': typeof ApiPublicLocalidadesRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -501,6 +509,7 @@ export interface FileRoutesById {
   '/api/public/home-block-data': typeof ApiPublicHomeBlockDataRoute
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
+  '/api/public/img-backfill-tmp': typeof ApiPublicImgBackfillTmpRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
   '/api/public/localidades': typeof ApiPublicLocalidadesRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
@@ -560,6 +569,7 @@ export interface FileRouteTypes {
     | '/api/public/home-block-data'
     | '/api/public/home-config'
     | '/api/public/home-grouping-data'
+    | '/api/public/img-backfill-tmp'
     | '/api/public/instance-settings'
     | '/api/public/localidades'
     | '/api/public/organization-categories'
@@ -616,6 +626,7 @@ export interface FileRouteTypes {
     | '/api/public/home-block-data'
     | '/api/public/home-config'
     | '/api/public/home-grouping-data'
+    | '/api/public/img-backfill-tmp'
     | '/api/public/instance-settings'
     | '/api/public/localidades'
     | '/api/public/organization-categories'
@@ -673,6 +684,7 @@ export interface FileRouteTypes {
     | '/api/public/home-block-data'
     | '/api/public/home-config'
     | '/api/public/home-grouping-data'
+    | '/api/public/img-backfill-tmp'
     | '/api/public/instance-settings'
     | '/api/public/localidades'
     | '/api/public/organization-categories'
@@ -729,6 +741,7 @@ export interface RootRouteChildren {
   ApiPublicHomeBlockDataRoute: typeof ApiPublicHomeBlockDataRoute
   ApiPublicHomeConfigRoute: typeof ApiPublicHomeConfigRoute
   ApiPublicHomeGroupingDataRoute: typeof ApiPublicHomeGroupingDataRoute
+  ApiPublicImgBackfillTmpRoute: typeof ApiPublicImgBackfillTmpRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
   ApiPublicLocalidadesRoute: typeof ApiPublicLocalidadesRoute
   ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
@@ -926,6 +939,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/instance-settings'
       fullPath: '/api/public/instance-settings'
       preLoaderRoute: typeof ApiPublicInstanceSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/img-backfill-tmp': {
+      id: '/api/public/img-backfill-tmp'
+      path: '/api/public/img-backfill-tmp'
+      fullPath: '/api/public/img-backfill-tmp'
+      preLoaderRoute: typeof ApiPublicImgBackfillTmpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/home-grouping-data': {
@@ -1268,6 +1288,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHomeBlockDataRoute: ApiPublicHomeBlockDataRoute,
   ApiPublicHomeConfigRoute: ApiPublicHomeConfigRoute,
   ApiPublicHomeGroupingDataRoute: ApiPublicHomeGroupingDataRoute,
+  ApiPublicImgBackfillTmpRoute: ApiPublicImgBackfillTmpRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
   ApiPublicLocalidadesRoute: ApiPublicLocalidadesRoute,
   ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,

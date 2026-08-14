@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { addFieldOption } from "@/lib/orgs.functions";
 import type { FieldRow } from "@/lib/records.functions";
 import { useLabels } from "@/hooks/use-instance-context";
+import { optimizeImage } from "@/lib/image-optimizer";
 
 type Props = {
   fields: FieldRow[];
@@ -46,15 +47,16 @@ export function UploadField({
 }: { value: string; kind: "image" | "file"; disabled?: boolean; onChange: (v: string) => void }) {
   const [busy, setBusy] = useState(false);
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const original = e.target.files?.[0];
+    if (!original) return;
     setBusy(true);
     try {
+      const file = kind === "image" ? await optimizeImage(original) : original;
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id ?? "anon";
       const safe = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
       const path = `${uid}/${kind}/${Date.now()}-${safe}`;
-      const { error } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: false });
+      const { error } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: false, contentType: file.type });
       if (error) throw error;
       onChange(path);
     } catch (err) { toast.error((err as Error).message); }
@@ -97,10 +99,11 @@ export function GalleryField({
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id ?? "anon";
       const uploaded: string[] = [];
-      for (const file of files) {
+      for (const original of files) {
+        const file = await optimizeImage(original);
         const safe = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
         const path = `${uid}/gallery/${Date.now()}-${Math.random().toString(36).slice(2,7)}-${safe}`;
-        const { error } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: false });
+        const { error } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: false, contentType: file.type });
         if (error) throw error;
         uploaded.push(path);
       }
