@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermosECondicoesRouteImport } from './routes/termos-e-condicoes'
 import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
+import { Route as PoliticaDeCookiesRouteImport } from './routes/politica-de-cookies'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as ContestacaoDeEspacosRouteImport } from './routes/contestacao-de-espacos'
 import { Route as BlogRouteImport } from './routes/blog'
@@ -74,6 +75,11 @@ const TermosECondicoesRoute = TermosECondicoesRouteImport.update({
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
   id: '/politica-de-privacidade',
   path: '/politica-de-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDeCookiesRoute = PoliticaDeCookiesRouteImport.update({
+  id: '/politica-de-cookies',
+  path: '/politica-de-cookies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExploreRoute = ExploreRouteImport.update({
@@ -373,6 +379,7 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogRouteWithChildren
   '/contestacao-de-espacos': typeof ContestacaoDeEspacosRoute
   '/explore': typeof ExploreRoute
+  '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -429,6 +436,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/contestacao-de-espacos': typeof ContestacaoDeEspacosRoute
   '/explore': typeof ExploreRoute
+  '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -487,6 +495,7 @@ export interface FileRoutesById {
   '/blog': typeof BlogRouteWithChildren
   '/contestacao-de-espacos': typeof ContestacaoDeEspacosRoute
   '/explore': typeof ExploreRoute
+  '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/auth_/callback': typeof AuthCallbackRoute
@@ -546,6 +555,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/contestacao-de-espacos'
     | '/explore'
+    | '/politica-de-cookies'
     | '/politica-de-privacidade'
     | '/termos-e-condicoes'
     | '/auth/callback'
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/contestacao-de-espacos'
     | '/explore'
+    | '/politica-de-cookies'
     | '/politica-de-privacidade'
     | '/termos-e-condicoes'
     | '/auth/callback'
@@ -659,6 +670,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/contestacao-de-espacos'
     | '/explore'
+    | '/politica-de-cookies'
     | '/politica-de-privacidade'
     | '/termos-e-condicoes'
     | '/auth_/callback'
@@ -718,6 +730,7 @@ export interface RootRouteChildren {
   BlogRoute: typeof BlogRouteWithChildren
   ContestacaoDeEspacosRoute: typeof ContestacaoDeEspacosRoute
   ExploreRoute: typeof ExploreRoute
+  PoliticaDeCookiesRoute: typeof PoliticaDeCookiesRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   TermosECondicoesRoute: typeof TermosECondicoesRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -765,6 +778,13 @@ declare module '@tanstack/react-router' {
       path: '/politica-de-privacidade'
       fullPath: '/politica-de-privacidade'
       preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-cookies': {
+      id: '/politica-de-cookies'
+      path: '/politica-de-cookies'
+      fullPath: '/politica-de-cookies'
+      preLoaderRoute: typeof PoliticaDeCookiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explore': {
@@ -1257,6 +1277,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRoute: BlogRouteWithChildren,
   ContestacaoDeEspacosRoute: ContestacaoDeEspacosRoute,
   ExploreRoute: ExploreRoute,
+  PoliticaDeCookiesRoute: PoliticaDeCookiesRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   TermosECondicoesRoute: TermosECondicoesRoute,
   AuthCallbackRoute: AuthCallbackRoute,

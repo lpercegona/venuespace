@@ -7,6 +7,7 @@ import { Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote, LinkIcon, I
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { optimizeImage } from "@/lib/image-optimizer";
 
 type Props = { value: string; onChange: (html: string) => void };
 
@@ -37,16 +38,17 @@ export function TiptapEditor({ value, onChange }: Props) {
   if (!editor) return null;
 
   async function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const original = e.target.files?.[0];
     e.target.value = "";
-    if (!file || !editor) return;
+    if (!original || !editor) return;
     setUploading(true);
     try {
+      const file = await optimizeImage(original);
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id ?? "anon";
       const safe = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
       const path = `${uid}/blog/inline/${Date.now()}-${safe}`;
-      const { error } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: false });
+      const { error } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: false, contentType: file.type });
       if (error) throw error;
       const { data: signed } = await supabase.storage.from("venue-uploads").createSignedUrl(path, 60 * 60 * 24 * 365);
       if (signed?.signedUrl) editor.chain().focus().setImage({ src: signed.signedUrl }).run();

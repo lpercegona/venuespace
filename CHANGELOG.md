@@ -1,3 +1,13 @@
+## 2026-08-14 11:20 (America/Sao_Paulo) — Iteração 35 (otimização de imagens e consentimento de cookies)
+
+- Novo `src/lib/image-optimizer.ts`: redimensiona (máx. 1920 px; 512 px para avatares) e reencoda para WebP (qualidade 0.80) no browser, mantendo o original quando o ganho é menor que 10% ou o formato não é suportado (SVG/GIF/AVIF).
+- Uploads passam pelo otimizador em `dynamic-form.tsx` (imagem e galeria), `settings-modal.tsx` (avatar), `tiptap-editor.tsx` (imagem inline) e `_authenticated.admin.blog.$postId.tsx` (capa), com `contentType` correto no storage.
+- Backfill único executado sobre o bucket `venue-uploads`: 308 imagens avaliadas, 217 otimizadas no mesmo caminho (sem alteração de registros), 91 mantidas por ganho insuficiente — 130,77 MB → 28,48 MB. Endpoint temporário usado no processo foi removido.
+- Novo `src/lib/cookie-consent.ts` e `src/components/venue/cookie-consent.tsx`: banner LGPD com "Aceitar todos", "Rejeitar não essenciais" e "Preferências", modal com categorias Necessários/Analíticos/Marketing, persistência em `localStorage` (versão + data, validade de 12 meses) e renderização apenas após hidratação.
+- Google Consent Mode v2 em `__root.tsx`: estado padrão `denied` antes do GTM, releitura do consentimento salvo e `consent update` ao salvar preferências.
+- Nova rota `/politica-de-cookies` com `head()` próprio (title, description, og, canonical), tabela de categorias, prazos, bases legais, revogação e contato do encarregado.
+- `PublicFooter`: links para a Política de Cookies e ação "Preferências de cookies" (reabre o modal em qualquer página).
+
 ## 2026-08-14 10:03 (America/Sao_Paulo) — Correção/extensão da Iteração 33 (layout de listagens e header)
 
 - Desktop: `/explore` e `/categoria/$slug` passam a usar 3 colunas — coluna fixa (~280 px) para filtros e duas colunas para cards com largura mínima de ~280 px (`minmax(280px, 1fr)`); grade de cards simplificada para 2 colunas.

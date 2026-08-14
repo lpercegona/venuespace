@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile, updateMyProfile } from "@/lib/profile.functions";
 import { TwoFactorManager } from "@/components/venue/two-factor-manager";
+import { optimizeImage } from "@/lib/image-optimizer";
 
 type Section = "profile" | "notifications" | "security";
 
@@ -89,16 +90,17 @@ function ProfileSection() {
   }, [me.data]);
 
   async function handleAvatar(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const original = e.target.files?.[0];
+    if (!original) return;
     setUploading(true);
     try {
+      const file = await optimizeImage(original, { maxSide: 512 });
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id;
       if (!uid) throw new Error("Sem sessão");
       const ext = file.name.split(".").pop() ?? "png";
       const path = `${uid}/avatar-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: true });
+      const { error: upErr } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: true, contentType: file.type });
       if (upErr) throw upErr;
       const { data: signed } = await supabase.storage.from("venue-uploads").createSignedUrl(path, 60 * 60 * 24 * 30);
       setAvatarUrl(signed?.signedUrl ?? path);

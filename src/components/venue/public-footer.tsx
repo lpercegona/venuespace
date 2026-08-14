@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
+import { openCookiePreferences } from "@/lib/cookie-consent";
 
 const links = [
   { to: "/termos-e-condicoes", label: "Termos e condições" },
   { to: "/politica-de-privacidade", label: "Política de Privacidade" },
+  { to: "/politica-de-cookies", label: "Política de Cookies" },
   { to: "/contestacao-de-espacos", label: "Contestações de espaços" },
   { to: "https://tools.venuespace.com.br", label: "Ferramentas", external: true },
   { to: "/blog", label: "Blog" },
@@ -19,6 +21,13 @@ export function PublicFooter() {
               {l.label}
             </Link>
           ))}
+          <button
+            type="button"
+            onClick={() => openCookiePreferences()}
+            className="hover:text-foreground"
+          >
+            Preferências de cookies
+          </button>
         </nav>
       </div>
     </footer>

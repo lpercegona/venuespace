@@ -15,6 +15,7 @@ import { TiptapEditor } from "@/components/venue/tiptap-editor";
 import { getBlogPostAdmin, upsertBlogPost, signBlogImagePath } from "@/lib/blog.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { slugify } from "@/lib/slug";
+import { optimizeImage } from "@/lib/image-optimizer";
 
 export const Route = createFileRoute("/_authenticated/admin/blog/$postId")({
   head: () => ({ meta: [{ title: "Post — Admin Venuespace" }, { name: "robots", content: "noindex" }] }),
@@ -72,16 +73,17 @@ function BlogEditor() {
   }, [title, slugTouched]);
 
   async function onPickCover(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const original = e.target.files?.[0];
     e.target.value = "";
-    if (!file) return;
+    if (!original) return;
     setUploadingCover(true);
     try {
+      const file = await optimizeImage(original);
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id ?? "anon";
       const safe = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
       const path = `${uid}/blog/covers/${Date.now()}-${safe}`;
-      const { error } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: false });
+      const { error } = await supabase.storage.from("venue-uploads").upload(path, file, { upsert: false, contentType: file.type });
       if (error) throw error;
       const r = await signBlogImagePath({ data: { path } });
       setCoverPath(path);

@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { CookieConsent } from "@/components/venue/cookie-consent";
 
 function NotFoundComponent() {
   return (
@@ -110,6 +111,40 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     scripts: [
       {
         children: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){window.dataLayer.push(arguments);}
+          gtag('consent','default',{
+            'ad_storage':'denied',
+            'ad_user_data':'denied',
+            'ad_personalization':'denied',
+            'analytics_storage':'denied',
+            'personalization_storage':'denied',
+            'functionality_storage':'granted',
+            'security_storage':'granted',
+            'wait_for_update': 500
+          });
+          try {
+            var raw = window.localStorage.getItem('vs_cookie_consent');
+            if (raw) {
+              var c = JSON.parse(raw);
+              var saved = Date.parse(c && c.savedAt);
+              if (c && c.version === 1 && saved && (Date.now() - saved) < 365*24*60*60*1000) {
+                gtag('consent','update',{
+                  'ad_storage': c.categories.marketing ? 'granted' : 'denied',
+                  'ad_user_data': c.categories.marketing ? 'granted' : 'denied',
+                  'ad_personalization': c.categories.marketing ? 'granted' : 'denied',
+                  'analytics_storage': c.categories.analytics ? 'granted' : 'denied',
+                  'personalization_storage': c.categories.marketing ? 'granted' : 'denied',
+                  'functionality_storage':'granted',
+                  'security_storage':'granted'
+                });
+              }
+            }
+          } catch (e) {}
+        `,
+      },
+      {
+        children: `
           (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
           j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -154,6 +189,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <Toaster richColors position="top-right" />
+      <CookieConsent />
     </QueryClientProvider>
   );
 }
