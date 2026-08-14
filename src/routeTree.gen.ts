@@ -31,6 +31,7 @@ import { Route as ApiPublicRecordsRouteImport } from './routes/api/public/record
 import { Route as ApiPublicPlatformLabelsRouteImport } from './routes/api/public/platform-labels'
 import { Route as ApiPublicOrganizationsRouteImport } from './routes/api/public/organizations'
 import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/api/public/organization-categories'
+import { Route as ApiPublicLocalidadesRouteImport } from './routes/api/public/localidades'
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
 import { Route as ApiPublicHomeGroupingDataRouteImport } from './routes/api/public/home-grouping-data'
 import { Route as ApiPublicHomeConfigRouteImport } from './routes/api/public/home-config'
@@ -174,6 +175,11 @@ const ApiPublicOrganizationCategoriesRoute =
     path: '/api/public/organization-categories',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicLocalidadesRoute = ApiPublicLocalidadesRouteImport.update({
+  id: '/api/public/localidades',
+  path: '/api/public/localidades',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicInstanceSettingsRoute =
   ApiPublicInstanceSettingsRouteImport.update({
     id: '/api/public/instance-settings',
@@ -375,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
+  '/api/public/localidades': typeof ApiPublicLocalidadesRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
@@ -429,6 +436,7 @@ export interface FileRoutesByTo {
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
+  '/api/public/localidades': typeof ApiPublicLocalidadesRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
@@ -485,6 +493,7 @@ export interface FileRoutesById {
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
+  '/api/public/localidades': typeof ApiPublicLocalidadesRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
@@ -542,6 +551,7 @@ export interface FileRouteTypes {
     | '/api/public/home-config'
     | '/api/public/home-grouping-data'
     | '/api/public/instance-settings'
+    | '/api/public/localidades'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
     | '/api/public/platform-labels'
@@ -596,6 +606,7 @@ export interface FileRouteTypes {
     | '/api/public/home-config'
     | '/api/public/home-grouping-data'
     | '/api/public/instance-settings'
+    | '/api/public/localidades'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
     | '/api/public/platform-labels'
@@ -651,6 +662,7 @@ export interface FileRouteTypes {
     | '/api/public/home-config'
     | '/api/public/home-grouping-data'
     | '/api/public/instance-settings'
+    | '/api/public/localidades'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
     | '/api/public/platform-labels'
@@ -705,6 +717,7 @@ export interface RootRouteChildren {
   ApiPublicHomeConfigRoute: typeof ApiPublicHomeConfigRoute
   ApiPublicHomeGroupingDataRoute: typeof ApiPublicHomeGroupingDataRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
+  ApiPublicLocalidadesRoute: typeof ApiPublicLocalidadesRoute
   ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
   ApiPublicOrganizationsRoute: typeof ApiPublicOrganizationsRouteWithChildren
   ApiPublicPlatformLabelsRoute: typeof ApiPublicPlatformLabelsRoute
@@ -879,6 +892,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/organization-categories'
       fullPath: '/api/public/organization-categories'
       preLoaderRoute: typeof ApiPublicOrganizationCategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/localidades': {
+      id: '/api/public/localidades'
+      path: '/api/public/localidades'
+      fullPath: '/api/public/localidades'
+      preLoaderRoute: typeof ApiPublicLocalidadesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/instance-settings': {
@@ -1228,6 +1248,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHomeConfigRoute: ApiPublicHomeConfigRoute,
   ApiPublicHomeGroupingDataRoute: ApiPublicHomeGroupingDataRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
+  ApiPublicLocalidadesRoute: ApiPublicLocalidadesRoute,
   ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,
   ApiPublicOrganizationsRoute: ApiPublicOrganizationsRouteWithChildren,
   ApiPublicPlatformLabelsRoute: ApiPublicPlatformLabelsRoute,
