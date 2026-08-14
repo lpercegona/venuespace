@@ -69,7 +69,7 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
               <SlidersHorizontal className="h-4 w-4" />
               <span className="hidden sm:inline">Filtros</span>
               {activeCount > 0 ? (
-                <Badge variant="secondary" className="rounded-full px-1.5">
+                <Badge variant="secondary" className="rounded-full">
                   {activeCount}
                 </Badge>
               ) : null}
@@ -116,7 +116,6 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
       <Button type="submit" size="icon" aria-label="Buscar" className="h-11 w-11 shrink-0 rounded-full">
         <Search className="h-4 w-4" />
       </Button>
-
     </form>
   );
 }
