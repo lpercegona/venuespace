@@ -1,3 +1,11 @@
+## 2026-08-13 — Correção das Iterações 29/30/31 e Iteração 34 (verificação de e-mail + 2FA)
+- Rich text: `isRichTextHtml` reconhece h2/h3/blockquote/links; conteúdo do blog passa a usar a classe `.rich-content` (mesma tipografia das descrições).
+- Blog por link direto (Correção da Iteração 30): loaders passam a usar server functions (`listPublicBlogPostsFn`, `getPublicBlogPostFn`) em vez de `fetch` relativo, que falhava no SSR.
+- Localidades "Espaços em" (Correção da Iteração 30): `listPublicLocalities` lê bairros/cidades reais das organizações públicas; nova rota `/api/public/localidades` e `getPublicLocalitiesFn`; home aguarda as leituras do primeiro render (fim da divergência de hidratação).
+- Login Google (Correção da Iteração 1): `redirect_uri` passa a ser `/auth/callback` (nova rota `auth_.callback.tsx`), que aguarda a sessão e encaminha para `/app`.
+- Iteração 34: confirmação de e-mail obrigatória em novos cadastros (com reenvio de link) e verificação em duas etapas por aplicativo autenticador (TOTP) — novo `TwoFactorManager` em Configurações > Segurança e etapa de código no login.
+- Busca (Correção da Iteração 33): ícone de lupa removido do campo de digitação, bloco e botão de filtros arredondados; dock mobile centralizado.
+
 ## 2026-08-12 — Correção/extensão da Iteração 32 — reservas apartadas, itens com desconto e novo PDF
 - Tabela de reservas dedicada por tabela reservável (`system_data.kind = 'bookings'`); catálogos voltam a ser apenas listagem.
 - Formulário de reserva: período primeiro, listagem apenas de itens disponíveis, valor de diária, nº de diárias, desconto (R$ ou %), observações e cortesia por item, além de observações gerais.
