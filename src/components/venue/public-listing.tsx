@@ -137,6 +137,7 @@ export function PublicListing({
         onClear={onClear}
         total={total}
       />
+    </div>
     </section>
   );
 }
