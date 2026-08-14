@@ -725,13 +725,18 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   const slug = opts.slug?.trim() || undefined;
   const filters = opts.filters ?? {};
 
-  const { data, error } = await sb.from("records")
-    .select("id, data, deal_status, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(slug, name, category_id, is_public))")
-    .eq("status", "published")
-    .order("created_at", { ascending: false })
-    .limit(2000);
-  if (error) throw new Error(error.message);
-  let base = ((data ?? []) as any[])
+  // Snapshot único dos registros publicados (chave estável + revalidação em
+  // segundo plano): antes cada bloco/listagem refazia esta consulta.
+  const rows = await cachedSWR("records:public:snapshot", TTL_MEDIUM, async () => {
+    const { data, error } = await sb.from("records")
+      .select("id, data, deal_status, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(slug, name, category_id, is_public))")
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(2000);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as any[];
+  });
+  let base = rows
     .filter((r) => r.table?.organization?.is_public !== false && r.table?.is_public !== false)
     .map((r) => ({
       record_id: r.id,
@@ -750,13 +755,15 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   if (slug) base = base.filter((i) => i.org_slug === slug);
 
   const { loadFilterKeys: loadRecFilterKeys } = await import("@/lib/explore-filters.server");
-  const recFilterKeys = await loadRecFilterKeys("record", categoryId);
+  const [recFilterKeys, recAliases] = await Promise.all([
+    loadRecFilterKeys("record", categoryId),
+    loadOptionAliases(
+      "category_standard_table_fields",
+      [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
+    ),
+  ]);
   const recRangeByKey = new Map(recFilterKeys.ranges.map((r) => [r.key, r]));
 
-  const recAliases = await loadOptionAliases(
-    "category_standard_table_fields",
-    [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
-  );
 
   for (const [key, val] of Object.entries(filters)) {
     const rangeDef = recRangeByKey.get(key);
