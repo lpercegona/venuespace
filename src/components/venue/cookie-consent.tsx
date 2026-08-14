@@ -50,6 +50,7 @@ export function CookieConsent() {
 
   return (
     <>
+      {/* ========== BANNER – parágrafo em cima, botões em linha ========== */}
       {bannerOpen && (
         <div
           role="region"
@@ -57,31 +58,34 @@ export function CookieConsent() {
           className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-6 sm:pb-6 animate-in slide-in-from-bottom-4 fade-in duration-300"
         >
           <div className="mx-auto w-full max-w-4xl rounded-2xl border border-border/50 bg-card/95 backdrop-blur-sm p-4 text-card-foreground shadow-2xl shadow-black/5 sm:p-5">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex min-w-0 gap-3">
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  Usamos cookies necessários para o funcionamento do site e, mediante seu consentimento, cookies
-                  analíticos e de marketing para medir audiência e personalizar comunicação (LGPD, Lei nº 13.709/2018,
-                  art. 7º). Você pode aceitar, recusar os não essenciais ou escolher por categoria a qualquer momento.
-                  Saiba mais na{" "}
-                  <Link
-                    to="/politica-de-cookies"
-                    className="text-foreground font-medium underline underline-offset-2 hover:text-brand transition-colors"
-                  >
-                    Política de Cookies
-                  </Link>{" "}
-                  e na{" "}
-                  <Link
-                    to="/politica-de-privacidade"
-                    className="text-foreground font-medium underline underline-offset-2 hover:text-brand transition-colors"
-                  >
-                    Política de Privacidade
-                  </Link>
-                  .
-                </p>
+            <div className="flex flex-col gap-3">
+              {/* Parágrafo */}
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Usamos cookies necessários para o funcionamento do site e, mediante seu consentimento, cookies
+                analíticos e de marketing para medir audiência e personalizar comunicação (LGPD, Lei nº 13.709/2018,
+                art. 7º). Você pode aceitar, recusar os não essenciais ou escolher por categoria a qualquer momento.
+                Saiba mais na{" "}
+                <Link
+                  to="/politica-de-cookies"
+                  className="text-foreground font-medium underline underline-offset-2 hover:text-brand transition-colors"
+                >
+                  Política de Cookies
+                </Link>{" "}
+                e na{" "}
+                <Link
+                  to="/politica-de-privacidade"
+                  className="text-foreground font-medium underline underline-offset-2 hover:text-brand transition-colors"
+                >
+                  Política de Privacidade
+                </Link>
+                .
+              </p>
+
+              {/* Botões em linha única (3 colunas) */}
+              <div className="grid grid-cols-3 gap-1.5">
                 <Button
                   variant="ghost"
-                  className="h-auto px-3 py-1.5 text-xs whitespace-nowrap hover:bg-muted/50"
+                  className="h-auto px-3 py-1.5 text-xs whitespace-nowrap hover:bg-muted/50 w-full"
                   onClick={() => {
                     setDraft(readConsent()?.categories ?? DENY_ALL);
                     setPrefsOpen(true);
@@ -91,13 +95,13 @@ export function CookieConsent() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-auto px-3 py-1.5 text-xs whitespace-nowrap border-muted-foreground/20 hover:bg-muted/50"
+                  className="h-auto px-3 py-1.5 text-xs whitespace-nowrap border-muted-foreground/20 hover:bg-muted/50 w-full"
                   onClick={() => save(DENY_ALL)}
                 >
                   Rejeitar não essenciais
                 </Button>
                 <Button
-                  className="h-auto px-3 py-1.5 text-xs whitespace-nowrap bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow"
+                  className="h-auto px-3 py-1.5 text-xs whitespace-nowrap bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow w-full"
                   onClick={() => save(ALLOW_ALL)}
                 >
                   Aceitar todos
@@ -108,6 +112,7 @@ export function CookieConsent() {
         </div>
       )}
 
+      {/* ========== POPUP DE PREFERÊNCIAS (sem alterações) ========== */}
       <Dialog open={prefsOpen} onOpenChange={setPrefsOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg rounded-2xl border-border/50 shadow-2xl">
           <DialogHeader>
@@ -154,7 +159,6 @@ export function CookieConsent() {
             .
           </p>
 
-          {/* Botões reposicionados abaixo do parágrafo */}
           <div className="mt-4 flex flex-col gap-1.5 sm:flex-row sm:justify-end sm:gap-2">
             <Button
               variant="ghost"
