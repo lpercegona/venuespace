@@ -84,36 +84,36 @@ export function FilterRangeSelect({
         <div className="grid grid-cols-2 gap-2 pb-2">
           <div className="min-w-0 space-y-1">
             <span className="block text-[11px] text-muted-foreground">A partir de</span>
-            <Select value={range.min != null ? String(range.min) : ANY} onValueChange={(v) => set("min", v)}>
-              <SelectTrigger className="h-9 text-xs" aria-label={`${label}: a partir de`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ANY}>Qualquer</SelectItem>
-                {minOptions.map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {fmt(n)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={range.min != null ? String(range.min) : ANY}
+              onChange={(e) => set("min", e.target.value)}
+              aria-label={`${label}: a partir de`}
+              className="h-9 w-full rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value={ANY}>Qualquer</option>
+              {minOptions.map((n) => (
+                <option key={n} value={String(n)}>
+                  {fmt(n)}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="min-w-0 space-y-1">
             <span className="block text-[11px] text-muted-foreground">Até</span>
-            <Select value={range.max != null ? String(range.max) : ANY} onValueChange={(v) => set("max", v)}>
-              <SelectTrigger className="h-9 text-xs" aria-label={`${label}: até`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ANY}>Qualquer</SelectItem>
-                {maxOptions.map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {fmt(n)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={range.max != null ? String(range.max) : ANY}
+              onChange={(e) => set("max", e.target.value)}
+              aria-label={`${label}: até`}
+              className="h-9 w-full rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value={ANY}>Qualquer</option>
+              {maxOptions.map((n) => (
+                <option key={n} value={String(n)}>
+                  {fmt(n)}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       )}
