@@ -1026,3 +1026,36 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
 }
 
 
+
+export type PublicLocalities = {
+  bairros: Array<{ value: string; count: number }>;
+  cidades: Array<{ value: string; count: number }>;
+};
+
+/**
+ * Bairros e cidades distintos das organizações públicas existentes.
+ * Sem paginação de cards: lê direto o endereço das organizações publicadas.
+ */
+export async function listPublicLocalities(): Promise<PublicLocalities> {
+  return cached("localities:v1", TTL_MEDIUM, async () => {
+    const { data, error } = await supabaseAdmin
+      .from("organizations")
+      .select("address")
+      .eq("is_public", true);
+    if (error) throw new Error(error.message);
+    const bairros = new Map<string, number>();
+    const cidades = new Map<string, number>();
+    for (const row of (data ?? []) as Array<{ address: any }>) {
+      const addr = (row.address ?? {}) as Record<string, any>;
+      const bairro = String(addr.neighborhood ?? "").trim();
+      const cidade = String(addr.city ?? "").trim();
+      if (bairro) bairros.set(bairro, (bairros.get(bairro) ?? 0) + 1);
+      if (cidade) cidades.set(cidade, (cidades.get(cidade) ?? 0) + 1);
+    }
+    const toList = (m: Map<string, number>) =>
+      Array.from(m.entries())
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => a.value.localeCompare(b.value, "pt-BR"));
+    return { bairros: toList(bairros), cidades: toList(cidades) };
+  });
+}
