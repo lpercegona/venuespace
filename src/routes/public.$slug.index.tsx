@@ -16,6 +16,7 @@ import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { EmptyState } from "@/components/venue/empty-state";
 import { RichTextView } from "@/components/venue/rich-text-view";
+import { isImageSource } from "@/lib/public-image";
 
 
 type PublicLayoutField = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
