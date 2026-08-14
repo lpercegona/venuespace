@@ -189,10 +189,14 @@ export type QuoteInput = {
   org: QuoteOrg;
   recordId: string;
   client: string | null;
+  clientCompany?: string | null;
+  clientCnpj?: string | null;
+  clientAddress?: string | null;
   location: string | null;
   periodStart: string | null;
   periodEnd: string | null;
   items: QuoteItem[];
+  travelFee?: number;
   paymentTerms: string[];
   notes: string[];
   validityDays: number;
