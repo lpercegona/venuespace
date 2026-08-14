@@ -27,7 +27,19 @@ type PublicOrganizationSummary = {
   category_id: string | null; data: Record<string, any>; layout: PublicLayoutField[]; fields: PublicRendererField[];
 };
 
+function publicOrgQuery(slug: string) {
+  return {
+    queryKey: ["public-org", slug],
+    queryFn: () => getPublicOrganizationFn({ data: { slug } }) as Promise<PublicOrg>,
+    staleTime: 60_000,
+  };
+}
+
 export const Route = createFileRoute("/public/$slug/")({
+  loader: async ({ context, params }) => {
+    // Prefetch para que o estilo de página (padrão/imersivo) já seja conhecido na primeira renderização.
+    await context.queryClient.ensureQueryData(publicOrgQuery(params.slug)).catch(() => null);
+  },
   head: ({ params }) => ({
     meta: [
       { title: `${params.slug} — Venuespace` },
@@ -57,17 +69,12 @@ type PublicOrg = PublicOrganizationSummary & {
   total_reviews: number;
 };
 
-async function fetchOrg(slug: string): Promise<PublicOrg> {
-  const res = await fetch(`/api/public/organizations/${encodeURIComponent(slug)}`);
-  if (!res.ok) throw new Error("Perfil não encontrado");
-  return res.json();
-}
-
 async function fetchRecords(slug: string): Promise<{ items: PublicRecordSummary[]; total: number }> {
   const res = await fetch(`/api/public/records?limit=60&slug=${encodeURIComponent(slug)}`);
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
+
 
 function formatAddress(a: Record<string, any> | undefined): { line1: string; line2: string } | null {
   if (!a) return null;
