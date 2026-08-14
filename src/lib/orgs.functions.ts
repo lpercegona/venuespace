@@ -121,6 +121,7 @@ export const createOrganization = createServerFn({ method: "POST" })
       const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
       if (uErr) throw new Error(uErr.message);
     }
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return org as { id: string; slug: string; name: string };
   });
 
@@ -196,6 +197,7 @@ export const updateOrganization = createServerFn({ method: "POST" })
     if (categoryChanged) {
       await context.supabase.rpc("reconcile_org_category_fields", { _org_id: data.id });
     }
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return { ok: true, category_reconciled: categoryChanged };
   });
 
@@ -213,6 +215,7 @@ export const deleteOrganization = createServerFn({ method: "POST" })
     if (!allowedDelete) throw new Error("Sem permissão para excluir esta organização.");
     const { error } = await context.supabase.from("organizations").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return { ok: true };
   });
 
@@ -231,6 +234,7 @@ export const deleteTable = createServerFn({ method: "POST" })
     if (!isOwner) throw new Error("Apenas owners podem excluir tabelas.");
     const { error } = await context.supabase.from("tables").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return { ok: true };
   });
 
@@ -335,6 +339,7 @@ export const createTable = createServerFn({ method: "POST" })
       // Seeding failure must not block table creation.
     }
 
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return row;
   });
 
@@ -387,6 +392,7 @@ export const updateTable = createServerFn({ method: "POST" })
     if (rest.category_data !== undefined) patch.category_data = rest.category_data;
     const { error } = await context.supabase.from("tables").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return { ok: true };
   });
 

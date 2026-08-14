@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /admin/
+Disallow: /me/
+Disallow: /auth
+Disallow: /lead/
+Disallow: /api/
+
+Sitemap: https://venuespace.com.br/sitemap.xml

@@ -951,3 +951,11 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 - `bookings.server.ts`: `ContactRow`/`contactLabel` devolvem empresa, CNPJ e endereço; `QuoteInput` recebe `clientCompany`, `clientCnpj`, `clientAddress` e `travelFee`; o PDF ganha as linhas Empresa/CNPJ/Endereço no bloco de dados do cliente e, quando há deslocamento, "Subtotal dos itens" + "Deslocamento" antes do total geral.
 - `bookings.functions.ts`: `getBookingContext` inclui os campos de empresa no schema de novo contato; `listBookings` devolve `travel_fee` e soma o deslocamento em `items_total`; `generateBookingQuote` envia os dados do cliente e o deslocamento ao PDF (a proposta na conversa usa o total com deslocamento).
 - UI: `booking-form-dialog.tsx` ganhou o campo Deslocamento e o rodapé com subtotal/deslocamento/total, além do resumo de empresa/CNPJ/endereço do contato selecionado; `booking-contact-picker.tsx` tipa os novos dados do contato.
+
+## Iteração 38 — sitemap público e robots.txt (2026-08-14)
+- Novo `src/routes/sitemap[.]xml.ts` servindo `/sitemap.xml` (XML, `Cache-Control: public, max-age=3600`) a partir de `src/lib/sitemap.server.ts`.
+- Cobertura: páginas estáticas (`/`, `/explore`, `/blog`, `/para-empresas` e as legais) + dinâmicas lidas do banco — `/categoria/{slug}` por categoria, `/blog/{slug}` de posts publicados, `/public/{slug}` de organizações públicas, `/public/{slug}/{tableId}` de tabelas públicas com registros publicados e `/public/{slug}/{tableId}/{recordId}` de cada registro publicado. `lastmod` vem do `updated_at` real de cada entidade. Rotas autenticadas, de API e por token ficam de fora. Teto de 45.000 URLs.
+- Inclusão automática: como as URLs vêm de consulta ao banco, toda organização/tabela/registro publicado entra no sitemap sem passo manual; `invalidateSitemapCache()` é disparada em criação, edição e exclusão de organização e tabela (`orgs.functions.ts`), com cache SWR de 1h (`cacheDelete` adicionado a `server-cache.ts`).
+- Novo `public/robots.txt`: rastreamento liberado, `/app/`, `/admin/`, `/me/`, `/auth`, `/lead/` e `/api/` bloqueados, apontando para `https://venuespace.com.br/sitemap.xml`.
+- `AGENTS.md`: nova seção "Sitemap (obrigatório)" tornando a inclusão de novas páginas públicas no sitemap uma regra de governança.
+- Pendência: acima de 45.000 URLs será necessário migrar para `sitemapindex`.
