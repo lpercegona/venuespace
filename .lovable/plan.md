@@ -36,8 +36,22 @@ Hoje a filtragem é toda em JavaScript sobre listas inteiras (`records` com limi
 4. `explore-filters.server.ts`: facetas por agregação no banco, em vez de varrer 5000 registros a cada mudança de filtro.
 5. Validação: `EXPLAIN ANALYZE` das novas consultas e teste de duas requisições simultâneas de reserva confirmando o bloqueio da Iteração A.
 
+## Cobertura dos apontamentos (nenhum fica de fora)
+
+| Apontamento | Onde é sanado |
+| --- | --- |
+| JWT issued at future | Iteração A, item 1 |
+| 1. Cache entre isolates | Iteração A, item 4 (cache de borda; instrumentação dispensada) |
+| 2. Concorrência em reservas | Iteração A, item 2 (correção no banco) |
+| 3. Normalização da busca | Iteração B, itens 1–3 (hoje é em JavaScript) |
+| 4. Filtros jsonb sem índice | Iteração B, itens 2–4 |
+| 5. Payload de galeria | Iteração A, item 3 |
+| 6. Dependências no bundle público | Iteração A, item 7 (`pdf-lib` já é só servidor) |
+| 7. Custo da verificação de sessão | Iteração A, item 1 (medição junto ao log de JWT; cache da chave por isolate se houver ida à rede) |
+
 ## Observações técnicas
 
-- Nada aqui altera contratos de API pública nem o comportamento visual das páginas.
-- A Iteração B envolve migração de dados (preenchimento inicial do campo normalizado) e é executada depois de A para não misturar risco com as correções de estabilidade.
-- Registro das duas iterações em `CHANGELOG.md`.
+- Prioridade de esforço x ganho: a Iteração A concentra tudo que reduz latência sem migração de dados; a Iteração B é a única com migração e entrega o maior ganho restante.
+- Nada altera contratos de API pública nem o comportamento visual das páginas.
+- Registro das duas iterações em `CHANGELOG.md`, com as correções referenciando as iterações de origem.
+
