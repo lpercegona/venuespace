@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import type { PublicOrganizationSummary } from "@/lib/public.server";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { PublicListing, PUBLIC_LISTING_PAGE_SIZE } from "@/components/venue/public-listing";
@@ -162,6 +163,11 @@ function ExplorePage() {
       <PublicHeader />
 
       <PublicListing
+        breadcrumbs={
+          <PublicBreadcrumbs
+            items={[{ label: "Home", to: "/" }, { label: activeCat?.name ?? "Explorar" }]}
+          />
+        }
         beforeTitle={<BackLink to="/" label="Início" />}
         hero={
           <ListingHero

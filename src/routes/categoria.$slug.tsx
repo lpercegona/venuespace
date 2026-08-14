@@ -3,6 +3,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
 import { PublicHeader } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { PublicListing, PUBLIC_LISTING_PAGE_SIZE } from "@/components/venue/public-listing";
@@ -132,6 +133,9 @@ function CategoryPage() {
       <PublicHeader activeCategorySlug={slug} />
 
       <PublicListing
+        breadcrumbs={
+          <PublicBreadcrumbs items={[{ label: "Home", to: "/" }, { label: category?.name ?? "Categoria" }]} />
+        }
         hero={<ListingHero title={`${category?.name ?? "Categoria"} do jeito que você busca!`} />}
         term={term}
         onTermChange={setTerm}
