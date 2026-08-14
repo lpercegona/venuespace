@@ -70,19 +70,20 @@ export function PublicListing({
   const offset = (page - 1) * pageSize;
 
   return (
-    <section className="mx-auto w-full max-w-6xl grow px-4 py-10 pb-28 sm:px-6 lg:pb-10">
-      {beforeTitle}
-      {hero ? (
-        <>{hero}</>
-      ) : title ? (
-        <>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
-          {description ? <p className="mt-2 text-sm text-muted-foreground">{description}</p> : null}
-        </>
-      ) : null}
-      {aboveContent}
+    <section className="flex w-full grow flex-col pb-28 lg:pb-10">
+      {hero ? <div className="w-full">{hero}</div> : null}
 
-      <div className="mt-6 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div className="mx-auto w-full max-w-6xl grow px-4 py-10 sm:px-6">
+        {beforeTitle}
+        {!hero && title ? (
+          <>
+            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+            {description ? <p className="mt-2 text-sm text-muted-foreground">{description}</p> : null}
+          </>
+        ) : null}
+        {aboveContent}
+
+        <div className="mt-6 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
         <PublicFilterSidebar
           className="hidden lg:sticky lg:top-24 lg:block"
           term={term}
