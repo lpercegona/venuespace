@@ -134,6 +134,7 @@ export function BookingFormDialog({
   const selected = Object.values(values);
   const itemsTotal = selected.reduce((s, v) => s + itemTotal(v), 0);
   const travelFee = Math.max(0, Number(period["travel_fee"] ?? 0) || 0);
+  const selectedContact = contacts.find((c) => c.id === contactId) ?? null;
   const total = itemsTotal + travelFee;
 
   function toggle(id: string, defaultValue: number) {
