@@ -122,44 +122,62 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
 
         {/* Centro: "Cadastrar empresa" no mobile, Explore no desktop */}
         <div className="min-w-0 justify-self-center">
-          <Link to="/auth" className="sm:hidden">
-            <Button
-              size="sm"
-              variant={onHero ? "secondary" : "default"}
-              className="h-10 rounded-full px-4 whitespace-nowrap"
-            >
-              Cadastrar empresa
-            </Button>
-          </Link>
+          {showAuthActions ? (
+            <Link to="/para-empresas" className="sm:hidden">
+              <Button
+                size="sm"
+                variant={onHero ? "secondary" : "default"}
+                className="h-10 rounded-full px-4 whitespace-nowrap"
+              >
+                Cadastrar empresa
+              </Button>
+            </Link>
+          ) : null}
           <div className="hidden sm:block">{exploreMenu}</div>
         </div>
 
         {/* Direita: "Cadastrar empresa" no desktop + login */}
         <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
-          <Link to="/auth" className="hidden sm:block">
-            <Button
-              size="sm"
-              variant={onHero ? "secondary" : "default"}
-              className="rounded-full px-4 whitespace-nowrap"
-            >
-              Cadastrar empresa
-            </Button>
-          </Link>
           {showAuthActions ? (
-            <Link to={isHome ? "/auth" : "/"} aria-label={isHome ? "Entrar" : "Início"}>
+            <Link to="/para-empresas" className="hidden sm:block">
               <Button
-                variant="ghost"
-                size="icon"
-                aria-label={isHome ? "Entrar" : "Início"}
-                className={cn(
-                  "h-10 w-10 sm:h-9 sm:w-9",
-                  onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "",
-                )}
+                size="sm"
+                variant={onHero ? "secondary" : "default"}
+                className="rounded-full px-4 whitespace-nowrap"
               >
-                {isHome ? <CircleUserRound className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+                Cadastrar empresa
               </Button>
             </Link>
           ) : null}
+
+          {/* Mobile: casa fora da home, login na home. Desktop: sempre login. */}
+          <Link to={isHome ? "/auth" : "/"} aria-label={isHome ? "Entrar" : "Início"} className="sm:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={isHome ? "Entrar" : "Início"}
+              className={cn(
+                "h-10 w-10",
+                onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "",
+              )}
+            >
+              {isHome ? <CircleUserRound className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+            </Button>
+          </Link>
+          <Link to="/auth" aria-label="Entrar" className="hidden sm:block">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Entrar"
+              className={cn(
+                "h-9 w-9",
+                onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "",
+              )}
+            >
+              <CircleUserRound className="h-5 w-5" />
+            </Button>
+          </Link>
+
 
         </div>
       </div>

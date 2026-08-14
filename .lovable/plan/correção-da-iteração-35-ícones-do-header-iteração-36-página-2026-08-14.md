@@ -14,7 +14,7 @@ Arquivo: `src/components/venue/public-header.tsx`.
 
 ## 2. Nova página institucional para donos de empresa
 
-Rota pública nova: `/para-empresas` (link "Para empresas" no `PublicFooter`; o botão "Cadastrar empresa" do header continua indo para `/auth`).
+Rota pública nova: `/para-empresas` (link "Para empresas" no `PublicFooter`; o botão "Cadastrar empresa" passa a encaminhar usuário para `/para-empresas`).
 
 Conteúdo (copy em pt-BR, foco em conversão + SEO):
 
