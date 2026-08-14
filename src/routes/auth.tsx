@@ -282,7 +282,10 @@ function AuthPage() {
                     </form>
                   </TabsContent>
                 </Tabs>
+                  </>
+                )}
               </CardContent>
+
             </Card>
           </div>
         </section>
