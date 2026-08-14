@@ -35,8 +35,12 @@ export const getOrganizationReviews = createServerFn({ method: "GET" })
       for (const p of profs ?? []) names.set(p.id, p.display_name);
     }
     return {
-      items: list.map((r) => ({ ...r, user: { display_name: names.get(r.user_id) ?? null } })) as any[],
+      items: list.map(({ user_id, ...r }) => ({
+        ...r,
+        user: { display_name: names.get(user_id) ?? null },
+      })) as any[],
     };
+
 
   });
 
