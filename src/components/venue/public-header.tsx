@@ -146,20 +146,21 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
             </Button>
           </Link>
           {showAuthActions ? (
-            <Link to="/auth" aria-label="Entrar">
+            <Link to={isHome ? "/auth" : "/"} aria-label={isHome ? "Entrar" : "Início"}>
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Entrar"
+                aria-label={isHome ? "Entrar" : "Início"}
                 className={cn(
                   "h-10 w-10 sm:h-9 sm:w-9",
                   onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "",
                 )}
               >
-                <CircleUserRound className="h-5 w-5" />
+                {isHome ? <CircleUserRound className="h-5 w-5" /> : <Home className="h-5 w-5" />}
               </Button>
             </Link>
           ) : null}
+
         </div>
       </div>
 
