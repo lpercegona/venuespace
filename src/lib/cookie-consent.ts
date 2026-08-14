@@ -61,22 +61,28 @@ export function writeConsent(categories: ConsentCategories): ConsentRecord {
 /** Envia o estado escolhido ao Google Consent Mode v2. */
 export function applyConsentToGtm(categories: ConsentCategories) {
   if (typeof window === "undefined") return;
-  const w = window as unknown as { dataLayer?: unknown[] };
+  const w = window as unknown as {
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+  };
   w.dataLayer = w.dataLayer || [];
-  // gtag usa `arguments`, por isso o push do array bruto.
-  w.dataLayer.push([
-    "consent",
-    "update",
-    {
-      ad_storage: categories.marketing ? "granted" : "denied",
-      ad_user_data: categories.marketing ? "granted" : "denied",
-      ad_personalization: categories.marketing ? "granted" : "denied",
-      analytics_storage: categories.analytics ? "granted" : "denied",
-      functionality_storage: "granted",
-      personalization_storage: categories.marketing ? "granted" : "denied",
-      security_storage: "granted",
-    },
-  ]);
+  const state = {
+    ad_storage: categories.marketing ? "granted" : "denied",
+    ad_user_data: categories.marketing ? "granted" : "denied",
+    ad_personalization: categories.marketing ? "granted" : "denied",
+    analytics_storage: categories.analytics ? "granted" : "denied",
+    functionality_storage: "granted",
+    personalization_storage: categories.marketing ? "granted" : "denied",
+    security_storage: "granted",
+  };
+  if (typeof w.gtag === "function") {
+    w.gtag("consent", "update", state);
+  } else {
+    // eslint-disable-next-line prefer-rest-params
+    (function gtagFallback(this: unknown) {
+      w.dataLayer!.push(arguments);
+    })("consent", "update", state);
+  }
   w.dataLayer.push({ event: "cookie_consent_update" });
 }
 
