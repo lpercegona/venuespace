@@ -27,8 +27,9 @@ const HIDDEN_KEYS = new Set([
 const CONTACT_KEYS = /^(site|website|url|telefone|phone|whatsapp|email|e_mail)$/i;
 
 function isUrl(v: unknown): v is string {
-  return typeof v === "string" && /^https?:\/\//i.test(v);
+  return isImageSource(v) || (typeof v === "string" && /^https?:\/\//i.test(v));
 }
+
 
 function formatValue(field: PublicRendererField | undefined, raw: any): string {
   if (raw == null || raw === "") return "";
