@@ -15,11 +15,22 @@ export type CategoryCascadeField = {
   required: boolean;
   config: Record<string, any>;
   order_index: number;
+  group_id?: string | null;
+  is_base?: boolean;
+};
+
+export type BaseFieldPresentation = {
+  visible: boolean;
+  required: boolean;
+  label?: string;
+  tooltip?: string;
+  group_id?: string | null;
+  order_index?: number;
 };
 
 export type BaseFieldConfig = {
-  organization: Record<string, { visible: boolean; required: boolean }>;
-  table: Record<string, { visible: boolean; required: boolean }>;
+  organization: Record<string, BaseFieldPresentation>;
+  table: Record<string, BaseFieldPresentation>;
 };
 
 async function requireSA(supabase: any, userId: string) {
@@ -44,7 +55,7 @@ export const listCategoryCascadeFields = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await (supabaseAdmin as any)
       .from(tableFor(data.scope) as any)
-      .select("id, category_id, field_key, label, field_type, required, config, order_index")
+      .select("id, category_id, field_key, label, field_type, required, config, order_index, group_id, is_base")
       .eq("category_id", data.category_id)
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
@@ -63,6 +74,8 @@ const upsertSchema = z.object({
   required: z.boolean().optional(),
   config: z.record(z.string(), z.unknown()).optional(),
   order_index: z.number().int().min(0).max(999).optional(),
+  group_id: z.string().uuid().nullable().optional(),
+  is_base: z.boolean().optional(),
 });
 
 export const upsertCategoryCascadeField = createServerFn({ method: "POST" })
@@ -78,12 +91,40 @@ export const upsertCategoryCascadeField = createServerFn({ method: "POST" })
       required: data.required ?? false,
       config: data.config ?? {},
       order_index: data.order_index ?? 0,
+      group_id: data.group_id ?? null,
+      is_base: data.is_base ?? false,
     };
     if (data.id) row.id = data.id;
     const { error } = await (context.supabase as any)
       .from(tableFor(data.scope))
       .upsert(row, { onConflict: "category_id,field_key" });
     if (error) throw new Error(error.message);
+
+    // Campo base da instância: replica a definição para todas as demais
+    // categorias (sem bloco, que é específico de cada categoria).
+    if (data.is_base) {
+      const { data: cats } = await (context.supabase as any)
+        .from("organization_categories")
+        .select("id")
+        .neq("id", data.category_id);
+      const others = ((cats ?? []) as any[]).map((c) => ({
+        category_id: c.id,
+        field_key: data.field_key,
+        label: data.label,
+        field_type: data.field_type,
+        required: data.required ?? false,
+        config: data.config ?? {},
+        order_index: data.order_index ?? 0,
+        group_id: null,
+        is_base: true,
+      }));
+      if (others.length > 0) {
+        const { error: repErr } = await (context.supabase as any)
+          .from(tableFor(data.scope))
+          .upsert(others, { onConflict: "category_id,field_key" });
+        if (repErr) throw new Error(repErr.message);
+      }
+    }
     return { ok: true };
   });
 
@@ -104,11 +145,20 @@ export const deleteCategoryCascadeField = createServerFn({ method: "POST" })
 
 // -------- Base field config --------
 
+const basePresentation = z.object({
+  visible: z.boolean(),
+  required: z.boolean(),
+  label: z.string().max(120).optional(),
+  tooltip: z.string().max(400).optional(),
+  group_id: z.string().uuid().nullable().optional(),
+  order_index: z.number().int().min(0).max(999).optional(),
+});
+
 const baseCfgSchema = z.object({
   category_id: z.string().uuid(),
   base_field_config: z.object({
-    organization: z.record(z.string(), z.object({ visible: z.boolean(), required: z.boolean() })),
-    table: z.record(z.string(), z.object({ visible: z.boolean(), required: z.boolean() })),
+    organization: z.record(z.string(), basePresentation),
+    table: z.record(z.string(), basePresentation),
   }),
 });
 
@@ -186,14 +236,22 @@ export const getCategorySchemaPublic = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ category_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [{ data: cat }, { data: org }, { data: tbl }, { data: rec }] = await Promise.all([
+    const sel = "id, field_key, label, field_type, required, config, order_index, group_id, is_base";
+    const [{ data: cat }, { data: org }, { data: tbl }, { data: rec }, { data: grp }] = await Promise.all([
       (supabaseAdmin as any).from("organization_categories").select("id, name, base_field_config").eq("id", data.category_id).maybeSingle(),
-      (supabaseAdmin as any).from("category_org_fields").select("id, field_key, label, field_type, required, config, order_index").eq("category_id", data.category_id).order("order_index"),
-      (supabaseAdmin as any).from("category_table_fields").select("id, field_key, label, field_type, required, config, order_index").eq("category_id", data.category_id).order("order_index"),
-      (supabaseAdmin as any).from("organization_category_default_fields").select("id, field_key, label, field_type, required, config, order_index").eq("category_id", data.category_id).order("order_index"),
+      (supabaseAdmin as any).from("category_org_fields").select(sel).eq("category_id", data.category_id).order("order_index"),
+      (supabaseAdmin as any).from("category_table_fields").select(sel).eq("category_id", data.category_id).order("order_index"),
+      (supabaseAdmin as any).from("organization_category_default_fields").select(sel).eq("category_id", data.category_id).order("order_index"),
+      (supabaseAdmin as any).from("category_field_groups").select("id, scope, key, title, description, order_index").eq("category_id", data.category_id).order("order_index"),
     ]);
+    const groups = (grp ?? []) as any[];
     return {
       category: cat ?? null,
+      groups: {
+        org: groups.filter((g) => g.scope === "org"),
+        table: groups.filter((g) => g.scope === "table"),
+        record: groups.filter((g) => g.scope === "record"),
+      },
       org_fields: (org ?? []) as CategoryCascadeField[],
       table_fields: (tbl ?? []) as CategoryCascadeField[],
       record_fields: (rec ?? []) as CategoryCascadeField[],
