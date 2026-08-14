@@ -86,8 +86,17 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
             </DropdownMenuItem>
           );
         })}
-        {list.length === 0 ? <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem> : null}
+        {list.length === 0
+          ? cats.isPending
+            ? [0, 1, 2].map((i) => (
+                <DropdownMenuItem key={`sk-${i}`} disabled className="pointer-events-none">
+                  <span className="h-4 w-24 animate-pulse rounded bg-muted" />
+                </DropdownMenuItem>
+              ))
+            : <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem>
+          : null}
       </DropdownMenuContent>
+
     </DropdownMenu>
   );
 
