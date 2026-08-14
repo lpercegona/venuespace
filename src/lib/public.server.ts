@@ -4,7 +4,7 @@
 
 import { parseFilterValues, parseRangeValue, toFilterNumber } from "@/lib/filter-params";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { cached, cacheGet, cacheSet, TTL_MEDIUM, TTL_SHORT, TTL_SIGNED } from "@/lib/server-cache";
+import { cached, cachedSWR, cacheGet, cacheSet, TTL_MEDIUM, TTL_SHORT, TTL_SIGNED } from "@/lib/server-cache";
 
 /** Cards de listagem mostram poucas fotos: assinamos só as primeiras por item. */
 const LISTING_GALLERY_LIMIT = 5;
