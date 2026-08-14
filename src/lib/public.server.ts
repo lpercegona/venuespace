@@ -501,7 +501,14 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   };
 
   const { loadFilterKeys } = await import("@/lib/explore-filters.server");
-  const { searchKeys, ranges } = await loadFilterKeys("organization", categoryId);
+  // Em paralelo: nenhuma das duas leituras depende da outra.
+  const [{ searchKeys, ranges }, orgAliases] = await Promise.all([
+    loadFilterKeys("organization", categoryId),
+    loadOptionAliases(
+      "category_org_fields",
+      [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
+    ),
+  ]);
   const rangeByKey = new Map(ranges.map((r) => [r.key, r]));
 
   let base = ((data ?? []) as any[]).map((o) => ({
@@ -512,10 +519,6 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     updated_at: o.updated_at,
   }));
 
-  const orgAliases = await loadOptionAliases(
-    "category_org_fields",
-    [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
-  );
 
   for (const [key, val] of Object.entries(filters)) {
     // Faixa numérica vinculada a dois campos: exige a faixa do item contida na pedida.
