@@ -23,56 +23,12 @@ import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/publi
 import type { HomeGroupingDTO, HomeBlockDTO } from "@/lib/home-config.functions";
 
 // ------------------------------------------------------------
-// Query para obter bairros e cidades a partir de /organizations
+// Bairros e cidades reais das organizações públicas (SSR-safe)
 // ------------------------------------------------------------
-async function fetchLocalidades() {
-  try {
-    const response = await fetch("/api/public/organizations?limit=1000");
-    if (!response.ok) {
-      console.warn("⚠️ Erro ao buscar organizações, status:", response.status);
-      return { bairros: [], cidades: [] };
-    }
-    const data = await response.json();
-
-    // Detecta a estrutura da resposta
-    let orgs: any[] = [];
-    if (Array.isArray(data)) {
-      orgs = data;
-    } else if (data.data && Array.isArray(data.data)) {
-      orgs = data.data;
-    } else if (data.items && Array.isArray(data.items)) {
-      orgs = data.items;
-    } else if (data.organizations && Array.isArray(data.organizations)) {
-      orgs = data.organizations;
-    } else {
-      console.warn("⚠️ Estrutura de resposta desconhecida", data);
-      return { bairros: [], cidades: [] };
-    }
-
-    const bairrosSet = new Set<string>();
-    const cidadesSet = new Set<string>();
-
-    orgs.forEach((org: any) => {
-      const bairro = org.neighborhood || org.bairro;
-      const cidade = org.city || org.cidade;
-      if (bairro) bairrosSet.add(bairro);
-      if (cidade) cidadesSet.add(cidade);
-    });
-
-    return {
-      bairros: Array.from(bairrosSet).sort((a, b) => a.localeCompare(b)),
-      cidades: Array.from(cidadesSet).sort((a, b) => a.localeCompare(b)),
-    };
-  } catch (error) {
-    console.error("❌ Erro ao buscar localidades:", error);
-    return { bairros: [], cidades: [] };
-  }
-}
-
 export const localidadesQuery = () => ({
   queryKey: ["localidades"],
-  queryFn: fetchLocalidades,
-  staleTime: 1000 * 60 * 15, // 15 minutos
+  queryFn: async () => getPublicLocalitiesFn(),
+  staleTime: 1000 * 60 * 15,
 });
 
 // ------------------------------------------------------------
@@ -157,8 +113,8 @@ function Landing() {
   });
 
   const localidadesQ = useQuery(localidadesQuery());
-  const bairros = (localidadesQ.data?.bairros ?? []) as string[];
-  const cidades = (localidadesQ.data?.cidades ?? []) as string[];
+  const bairros = ((localidadesQ.data?.bairros ?? []) as Array<{ value: string }>).map((b) => b.value);
+  const cidades = ((localidadesQ.data?.cidades ?? []) as Array<{ value: string }>).map((c) => c.value);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
