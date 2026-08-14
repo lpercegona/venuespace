@@ -1,3 +1,14 @@
+## 2026-08-14 18:55 (America/Sao_Paulo) — Correção/Extensão das Iterações 26/28/31 (breadcrumbs públicos e skeleton do perfil)
+
+- `src/components/venue/public-breadcrumbs.tsx` (novo): trilha compartilhada das páginas públicas, extraída da faixa já usada na página imersiva (borda inferior, `bg-surface`, uppercase com `tracking-[0.18em]`), agora com `nav aria-label="Trilha"`, `ol/li` semânticos, `aria-current="page"` e truncamento.
+- Trilha aplicada em `/explore`, `/categoria/$slug`, `/blog`, `/blog/$slug`, `/public/$slug` (padrão e imersivo), `/public/$slug/$tableId`, `/public/$slug/$tableId/$recordId`, `/public/$slug/$tableId/form`, `/public/$slug/campaigns/$recordId`, `/politica-de-privacidade`, `/politica-de-cookies`, `/termos-e-condicoes` e `/contestacao-de-espacos`. Home e `/para-empresas` seguem sem trilha; os `BackLink` existentes foram mantidos.
+- `src/components/venue/public-listing.tsx`: nova prop `breadcrumbs`, renderizada acima do hero.
+- `src/components/venue/listing-hero.tsx`: nova prop `offsetHeader` (padrão `true`); com trilha acima, o hero deixa de usar `-mt-[57px]` e ajusta o padding superior.
+- `src/components/venue/organization-page-immersive.tsx`: trilha própria substituída pelo componente compartilhado, com link para a página da categoria.
+- `src/components/venue/organization-profile-skeleton.tsx` (novo): skeleton do perfil público em duas variantes conforme o `page_style` definido pelo super admin — padrão (logo + cabeçalho + 2 colunas + coluna de contato) e imersivo (hero full-bleed + grade 3fr/2fr) —, reutilizando `PublicCardSkeletonGrid` para a grade de publicações.
+- `src/lib/public-catalog.functions.ts`: novo `getPublicOrganizationFn` (server function sobre `getPublicOrganization`), usado no `loader` de `/public/$slug` com `ensureQueryData` para que o estilo de página já esteja disponível na primeira renderização.
+- Validação: typecheck limpo; `/explore`, `/public/laggus-residencial-nautico`, `/blog` e `/politica-de-cookies` verificados no navegador com a trilha correta e sem erros de console.
+
 ## 2026-08-14 19:46 (America/Sao_Paulo) — Iteração 37 (blocos de campos, tooltips, campos-base editáveis e configuração por tipo)
 
 - Migração: nova tabela `public.category_field_groups` (título, chave, descrição, escopo, ordem) com RLS (leitura pública, escrita apenas super admin) e GRANTs; colunas `group_id` e `is_base` em `category_org_fields`, `category_table_fields` e `organization_category_default_fields`; seed dos blocos "Endereço" e "Orçamento" e dos campos padrão de orçamento (`quote_cnpj`, `quote_site`, `quote_validity_days`, `quote_payment_terms`) mapeados para `system_data.quote`.
