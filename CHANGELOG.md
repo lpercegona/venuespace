@@ -1,6 +1,6 @@
 ## 2026-08-14 10:03 (America/Sao_Paulo) — Correção/extensão da Iteração 33 (layout de listagens e header)
 
-- Desktop: `/explore` e `/categoria/$slug` passam a usar 3 colunas — primeira coluna fixa (~280 px) para filtros e duas colunas para cards; grade de cards simplificada para 2 colunas.
+- Desktop: `/explore` e `/categoria/$slug` passam a usar 3 colunas — coluna fixa (~280 px) para filtros e duas colunas para cards com largura mínima de ~280 px (`minmax(280px, 1fr)`); grade de cards simplificada para 2 colunas.
 - Header público: dropdown de categorias centralizado na tela via grid de 3 colunas.
 - Hidratação da página de categoria: `categoryFiltersQuery` carregada com `ensureQueryData` no loader para evitar divergência SSR.
 
