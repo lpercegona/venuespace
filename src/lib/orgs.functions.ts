@@ -483,6 +483,7 @@ export const createField = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => fieldCreate.parse(d))
   .handler(async ({ data, context }) => {
     await checkFieldManagementAllowed(context.supabase, context.userId);
+    await assertRelationTargetSameOrg(context.supabase, data.table_id, data.type, data.config);
     const { data: isSA } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
     const { data: row, error } = await context.supabase
       .from("fields")
@@ -509,6 +510,17 @@ export const updateField = createServerFn({ method: "POST" })
     await checkFieldManagementAllowed(context.supabase, context.userId);
     await assertFieldMutable(context.supabase, context.userId, data.id);
     const { id, ...rest } = data;
+    if ((rest as any).config) {
+      const { data: cur } = await context.supabase.from("fields").select("table_id, type").eq("id", id).maybeSingle();
+      if (cur) {
+        await assertRelationTargetSameOrg(
+          context.supabase,
+          (cur as any).table_id,
+          ((rest as any).type ?? (cur as any).type) as string,
+          (rest as any).config,
+        );
+      }
+    }
     const { error } = await context.supabase.from("fields").update(rest as any).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
