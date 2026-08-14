@@ -825,7 +825,12 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
 }
 
 // Batch-sign image/gallery paths across items so listing cards can render <img>.
-async function signImagePathsInItems(items: Array<{ data: Record<string, any>; fields: PublicRendererField[] }>) {
+// `maxGallery` limita quantas imagens de cada galeria são assinadas e enviadas:
+// nas listagens o card mostra poucas, então não faz sentido assinar o álbum todo.
+async function signImagePathsInItems(
+  items: Array<{ data: Record<string, any>; fields: PublicRendererField[] }>,
+  maxGallery?: number,
+) {
   type Ref =
     | { kind: "single"; data: Record<string, any>; key: string }
     | { kind: "gallery"; data: Record<string, any>; key: string; index: number };
@@ -837,7 +842,7 @@ async function signImagePathsInItems(items: Array<{ data: Record<string, any>; f
   for (const it of items) {
     for (const f of it.fields) {
       const imageLike = f.type === "image" || f.type === "gallery" || isImageLikeName(f.key, f.label);
-      const v = it.data?.[f.key];
+      let v = it.data?.[f.key];
       // Single-value image (string path)
       if ((f.type === "image" || imageLike) && typeof v === "string" && v && !isHttp(v)) {
         if (imageLike || hasImageExtension(v)) {
@@ -848,7 +853,11 @@ async function signImagePathsInItems(items: Array<{ data: Record<string, any>; f
       // Gallery / array of paths — evaluated independently, so a non-string
       // value on the single branch never blocks the gallery branch.
       if ((f.type === "gallery" || imageLike) && Array.isArray(v)) {
-        v.forEach((p, i) => {
+        if (maxGallery != null && v.length > maxGallery) {
+          v = v.slice(0, maxGallery);
+          it.data[f.key] = v;
+        }
+        (v as any[]).forEach((p, i) => {
           if (typeof p !== "string" || !p) return;
           if (isHttp(p)) return;
           if (!imageLike && !hasImageExtension(p)) return;
@@ -859,6 +868,7 @@ async function signImagePathsInItems(items: Array<{ data: Record<string, any>; f
     }
   }
   if (paths.length === 0) return;
+
   const signed = await signPathsCached(paths);
   refs.forEach((ref, i) => {
     const url = signed.get(paths[i] as string);
