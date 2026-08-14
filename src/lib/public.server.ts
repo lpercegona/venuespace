@@ -475,17 +475,18 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   const filters = opts.filters ?? {};
 
   // Toda organização pública é listada, mesmo sem registros publicados.
-  let query = sb.from("organizations")
-    .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at")
-    .eq("is_public", true)
-    .order("updated_at", { ascending: false });
-
-  if (categoryId) query = query.eq("category_id", categoryId);
-  const { data, error } = await cached(`orgs:public:${categoryId ?? "all"}`, TTL_SHORT, async () => {
-    const res = await query;
-    return res as { data: any[] | null; error: { message: string } | null };
+  // Snapshot único (chave estável, 5 min, revalidação em segundo plano): o
+  // recorte por categoria é feito em memória para não multiplicar consultas.
+  const all = await cachedSWR("orgs:public:snapshot", TTL_MEDIUM, async () => {
+    const { data, error } = await sb.from("organizations")
+      .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at")
+      .eq("is_public", true)
+      .order("updated_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as any[];
   });
-  if (error) throw new Error(error.message);
+  const data = categoryId ? all.filter((o) => o.category_id === categoryId) : all;
+
 
   const resolveOrgVal = (o: any, key: string): unknown => {
     if (key === "name") return o.name;
