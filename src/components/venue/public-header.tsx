@@ -120,9 +120,13 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
           </Link>
         </div>
 
-        {/* Centro: "Cadastrar empresa" no mobile, Explore no desktop */}
+        {/* Centro: "Cadastrar empresa" no mobile, Explore no desktop. Na /para-empresas mobile mostra logo centralizada. */}
         <div className="min-w-0 justify-self-center">
-          {showAuthActions ? (
+          {pathname === "/para-empresas" ? (
+            <Link to="/" className="flex sm:hidden" aria-label="Venuespace — início">
+              <VenuespaceLogo className="h-5 w-auto text-brand" />
+            </Link>
+          ) : showAuthActions ? (
             <Link to="/para-empresas" className="sm:hidden">
               <Button
                 size="sm"
