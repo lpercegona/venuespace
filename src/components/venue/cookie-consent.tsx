@@ -1,17 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Cookie, Settings } from "lucide-react";
+import { Cookie } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ALLOW_ALL,
   DENY_ALL,
@@ -121,17 +114,14 @@ export function CookieConsent() {
       <Dialog open={prefsOpen} onOpenChange={setPrefsOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg rounded-2xl border-border/50 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Settings className="h-5 w-5 text-brand" />
-              Preferências de cookies
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
+            <DialogTitle className="text-lg font-semibold">Preferências de cookies</DialogTitle>
+            <DialogDescription className="text-xs leading-relaxed text-muted-foreground">
               Escolha quais categorias deseja permitir. Sua escolha é registrada neste navegador e vale por 12 meses;
               você pode alterá-la quando quiser pelo rodapé do site.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-3 py-2">
             <CategoryRow
               id="cat-necessary"
               title="Necessários"
@@ -155,7 +145,7 @@ export function CookieConsent() {
             />
           </div>
 
-          <p className="text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             Você pode revogar o consentimento a qualquer momento e exercer seus direitos de titular (acesso, correção,
             eliminação, portabilidade e oposição) pelo e-mail{" "}
             <a
@@ -167,7 +157,8 @@ export function CookieConsent() {
             .
           </p>
 
-          <DialogFooter className="flex flex-col-reverse gap-1.5 sm:flex-row sm:justify-between sm:gap-2">
+          {/* Botões reposicionados abaixo do parágrafo */}
+          <div className="mt-4 flex flex-col gap-1.5 sm:flex-row sm:justify-end sm:gap-2">
             <Button
               variant="ghost"
               className="h-auto px-3 py-1.5 text-xs w-full sm:w-auto hover:bg-muted/50"
@@ -175,22 +166,20 @@ export function CookieConsent() {
             >
               Rejeitar não essenciais
             </Button>
-            <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:flex-row sm:gap-2">
-              <Button
-                variant="outline"
-                className="h-auto px-3 py-1.5 text-xs w-full sm:w-auto border-muted-foreground/20 hover:bg-muted/50"
-                onClick={() => save(ALLOW_ALL)}
-              >
-                Aceitar todos
-              </Button>
-              <Button
-                className="h-auto px-3 py-1.5 text-xs w-full sm:w-auto bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow"
-                onClick={() => save(draft)}
-              >
-                Salvar preferências
-              </Button>
-            </div>
-          </DialogFooter>
+            <Button
+              variant="outline"
+              className="h-auto px-3 py-1.5 text-xs w-full sm:w-auto border-muted-foreground/20 hover:bg-muted/50"
+              onClick={() => save(ALLOW_ALL)}
+            >
+              Aceitar todos
+            </Button>
+            <Button
+              className="h-auto px-3 py-1.5 text-xs w-full sm:w-auto bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow"
+              onClick={() => save(draft)}
+            >
+              Salvar preferências
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
@@ -213,12 +202,12 @@ function CategoryRow({
   onChange?: (v: boolean) => void;
 }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 rounded-xl bg-muted/20 border border-border/50 p-4 transition-colors hover:bg-muted/30">
-      <div className="min-w-0 space-y-1">
-        <Label htmlFor={id} className="text-sm font-medium text-foreground cursor-pointer">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-xl bg-muted/20 border border-border/50 p-3 transition-colors hover:bg-muted/30">
+      <div className="min-w-0 space-y-0.5">
+        <Label htmlFor={id} className="text-xs font-medium text-foreground cursor-pointer">
           {title}
         </Label>
-        <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+        <p className="text-[0.7rem] leading-relaxed text-muted-foreground">{description}</p>
       </div>
       <Switch
         id={id}
@@ -226,7 +215,7 @@ function CategoryRow({
         disabled={disabled}
         onCheckedChange={(v) => onChange?.(!!v)}
         aria-label={title}
-        className="shrink-0 mt-1"
+        className="shrink-0 mt-0.5"
       />
     </div>
   );
