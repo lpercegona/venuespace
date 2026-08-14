@@ -78,10 +78,11 @@ export function applyConsentToGtm(categories: ConsentCategories) {
   if (typeof w.gtag === "function") {
     w.gtag("consent", "update", state);
   } else {
-    // eslint-disable-next-line prefer-rest-params
-    (function gtagFallback(this: unknown) {
+    const gtagFallback = function (this: unknown, ..._args: unknown[]) {
+      // eslint-disable-next-line prefer-rest-params
       w.dataLayer!.push(arguments);
-    })("consent", "update", state);
+    };
+    gtagFallback("consent", "update", state);
   }
   w.dataLayer.push({ event: "cookie_consent_update" });
 }
