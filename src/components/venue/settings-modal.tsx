@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile, updateMyProfile } from "@/lib/profile.functions";
+import { TwoFactorManager } from "@/components/venue/two-factor-manager";
 
 type Section = "profile" | "notifications" | "security";
 
@@ -184,8 +185,9 @@ function SecuritySection() {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <h2 className="font-display text-lg font-semibold text-foreground">Segurança</h2>
-        <p className="text-sm text-muted-foreground">Defina uma nova senha para sua conta.</p>
+        <p className="text-sm text-muted-foreground">Defina uma nova senha e ative a verificação em duas etapas.</p>
       </div>
+      <TwoFactorManager />
       <div className="space-y-2">
         <Label htmlFor="s-pass">Nova senha</Label>
         <Input id="s-pass" type="password" minLength={8} required value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="new-password" />
