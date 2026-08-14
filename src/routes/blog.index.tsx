@@ -30,10 +30,10 @@ type Item = {
 };
 
 async function fetchPosts(): Promise<{ items: Item[] }> {
-  const res = await fetch("/api/public/blog?limit=30");
-  if (!res.ok) throw new Error("Falha ao carregar");
-  return res.json();
+  const { listPublicBlogPostsFn } = await import("@/lib/blog.functions");
+  return (await listPublicBlogPostsFn({ data: { limit: 30 } })) as { items: Item[] };
 }
+
 
 function BlogIndex() {
   const ctx = useFormatContext();

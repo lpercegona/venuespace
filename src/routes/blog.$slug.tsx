@@ -85,7 +85,7 @@ function BlogPost() {
       ) : null}
 
       <div
-        className="blog-content font-body text-base leading-relaxed text-foreground"
+        className="rich-content font-body text-base text-foreground"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: post.content_html }}
       />
