@@ -332,9 +332,13 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
   // Dados do cliente e evento
   sectionTitle(ctx, "Dados do cliente e evento");
   const emitted = new Date().toISOString().slice(0, 10);
+  const valueW = R - (L + 150) - 12;
   const rows: Array<[string, string[]]> = [
     ["Cliente:", [input.client ?? "-"]],
-    ["Local de Instalação:", wrapText(input.location ?? "-", font, 10, R - (L + 150) - 12)],
+    ...(input.clientCompany ? ([["Empresa:", wrapText(input.clientCompany, font, 10, valueW)]] as Array<[string, string[]]>) : []),
+    ...(input.clientCnpj ? ([["CNPJ:", [input.clientCnpj]]] as Array<[string, string[]]>) : []),
+    ...(input.clientAddress ? ([["Endereço:", wrapText(input.clientAddress, font, 10, valueW)]] as Array<[string, string[]]>) : []),
+    ["Local de Instalação:", wrapText(input.location ?? "-", font, 10, valueW)],
     ["Data de Emissão:", [longDate(emitted)]],
     ["Validade:", [`${input.validityDays} dias (a partir da data de emissão) — até ${longDate(addDays(emitted, input.validityDays))}`]],
   ];
