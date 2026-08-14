@@ -68,6 +68,50 @@ export type Database = {
         }
         Relationships: []
       }
+      category_field_groups: {
+        Row: {
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          order_index: number
+          scope: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          order_index?: number
+          scope: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          order_index?: number
+          scope?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_field_groups_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_filter_fields: {
         Row: {
           category_id: string
@@ -163,7 +207,9 @@ export type Database = {
           created_at: string
           field_key: string
           field_type: string
+          group_id: string | null
           id: string
+          is_base: boolean
           label: string
           order_index: number
           required: boolean
@@ -175,7 +221,9 @@ export type Database = {
           created_at?: string
           field_key: string
           field_type: string
+          group_id?: string | null
           id?: string
+          is_base?: boolean
           label: string
           order_index?: number
           required?: boolean
@@ -187,7 +235,9 @@ export type Database = {
           created_at?: string
           field_key?: string
           field_type?: string
+          group_id?: string | null
           id?: string
+          is_base?: boolean
           label?: string
           order_index?: number
           required?: boolean
@@ -199,6 +249,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_org_fields_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "category_field_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -478,7 +535,9 @@ export type Database = {
           created_at: string
           field_key: string
           field_type: string
+          group_id: string | null
           id: string
+          is_base: boolean
           label: string
           order_index: number
           required: boolean
@@ -490,7 +549,9 @@ export type Database = {
           created_at?: string
           field_key: string
           field_type: string
+          group_id?: string | null
           id?: string
+          is_base?: boolean
           label: string
           order_index?: number
           required?: boolean
@@ -502,7 +563,9 @@ export type Database = {
           created_at?: string
           field_key?: string
           field_type?: string
+          group_id?: string | null
           id?: string
+          is_base?: boolean
           label?: string
           order_index?: number
           required?: boolean
@@ -514,6 +577,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_table_fields_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "category_field_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -961,7 +1031,9 @@ export type Database = {
           created_at: string
           field_key: string
           field_type: string
+          group_id: string | null
           id: string
+          is_base: boolean
           label: string
           order_index: number
           required: boolean
@@ -972,7 +1044,9 @@ export type Database = {
           created_at?: string
           field_key: string
           field_type: string
+          group_id?: string | null
           id?: string
+          is_base?: boolean
           label: string
           order_index?: number
           required?: boolean
@@ -983,7 +1057,9 @@ export type Database = {
           created_at?: string
           field_key?: string
           field_type?: string
+          group_id?: string | null
           id?: string
+          is_base?: boolean
           label?: string
           order_index?: number
           required?: boolean
@@ -994,6 +1070,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_category_default_fields_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "category_field_groups"
             referencedColumns: ["id"]
           },
         ]
