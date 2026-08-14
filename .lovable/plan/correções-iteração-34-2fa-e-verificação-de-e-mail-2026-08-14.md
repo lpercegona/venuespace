@@ -4,7 +4,7 @@ Seis frentes solicitadas. As cinco primeiras são **correções** de escopo já 
 
 ## 1. Formatação do texto rico na plotagem (Correção das Iterações 29 e 30)
 
-Verificado: a página do post aplica a classe `blog-content`, mas **essa classe não existe em `src/styles.css`** — com o reset do Tailwind, `h2/h3/ul/ol/blockquote` do editor renderizam sem estilo. Nos registros públicos, valores `long_text` passam por `String(raw)`, então HTML do editor aparece cru.
+Verificado: a página do post aplica a classe `blog-content`, mas **essa classe não existe em `src/styles.css**` — com o reset do Tailwind, `h2/h3/ul/ol/blockquote` do editor renderizam sem estilo. Nos registros públicos, valores `long_text` passam por `String(raw)`, então HTML do editor aparece cru.
 
 - Criar estilo tipográfico único para conteúdo rico em `src/styles.css` (títulos, parágrafos, listas, citação, links, imagens), com tokens semânticos.
 - Reaproveitar em `RichTextView` e no post do blog (mesma fonte de estilo, sem duplicar CSS).
@@ -35,15 +35,15 @@ Verificado: `redirect_uri: window.location.origin` — o provedor devolve o usu�
 ## 5. Barras de busca (Correção da Iteração 33)
 
 - Remover o ícone de lupa de dentro do campo de digitação (home, explorar e listagens por categoria).
-- Arredondar o bloco/botão de filtros no mesmo raio da barra.
+- Arredondar o bloco/botão de filtros no mesmo estilo do botão buscar.
 - Corrigir a centralização do flutuante de filtros no mobile.
 
-Também será corrigido, em silêncio, um erro de hidratação na home (blocos renderizados em ordem diferente entre servidor e cliente).
+Também será corrigido, um erro de hidratação na home (blocos renderizados em ordem diferente entre servidor e cliente).
 
 ## 6. Iteração 34 — Verificação de e-mail e 2FA (TOTP)
 
 - **Verificação de e-mail**: desativar confirmação automática de cadastro; após criar conta, exibir tela "confirme seu e-mail" com reenvio; login sem confirmação mostra aviso claro em vez de erro genérico.
-- **2FA por aplicativo autenticador**: tela de segurança na conta com ativação (QR + código de 6 dígitos), lista de fatores e remoção; no login, quando houver fator ativo, exigir o código antes de liberar o app; rotas autenticadas bloqueiam sessão pendente de verificação.
+- **2FA por aplicativo autenticador**: tela de segurança na configuração de conta com ativação opcional (QR + código de 6 dígitos), lista de fatores e remoção; no login, quando houver fator ativo, exigir o código antes de liberar o app; ativação de autenticador opcional para usuários.
 
 ## Detalhes técnicos
 
