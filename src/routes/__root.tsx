@@ -74,6 +74,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Pré-carrega as categorias públicas: o menu "Explore" já abre preenchido.
+  loader: ({ context }) => {
+    context.queryClient.prefetchQuery({
+      queryKey: ["public-org-categories"],
+      queryFn: async () => {
+        const res = await fetch("/api/public/organization-categories");
+        if (!res.ok) throw new Error("Falha ao carregar categorias");
+        return res.json();
+      },
+      staleTime: 30 * 60_000,
+    });
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
