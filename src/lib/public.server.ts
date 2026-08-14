@@ -282,18 +282,21 @@ const RECORD_BUILTIN_FIELDS: PublicRendererField[] = [
 ];
 
 
+// Layouts e campos de categoria são poucos e mudam raramente: carregamos o
+// conjunto completo uma única vez (chave de cache estável) em vez de uma
+// consulta por combinação de categorias — cada bloco da home usava uma chave
+// diferente e provocava falha de cache.
 async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card" | "organization_page"): Promise<Map<string, PublicLayoutField[]>> {
   if (categoryIds.length === 0) return new Map<string, PublicLayoutField[]>();
-  return cached(`layouts:${scope}:${[...categoryIds].sort().join(",")}`, TTL_SHORT, () => loadLayoutsBatchUncached(categoryIds, scope));
+  return cachedSWR(`layouts:all:${scope}`, TTL_MEDIUM, () => loadLayoutsBatchUncached(scope));
 }
 
-async function loadLayoutsBatchUncached(categoryIds: string[], scope: "organization_card" | "record_card" | "organization_page"): Promise<Map<string, PublicLayoutField[]>> {
+async function loadLayoutsBatchUncached(scope: "organization_card" | "record_card" | "organization_page"): Promise<Map<string, PublicLayoutField[]>> {
   const out = new Map<string, PublicLayoutField[]>();
   const sb = supabaseAdmin;
   const { data: parents } = await (sb as any)
     .from("category_public_layouts")
     .select("id, category_id, card_style")
-    .in("category_id", categoryIds)
     .eq("scope", scope);
   const parentList = (parents ?? []) as Array<{ id: string; category_id: string; card_style?: string | null }>;
   if (parentList.length === 0) return out;
@@ -321,15 +324,14 @@ async function loadLayoutsBatchUncached(categoryIds: string[], scope: "organizat
 
 async function loadOrgCategoryFieldsBatch(categoryIds: string[]): Promise<Map<string, PublicRendererField[]>> {
   if (categoryIds.length === 0) return new Map<string, PublicRendererField[]>();
-  return cached(`orgfields:${[...categoryIds].sort().join(",")}`, TTL_SHORT, () => loadOrgCategoryFieldsBatchUncached(categoryIds));
+  return cachedSWR("orgfields:all", TTL_MEDIUM, loadOrgCategoryFieldsBatchUncached);
 }
 
-async function loadOrgCategoryFieldsBatchUncached(categoryIds: string[]): Promise<Map<string, PublicRendererField[]>> {
+async function loadOrgCategoryFieldsBatchUncached(): Promise<Map<string, PublicRendererField[]>> {
   const out = new Map<string, PublicRendererField[]>();
   const { data } = await (supabaseAdmin as any)
     .from("category_org_fields")
     .select("category_id, field_key, label, field_type, config, order_index")
-    .in("category_id", categoryIds)
     .order("order_index", { ascending: true });
   for (const r of ((data ?? []) as any[])) {
     const arr = out.get(r.category_id) ?? [];
@@ -338,6 +340,7 @@ async function loadOrgCategoryFieldsBatchUncached(categoryIds: string[]): Promis
   }
   return out;
 }
+
 
 
 
