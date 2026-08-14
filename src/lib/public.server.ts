@@ -851,7 +851,28 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
 // Batch-sign image/gallery paths across items so listing cards can render <img>.
 // `maxGallery` limita quantas imagens de cada galeria são assinadas e enviadas:
 // nas listagens o card mostra poucas, então não faz sentido assinar o álbum todo.
+// Chaves sempre usadas pelos componentes de listagem, fora do layout.
+const LISTING_ALWAYS_KEYS = new Set(["name", "slug", "description", "logo_url", "org_name", "table_name", "deal_status"]);
+
+/**
+ * Os cards plotam apenas os campos presentes no layout configurado. Enviar a
+ * definição completa de campos e todos os valores por item duplicava dezenas de
+ * kB por listagem; aqui recortamos ao que é efetivamente renderizado.
+ */
+function trimListingPayload(
+  items: Array<{ data: Record<string, any>; fields: PublicRendererField[]; layout: PublicLayoutField[] }>,
+) {
+  for (const it of items) {
+    const keys = new Set([...it.layout.map((l) => l.field_key), ...LISTING_ALWAYS_KEYS]);
+    it.fields = it.fields.filter((f) => keys.has(f.key));
+    const data: Record<string, any> = {};
+    for (const k of Object.keys(it.data)) if (keys.has(k)) data[k] = it.data[k];
+    it.data = data;
+  }
+}
+
 async function signImagePathsInItems(
+
   items: Array<{ data: Record<string, any>; fields: PublicRendererField[] }>,
   maxGallery?: number,
 ) {
