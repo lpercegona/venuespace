@@ -4,6 +4,7 @@ import { Loader2, BookOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFormatContext } from "@/hooks/use-instance-context";
 import { formatDate } from "@/lib/formatting";
+import { listPublicBlogPostsFn } from "@/lib/blog.functions";
 
 export const Route = createFileRoute("/blog/")({
   head: () => ({
@@ -30,7 +31,6 @@ type Item = {
 };
 
 async function fetchPosts(): Promise<{ items: Item[] }> {
-  const { listPublicBlogPostsFn } = await import("@/lib/blog.functions");
   return (await listPublicBlogPostsFn({ data: { limit: 30 } })) as { items: Item[] };
 }
 
