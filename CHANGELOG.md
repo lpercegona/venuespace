@@ -1,3 +1,11 @@
+## 2026-08-14 12:35 (America/Sao_Paulo) — Correção da Iteração 35 (ícones do header) + Iteração 36 (página para empresas)
+
+- `public-header.tsx`: no desktop o ícone da direita é sempre login (`CircleUserRound` → `/auth`) em todas as páginas; no mobile é o ícone de casa (→ `/`) fora da home, inclusive em `/auth` e páginas institucionais, mantendo login apenas na home. O ícone passa a ser renderizado independentemente de `showAuthActions`, que agora controla apenas o botão "Cadastrar empresa".
+- Botão "Cadastrar empresa" (mobile e desktop) passa a encaminhar para `/para-empresas`.
+- Nova rota pública `src/routes/para-empresas.tsx`: hero com CTA, benefícios, passo a passo, tipos de publicação (espaços, audiovisual, serviços), recursos da plataforma, FAQ em accordion e CTA final — apenas primitives shadcn e tokens semânticos.
+- SEO da nova rota: `head()` com title/description/og/twitter, canonical em https://venuespace.com.br/para-empresas e JSON-LD `FAQPage` + `BreadcrumbList`.
+- `PublicFooter`: novo link "Para empresas".
+
 ## 2026-08-14 13:20 (America/Sao_Paulo) — Correção da Iteração 35 (imagens, menu Explore, cookies e ícone do header)
 
 - Causa das imagens em branco: os componentes públicos validavam mídia com `^https?://`, descartando os caminhos internos do proxy `/api/public/img/*` criados na correção anterior. Novo helper `isImageSource` em `src/lib/public-image.ts`, aplicado em `public-card-renderer.tsx`, `organization-page-immersive.tsx` e `public.$slug.index.tsx` (inclusive `logo_url` e filtro de atributos em texto).
