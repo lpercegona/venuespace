@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, CircleUserRound, Compass } from "lucide-react";
+import { ArrowLeft, CircleUserRound, Compass, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
