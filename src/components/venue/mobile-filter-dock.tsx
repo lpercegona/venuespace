@@ -42,10 +42,9 @@ export function MobileFilterDock({
         onSubmit={(e) => e.preventDefault()}
         className="pointer-events-auto mx-auto flex w-full max-w-2xl items-center gap-2 rounded-full border border-border bg-background/95 p-2 shadow-elegant backdrop-blur"
       >
-        <div className="relative min-w-0 grow">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="min-w-0 grow">
           <Input
-            className="h-11 rounded-full pl-9 text-foreground shadow-none focus-visible:ring-0"
+            className="h-11 rounded-full border-0 bg-transparent px-4 text-foreground shadow-none focus-visible:ring-0"
             type="search"
             placeholder="Buscar"
             aria-label="Buscar"

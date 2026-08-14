@@ -158,3 +158,18 @@ export const signBlogImagePath = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { url: signed?.signedUrl ?? "" };
   });
+
+/** Leitura pública de posts (SSR-safe): usada pelos loaders das rotas /blog. */
+export const listPublicBlogPostsFn = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => z.object({ limit: z.number().int().min(1).max(60).optional() }).parse(d ?? {}))
+  .handler(async ({ data }) => {
+    const { listPublicBlogPosts } = await import("@/lib/blog-public.server");
+    return { items: await listPublicBlogPosts(data.limit ?? 30) };
+  });
+
+export const getPublicBlogPostFn = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => z.object({ slug: z.string().min(1).max(200) }).parse(d))
+  .handler(async ({ data }) => {
+    const { getPublicBlogPostBySlug } = await import("@/lib/blog-public.server");
+    return { post: await getPublicBlogPostBySlug(data.slug) };
+  });

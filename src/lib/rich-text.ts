@@ -4,10 +4,17 @@ import sanitizeHtml from "sanitize-html";
 export const RICH_TEXT_MAX = 2500;
 
 const OPTIONS: sanitizeHtml.IOptions = {
-  allowedTags: ["p", "h4", "ul", "li", "strong", "em", "br"],
-  allowedAttributes: {},
-  allowedSchemes: [],
+  allowedTags: [
+    "p", "h2", "h3", "h4", "ul", "ol", "li",
+    "strong", "em", "u", "s", "br", "hr", "blockquote", "code", "pre", "a",
+  ],
+  allowedAttributes: { a: ["href", "title", "target", "rel"] },
+  allowedSchemes: ["http", "https", "mailto"],
+  transformTags: {
+    a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer", target: "_blank" }),
+  },
 };
+
 
 /** Sanitiza HTML de descrição, permitindo apenas texto, título (h4) e bullets. */
 export function sanitizeRichText(html: string): string {
@@ -24,8 +31,9 @@ export function richTextToPlainText(html: string): string {
 
 /** Heurística simples para detectar conteúdo já formatado em HTML. */
 export function isRichTextHtml(value: string): boolean {
-  return /<(p|h4|ul|ol|li|br|strong|em|div|span)\b[^>]*>/i.test(value ?? "");
+  return /<(p|h2|h3|h4|ul|ol|li|br|strong|em|blockquote|a|div|span)\b[^>]*>/i.test(value ?? "");
 }
+
 
 /** Garante HTML renderizável: texto puro vira parágrafos preservando quebras. */
 export function toRichTextHtml(value: string): string {

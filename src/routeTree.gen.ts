@@ -21,6 +21,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as LeadTokenRouteImport } from './routes/lead.$token'
 import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as PublicSlugIndexRouteImport } from './routes/public.$slug.index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
@@ -31,6 +32,7 @@ import { Route as ApiPublicRecordsRouteImport } from './routes/api/public/record
 import { Route as ApiPublicPlatformLabelsRouteImport } from './routes/api/public/platform-labels'
 import { Route as ApiPublicOrganizationsRouteImport } from './routes/api/public/organizations'
 import { Route as ApiPublicOrganizationCategoriesRouteImport } from './routes/api/public/organization-categories'
+import { Route as ApiPublicLocalidadesRouteImport } from './routes/api/public/localidades'
 import { Route as ApiPublicInstanceSettingsRouteImport } from './routes/api/public/instance-settings'
 import { Route as ApiPublicHomeGroupingDataRouteImport } from './routes/api/public/home-grouping-data'
 import { Route as ApiPublicHomeConfigRouteImport } from './routes/api/public/home-config'
@@ -123,6 +125,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => BlogRoute,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth_/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PublicSlugIndexRoute = PublicSlugIndexRouteImport.update({
   id: '/public/$slug/',
   path: '/public/$slug/',
@@ -174,6 +181,11 @@ const ApiPublicOrganizationCategoriesRoute =
     path: '/api/public/organization-categories',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicLocalidadesRoute = ApiPublicLocalidadesRouteImport.update({
+  id: '/api/public/localidades',
+  path: '/api/public/localidades',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicInstanceSettingsRoute =
   ApiPublicInstanceSettingsRouteImport.update({
     id: '/api/public/instance-settings',
@@ -363,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -375,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
+  '/api/public/localidades': typeof ApiPublicLocalidadesRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
@@ -417,6 +431,7 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -429,6 +444,7 @@ export interface FileRoutesByTo {
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
+  '/api/public/localidades': typeof ApiPublicLocalidadesRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
@@ -473,6 +489,7 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
+  '/auth_/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -485,6 +502,7 @@ export interface FileRoutesById {
   '/api/public/home-config': typeof ApiPublicHomeConfigRoute
   '/api/public/home-grouping-data': typeof ApiPublicHomeGroupingDataRoute
   '/api/public/instance-settings': typeof ApiPublicInstanceSettingsRoute
+  '/api/public/localidades': typeof ApiPublicLocalidadesRoute
   '/api/public/organization-categories': typeof ApiPublicOrganizationCategoriesRoute
   '/api/public/organizations': typeof ApiPublicOrganizationsRouteWithChildren
   '/api/public/platform-labels': typeof ApiPublicPlatformLabelsRoute
@@ -530,6 +548,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/politica-de-privacidade'
     | '/termos-e-condicoes'
+    | '/auth/callback'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -542,6 +561,7 @@ export interface FileRouteTypes {
     | '/api/public/home-config'
     | '/api/public/home-grouping-data'
     | '/api/public/instance-settings'
+    | '/api/public/localidades'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
     | '/api/public/platform-labels'
@@ -584,6 +604,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/politica-de-privacidade'
     | '/termos-e-condicoes'
+    | '/auth/callback'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -596,6 +617,7 @@ export interface FileRouteTypes {
     | '/api/public/home-config'
     | '/api/public/home-grouping-data'
     | '/api/public/instance-settings'
+    | '/api/public/localidades'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
     | '/api/public/platform-labels'
@@ -639,6 +661,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/politica-de-privacidade'
     | '/termos-e-condicoes'
+    | '/auth_/callback'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -651,6 +674,7 @@ export interface FileRouteTypes {
     | '/api/public/home-config'
     | '/api/public/home-grouping-data'
     | '/api/public/instance-settings'
+    | '/api/public/localidades'
     | '/api/public/organization-categories'
     | '/api/public/organizations'
     | '/api/public/platform-labels'
@@ -696,6 +720,7 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   TermosECondicoesRoute: typeof TermosECondicoesRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicCategoryLabelsRoute: typeof ApiPublicCategoryLabelsRoute
@@ -705,6 +730,7 @@ export interface RootRouteChildren {
   ApiPublicHomeConfigRoute: typeof ApiPublicHomeConfigRoute
   ApiPublicHomeGroupingDataRoute: typeof ApiPublicHomeGroupingDataRoute
   ApiPublicInstanceSettingsRoute: typeof ApiPublicInstanceSettingsRoute
+  ApiPublicLocalidadesRoute: typeof ApiPublicLocalidadesRoute
   ApiPublicOrganizationCategoriesRoute: typeof ApiPublicOrganizationCategoriesRoute
   ApiPublicOrganizationsRoute: typeof ApiPublicOrganizationsRouteWithChildren
   ApiPublicPlatformLabelsRoute: typeof ApiPublicPlatformLabelsRoute
@@ -811,6 +837,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/auth_/callback': {
+      id: '/auth_/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/public/$slug/': {
       id: '/public/$slug/'
       path: '/public/$slug'
@@ -879,6 +912,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/organization-categories'
       fullPath: '/api/public/organization-categories'
       preLoaderRoute: typeof ApiPublicOrganizationCategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/localidades': {
+      id: '/api/public/localidades'
+      path: '/api/public/localidades'
+      fullPath: '/api/public/localidades'
+      preLoaderRoute: typeof ApiPublicLocalidadesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/instance-settings': {
@@ -1219,6 +1259,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   TermosECondicoesRoute: TermosECondicoesRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicCategoryLabelsRoute: ApiPublicCategoryLabelsRoute,
@@ -1228,6 +1269,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHomeConfigRoute: ApiPublicHomeConfigRoute,
   ApiPublicHomeGroupingDataRoute: ApiPublicHomeGroupingDataRoute,
   ApiPublicInstanceSettingsRoute: ApiPublicInstanceSettingsRoute,
+  ApiPublicLocalidadesRoute: ApiPublicLocalidadesRoute,
   ApiPublicOrganizationCategoriesRoute: ApiPublicOrganizationCategoriesRoute,
   ApiPublicOrganizationsRoute: ApiPublicOrganizationsRouteWithChildren,
   ApiPublicPlatformLabelsRoute: ApiPublicPlatformLabelsRoute,

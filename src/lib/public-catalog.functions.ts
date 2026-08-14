@@ -82,3 +82,9 @@ export const getExploreFiltersFn = createServerFn({ method: "GET" })
     });
   });
 
+
+/** Bairros e cidades das organizações públicas (links de localidade da home). */
+export const getPublicLocalitiesFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { listPublicLocalities } = await import("@/lib/public.server");
+  return listPublicLocalities();
+});

@@ -10,6 +10,8 @@ import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { categorySlug, usePublicCategories } from "@/components/venue/category-tabs";
 import { HomeSearchBar } from "@/components/venue/home-search-bar";
+import { getPublicLocalitiesFn } from "@/lib/public-catalog.functions";
+
 
 import {
   categoryLayoutQuery,
@@ -23,56 +25,12 @@ import type { PublicOrganizationSummary, PublicRecordSummary } from "@/lib/publi
 import type { HomeGroupingDTO, HomeBlockDTO } from "@/lib/home-config.functions";
 
 // ------------------------------------------------------------
-// Query para obter bairros e cidades a partir de /organizations
+// Bairros e cidades reais das organizações públicas (SSR-safe)
 // ------------------------------------------------------------
-async function fetchLocalidades() {
-  try {
-    const response = await fetch("/api/public/organizations?limit=1000");
-    if (!response.ok) {
-      console.warn("⚠️ Erro ao buscar organizações, status:", response.status);
-      return { bairros: [], cidades: [] };
-    }
-    const data = await response.json();
-
-    // Detecta a estrutura da resposta
-    let orgs: any[] = [];
-    if (Array.isArray(data)) {
-      orgs = data;
-    } else if (data.data && Array.isArray(data.data)) {
-      orgs = data.data;
-    } else if (data.items && Array.isArray(data.items)) {
-      orgs = data.items;
-    } else if (data.organizations && Array.isArray(data.organizations)) {
-      orgs = data.organizations;
-    } else {
-      console.warn("⚠️ Estrutura de resposta desconhecida", data);
-      return { bairros: [], cidades: [] };
-    }
-
-    const bairrosSet = new Set<string>();
-    const cidadesSet = new Set<string>();
-
-    orgs.forEach((org: any) => {
-      const bairro = org.neighborhood || org.bairro;
-      const cidade = org.city || org.cidade;
-      if (bairro) bairrosSet.add(bairro);
-      if (cidade) cidadesSet.add(cidade);
-    });
-
-    return {
-      bairros: Array.from(bairrosSet).sort((a, b) => a.localeCompare(b)),
-      cidades: Array.from(cidadesSet).sort((a, b) => a.localeCompare(b)),
-    };
-  } catch (error) {
-    console.error("❌ Erro ao buscar localidades:", error);
-    return { bairros: [], cidades: [] };
-  }
-}
-
 export const localidadesQuery = () => ({
   queryKey: ["localidades"],
-  queryFn: fetchLocalidades,
-  staleTime: 1000 * 60 * 15, // 15 minutos
+  queryFn: async () => getPublicLocalitiesFn(),
+  staleTime: 1000 * 60 * 15,
 });
 
 // ------------------------------------------------------------
@@ -99,11 +57,15 @@ export const Route = createFileRoute("/")({
   }),
   loader: async ({ context }) => {
     const qc = context.queryClient;
-    qc.prefetchQuery(publicCategoriesQuery());
-    qc.prefetchQuery(localidadesQuery());
-    const config = await qc.ensureQueryData(homeGroupingsQuery());
+    // Aguarda todas as leituras usadas no primeiro render para evitar divergência
+    // de hidratação (servidor com dados x cliente em loading).
+    const [config] = await Promise.all([
+      qc.ensureQueryData(homeGroupingsQuery()),
+      qc.ensureQueryData(publicCategoriesQuery()),
+      qc.ensureQueryData(localidadesQuery()),
+    ]);
     const first = (config as { groupings: HomeGroupingDTO[] }).groupings?.[0];
-    if (first) qc.prefetchQuery(homeGroupingDataQuery(first.id));
+    if (first) await qc.ensureQueryData(homeGroupingDataQuery(first.id));
   },
   errorComponent: ({ error }) => (
     <div className="p-8 text-center text-sm text-muted-foreground" role="alert">
@@ -157,8 +119,8 @@ function Landing() {
   });
 
   const localidadesQ = useQuery(localidadesQuery());
-  const bairros = (localidadesQ.data?.bairros ?? []) as string[];
-  const cidades = (localidadesQ.data?.cidades ?? []) as string[];
+  const bairros = ((localidadesQ.data?.bairros ?? []) as Array<{ value: string }>).map((b) => b.value);
+  const cidades = ((localidadesQ.data?.cidades ?? []) as Array<{ value: string }>).map((c) => c.value);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

@@ -3,6 +3,7 @@ import { PublicHeader } from "@/components/venue/public-header";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { OAUTH_REDIRECT_KEY } from "@/routes/auth_.callback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,11 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  /** Etapa extra quando a conta tem verificação em duas etapas ativa. */
+  const [mfa, setMfa] = useState<{ factorId: string } | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  /** Conta criada aguardando confirmação de e-mail. */
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -38,10 +44,51 @@ function AuthPage() {
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpName, setSignUpName] = useState("");
 
+  /** Encaminha para /app ou pede o código de 2FA quando exigido. */
+  async function finishSignIn() {
+    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (!error && data?.currentLevel === "aal1" && data?.nextLevel === "aal2") {
+      const list = await supabase.auth.mfa.listFactors();
+      const factor = (list.data?.totp ?? []).find((f) => f.status === "verified");
+      if (factor) {
+        setMfa({ factorId: factor.id });
+        return;
+      }
+    }
+    toast.success("Bem-vindo de volta!");
+    navigate({ to: "/app" });
+  }
+
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: signInEmail, password: signInPassword });
+    if (error) {
+      setLoading(false);
+      if (/confirm/i.test(error.message)) {
+        setPendingEmail(signInEmail);
+        return toast.error("Confirme seu e-mail para entrar.");
+      }
+      return toast.error(error.message);
+    }
+    await finishSignIn();
+    setLoading(false);
+  }
+
+  async function handleMfaVerify(e: React.FormEvent) {
+    e.preventDefault();
+    if (!mfa) return;
+    setLoading(true);
+    const challenge = await supabase.auth.mfa.challenge({ factorId: mfa.factorId });
+    if (challenge.error) {
+      setLoading(false);
+      return toast.error(challenge.error.message);
+    }
+    const { error } = await supabase.auth.mfa.verify({
+      factorId: mfa.factorId,
+      challengeId: challenge.data.id,
+      code: mfaCode.trim(),
+    });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Bem-vindo de volta!");
@@ -51,27 +98,48 @@ function AuthPage() {
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: signUpEmail,
       password: signUpPassword,
-      options: { data: { full_name: signUpName }, emailRedirectTo: `${window.location.origin}/app` },
+      options: { data: { full_name: signUpName }, emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
+    if (!data.session) {
+      setPendingEmail(signUpEmail);
+      return toast.success("Enviamos um link de confirmação para seu e-mail.");
+    }
     toast.success("Conta criada!");
     navigate({ to: "/app" });
   }
 
+  async function resendConfirmation() {
+    if (!pendingEmail) return;
+    setLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: pendingEmail,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Link de confirmação reenviado.");
+  }
+
   async function handleGoogle() {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    sessionStorage.setItem(OAUTH_REDIRECT_KEY, "/app");
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: `${window.location.origin}/auth/callback`,
+    });
     if (result.error) {
       setLoading(false);
       return toast.error((result.error as Error).message ?? "Falha ao entrar com Google");
     }
     if (result.redirected) return;
-    navigate({ to: "/app" });
+    navigate({ to: "/auth/callback" });
   }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,9 +161,46 @@ function AuthPage() {
                 <CardDescription>Entre ou crie sua conta para começar.</CardDescription>
               </CardHeader>
               <CardContent>
+                {mfa ? (
+                  <form onSubmit={handleMfaVerify} className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Digite o código de 6 dígitos do seu aplicativo autenticador.
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="mfa-login-code">Código</Label>
+                      <Input
+                        id="mfa-login-code"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        required
+                        value={mfaCode}
+                        onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+                      />
+                    </div>
+                    <Button type="submit" className="h-11 w-full" disabled={loading || mfaCode.length !== 6}>
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verificar"}
+                    </Button>
+                  </form>
+                ) : pendingEmail ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Enviamos um link de confirmação para <strong className="text-foreground">{pendingEmail}</strong>.
+                      Confirme seu e-mail para acessar a plataforma.
+                    </p>
+                    <Button className="h-11 w-full" onClick={resendConfirmation} disabled={loading}>
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reenviar link de confirmação"}
+                    </Button>
+                    <Button variant="ghost" className="h-11 w-full" onClick={() => setPendingEmail(null)}>
+                      Voltar
+                    </Button>
+                  </div>
+                ) : (
+                  <>
                 <Button variant="outline" className="w-full h-11" onClick={handleGoogle} disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continuar com Google"}
                 </Button>
+
 
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
@@ -177,7 +282,10 @@ function AuthPage() {
                     </form>
                   </TabsContent>
                 </Tabs>
+                  </>
+                )}
               </CardContent>
+
             </Card>
           </div>
         </section>
