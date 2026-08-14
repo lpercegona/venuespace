@@ -17,6 +17,9 @@ import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton"
 import { EmptyState } from "@/components/venue/empty-state";
 import { RichTextView } from "@/components/venue/rich-text-view";
 import { isImageSource } from "@/lib/public-image";
+import { getPublicOrganizationFn } from "@/lib/public-catalog.functions";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
+import { OrganizationProfileSkeleton } from "@/components/venue/organization-profile-skeleton";
 
 
 type PublicLayoutField = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
@@ -120,7 +123,7 @@ function OrgDetailsFallback({
 
 function PublicOrgPage() {
   const { slug } = Route.useParams();
-  const orgQ = useQuery({ queryKey: ["public-org", slug], queryFn: () => fetchOrg(slug) });
+  const orgQ = useQuery(publicOrgQuery(slug));
   const [contactOpen, setContactOpen] = useState(false);
   const recordsQ = useQuery({ queryKey: ["public-org-records", slug], queryFn: () => fetchRecords(slug) });
 
