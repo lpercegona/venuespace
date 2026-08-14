@@ -390,26 +390,24 @@ function optionEntries(config: any): Array<{ value: string; label: string }> {
   return out;
 }
 
+// Chave estável: carregamos os apelidos de todos os campos da tabela de uma vez
+// (a chave por conjunto de field_keys variava a cada bloco/filtro e nunca reusava).
 async function loadOptionAliases(
   table: "category_org_fields" | "category_standard_table_fields",
   fieldKeys: string[],
 ): Promise<OptionAliasMap> {
-  const keysSorted = Array.from(new Set(fieldKeys.filter(Boolean))).sort();
-  if (keysSorted.length === 0) return new Map();
-  return cached(`aliases:${table}:${keysSorted.join(",")}`, TTL_SHORT, () => loadOptionAliasesUncached(table, keysSorted));
+  if (fieldKeys.filter(Boolean).length === 0) return new Map();
+  return cachedSWR(`aliases:${table}:all`, TTL_MEDIUM, () => loadOptionAliasesUncached(table));
 }
 
 async function loadOptionAliasesUncached(
   table: "category_org_fields" | "category_standard_table_fields",
-  fieldKeys: string[],
 ): Promise<OptionAliasMap> {
   const map: OptionAliasMap = new Map();
-  const keys = Array.from(new Set(fieldKeys.filter(Boolean)));
-  if (keys.length === 0) return map;
   const { data } = await (supabaseAdmin as any)
     .from(table)
-    .select("field_key, field_type, config")
-    .in("field_key", keys);
+    .select("field_key, field_type, config");
+
   for (const f of ((data ?? []) as any[])) {
     const entries = optionEntries(f.config);
     if (entries.length === 0) continue;
