@@ -19,6 +19,7 @@ import { RichTextView } from "@/components/venue/rich-text-view";
 import { isImageSource } from "@/lib/public-image";
 import { getPublicOrganizationFn } from "@/lib/public-catalog.functions";
 import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
+import { categorySlug } from "@/components/venue/category-tabs";
 import { OrganizationProfileSkeleton } from "@/components/venue/organization-profile-skeleton";
 
 
@@ -165,7 +166,9 @@ function PublicOrgPage() {
       <PublicBreadcrumbs
         items={[
           { label: "Home", to: "/" },
-          ...(org.category_name ? [{ label: org.category_name }] : []),
+          ...(org.category_name
+            ? [{ label: org.category_name, to: "/categoria/$slug", params: { slug: categorySlug({ name: org.category_name } as any) } }]
+            : []),
           { label: org.name },
         ]}
       />
