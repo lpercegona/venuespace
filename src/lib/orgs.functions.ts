@@ -461,6 +461,23 @@ async function assertFieldMutable(supabase: any, userId: string, fieldId: string
   }
 }
 
+/** Campos `relation` só podem apontar para tabelas da mesma organização. */
+async function assertRelationTargetSameOrg(supabase: any, tableId: string, type?: string, config?: any) {
+  const target = (config ?? {})?.target_table_id;
+  if (!target || (type && type !== "relation")) return;
+  const { data: rows, error } = await supabase
+    .from("tables")
+    .select("id, organization_id")
+    .in("id", [tableId, target]);
+  if (error) throw new Error(error.message);
+  const own = (rows ?? []).find((r: any) => r.id === tableId);
+  const tgt = (rows ?? []).find((r: any) => r.id === target);
+  if (!own || !tgt || own.organization_id !== tgt.organization_id) {
+    throw new Error("A tabela relacionada precisa pertencer à mesma organização.");
+  }
+}
+
+
 export const createField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => fieldCreate.parse(d))
