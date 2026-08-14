@@ -7,7 +7,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DynamicForm } from "@/components/venue/dynamic-form";
 import { createBookingContact } from "@/lib/bookings.functions";
 
-export type ContactOption = { id: string; label: string; email: string | null };
+export type ContactOption = {
+  id: string;
+  label: string;
+  email: string | null;
+  company?: string | null;
+  cnpj?: string | null;
+  address?: string | null;
+};
 export type ContactFieldDef = {
   key: string; label: string; type: string; required: boolean; config: any; position: number;
 };
