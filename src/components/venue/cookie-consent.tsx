@@ -85,7 +85,7 @@ export function CookieConsent() {
               <div className="grid gap-2 sm:grid-cols-3">
                 <Button
                   variant="ghost"
-                  className="h-8 w-full px-4 text-sm hover:bg-muted/60 sm:order-1"
+                  className="h-8 w-full px-4 text-xs hover:bg-muted/60 sm:order-1"
                   onClick={() => {
                     setDraft(readConsent()?.categories ?? DENY_ALL);
                     setPrefsOpen(true);
@@ -95,13 +95,13 @@ export function CookieConsent() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-8 w-full px-4 text-sm sm:order-2"
+                  className="h-8 w-full px-4 text-xs sm:order-2"
                   onClick={() => save(DENY_ALL)}
                 >
                   Rejeitar não essenciais
                 </Button>
                 <Button
-                  className="h-8 w-full px-4 text-sm sm:order-3"
+                  className="h-8 w-full px-4 text-xs sm:order-3"
                   onClick={() => save(ALLOW_ALL)}
                 >
                   Aceitar todos
@@ -162,19 +162,19 @@ export function CookieConsent() {
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button
               variant="ghost"
-              className="h-8 w-full px-4 text-sm hover:bg-muted/60 sm:w-auto"
+              className="h-8 w-full px-4 text-xs hover:bg-muted/60 sm:w-auto"
               onClick={() => save(DENY_ALL)}
             >
               Rejeitar não essenciais
             </Button>
             <Button
               variant="outline"
-              className="h-8 w-full px-4 text-sm sm:w-auto"
+              className="h-8 w-full px-4 text-xs sm:w-auto"
               onClick={() => save(ALLOW_ALL)}
             >
               Aceitar todos
             </Button>
-            <Button className="h-8 w-full px-4 text-sm sm:w-auto" onClick={() => save(draft)}>
+            <Button className="h-8 w-full px-4 text-xs sm:w-auto" onClick={() => save(draft)}>
               Salvar preferências
             </Button>
           </div>
