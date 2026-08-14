@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { openCookiePreferences } from "@/lib/cookie-consent";
 
 const links = [
+  { to: "/para-empresas", label: "Para empresas" },
   { to: "/termos-e-condicoes", label: "Termos e condições" },
   { to: "/politica-de-privacidade", label: "Política de Privacidade" },
   { to: "/politica-de-cookies", label: "Política de Cookies" },
@@ -9,6 +10,7 @@ const links = [
   { to: "https://tools.venuespace.com.br", label: "Ferramentas", external: true },
   { to: "/blog", label: "Blog" },
 ];
+
 
 export function PublicFooter() {
   return (
