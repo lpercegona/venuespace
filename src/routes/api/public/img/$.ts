@@ -5,6 +5,12 @@ import { createFileRoute } from "@tanstack/react-router";
  * Evita URLs assinadas expirando (imagens sumindo) e trocando de token
  * (imagens recarregando/piscando a cada navegação).
  */
+/** Prefixos privados que nunca podem ser servidos publicamente. */
+const PRIVATE_PREFIXES = ["orcamentos/"];
+
+/** Extensões permitidas: apenas conteúdo de imagem público. */
+const ALLOWED_EXT = /\.(png|jpe?g|webp|gif|avif|svg)$/i;
+
 export const Route = createFileRoute("/api/public/img/$")({
   server: {
     handlers: {
@@ -14,6 +20,11 @@ export const Route = createFileRoute("/api/public/img/$")({
         if (!path || path.includes("..") || path.startsWith(".")) {
           return new Response("Not found", { status: 404 });
         }
+        const lower = path.toLowerCase();
+        if (PRIVATE_PREFIXES.some((p) => lower.startsWith(p)) || !ALLOWED_EXT.test(lower)) {
+          return new Response("Not found", { status: 404 });
+        }
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data, error } = await supabaseAdmin.storage.from("venue-uploads").download(path);
         if (error || !data) return new Response("Not found", { status: 404 });
