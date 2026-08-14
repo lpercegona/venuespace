@@ -158,7 +158,7 @@ function PublicOrgPage() {
   const layout: PublicLayoutField[] = org.layout ?? [];
   const layoutKeys = new Set(layout.map((l) => l.field_key));
   const addr = formatAddress(org.address);
-  const logoUrl = typeof org.data?.logo_url === "string" && /^https?:\/\//i.test(org.data.logo_url) ? org.data.logo_url : (org.logo_url ?? null);
+  const logoUrl = isImageSource(org.data?.logo_url) ? org.data.logo_url : (org.logo_url ?? null);
 
   const pageStyle = (org.page_style as "standard" | "immersive") ?? "standard";
 
