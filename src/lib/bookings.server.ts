@@ -440,6 +440,17 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
   }
 
   const maxDays = input.items.reduce((m, i) => Math.max(m, Number(i.days) || 1), 1);
+  const travelFee = Math.max(0, Number(input.travelFee) || 0);
+  if (travelFee > 0) {
+    ensure(ctx, 44);
+    drawRight(ctx, "Subtotal dos itens:", R - 120, ctx.y, 10, font, INK);
+    drawRight(ctx, brl(total), R - 10, ctx.y, 10, font, INK);
+    ctx.y -= 16;
+    drawRight(ctx, "Deslocamento:", R - 120, ctx.y, 10, font, INK);
+    drawRight(ctx, brl(travelFee), R - 10, ctx.y, 10, font, INK);
+    ctx.y -= 20;
+  }
+  total += travelFee;
   ensure(ctx, 40);
   ctx.page.drawRectangle({ x: L, y: ctx.y - 10, width: R - L, height: 28, color: PAPER });
   drawRight(ctx, `Valor Total do Orçamento (${maxDays} diária${maxDays === 1 ? "" : "s"}):`, R - 120, ctx.y, 10.5, bold, INK);
