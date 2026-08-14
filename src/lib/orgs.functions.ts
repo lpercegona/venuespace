@@ -196,6 +196,7 @@ export const updateOrganization = createServerFn({ method: "POST" })
     if (categoryChanged) {
       await context.supabase.rpc("reconcile_org_category_fields", { _org_id: data.id });
     }
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return { ok: true, category_reconciled: categoryChanged };
   });
 
@@ -213,6 +214,7 @@ export const deleteOrganization = createServerFn({ method: "POST" })
     if (!allowedDelete) throw new Error("Sem permissão para excluir esta organização.");
     const { error } = await context.supabase.from("organizations").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return { ok: true };
   });
 
@@ -387,6 +389,7 @@ export const updateTable = createServerFn({ method: "POST" })
     if (rest.category_data !== undefined) patch.category_data = rest.category_data;
     const { error } = await context.supabase.from("tables").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return { ok: true };
   });
 
