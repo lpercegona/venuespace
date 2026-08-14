@@ -7,6 +7,7 @@ import type { PublicOrganizationSummary } from "@/lib/public.server";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { PublicListing, PUBLIC_LISTING_PAGE_SIZE } from "@/components/venue/public-listing";
+import { ListingHero } from "@/components/venue/listing-hero";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CategoryTabs, resolveCategory, usePublicCategories } from "@/components/venue/category-tabs";
 import { useCategoryLayout } from "@/hooks/use-public-catalog";

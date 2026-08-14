@@ -6,6 +6,7 @@ import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { PublicHeader } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { PublicListing, PUBLIC_LISTING_PAGE_SIZE } from "@/components/venue/public-listing";
+import { ListingHero } from "@/components/venue/listing-hero";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { categorySlug } from "@/components/venue/category-tabs";
 import {
