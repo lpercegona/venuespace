@@ -145,21 +145,34 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
               Cadastrar empresa
             </Button>
           </Link>
-          {showAuthActions ? (
-            <Link to={isHome ? "/auth" : "/"} aria-label={isHome ? "Entrar" : "Início"}>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={isHome ? "Entrar" : "Início"}
-                className={cn(
-                  "h-10 w-10 sm:h-9 sm:w-9",
-                  onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "",
-                )}
-              >
-                {isHome ? <CircleUserRound className="h-5 w-5" /> : <Home className="h-5 w-5" />}
-              </Button>
-            </Link>
-          ) : null}
+          {/* Mobile: casa fora da home, login na home. Desktop: sempre login. */}
+          <Link to={isHome ? "/auth" : "/"} aria-label={isHome ? "Entrar" : "Início"} className="sm:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={isHome ? "Entrar" : "Início"}
+              className={cn(
+                "h-10 w-10",
+                onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "",
+              )}
+            >
+              {isHome ? <CircleUserRound className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+            </Button>
+          </Link>
+          <Link to="/auth" aria-label="Entrar" className="hidden sm:block">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Entrar"
+              className={cn(
+                "h-9 w-9",
+                onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "",
+              )}
+            >
+              <CircleUserRound className="h-5 w-5" />
+            </Button>
+          </Link>
+
 
         </div>
       </div>
