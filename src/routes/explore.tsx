@@ -172,6 +172,7 @@ function ExplorePage() {
         hero={
           <ListingHero
             title={`${activeCat?.name ?? "Explorar"} do jeito que você busca!`}
+            offsetHeader={false}
           />
         }
         aboveContent={

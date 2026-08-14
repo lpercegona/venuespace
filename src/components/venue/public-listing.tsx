@@ -30,6 +30,8 @@ type Props = {
   beforeTitle?: React.ReactNode;
   /** Hero customizado para substituir o título textual padrão. */
   hero?: React.ReactNode;
+  /** Trilha de navegação exibida acima do hero. */
+  breadcrumbs?: React.ReactNode;
   term: string;
   onTermChange: (v: string) => void;
   filters: PublicFilterDef[];
@@ -53,6 +55,7 @@ export function PublicListing({
   aboveContent,
   beforeTitle,
   hero,
+  breadcrumbs,
   term,
   onTermChange,
   filters,
@@ -71,6 +74,7 @@ export function PublicListing({
 
   return (
     <section className="flex w-full grow flex-col pb-28 lg:pb-10">
+      {breadcrumbs}
       {hero ? <div className="w-full">{hero}</div> : null}
 
       <div className="mx-auto w-full max-w-6xl grow px-4 py-10 sm:px-6">

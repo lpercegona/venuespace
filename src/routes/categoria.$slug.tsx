@@ -136,7 +136,7 @@ function CategoryPage() {
         breadcrumbs={
           <PublicBreadcrumbs items={[{ label: "Home", to: "/" }, { label: category?.name ?? "Categoria" }]} />
         }
-        hero={<ListingHero title={`${category?.name ?? "Categoria"} do jeito que você busca!`} />}
+        hero={<ListingHero title={`${category?.name ?? "Categoria"} do jeito que você busca!`} offsetHeader={false} />}
         term={term}
         onTermChange={setTerm}
         filters={availableFilters as any}
