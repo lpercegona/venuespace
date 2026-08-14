@@ -23,11 +23,13 @@ type OrgItem = {
 };
 
 type Props = {
-  title: string;
+  title?: string;
   description?: string;
   /** Conteúdo extra entre o título e a listagem (ex.: abas de categoria). */
   aboveContent?: React.ReactNode;
   beforeTitle?: React.ReactNode;
+  /** Hero customizado para substituir o título textual padrão. */
+  hero?: React.ReactNode;
   term: string;
   onTermChange: (v: string) => void;
   filters: PublicFilterDef[];
