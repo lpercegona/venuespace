@@ -1,6 +1,6 @@
 import { Info } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -25,6 +25,7 @@ export function FieldLabel({ htmlFor, children, required, tooltip, className }: 
         {required ? <span className="ml-1 text-destructive">*</span> : null}
       </Label>
       {help ? (
+        <TooltipProvider delayDuration={150}>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
@@ -37,6 +38,7 @@ export function FieldLabel({ htmlFor, children, required, tooltip, className }: 
           </TooltipTrigger>
           <TooltipContent className="max-w-64 text-xs">{help}</TooltipContent>
         </Tooltip>
+        </TooltipProvider>
       ) : null}
     </div>
   );

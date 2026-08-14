@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UploadField, GalleryField } from "@/components/venue/dynamic-form";
@@ -236,6 +235,3 @@ export function CategoryFieldsForm({
     );
   }
 }
-
-// Mantém a importação de Label usada por consumidores legados do módulo.
-export { Label };
