@@ -76,8 +76,17 @@ import {
   upsertCategoryCascadeField,
   deleteCategoryCascadeField,
   reconcileCategoryAllOrganizations,
+  getCategoryBaseFieldConfig,
+  updateCategoryBaseFieldConfig,
   type CategoryCascadeField,
+  type BaseFieldPresentation,
 } from "@/lib/category-cascade.functions";
+import {
+  listCategoryFieldGroups,
+  upsertCategoryFieldGroup,
+  deleteCategoryFieldGroup,
+  type CategoryFieldGroup,
+} from "@/lib/category-field-groups.functions";
 import {
   listCategoryStandardTables,
   upsertCategoryStandardTable,
@@ -794,6 +803,8 @@ type UnifiedField = {
   required: boolean;
   order_index: number;
   config: Record<string, any>;
+  group_id?: string | null;
+  is_base?: boolean;
 };
 
 const BASE_FIELDS: Record<DefaultsScope, Array<{ key: string; label: string; type: string; required: boolean }>> = {
