@@ -21,6 +21,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as LeadTokenRouteImport } from './routes/lead.$token'
 import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as PublicSlugIndexRouteImport } from './routes/public.$slug.index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
@@ -123,6 +124,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => BlogRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth_/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PublicSlugIndexRoute = PublicSlugIndexRouteImport.update({
   id: '/public/$slug/',
@@ -369,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -424,6 +431,7 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -481,6 +489,7 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
+  '/auth_/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/lead/$token': typeof LeadTokenRoute
@@ -539,6 +548,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/politica-de-privacidade'
     | '/termos-e-condicoes'
+    | '/auth/callback'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -594,6 +604,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/politica-de-privacidade'
     | '/termos-e-condicoes'
+    | '/auth/callback'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -650,6 +661,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/politica-de-privacidade'
     | '/termos-e-condicoes'
+    | '/auth_/callback'
     | '/blog/$slug'
     | '/categoria/$slug'
     | '/lead/$token'
@@ -708,6 +720,7 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
   TermosECondicoesRoute: typeof TermosECondicoesRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   LeadTokenRoute: typeof LeadTokenRoute
   ApiPublicCategoryLabelsRoute: typeof ApiPublicCategoryLabelsRoute
@@ -823,6 +836,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/$slug'
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof BlogRoute
+    }
+    '/auth_/callback': {
+      id: '/auth_/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/public/$slug/': {
       id: '/public/$slug/'
@@ -1239,6 +1259,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
   TermosECondicoesRoute: TermosECondicoesRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
   LeadTokenRoute: LeadTokenRoute,
   ApiPublicCategoryLabelsRoute: ApiPublicCategoryLabelsRoute,
