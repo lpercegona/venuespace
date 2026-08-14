@@ -91,7 +91,7 @@ function OrgDetailsFallback({
     const v = data?.[f.key];
     if (v == null || v === "" || (Array.isArray(v) && v.length === 0)) continue;
     let text: string;
-    if (Array.isArray(v)) text = v.filter((x) => typeof x === "string" && !/^https?:\/\//i.test(x)).join(", ");
+    if (Array.isArray(v)) text = v.filter((x) => typeof x === "string" && !isImageSource(x) && !/^https?:\/\//i.test(x)).join(", ");
     else if (typeof v === "boolean") text = v ? "Sim" : "Não";
     else text = String(v);
     if (!text) continue;
