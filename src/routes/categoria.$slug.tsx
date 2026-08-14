@@ -52,8 +52,8 @@ export const Route = createFileRoute("/categoria/$slug")({
     if (!category) return;
     const search = deps.search ?? {};
     const page = Math.max(1, Number(search.page ?? 1));
-    qc.prefetchQuery(categoryLayoutQuery(category.id, "organization_card"));
-    qc.prefetchQuery(categoryFiltersQuery(category.id, String(search.q ?? ""), extractFilters(search)));
+    await qc.ensureQueryData(categoryLayoutQuery(category.id, "organization_card"));
+    await qc.ensureQueryData(categoryFiltersQuery(category.id, String(search.q ?? ""), extractFilters(search)));
     await qc.ensureQueryData(
       categoryOrganizationsQuery({
         categoryId: category.id,
