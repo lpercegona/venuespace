@@ -23,11 +23,13 @@ type OrgItem = {
 };
 
 type Props = {
-  title: string;
+  title?: string;
   description?: string;
   /** Conteúdo extra entre o título e a listagem (ex.: abas de categoria). */
   aboveContent?: React.ReactNode;
   beforeTitle?: React.ReactNode;
+  /** Hero customizado para substituir o título textual padrão. */
+  hero?: React.ReactNode;
   term: string;
   onTermChange: (v: string) => void;
   filters: PublicFilterDef[];
@@ -50,6 +52,7 @@ export function PublicListing({
   description,
   aboveContent,
   beforeTitle,
+  hero,
   term,
   onTermChange,
   filters,
@@ -67,13 +70,20 @@ export function PublicListing({
   const offset = (page - 1) * pageSize;
 
   return (
-    <section className="mx-auto w-full max-w-6xl grow px-4 py-10 pb-28 sm:px-6 lg:pb-10">
-      {beforeTitle}
-      <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
-      {description ? <p className="mt-2 text-sm text-muted-foreground">{description}</p> : null}
-      {aboveContent}
+    <section className="flex w-full grow flex-col pb-28 lg:pb-10">
+      {hero ? <div className="w-full">{hero}</div> : null}
 
-      <div className="mt-6 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div className="mx-auto w-full max-w-6xl grow px-4 py-10 sm:px-6">
+        {beforeTitle}
+        {!hero && title ? (
+          <>
+            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+            {description ? <p className="mt-2 text-sm text-muted-foreground">{description}</p> : null}
+          </>
+        ) : null}
+        {aboveContent}
+
+        <div className="mt-6 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
         <PublicFilterSidebar
           className="hidden lg:sticky lg:top-24 lg:block"
           term={term}
@@ -127,6 +137,7 @@ export function PublicListing({
         onClear={onClear}
         total={total}
       />
+    </div>
     </section>
   );
 }
