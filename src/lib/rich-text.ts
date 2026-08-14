@@ -31,8 +31,9 @@ export function richTextToPlainText(html: string): string {
 
 /** Heurística simples para detectar conteúdo já formatado em HTML. */
 export function isRichTextHtml(value: string): boolean {
-  return /<(p|h4|ul|ol|li|br|strong|em|div|span)\b[^>]*>/i.test(value ?? "");
+  return /<(p|h2|h3|h4|ul|ol|li|br|strong|em|blockquote|a|div|span)\b[^>]*>/i.test(value ?? "");
 }
+
 
 /** Garante HTML renderizável: texto puro vira parágrafos preservando quebras. */
 export function toRichTextHtml(value: string): string {
