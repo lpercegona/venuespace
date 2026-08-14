@@ -88,3 +88,11 @@ export const getPublicLocalitiesFn = createServerFn({ method: "GET" }).handler(a
   const { listPublicLocalities } = await import("@/lib/public.server");
   return listPublicLocalities();
 });
+
+/** Perfil público de uma organização pelo slug (mesma origem da rota /api/public/organizations/$slug). */
+export const getPublicOrganizationFn = createServerFn({ method: "GET" })
+  .inputValidator((data: unknown) => z.object({ slug: z.string().min(1) }).parse(data))
+  .handler(async ({ data }) => {
+    const { getPublicOrganization } = await import("@/lib/public.server");
+    return getPublicOrganization(data.slug);
+  });
