@@ -76,6 +76,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // Pré-carrega as categorias públicas: o menu "Explore" já abre preenchido.
   loader: ({ context }) => {
+    if (typeof window === "undefined") return;
     context.queryClient.prefetchQuery({
       queryKey: ["public-org-categories"],
       queryFn: async () => {
