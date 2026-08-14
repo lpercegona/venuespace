@@ -461,11 +461,29 @@ async function assertFieldMutable(supabase: any, userId: string, fieldId: string
   }
 }
 
+/** Campos `relation` só podem apontar para tabelas da mesma organização. */
+async function assertRelationTargetSameOrg(supabase: any, tableId: string, type?: string, config?: any) {
+  const target = (config ?? {})?.target_table_id;
+  if (!target || (type && type !== "relation")) return;
+  const { data: rows, error } = await supabase
+    .from("tables")
+    .select("id, organization_id")
+    .in("id", [tableId, target]);
+  if (error) throw new Error(error.message);
+  const own = (rows ?? []).find((r: any) => r.id === tableId);
+  const tgt = (rows ?? []).find((r: any) => r.id === target);
+  if (!own || !tgt || own.organization_id !== tgt.organization_id) {
+    throw new Error("A tabela relacionada precisa pertencer à mesma organização.");
+  }
+}
+
+
 export const createField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => fieldCreate.parse(d))
   .handler(async ({ data, context }) => {
     await checkFieldManagementAllowed(context.supabase, context.userId);
+    await assertRelationTargetSameOrg(context.supabase, data.table_id, data.type, data.config);
     const { data: isSA } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
     const { data: row, error } = await context.supabase
       .from("fields")
@@ -492,6 +510,17 @@ export const updateField = createServerFn({ method: "POST" })
     await checkFieldManagementAllowed(context.supabase, context.userId);
     await assertFieldMutable(context.supabase, context.userId, data.id);
     const { id, ...rest } = data;
+    if ((rest as any).config) {
+      const { data: cur } = await context.supabase.from("fields").select("table_id, type").eq("id", id).maybeSingle();
+      if (cur) {
+        await assertRelationTargetSameOrg(
+          context.supabase,
+          (cur as any).table_id,
+          ((rest as any).type ?? (cur as any).type) as string,
+          (rest as any).config,
+        );
+      }
+    }
     const { error } = await context.supabase.from("fields").update(rest as any).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };

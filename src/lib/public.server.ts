@@ -1039,9 +1039,16 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
     if (ids.length === 0) return;
     const target = (f.config ?? {}).target_table_id as string | undefined;
     if (!target) return;
+    // A tabela alvo precisa ser pública e pertencer à mesma organização.
+    const { data: tTable } = await sb
+      .from("tables")
+      .select("id, is_public, organization_id")
+      .eq("id", target)
+      .maybeSingle();
+    if (!tTable || !(tTable as any).is_public || (tTable as any).organization_id !== (org as any).id) return;
     const [{ data: tFields }, { data: targets }] = await Promise.all([
       sb.from("fields").select("key, type, position").eq("table_id", target).order("position", { ascending: true }),
-      sb.from("records").select("id, data").eq("table_id", target).in("id", ids),
+      sb.from("records").select("id, data").eq("table_id", target).eq("status", "published").in("id", ids),
     ]);
     const labelKey = ((tFields ?? []) as any[]).find((x) => x.type === "text")?.key ?? "id";
     const map: Record<string, { id: string; label: string }> = {};
@@ -1050,6 +1057,7 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
     }
     relations[f.id] = map;
   }));
+
 
   return {
     organization: { id: org.id, slug: org.slug, name: org.name, description: org.description ?? null, logo_url: org.logo_url ?? null },
