@@ -509,11 +509,19 @@ export const generateBookingQuote = createServerFn({ method: "POST" })
     }));
 
     let contactText: string | null = null;
+    let clientCompany: string | null = null;
+    let clientCnpj: string | null = null;
+    let clientAddress: string | null = null;
     if (sdRec.contact_record_id) {
       const setup = await loadContactSetup(context.supabase, rec.organization_id);
       const contacts = await loadContacts(context.supabase, setup.contactsTableId, setup.fields);
       const c = contacts.find((x) => x.id === sdRec.contact_record_id);
-      if (c) contactText = c.email ? `${c.label} — ${c.email}` : c.label;
+      if (c) {
+        contactText = c.email ? `${c.label} — ${c.email}` : c.label;
+        clientCompany = c.company;
+        clientCnpj = c.cnpj;
+        clientAddress = c.address;
+      }
     }
     if (!contactText) {
       const contactField = meta.fields.find(
@@ -546,10 +554,14 @@ export const generateBookingQuote = createServerFn({ method: "POST" })
       },
       recordId: rec.id,
       client: contactText,
+      clientCompany,
+      clientCnpj,
+      clientAddress,
       location: locationKey ? (recData[locationKey] ?? null) : null,
       periodStart: meta.startKey ? (recData[meta.startKey] ?? null) : null,
       periodEnd: meta.endKey ? (recData[meta.endKey] ?? null) : null,
       items,
+      travelFee: Math.max(0, Number(recData["travel_fee"] ?? 0) || 0),
       paymentTerms,
       notes,
       validityDays: Number(orgSys.validity_days ?? 15) || 15,
