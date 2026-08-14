@@ -54,8 +54,9 @@ function formatValue(field: RendererField | undefined, raw: any): string {
 }
 
 function isUrl(v: unknown): v is string {
-  return typeof v === "string" && /^https?:\/\//i.test(v);
+  return isImageSource(v) || (typeof v === "string" && /^https?:\/\//i.test(v));
 }
+
 
 function hasImageExtension(v: string) {
   try {
