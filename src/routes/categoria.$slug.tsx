@@ -132,7 +132,7 @@ function CategoryPage() {
       <PublicHeader activeCategorySlug={slug} />
 
       <PublicListing
-        title={category?.name ?? "Categoria"}
+        hero={<ListingHero title={`${category?.name ?? "Categoria"} do jeito que você busca!`} />}
         term={term}
         onTermChange={setTerm}
         filters={availableFilters as any}

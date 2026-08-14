@@ -163,8 +163,11 @@ function ExplorePage() {
 
       <PublicListing
         beforeTitle={<BackLink to="/" label="Início" />}
-        title="Explorar"
-        description="Navegue por espaços de eventos e ambientes publicados."
+        hero={
+          <ListingHero
+            title={`${activeCat?.name ?? "Explorar"} do jeito que você busca!`}
+          />
+        }
         aboveContent={
           <CategoryTabs
             className="mt-6"
