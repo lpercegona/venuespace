@@ -57,11 +57,15 @@ export const Route = createFileRoute("/")({
   }),
   loader: async ({ context }) => {
     const qc = context.queryClient;
-    qc.prefetchQuery(publicCategoriesQuery());
-    qc.prefetchQuery(localidadesQuery());
-    const config = await qc.ensureQueryData(homeGroupingsQuery());
+    // Aguarda todas as leituras usadas no primeiro render para evitar divergência
+    // de hidratação (servidor com dados x cliente em loading).
+    const [config] = await Promise.all([
+      qc.ensureQueryData(homeGroupingsQuery()),
+      qc.ensureQueryData(publicCategoriesQuery()),
+      qc.ensureQueryData(localidadesQuery()),
+    ]);
     const first = (config as { groupings: HomeGroupingDTO[] }).groupings?.[0];
-    if (first) qc.prefetchQuery(homeGroupingDataQuery(first.id));
+    if (first) await qc.ensureQueryData(homeGroupingDataQuery(first.id));
   },
   errorComponent: ({ error }) => (
     <div className="p-8 text-center text-sm text-muted-foreground" role="alert">
