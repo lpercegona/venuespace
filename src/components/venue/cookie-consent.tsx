@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Cookie } from "lucide-react";
+import { Cookie, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -57,36 +57,41 @@ export function CookieConsent() {
 
   return (
     <>
-      {bannerOpen ? (
+      {bannerOpen && (
         <div
           role="region"
           aria-label="Aviso de cookies"
-          className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-6 sm:pb-6"
+          className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-6 sm:pb-6 animate-in slide-in-from-bottom-4 fade-in duration-300"
         >
-          <div className="mx-auto w-full max-w-4xl rounded-xl border border-border bg-card p-4 text-card-foreground shadow-elegant sm:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="mx-auto w-full max-w-4xl rounded-2xl border border-border/50 bg-card/95 backdrop-blur-sm p-4 text-card-foreground shadow-2xl shadow-black/5 sm:p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 gap-3">
                 <Cookie className="mt-0.5 hidden h-5 w-5 shrink-0 text-brand sm:block" aria-hidden />
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Usamos cookies necessários para o funcionamento do site e, mediante seu
-                  consentimento, cookies analíticos e de marketing para medir audiência e
-                  personalizar comunicação (LGPD, Lei nº 13.709/2018, art. 7º). Você pode
-                  aceitar, recusar os não essenciais ou escolher por categoria a qualquer
-                  momento. Saiba mais na{" "}
-                  <Link to="/politica-de-cookies" className="text-foreground underline underline-offset-2">
+                  Usamos cookies necessários para o funcionamento do site e, mediante seu consentimento, cookies
+                  analíticos e de marketing para medir audiência e personalizar comunicação (LGPD, Lei nº 13.709/2018,
+                  art. 7º). Você pode aceitar, recusar os não essenciais ou escolher por categoria a qualquer momento.
+                  Saiba mais na{" "}
+                  <Link
+                    to="/politica-de-cookies"
+                    className="text-foreground font-medium underline underline-offset-2 hover:text-brand transition-colors"
+                  >
                     Política de Cookies
                   </Link>{" "}
                   e na{" "}
-                  <Link to="/politica-de-privacidade" className="text-foreground underline underline-offset-2">
+                  <Link
+                    to="/politica-de-privacidade"
+                    className="text-foreground font-medium underline underline-offset-2 hover:text-brand transition-colors"
+                  >
                     Política de Privacidade
                   </Link>
                   .
                 </p>
               </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:w-auto lg:shrink-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 lg:w-auto lg:shrink-0">
                 <Button
                   variant="ghost"
-                  className="h-11 whitespace-nowrap"
+                  className="h-auto px-3 py-1.5 text-xs whitespace-nowrap hover:bg-muted/50"
                   onClick={() => {
                     setDraft(readConsent()?.categories ?? DENY_ALL);
                     setPrefsOpen(true);
@@ -94,30 +99,39 @@ export function CookieConsent() {
                 >
                   Preferências
                 </Button>
-                <Button variant="outline" className="h-11 whitespace-nowrap" onClick={() => save(DENY_ALL)}>
+                <Button
+                  variant="outline"
+                  className="h-auto px-3 py-1.5 text-xs whitespace-nowrap border-muted-foreground/20 hover:bg-muted/50"
+                  onClick={() => save(DENY_ALL)}
+                >
                   Rejeitar não essenciais
                 </Button>
-                <Button className="h-11 whitespace-nowrap" onClick={() => save(ALLOW_ALL)}>
+                <Button
+                  className="h-auto px-3 py-1.5 text-xs whitespace-nowrap bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow"
+                  onClick={() => save(ALLOW_ALL)}
+                >
                   Aceitar todos
                 </Button>
               </div>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
       <Dialog open={prefsOpen} onOpenChange={setPrefsOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg rounded-2xl border-border/50 shadow-2xl">
           <DialogHeader>
-            <DialogTitle>Preferências de cookies</DialogTitle>
-            <DialogDescription>
-              Escolha quais categorias deseja permitir. Sua escolha é registrada neste
-              navegador e vale por 12 meses; você pode alterá-la quando quiser pelo rodapé
-              do site.
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Settings className="h-5 w-5 text-brand" />
+              Preferências de cookies
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              Escolha quais categorias deseja permitir. Sua escolha é registrada neste navegador e vale por 12 meses;
+              você pode alterá-la quando quiser pelo rodapé do site.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 py-2">
             <CategoryRow
               id="cat-necessary"
               title="Necessários"
@@ -142,23 +156,37 @@ export function CookieConsent() {
           </div>
 
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Você pode revogar o consentimento a qualquer momento e exercer seus direitos de
-            titular (acesso, correção, eliminação, portabilidade e oposição) pelo e-mail{" "}
-            <a href="mailto:contato@venuespace.com.br" className="underline underline-offset-2">
+            Você pode revogar o consentimento a qualquer momento e exercer seus direitos de titular (acesso, correção,
+            eliminação, portabilidade e oposição) pelo e-mail{" "}
+            <a
+              href="mailto:contato@venuespace.com.br"
+              className="text-foreground font-medium underline underline-offset-2 hover:text-brand transition-colors"
+            >
               contato@venuespace.com.br
             </a>
             .
           </p>
 
-          <DialogFooter className="gap-2 sm:justify-between">
-            <Button variant="ghost" className="h-11" onClick={() => save(DENY_ALL)}>
+          <DialogFooter className="flex flex-col-reverse gap-1.5 sm:flex-row sm:justify-between sm:gap-2">
+            <Button
+              variant="ghost"
+              className="h-auto px-3 py-1.5 text-xs w-full sm:w-auto hover:bg-muted/50"
+              onClick={() => save(DENY_ALL)}
+            >
               Rejeitar não essenciais
             </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" className="h-11" onClick={() => save(ALLOW_ALL)}>
+            <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:flex-row sm:gap-2">
+              <Button
+                variant="outline"
+                className="h-auto px-3 py-1.5 text-xs w-full sm:w-auto border-muted-foreground/20 hover:bg-muted/50"
+                onClick={() => save(ALLOW_ALL)}
+              >
                 Aceitar todos
               </Button>
-              <Button className="h-11" onClick={() => save(draft)}>
+              <Button
+                className="h-auto px-3 py-1.5 text-xs w-full sm:w-auto bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow"
+                onClick={() => save(draft)}
+              >
                 Salvar preferências
               </Button>
             </div>
@@ -185,12 +213,12 @@ function CategoryRow({
   onChange?: (v: boolean) => void;
 }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 rounded-lg border border-border p-3">
-      <div className="min-w-0">
-        <Label htmlFor={id} className="text-sm font-medium text-foreground">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 rounded-xl bg-muted/20 border border-border/50 p-4 transition-colors hover:bg-muted/30">
+      <div className="min-w-0 space-y-1">
+        <Label htmlFor={id} className="text-sm font-medium text-foreground cursor-pointer">
           {title}
         </Label>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
       </div>
       <Switch
         id={id}
@@ -198,7 +226,7 @@ function CategoryRow({
         disabled={disabled}
         onCheckedChange={(v) => onChange?.(!!v)}
         aria-label={title}
-        className="shrink-0"
+        className="shrink-0 mt-1"
       />
     </div>
   );
