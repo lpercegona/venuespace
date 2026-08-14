@@ -1,3 +1,9 @@
+## 2026-08-14 10:03 (America/Sao_Paulo) — Correção/extensão da Iteração 33 (layout de listagens e header)
+
+- Desktop: `/explore` e `/categoria/$slug` passam a usar 3 colunas — primeira coluna fixa (~280 px) para filtros e duas colunas para cards; grade de cards simplificada para 2 colunas.
+- Header público: dropdown de categorias centralizado na tela via grid de 3 colunas.
+- Hidratação da página de categoria: `categoryFiltersQuery` carregada com `ensureQueryData` no loader para evitar divergência SSR.
+
 ## 2026-08-14 14:10 (America/Sao_Paulo) — Correção das Iterações 30/31/33 (performance das páginas públicas — Iteração B do plano)
 - Cache stale-while-revalidate: novo `cachedSWR` em `src/lib/server-cache.ts` — o valor vencido é servido imediatamente enquanto a recarga acontece em segundo plano (nenhuma requisição paga o custo do miss).
 - Snapshots estáveis (Correção da Iteração 31): `listPublicOrganizations` e `listPublicRecords` (`src/lib/public.server.ts`) leem um snapshot único por 5 min e recortam categoria/filtros em memória; `loadLayoutsBatch`, `loadOrgCategoryFieldsBatch` e `loadOptionAliases` também passam a snapshot com SWR.

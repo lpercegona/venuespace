@@ -62,13 +62,15 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
           : "border-border bg-surface/90 text-foreground backdrop-blur",
       )}
     >
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3 sm:gap-3 sm:px-6">
         {/* Logo: apenas em telas maiores */}
-        <Link to="/" className="hidden min-w-0 items-center gap-2 sm:flex" aria-label="Venuespace — início">
-          <VenuespaceLogo className={cn("h-5 w-auto", onHero ? "text-primary-foreground" : "text-brand")} />
-        </Link>
+        <div className="flex min-w-0 items-center gap-2">
+          <Link to="/" className="hidden min-w-0 items-center gap-2 sm:flex" aria-label="Venuespace — início">
+            <VenuespaceLogo className={cn("h-5 w-auto", onHero ? "text-primary-foreground" : "text-brand")} />
+          </Link>
+        </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 justify-self-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -106,7 +108,7 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
           </DropdownMenu>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
           <Link to="/auth">
             <Button
               size="sm"

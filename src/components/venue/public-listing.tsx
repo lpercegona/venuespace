@@ -42,7 +42,7 @@ type Props = {
   onPageChange: (page: number) => void;
 };
 
-const GRID_CLS = "grid gap-4 sm:grid-cols-2 xl:grid-cols-3";
+const GRID_CLS = "grid gap-4 sm:grid-cols-2";
 
 /** Listagem pública unificada (explorar e páginas de categoria). */
 export function PublicListing({
@@ -73,7 +73,7 @@ export function PublicListing({
       {description ? <p className="mt-2 text-sm text-muted-foreground">{description}</p> : null}
       {aboveContent}
 
-      <div className="mt-6 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div className="mt-6 lg:grid lg:grid-cols-[280px_minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <PublicFilterSidebar
           className="hidden lg:sticky lg:top-24 lg:block"
           term={term}
