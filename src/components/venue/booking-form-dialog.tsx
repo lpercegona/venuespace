@@ -362,6 +362,22 @@ export function BookingFormDialog({
               )}
             </section>
 
+            <section className="space-y-1.5">
+              <Label htmlFor="bkf-travel" className="text-sm font-medium">Deslocamento</Label>
+              <Input
+                id="bkf-travel"
+                type="number"
+                min={0}
+                step="0.01"
+                className="h-11 sm:h-10"
+                value={period["travel_fee"] ?? ""}
+                onChange={(e) =>
+                  setPeriod((p) => ({ ...p, travel_fee: e.target.value === "" ? null : Number(e.target.value) || 0 }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">Somado ao total da reserva e exibido no orçamento.</p>
+            </section>
+
             {otherFields.length > 0 ? (
               <section className="space-y-3">
                 <h3 className="text-sm font-medium">Detalhes da reserva</h3>
@@ -389,13 +405,29 @@ export function BookingFormDialog({
                 onChange={setContactId}
                 onCreated={(c) => setExtraContacts((prev) => [c, ...prev])}
               />
+              {selectedContact &&
+              (selectedContact.company || selectedContact.cnpj || selectedContact.address) ? (
+                <div className="rounded-md border border-border p-3 text-xs text-muted-foreground">
+                  {selectedContact.company ? <p>Empresa: {selectedContact.company}</p> : null}
+                  {selectedContact.cnpj ? <p>CNPJ: {selectedContact.cnpj}</p> : null}
+                  {selectedContact.address ? <p>Endereço: {selectedContact.address}</p> : null}
+                </div>
+              ) : null}
             </section>
 
             <DialogFooter className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
-              <p className="min-w-0 truncate text-sm">
-                <span className="text-muted-foreground">Total: </span>
-                <span className="font-medium">{brl(total)}</span>
-              </p>
+              <div className="min-w-0 text-sm">
+                {travelFee > 0 ? (
+                  <>
+                    <p className="truncate text-xs text-muted-foreground">Subtotal dos itens: {brl(itemsTotal)}</p>
+                    <p className="truncate text-xs text-muted-foreground">Deslocamento: {brl(travelFee)}</p>
+                  </>
+                ) : null}
+                <p className="truncate">
+                  <span className="text-muted-foreground">Total: </span>
+                  <span className="font-medium">{brl(total)}</span>
+                </p>
+              </div>
               <div className="flex shrink-0 gap-2">
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <Button type="button" className="h-11 sm:h-10" disabled={saving} onClick={submit}>
