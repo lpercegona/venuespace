@@ -55,7 +55,7 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
         <Input
           className="h-11 rounded-full border-0 bg-transparent px-4 text-foreground shadow-none focus-visible:ring-0"
           type="search"
-          placeholder="Buscar por nome, cidade ou característica"
+          placeholder="Busque seu espaço..."
           aria-label="Buscar"
           value={term}
           onChange={(e) => setTerm(e.target.value)}
@@ -64,17 +64,25 @@ export function HomeSearchBar({ categoryId, categorySlug }: Props) {
 
       {filters.length > 0 ? (
         <Popover>
-          <PopoverTrigger asChild>
-            <Button type="button" variant="outline" className="h-11 shrink-0 gap-2 rounded-full text-foreground">
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="hidden sm:inline">Filtros</span>
-              {activeCount > 0 ? (
-                <Badge variant="secondary" className="rounded-full">
-                  {activeCount}
-                </Badge>
-              ) : null}
-            </Button>
-          </PopoverTrigger>
+  <PopoverTrigger asChild>
+    <Button
+      type="button"
+      variant="outline"
+      className="relative h-11 shrink-0 gap-2 rounded-full text-foreground aspect-square sm:aspect-auto sm:w-auto"
+    >
+      <SlidersHorizontal className="h-4 w-4" />
+      <span className="hidden sm:inline">Filtros</span>
+      {activeCount > 0 ? (
+        <Badge
+          variant="secondary"
+          className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-[10px] sm:static sm:h-auto sm:w-auto sm:px-2 sm:py-0 sm:text-xs"
+        >
+          {activeCount}
+        </Badge>
+      ) : null}
+    </Button>
+  </PopoverTrigger>
+</Popover>
           <PopoverContent align="end" className="w-80 p-0">
             <ScrollArea className="max-h-[70vh]">
               <div className="space-y-0 p-3 text-left">
