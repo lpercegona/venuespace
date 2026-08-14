@@ -182,23 +182,26 @@ function SecuritySection() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       <div>
         <h2 className="font-display text-lg font-semibold text-foreground">Segurança</h2>
         <p className="text-sm text-muted-foreground">Defina uma nova senha e ative a verificação em duas etapas.</p>
       </div>
       <TwoFactorManager />
-      <div className="space-y-2">
-        <Label htmlFor="s-pass">Nova senha</Label>
-        <Input id="s-pass" type="password" minLength={8} required value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="new-password" />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="s-pass2">Confirmar senha</Label>
-        <Input id="s-pass2" type="password" minLength={8} required value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
-      </div>
-      <div className="flex justify-end">
-        <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Atualizar senha"}</Button>
-      </div>
-    </form>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="s-pass">Nova senha</Label>
+          <Input id="s-pass" type="password" minLength={8} required value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="new-password" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="s-pass2">Confirmar senha</Label>
+          <Input id="s-pass2" type="password" minLength={8} required value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
+        </div>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Atualizar senha"}</Button>
+        </div>
+      </form>
+    </div>
   );
 }
+
