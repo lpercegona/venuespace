@@ -6,6 +6,7 @@ import { GalleryCarousel } from "@/components/venue/gallery-carousel";
 import { LazyImage } from "@/components/venue/lazy-image";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { isImageSource } from "@/lib/public-image";
 import { isRichTextHtml, richTextToPlainText } from "@/lib/rich-text";
 
 
