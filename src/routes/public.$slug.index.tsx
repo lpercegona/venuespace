@@ -162,7 +162,15 @@ function PublicOrgPage() {
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
+      <PublicBreadcrumbs
+        items={[
+          { label: "Home", to: "/" },
+          ...(org.category_name ? [{ label: org.category_name }] : []),
+          { label: org.name },
+        ]}
+      />
       <header className="border-b border-border/60 bg-surface">
+
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <BackLink to="/" label="Início" />
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
