@@ -2,6 +2,17 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 
+/** Erros que não indicam sessão inválida: relógio fora de sincronia ou rede. */
+export function isTransientAuthError(error: { message?: string; status?: number } | null | undefined): boolean {
+  if (!error) return false;
+  const msg = (error.message ?? "").toLowerCase();
+  if (msg.includes("issued at future") || msg.includes("clock") || msg.includes("not yet valid")) return true;
+  if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("timeout")) return true;
+  const status = error.status ?? 0;
+  return status === 0 || status >= 500;
+}
+
+
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
