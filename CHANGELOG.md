@@ -945,3 +945,9 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 - Hardening: políticas "super admin manage" em `organization_fields`, `table_fields` e `record_fields` reescritas com `TO authenticated`, evitando que visitantes anônimos avaliem `is_super_admin()` sem grant.
 - Validação: dados de auth íntegros (6 usuários / 6 perfis com e-mail / 1 super admin); `/app` e `/admin` carregam autenticados sem erros de console.
 - Memória de segurança atualizada para registrar que esses grants são obrigatórios e não devem ser revogados.
+
+## Correção/extensão da Iteração 32 — dados do cliente no orçamento e deslocamento (2026-08-14)
+- Migração: `ensure_contacts_table` passa a garantir os campos `contact_company` (Empresa / Razão social), `contact_cnpj` e `contact_address` na tabela Contatos (source `user`, editáveis) e a destravar a tabela (`is_locked = false`, seguindo privada); `ensure_bookings_table` garante o campo `travel_fee` (Deslocamento, moeda). Backfill aplicado às tabelas de Contatos e de Reservas existentes.
+- `bookings.server.ts`: `ContactRow`/`contactLabel` devolvem empresa, CNPJ e endereço; `QuoteInput` recebe `clientCompany`, `clientCnpj`, `clientAddress` e `travelFee`; o PDF ganha as linhas Empresa/CNPJ/Endereço no bloco de dados do cliente e, quando há deslocamento, "Subtotal dos itens" + "Deslocamento" antes do total geral.
+- `bookings.functions.ts`: `getBookingContext` inclui os campos de empresa no schema de novo contato; `listBookings` devolve `travel_fee` e soma o deslocamento em `items_total`; `generateBookingQuote` envia os dados do cliente e o deslocamento ao PDF (a proposta na conversa usa o total com deslocamento).
+- UI: `booking-form-dialog.tsx` ganhou o campo Deslocamento e o rodapé com subtotal/deslocamento/total, além do resumo de empresa/CNPJ/endereço do contato selecionado; `booking-contact-picker.tsx` tipa os novos dados do contato.
