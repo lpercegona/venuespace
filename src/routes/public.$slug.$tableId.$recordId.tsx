@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/venue/empty-state";
 import { PublicHeader, BackLink } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
+
 import { InterestFormModal } from "@/components/venue/interest-form-modal";
 
 type Payload = {
@@ -84,6 +86,14 @@ function PublicRecordDetail() {
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
+      <PublicBreadcrumbs
+        items={[
+          { label: "Home", to: "/" },
+          { label: organization.name, to: "/public/$slug", params: { slug } },
+          { label: table.name, to: "/public/$slug/$tableId", params: { slug, tableId } },
+          { label: title },
+        ]}
+      />
       <header className="border-b border-border/60 bg-surface">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
           <BackLink to="/public/$slug" params={{ slug }} label={`Voltar para ${organization.name}`} />

@@ -1,5 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { BackLink } from "@/components/venue/public-header";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
+
 import { useFormatContext } from "@/hooks/use-instance-context";
 import { formatDate } from "@/lib/formatting";
 import { getPublicBlogPostFn } from "@/lib/blog.functions";
@@ -58,6 +60,10 @@ function BlogPost() {
   const ctx = useFormatContext();
 
   return (
+    <>
+    <PublicBreadcrumbs
+      items={[{ label: "Home", to: "/" }, { label: "Blog", to: "/blog" }, { label: post.title }]}
+    />
     <article className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
       <div className="mb-6">
         <BackLink to="/blog" label="Voltar ao blog" />
@@ -90,5 +96,6 @@ function BlogPost() {
         dangerouslySetInnerHTML={{ __html: post.content_html }}
       />
     </article>
+    </>
   );
 }

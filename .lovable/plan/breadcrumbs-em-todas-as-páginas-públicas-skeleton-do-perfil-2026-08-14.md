@@ -12,21 +12,23 @@ API: `<PublicBreadcrumbs items={[{ label, to?, params? }]} />` — itens com `to
 
 Todas as páginas públicas, exceto `/` (home) e `/para-empresas`. Os links "Voltar/Início" (`BackLink`) existentes permanecem como estão.
 
-| Rota | Trilha |
-| --- | --- |
-| `/explore` | Home > Explorar |
-| `/categoria/$slug` | Home > {Categoria} |
-| `/blog` | Home > Blog |
-| `/blog/$slug` | Home > Blog > {Título do post} |
-| `/public/$slug` (padrão) | Home > {Categoria} > {Organização} |
-| `/public/$slug` (imersivo) | mantém a trilha atual, migrada para o componente |
-| `/public/$slug/$tableId` | Home > {Categoria} > {Organização} > {Tabela} |
-| `/public/$slug/$tableId/$recordId` | Home > {Categoria} > {Organização} > {Tabela} > {Registro} |
-| `/public/$slug/$tableId/form` | ... > {Tabela} > Contato |
-| `/public/$slug/campaigns/$recordId` | Home > {Organização} > {Campanha} |
-| `/politica-de-privacidade`, `/politica-de-cookies`, `/termos-e-condicoes`, `/contestacao-de-espacos` | Home > {Título da página} |
 
-Regras: rótulos usam os dados já carregados na rota (nada de nova consulta); segmentos sem dado carregado são omitidos; nomes longos usam `truncate`; em `/explore` e `/categoria/$slug` a trilha entra entre o header e o `ListingHero`, sem quebrar o `-mt-[57px]` do hero (a faixa fica abaixo do hero para preservar o encaixe visual atual).
+| Rota                                                                                                 | Trilha                                                     |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `/explore`                                                                                           | Home > Explorar                                            |
+| `/categoria/$slug`                                                                                   | Home > {Categoria}                                         |
+| `/blog`                                                                                              | Home > Blog                                                |
+| `/blog/$slug`                                                                                        | Home > Blog > {Título do post}                             |
+| `/public/$slug` (padrão)                                                                             | Home > {Categoria} > {Organização}                         |
+| `/public/$slug` (imersivo)                                                                           | mantém a trilha atual, migrada para o componente           |
+| `/public/$slug/$tableId`                                                                             | Home > {Categoria} > {Organização} > {Tabela}              |
+| `/public/$slug/$tableId/$recordId`                                                                   | Home > {Categoria} > {Organização} > {Tabela} > {Registro} |
+| `/public/$slug/$tableId/form`                                                                        | ... > {Tabela} > Contato                                   |
+| `/public/$slug/campaigns/$recordId`                                                                  | Home > {Organização} > {Campanha}                          |
+| `/politica-de-privacidade`, `/politica-de-cookies`, `/termos-e-condicoes`, `/contestacao-de-espacos` | Home > {Título da página}                                  |
+
+
+Regras: rótulos usam os dados já carregados na rota (nada de nova consulta); segmentos sem dado carregado são omitidos; nomes longos usam `truncate`; em `/explore` e `/categoria/$slug` a trilha entra entre o header e o `ListingHero`, sem quebrar o `-mt-[57px]` do hero (a faixa fica acima do hero para preservar o encaixe visual atual).
 
 ## 3. Skeleton do perfil da organização por estilo de página
 

@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PublicHeader } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
+
 import { Button } from "@/components/ui/button";
 import { openCookiePreferences } from "@/lib/cookie-consent";
 
@@ -59,6 +61,7 @@ function CookiePolicyPage() {
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader showAuthActions={false} />
+      <PublicBreadcrumbs items={[{ label: "Home", to: "/" }, { label: "Política de Cookies" }]} />
       <main className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
         <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
           Política de Cookies

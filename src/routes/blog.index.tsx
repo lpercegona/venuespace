@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFormatContext } from "@/hooks/use-instance-context";
 import { formatDate } from "@/lib/formatting";
 import { listPublicBlogPostsFn } from "@/lib/blog.functions";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
+
 
 export const Route = createFileRoute("/blog/")({
   head: () => ({
@@ -40,6 +42,8 @@ function BlogIndex() {
   const q = useQuery({ queryKey: ["public-blog"], queryFn: fetchPosts, staleTime: 60_000 });
 
   return (
+    <>
+    <PublicBreadcrumbs items={[{ label: "Home", to: "/" }, { label: "Blog" }]} />
     <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <header className="mb-8 max-w-3xl">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Blog</p>
@@ -98,5 +102,6 @@ function BlogIndex() {
         </div>
       )}
     </section>
+    </>
   );
 }

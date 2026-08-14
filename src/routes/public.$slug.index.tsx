@@ -17,6 +17,10 @@ import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton"
 import { EmptyState } from "@/components/venue/empty-state";
 import { RichTextView } from "@/components/venue/rich-text-view";
 import { isImageSource } from "@/lib/public-image";
+import { getPublicOrganizationFn } from "@/lib/public-catalog.functions";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
+import { categorySlug } from "@/components/venue/category-tabs";
+import { OrganizationProfileSkeleton } from "@/components/venue/organization-profile-skeleton";
 
 
 type PublicLayoutField = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
@@ -27,7 +31,19 @@ type PublicOrganizationSummary = {
   category_id: string | null; data: Record<string, any>; layout: PublicLayoutField[]; fields: PublicRendererField[];
 };
 
+function publicOrgQuery(slug: string) {
+  return {
+    queryKey: ["public-org", slug],
+    queryFn: () => getPublicOrganizationFn({ data: { slug } }) as Promise<PublicOrg>,
+    staleTime: 60_000,
+  };
+}
+
 export const Route = createFileRoute("/public/$slug/")({
+  loader: async ({ context, params }) => {
+    // Prefetch para que o estilo de página (padrão/imersivo) já seja conhecido na primeira renderização.
+    await context.queryClient.ensureQueryData(publicOrgQuery(params.slug)).catch(() => null);
+  },
   head: ({ params }) => ({
     meta: [
       { title: `${params.slug} — Venuespace` },
@@ -57,17 +73,12 @@ type PublicOrg = PublicOrganizationSummary & {
   total_reviews: number;
 };
 
-async function fetchOrg(slug: string): Promise<PublicOrg> {
-  const res = await fetch(`/api/public/organizations/${encodeURIComponent(slug)}`);
-  if (!res.ok) throw new Error("Perfil não encontrado");
-  return res.json();
-}
-
 async function fetchRecords(slug: string): Promise<{ items: PublicRecordSummary[]; total: number }> {
   const res = await fetch(`/api/public/records?limit=60&slug=${encodeURIComponent(slug)}`);
   if (!res.ok) throw new Error("Falha ao carregar");
   return res.json();
 }
+
 
 function formatAddress(a: Record<string, any> | undefined): { line1: string; line2: string } | null {
   if (!a) return null;
@@ -113,33 +124,14 @@ function OrgDetailsFallback({
 
 function PublicOrgPage() {
   const { slug } = Route.useParams();
-  const orgQ = useQuery({ queryKey: ["public-org", slug], queryFn: () => fetchOrg(slug) });
+  const orgQ = useQuery(publicOrgQuery(slug));
   const [contactOpen, setContactOpen] = useState(false);
   const recordsQ = useQuery({ queryKey: ["public-org-records", slug], queryFn: () => fetchRecords(slug) });
 
   if (orgQ.isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <PublicHeader />
-        <header className="border-b border-border/60 bg-surface">
-          <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-              <Skeleton className="h-20 w-20 shrink-0 rounded-lg" />
-              <div className="min-w-0 flex-1 space-y-3">
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-8 w-2/3" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-            </div>
-          </div>
-        </header>
-        <main className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6">
-          <PublicCardSkeletonGrid count={6} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" />
-        </main>
-      </div>
-    );
+    return <OrganizationProfileSkeleton pageStyle={(orgQ.data as PublicOrg | undefined)?.page_style ?? "standard"} />;
   }
+
   if (orgQ.error || !orgQ.data) {
     return (
       <div className="min-h-screen bg-background">
@@ -171,7 +163,17 @@ function PublicOrgPage() {
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
+      <PublicBreadcrumbs
+        items={[
+          { label: "Home", to: "/" },
+          ...(org.category_name
+            ? [{ label: org.category_name, to: "/categoria/$slug", params: { slug: categorySlug({ name: org.category_name } as any) } }]
+            : []),
+          { label: org.name },
+        ]}
+      />
       <header className="border-b border-border/60 bg-surface">
+
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <BackLink to="/" label="Início" />
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">

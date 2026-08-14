@@ -11,6 +11,8 @@ import { OrganizationReviews } from "@/components/venue/organization-reviews";
 import { EmptyState } from "@/components/venue/empty-state";
 import { RichTextView } from "@/components/venue/rich-text-view";
 import { InterestForm } from "@/components/venue/interest-form";
+import { PublicBreadcrumbs } from "@/components/venue/public-breadcrumbs";
+import { categorySlug } from "@/components/venue/category-tabs";
 import { PublicHeader } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { getPublicCardTitle, OptionIconList, PublicCardBody } from "@/components/venue/public-card-renderer";
@@ -139,18 +141,15 @@ export function OrganizationPageImmersive({
     <div className="min-h-screen bg-background">
       <PublicHeader />
 
-      {/* Breadcrumb */}
-      <nav aria-label="Trilha" className="border-b border-border/60 bg-surface">
-        <div className="mx-auto flex max-w-6xl items-center gap-1.5 px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:px-6">
-          <Link to="/" className="hover:text-foreground">Home</Link>
-          {org.category_name ? (
-            <>
-              <span aria-hidden>&gt;</span>
-              <span className="truncate text-foreground">{org.category_name}</span>
-            </>
-          ) : null}
-        </div>
-      </nav>
+      <PublicBreadcrumbs
+        items={[
+          { label: "Home", to: "/" },
+          ...(org.category_name
+            ? [{ label: org.category_name, to: "/categoria/$slug", params: { slug: categorySlug({ name: org.category_name } as any) } }]
+            : []),
+          { label: org.name },
+        ]}
+      />
 
       {/* Hero full-bleed */}
       <section className="relative isolate h-72 w-full overflow-hidden sm:h-[26rem]">
