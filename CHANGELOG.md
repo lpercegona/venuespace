@@ -926,3 +926,10 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 - `loadBookingMeta` agora deriva o período quando não há `booking_role` configurado: usa os campos de data/datetime da tabela e, na ausência deles, expõe um período virtual (`booking_start`/`booking_end`).
 - `getBookingContext` passa a devolver `meta.periodFields`, garantindo que o formulário de nova reserva/edição sempre exiba Início e Término.
 - Período tornou-se obrigatório no `BookingFormDialog` antes de salvar.
+
+## Correção da iteração de segurança — permissões de execução em funções de RLS (2026-08-14)
+- Causa: a revogação de `EXECUTE` das funções `SECURITY DEFINER` deixou `is_org_member()` e `can_edit_org()` sem grant para `authenticated`. Como essas funções são avaliadas dentro das políticas de RLS (com o papel do solicitante), 26 políticas em `conversations`, `fields`, `memberships`, `messages`, `organizations`, `permissions`, `records`, `tables` e `views` passaram a falhar com "permission denied for function" — derrubando o carregamento de dados para todos os usuários autenticados, inclusive o super admin. Perfis/e-mails também sumiam por dependerem de `memberships`.
+- Correção: migração concedendo `EXECUTE` em `public.is_org_member(uuid, uuid)` e `public.can_edit_org(uuid, uuid)` a `authenticated` (`anon` segue sem acesso).
+- Hardening: políticas "super admin manage" em `organization_fields`, `table_fields` e `record_fields` reescritas com `TO authenticated`, evitando que visitantes anônimos avaliem `is_super_admin()` sem grant.
+- Validação: dados de auth íntegros (6 usuários / 6 perfis com e-mail / 1 super admin); `/app` e `/admin` carregam autenticados sem erros de console.
+- Memória de segurança atualizada para registrar que esses grants são obrigatórios e não devem ser revogados.
