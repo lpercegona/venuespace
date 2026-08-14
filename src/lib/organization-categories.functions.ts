@@ -116,7 +116,7 @@ export const listCategoryDefaultFields = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("organization_category_default_fields")
-      .select("id, category_id, field_key, label, field_type, required, config, order_index")
+      .select("id, category_id, field_key, label, field_type, required, config, order_index, group_id, is_base")
       .eq("category_id", data.category_id)
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
@@ -132,6 +132,8 @@ const cdfUpsert = z.object({
   required: z.boolean().optional(),
   config: z.record(z.string(), z.unknown()).optional(),
   order_index: z.number().int().min(0).max(999).optional(),
+  group_id: z.string().uuid().nullable().optional(),
+  is_base: z.boolean().optional(),
 });
 
 export const upsertCategoryDefaultField = createServerFn({ method: "POST" })
@@ -147,6 +149,8 @@ export const upsertCategoryDefaultField = createServerFn({ method: "POST" })
       required: data.required ?? false,
       config: data.config ?? {},
       order_index: data.order_index ?? 0,
+      group_id: data.group_id ?? null,
+      is_base: data.is_base ?? false,
     };
     if (data.id) row.id = data.id;
     const { error } = await context.supabase
