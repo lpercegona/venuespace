@@ -6,6 +6,9 @@ import { parseFilterValues, parseRangeValue, toFilterNumber } from "@/lib/filter
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { cached, cacheGet, cacheSet, TTL_MEDIUM, TTL_SHORT, TTL_SIGNED } from "@/lib/server-cache";
 
+/** Cards de listagem mostram poucas fotos: assinamos só as primeiras por item. */
+const LISTING_GALLERY_LIMIT = 5;
+
 /** Assina caminhos do storage reutilizando URLs já assinadas (cache em memória). */
 export async function signPathsCached(paths: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
@@ -820,7 +823,7 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     layout: (r.org_category_id && layouts.get(r.org_category_id)) || [],
   }));
 
-  await signImagePathsInItems(items);
+  await signImagePathsInItems(items, LISTING_GALLERY_LIMIT);
   return { items, total };
 }
 
