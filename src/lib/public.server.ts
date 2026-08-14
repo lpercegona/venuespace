@@ -814,18 +814,22 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
 
   const tableIds = Array.from(new Set(paged.map((r) => r.table_id)));
   const catIds = Array.from(new Set(paged.map((r) => r.org_category_id).filter(Boolean))) as string[];
-  const [fieldsRes, layouts] = await Promise.all([
+  const [fieldsRows, layouts] = await Promise.all([
     tableIds.length
-      ? sb.from("fields").select("table_id, key, label, type, position, config").in("table_id", tableIds).order("position", { ascending: true })
-      : Promise.resolve({ data: [] as any[] } as any),
+      ? cachedSWR(`fields:tables:${[...tableIds].sort().join(",")}`, TTL_MEDIUM, async () => {
+          const { data } = await sb.from("fields").select("table_id, key, label, type, position, config").in("table_id", tableIds).order("position", { ascending: true });
+          return (data ?? []) as any[];
+        })
+      : Promise.resolve([] as any[]),
     loadLayoutsBatch(catIds, "record_card"),
   ]);
   const fieldsByTable = new Map<string, PublicRendererField[]>();
-  for (const f of (((fieldsRes as any).data ?? []) as any[])) {
+  for (const f of fieldsRows) {
     const arr = fieldsByTable.get(f.table_id) ?? [];
     arr.push({ key: f.key, label: f.label, type: f.type, config: (f as any).config ?? {} });
     fieldsByTable.set(f.table_id, arr);
   }
+
 
   const items: PublicRecordSummary[] = paged.map((r) => ({
     ...r,
