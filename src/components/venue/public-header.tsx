@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, CircleUserRound, Compass } from "lucide-react";
+import { ArrowLeft, CircleUserRound, Compass, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -86,8 +86,17 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
             </DropdownMenuItem>
           );
         })}
-        {list.length === 0 ? <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem> : null}
+        {list.length === 0
+          ? cats.isPending
+            ? [0, 1, 2].map((i) => (
+                <DropdownMenuItem key={`sk-${i}`} disabled className="pointer-events-none">
+                  <span className="h-4 w-24 animate-pulse rounded bg-muted" />
+                </DropdownMenuItem>
+              ))
+            : <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem>
+          : null}
       </DropdownMenuContent>
+
     </DropdownMenu>
   );
 
@@ -137,20 +146,21 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
             </Button>
           </Link>
           {showAuthActions ? (
-            <Link to="/auth" aria-label="Entrar">
+            <Link to={isHome ? "/auth" : "/"} aria-label={isHome ? "Entrar" : "Início"}>
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Entrar"
+                aria-label={isHome ? "Entrar" : "Início"}
                 className={cn(
                   "h-10 w-10 sm:h-9 sm:w-9",
                   onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "",
                 )}
               >
-                <CircleUserRound className="h-5 w-5" />
+                {isHome ? <CircleUserRound className="h-5 w-5" /> : <Home className="h-5 w-5" />}
               </Button>
             </Link>
           ) : null}
+
         </div>
       </div>
 

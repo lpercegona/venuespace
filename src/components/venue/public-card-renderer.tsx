@@ -6,6 +6,7 @@ import { GalleryCarousel } from "@/components/venue/gallery-carousel";
 import { LazyImage } from "@/components/venue/lazy-image";
 import { OrgLogo } from "@/components/venue/org-logo";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { isImageSource } from "@/lib/public-image";
 import { isRichTextHtml, richTextToPlainText } from "@/lib/rich-text";
 
 
@@ -54,8 +55,9 @@ function formatValue(field: RendererField | undefined, raw: any): string {
 }
 
 function isUrl(v: unknown): v is string {
-  return typeof v === "string" && /^https?:\/\//i.test(v);
+  return isImageSource(v) || (typeof v === "string" && /^https?:\/\//i.test(v));
 }
+
 
 function hasImageExtension(v: string) {
   try {

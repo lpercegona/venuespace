@@ -16,6 +16,7 @@ import { OrgLogo } from "@/components/venue/org-logo";
 import { PublicCardSkeletonGrid } from "@/components/venue/public-card-skeleton";
 import { EmptyState } from "@/components/venue/empty-state";
 import { RichTextView } from "@/components/venue/rich-text-view";
+import { isImageSource } from "@/lib/public-image";
 
 
 type PublicLayoutField = { id: string; field_key: string; width_percent: number; order_index: number; config: Record<string, any> };
@@ -91,7 +92,7 @@ function OrgDetailsFallback({
     const v = data?.[f.key];
     if (v == null || v === "" || (Array.isArray(v) && v.length === 0)) continue;
     let text: string;
-    if (Array.isArray(v)) text = v.filter((x) => typeof x === "string" && !/^https?:\/\//i.test(x)).join(", ");
+    if (Array.isArray(v)) text = v.filter((x) => typeof x === "string" && !isImageSource(x) && !/^https?:\/\//i.test(x)).join(", ");
     else if (typeof v === "boolean") text = v ? "Sim" : "Não";
     else text = String(v);
     if (!text) continue;
@@ -157,7 +158,7 @@ function PublicOrgPage() {
   const layout: PublicLayoutField[] = org.layout ?? [];
   const layoutKeys = new Set(layout.map((l) => l.field_key));
   const addr = formatAddress(org.address);
-  const logoUrl = typeof org.data?.logo_url === "string" && /^https?:\/\//i.test(org.data.logo_url) ? org.data.logo_url : (org.logo_url ?? null);
+  const logoUrl = isImageSource(org.data?.logo_url) ? org.data.logo_url : (org.logo_url ?? null);
 
   const pageStyle = (org.page_style as "standard" | "immersive") ?? "standard";
 

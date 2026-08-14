@@ -14,6 +14,7 @@ import { InterestForm } from "@/components/venue/interest-form";
 import { PublicHeader } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { getPublicCardTitle, OptionIconList, PublicCardBody } from "@/components/venue/public-card-renderer";
+import { isImageSource } from "@/lib/public-image";
 
 type PublicRendererField = { key: string; label: string; type: string; config?: Record<string, any> };
 
@@ -26,8 +27,9 @@ const HIDDEN_KEYS = new Set([
 const CONTACT_KEYS = /^(site|website|url|telefone|phone|whatsapp|email|e_mail)$/i;
 
 function isUrl(v: unknown): v is string {
-  return typeof v === "string" && /^https?:\/\//i.test(v);
+  return isImageSource(v) || (typeof v === "string" && /^https?:\/\//i.test(v));
 }
+
 
 function formatValue(field: PublicRendererField | undefined, raw: any): string {
   if (raw == null || raw === "") return "";

@@ -22,14 +22,28 @@ export function LazyImage({ containerClassName, className, onLoad, onError, ...i
     if (!src) return;
     if (loadedUrls.has(src)) { setLoaded(true); setErrored(false); return; }
     setErrored(false);
-    // Imagem já em cache do navegador: `onLoad` pode não disparar após hidratação.
-    if (ref.current?.complete && ref.current.naturalWidth > 0) {
-      loadedUrls.add(src);
-      setLoaded(true);
-    } else {
+    let alive = true;
+    const check = () => {
+      const el = ref.current;
+      if (!alive || !el) return false;
+      if (el.complete && el.naturalWidth > 0) {
+        loadedUrls.add(src);
+        setLoaded(true);
+        return true;
+      }
+      return false;
+    };
+    // Imagem já carregada antes da hidratação: o evento `load` não é capturado
+    // pelo React, então verificamos o estado nativo por alguns ciclos.
+    if (!check()) {
       setLoaded(false);
+      const id = window.setInterval(() => { if (check()) window.clearInterval(id); }, 200);
+      window.setTimeout(() => window.clearInterval(id), 15000);
+      return () => { alive = false; window.clearInterval(id); };
     }
+    return () => { alive = false; };
   }, [src]);
+
 
   return (
     <div className={cn("relative overflow-hidden", containerClassName)}>

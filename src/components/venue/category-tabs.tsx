@@ -16,9 +16,14 @@ export function usePublicCategories() {
   return useQuery({
     queryKey: ["public-org-categories"],
     queryFn: fetchCategories,
-    staleTime: 5 * 60_000,
+    staleTime: 30 * 60_000,
+    gcTime: 60 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    placeholderData: (prev: PublicCategory[] | undefined) => prev,
   });
 }
+
 
 export function categorySlug(c: PublicCategory) {
   return slugify(c.name);
