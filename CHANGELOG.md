@@ -1,3 +1,15 @@
+## 2026-08-14 19:46 (America/Sao_Paulo) — Iteração 37 (blocos de campos, tooltips, campos-base editáveis e configuração por tipo)
+
+- Migração: nova tabela `public.category_field_groups` (título, chave, descrição, escopo, ordem) com RLS (leitura pública, escrita apenas super admin) e GRANTs; colunas `group_id` e `is_base` em `category_org_fields`, `category_table_fields` e `organization_category_default_fields`; seed dos blocos "Endereço" e "Orçamento" e dos campos padrão de orçamento (`quote_cnpj`, `quote_site`, `quote_validity_days`, `quote_payment_terms`) mapeados para `system_data.quote`.
+- `src/lib/category-field-groups.functions.ts`: CRUD dos blocos (super admin) e leitura pública por categoria/escopo.
+- `src/lib/category-cascade.functions.ts` e `src/lib/organization-categories.functions.ts`: suporte a `group_id`, `is_base` (replicação da definição para todas as categorias), tooltip (`config.tooltip`) e configuração de `computed`/`relation`/`boolean`; schema público passa a retornar os blocos.
+- `src/components/venue/field-label.tsx`: novo componente compartilhado de rótulo com marca de obrigatório e ícone `Info` + tooltip, exibido apenas quando há texto de ajuda.
+- `src/components/venue/category-fields-form.tsx`: renderização agrupada por bloco (título + descrição) e roteamento por `system_key` para gravar em `system_data` ou `category_data`.
+- `src/components/venue/edit-org-dialog.tsx` e `address-fields.tsx`: blocos Endereço e Orçamento deixam de ser fixos no código e passam a vir da configuração da categoria.
+- `src/components/venue/dynamic-form.tsx`: rótulos passam a usar `FieldLabel` com tooltip.
+- `src/routes/_authenticated.admin.index.tsx`: `ScopeEditor` reescrito com gerenciador de blocos, edição de apresentação dos campos-base (rótulo, ajuda, obrigatoriedade, bloco, visibilidade), alternância "base da instância" e seções específicas de configuração para `computed`, `relation` e `boolean`.
+- Validação: typecheck limpo; admin (Estrutura → Campos) e diálogo de edição de organização verificados em desktop sem erros de console.
+
 ## 2026-08-14 12:35 (America/Sao_Paulo) — Correção da Iteração 35 (ícones do header) + Iteração 36 (página para empresas)
 
 - `public-header.tsx`: no desktop o ícone da direita é sempre login (`CircleUserRound` → `/auth`) em todas as páginas; no mobile é o ícone de casa (→ `/`) fora da home, inclusive em `/auth` e páginas institucionais, mantendo login apenas na home. O ícone passa a ser renderizado independentemente de `showAuthActions`, que agora controla apenas o botão "Cadastrar empresa".
