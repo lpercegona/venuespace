@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { FieldLabel } from "@/components/venue/field-label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -199,10 +200,9 @@ export function DynamicForm({
         .map((f) => {
           const id = `df-${f.key}`;
           const v = values[f.key] ?? "";
+          const tip = typeof (f.config ?? {}).tooltip === "string" ? ((f.config ?? {}).tooltip as string) : null;
           const labelEl = (
-            <Label htmlFor={id}>
-              {f.label}{f.required ? <span className="ml-1 text-destructive">*</span> : null}
-            </Label>
+            <FieldLabel htmlFor={id} required={f.required} tooltip={tip}>{f.label}</FieldLabel>
           );
 
           if (f.type === "long_text") {
@@ -216,7 +216,7 @@ export function DynamicForm({
           if (f.type === "boolean") {
             return (
               <div key={f.id} className="flex items-center justify-between rounded-md border border-border p-3">
-                <Label htmlFor={id} className="text-sm">{f.label}</Label>
+                <FieldLabel htmlFor={id} tooltip={tip} className="text-sm">{f.label}</FieldLabel>
                 <Switch id={id} checked={!!v} onCheckedChange={(x) => set(f.key, x)} />
               </div>
             );

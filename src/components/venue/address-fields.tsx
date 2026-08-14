@@ -17,13 +17,14 @@ type Props = {
   value: AddressValue;
   onChange: (v: AddressValue) => void;
   title?: string;
+  description?: string | null;
 };
 
 /**
  * Padrão de endereço para organizações. CEP dispara autocomplete via
  * proxy server-side /api/public/viacep/{cep}.
  */
-export function AddressFields({ value, onChange, title = "Endereço" }: Props) {
+export function AddressFields({ value, onChange, title = "Endereço", description = null }: Props) {
   const [loadingCep, setLoadingCep] = useState(false);
 
   function set<K extends keyof AddressValue>(k: K, v: AddressValue[K]) {
@@ -56,6 +57,7 @@ export function AddressFields({ value, onChange, title = "Endereço" }: Props) {
   return (
     <div className="space-y-3 rounded-lg border border-dashed border-border p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
+      {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
       <div className="grid gap-3 sm:grid-cols-6">
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="addr-cep" className="flex items-center gap-2">
