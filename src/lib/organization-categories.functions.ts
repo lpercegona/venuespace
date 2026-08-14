@@ -18,6 +18,8 @@ export type CategoryDefaultField = {
   required: boolean;
   config: Record<string, any>;
   order_index: number;
+  group_id?: string | null;
+  is_base?: boolean;
 };
 
 /** Public list — used in /explore filter, org creation dropdown, admin panel. */
