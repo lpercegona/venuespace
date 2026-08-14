@@ -6,6 +6,9 @@ import { parseFilterValues, parseRangeValue, toFilterNumber } from "@/lib/filter
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { cached, cacheGet, cacheSet, TTL_MEDIUM, TTL_SHORT, TTL_SIGNED } from "@/lib/server-cache";
 
+/** Cards de listagem mostram poucas fotos: assinamos só as primeiras por item. */
+const LISTING_GALLERY_LIMIT = 5;
+
 /** Assina caminhos do storage reutilizando URLs já assinadas (cache em memória). */
 export async function signPathsCached(paths: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
@@ -585,7 +588,7 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     };
     return { id: o.id, slug: o.slug, name: o.name, description: o.description, logo_url: o.logo_url, category_id: o.category_id, category_data: o.category_data, updated_at: o.updated_at, data, fields, layout };
   });
-  await signImagePathsInItems(items);
+  await signImagePathsInItems(items, LISTING_GALLERY_LIMIT);
   return { items, total };
 }
 
@@ -820,12 +823,17 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     layout: (r.org_category_id && layouts.get(r.org_category_id)) || [],
   }));
 
-  await signImagePathsInItems(items);
+  await signImagePathsInItems(items, LISTING_GALLERY_LIMIT);
   return { items, total };
 }
 
 // Batch-sign image/gallery paths across items so listing cards can render <img>.
-async function signImagePathsInItems(items: Array<{ data: Record<string, any>; fields: PublicRendererField[] }>) {
+// `maxGallery` limita quantas imagens de cada galeria são assinadas e enviadas:
+// nas listagens o card mostra poucas, então não faz sentido assinar o álbum todo.
+async function signImagePathsInItems(
+  items: Array<{ data: Record<string, any>; fields: PublicRendererField[] }>,
+  maxGallery?: number,
+) {
   type Ref =
     | { kind: "single"; data: Record<string, any>; key: string }
     | { kind: "gallery"; data: Record<string, any>; key: string; index: number };
@@ -837,7 +845,7 @@ async function signImagePathsInItems(items: Array<{ data: Record<string, any>; f
   for (const it of items) {
     for (const f of it.fields) {
       const imageLike = f.type === "image" || f.type === "gallery" || isImageLikeName(f.key, f.label);
-      const v = it.data?.[f.key];
+      let v = it.data?.[f.key];
       // Single-value image (string path)
       if ((f.type === "image" || imageLike) && typeof v === "string" && v && !isHttp(v)) {
         if (imageLike || hasImageExtension(v)) {
@@ -848,7 +856,11 @@ async function signImagePathsInItems(items: Array<{ data: Record<string, any>; f
       // Gallery / array of paths — evaluated independently, so a non-string
       // value on the single branch never blocks the gallery branch.
       if ((f.type === "gallery" || imageLike) && Array.isArray(v)) {
-        v.forEach((p, i) => {
+        if (maxGallery != null && v.length > maxGallery) {
+          v = v.slice(0, maxGallery);
+          it.data[f.key] = v;
+        }
+        (v as any[]).forEach((p, i) => {
           if (typeof p !== "string" || !p) return;
           if (isHttp(p)) return;
           if (!imageLike && !hasImageExtension(p)) return;
@@ -859,6 +871,7 @@ async function signImagePathsInItems(items: Array<{ data: Record<string, any>; f
     }
   }
   if (paths.length === 0) return;
+
   const signed = await signPathsCached(paths);
   refs.forEach((ref, i) => {
     const url = signed.get(paths[i] as string);

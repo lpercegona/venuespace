@@ -1578,6 +1578,16 @@ export type Database = {
           tables_touched: number
         }[]
       }
+      set_deal_status_guarded: {
+        Args: {
+          _agreed_value?: number
+          _end_key?: string
+          _record_id: string
+          _start_key?: string
+          _status: Database["public"]["Enums"]["deal_status"]
+        }
+        Returns: undefined
+      }
       sync_category_standard_forms: {
         Args: { _category_id: string }
         Returns: {

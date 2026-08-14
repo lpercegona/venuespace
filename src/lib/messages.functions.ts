@@ -138,18 +138,7 @@ export const setDealStatus = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const update: Record<string, any> = { deal_status: data.status };
-
-    // Booking conflict guard on transition to accepted (or closed).
-    if (data.status === "accepted" || data.status === "closed") {
-      const { runBookingCheck } = await import("./applications.functions");
-      const check = await runBookingCheck(context.supabase, data.record_id);
-      if (check.conflict) {
-        throw new Error(
-          `Conflito de reserva: já existe uma negociação aceita entre ${check.conflict.start} e ${check.conflict.end}.`,
-        );
-      }
-    }
+    let agreedValue: number | null = null;
 
     if (data.status === "closed") {
       // Find last accepted proposal on any conversation tied to this record
@@ -166,15 +155,37 @@ export const setDealStatus = createServerFn({ method: "POST" })
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (msg?.proposed_value != null) update.agreed_value = msg.proposed_value;
+        if (msg?.proposed_value != null) agreedValue = Number(msg.proposed_value);
       }
     }
 
-    const { error } = await context.supabase
-      .from("records").update(update as any).eq("id", data.record_id);
+    // Chaves de período da agenda: a checagem de conflito acontece dentro da
+    // função do banco, sob lock, para que duas confirmações simultâneas do
+    // mesmo item não passem as duas (condição de corrida do motor de reserva).
+    let startKey: string | null = null;
+    let endKey: string | null = null;
+    if (data.status === "accepted" || data.status === "closed") {
+      const { data: rec } = await context.supabase
+        .from("records").select("table_id").eq("id", data.record_id).maybeSingle();
+      if (rec?.table_id) {
+        const { loadBookingMeta } = await import("./bookings.server");
+        const meta = await loadBookingMeta(context.supabase, rec.table_id);
+        startKey = meta.startKey ?? null;
+        endKey = meta.endKey ?? null;
+      }
+    }
+
+    const { error } = await context.supabase.rpc("set_deal_status_guarded", {
+      _record_id: data.record_id,
+      _status: data.status,
+      _agreed_value: agreedValue,
+      _start_key: startKey,
+      _end_key: endKey,
+    } as any);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 // ============ Public form view creation (helper for editors) ============
 
