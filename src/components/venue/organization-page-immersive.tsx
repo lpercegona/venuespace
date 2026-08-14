@@ -14,6 +14,7 @@ import { InterestForm } from "@/components/venue/interest-form";
 import { PublicHeader } from "@/components/venue/public-header";
 import { PublicFooter } from "@/components/venue/public-footer";
 import { getPublicCardTitle, OptionIconList, PublicCardBody } from "@/components/venue/public-card-renderer";
+import { isImageSource } from "@/lib/public-image";
 
 type PublicRendererField = { key: string; label: string; type: string; config?: Record<string, any> };
 
