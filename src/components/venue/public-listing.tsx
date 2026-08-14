@@ -52,6 +52,7 @@ export function PublicListing({
   description,
   aboveContent,
   beforeTitle,
+  hero,
   term,
   onTermChange,
   filters,
@@ -71,8 +72,14 @@ export function PublicListing({
   return (
     <section className="mx-auto w-full max-w-6xl grow px-4 py-10 pb-28 sm:px-6 lg:pb-10">
       {beforeTitle}
-      <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
-      {description ? <p className="mt-2 text-sm text-muted-foreground">{description}</p> : null}
+      {hero ? (
+        <>{hero}</>
+      ) : title ? (
+        <>
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+          {description ? <p className="mt-2 text-sm text-muted-foreground">{description}</p> : null}
+        </>
+      ) : null}
       {aboveContent}
 
       <div className="mt-6 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
