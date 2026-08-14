@@ -189,10 +189,14 @@ export type QuoteInput = {
   org: QuoteOrg;
   recordId: string;
   client: string | null;
+  clientCompany?: string | null;
+  clientCnpj?: string | null;
+  clientAddress?: string | null;
   location: string | null;
   periodStart: string | null;
   periodEnd: string | null;
   items: QuoteItem[];
+  travelFee?: number;
   paymentTerms: string[];
   notes: string[];
   validityDays: number;
@@ -328,9 +332,13 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
   // Dados do cliente e evento
   sectionTitle(ctx, "Dados do cliente e evento");
   const emitted = new Date().toISOString().slice(0, 10);
+  const valueW = R - (L + 150) - 12;
   const rows: Array<[string, string[]]> = [
     ["Cliente:", [input.client ?? "-"]],
-    ["Local de Instalação:", wrapText(input.location ?? "-", font, 10, R - (L + 150) - 12)],
+    ...(input.clientCompany ? ([["Empresa:", wrapText(input.clientCompany, font, 10, valueW)]] as Array<[string, string[]]>) : []),
+    ...(input.clientCnpj ? ([["CNPJ:", [input.clientCnpj]]] as Array<[string, string[]]>) : []),
+    ...(input.clientAddress ? ([["Endereço:", wrapText(input.clientAddress, font, 10, valueW)]] as Array<[string, string[]]>) : []),
+    ["Local de Instalação:", wrapText(input.location ?? "-", font, 10, valueW)],
     ["Data de Emissão:", [longDate(emitted)]],
     ["Validade:", [`${input.validityDays} dias (a partir da data de emissão) — até ${longDate(addDays(emitted, input.validityDays))}`]],
   ];
@@ -432,6 +440,17 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
   }
 
   const maxDays = input.items.reduce((m, i) => Math.max(m, Number(i.days) || 1), 1);
+  const travelFee = Math.max(0, Number(input.travelFee) || 0);
+  if (travelFee > 0) {
+    ensure(ctx, 44);
+    drawRight(ctx, "Subtotal dos itens:", R - 120, ctx.y, 10, font, INK);
+    drawRight(ctx, brl(total), R - 10, ctx.y, 10, font, INK);
+    ctx.y -= 16;
+    drawRight(ctx, "Deslocamento:", R - 120, ctx.y, 10, font, INK);
+    drawRight(ctx, brl(travelFee), R - 10, ctx.y, 10, font, INK);
+    ctx.y -= 20;
+  }
+  total += travelFee;
   ensure(ctx, 40);
   ctx.page.drawRectangle({ x: L, y: ctx.y - 10, width: R - L, height: 28, color: PAPER });
   drawRight(ctx, `Valor Total do Orçamento (${maxDays} diária${maxDays === 1 ? "" : "s"}):`, R - 120, ctx.y, 10.5, bold, INK);
@@ -574,17 +593,40 @@ export async function loadContactSetup(supabase: any, orgId: string): Promise<{
   return { contactsTableId, fields, standard };
 }
 
-export type ContactRow = { id: string; label: string; email: string | null };
+export const CONTACT_COMPANY_KEY = "contact_company";
+export const CONTACT_CNPJ_KEY = "contact_cnpj";
+export const CONTACT_ADDRESS_KEY = "contact_address";
+const CLIENT_KEYS = [CONTACT_COMPANY_KEY, CONTACT_CNPJ_KEY, CONTACT_ADDRESS_KEY];
+
+export type ContactRow = {
+  id: string;
+  label: string;
+  email: string | null;
+  company: string | null;
+  cnpj: string | null;
+  address: string | null;
+};
 
 export function contactLabel(fields: ContactFieldDef[], data: Record<string, any>) {
+  const base = fields.filter((f) => !CLIENT_KEYS.includes(f.key));
   const nameKey =
-    fields.find((f) => /nome|name/i.test(f.key) && f.type === "text")?.key ??
-    fields.find((f) => f.type === "text")?.key ?? null;
+    base.find((f) => /nome|name/i.test(f.key) && f.type === "text")?.key ??
+    base.find((f) => f.type === "text")?.key ?? null;
   const emailKey =
-    fields.find((f) => f.type === "email")?.key ??
-    fields.find((f) => /email/i.test(f.key))?.key ?? null;
+    base.find((f) => f.type === "email")?.key ??
+    base.find((f) => /email/i.test(f.key))?.key ?? null;
   const label = String((nameKey ? data?.[nameKey] : null) ?? (emailKey ? data?.[emailKey] : null) ?? "Contato");
-  return { label: label.slice(0, 140), email: (emailKey ? (data?.[emailKey] ?? null) : null) as string | null };
+  const str = (k: string) => {
+    const v = data?.[k];
+    return v === undefined || v === null || String(v).trim() === "" ? null : String(v).slice(0, 400);
+  };
+  return {
+    label: label.slice(0, 140),
+    email: (emailKey ? (data?.[emailKey] ?? null) : null) as string | null,
+    company: str(CONTACT_COMPANY_KEY),
+    cnpj: str(CONTACT_CNPJ_KEY),
+    address: str(CONTACT_ADDRESS_KEY),
+  };
 }
 
 export async function loadContacts(
@@ -594,10 +636,10 @@ export async function loadContacts(
   const { data: rows } = await supabase
     .from("records").select("id, data").eq("table_id", contactsTableId)
     .order("created_at", { ascending: false }).limit(500);
-  return ((rows ?? []) as any[]).map((r) => {
-    const { label, email } = contactLabel(fields, (r.data ?? {}) as any);
-    return { id: r.id as string, label, email };
-  });
+  return ((rows ?? []) as any[]).map((r) => ({
+    id: r.id as string,
+    ...contactLabel(fields, (r.data ?? {}) as any),
+  }));
 }
 
 // ============ Conflito de datas e normalização de itens ============
