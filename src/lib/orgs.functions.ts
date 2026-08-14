@@ -121,6 +121,7 @@ export const createOrganization = createServerFn({ method: "POST" })
       const { error: uErr } = await context.supabase.from("organizations").update(patch as any).eq("id", (org as any).id);
       if (uErr) throw new Error(uErr.message);
     }
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return org as { id: string; slug: string; name: string };
   });
 
@@ -233,6 +234,7 @@ export const deleteTable = createServerFn({ method: "POST" })
     if (!isOwner) throw new Error("Apenas owners podem excluir tabelas.");
     const { error } = await context.supabase.from("tables").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return { ok: true };
   });
 
@@ -337,6 +339,7 @@ export const createTable = createServerFn({ method: "POST" })
       // Seeding failure must not block table creation.
     }
 
+    await (await import("@/lib/sitemap.server")).invalidateSitemapCache();
     return row;
   });
 
