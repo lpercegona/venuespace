@@ -52,6 +52,46 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
   const isHome = pathname === "/";
   const onHero = isHome && atTop;
 
+  const exploreMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "h-10 gap-1.5 sm:h-9",
+            onHero
+              ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              : "text-muted-foreground",
+          )}
+          aria-label="Explorar categorias"
+        >
+          <Compass className="h-5 w-5 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">Explore</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="sm:min-w-40">
+        {list.map((c) => {
+          const s = categorySlug(c);
+          return (
+            <DropdownMenuItem key={c.id} asChild>
+              <Link
+                to="/categoria/$slug"
+                params={{ slug: s }}
+                preload="intent"
+                className={activeCategorySlug === s ? "text-foreground" : ""}
+              >
+                {c.name}
+              </Link>
+            </DropdownMenuItem>
+          );
+        })}
+        {list.length === 0 ? <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem> : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+
   return (
     <header
       className={cn(
@@ -63,53 +103,31 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
       )}
     >
       <div className="mx-auto grid w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-3 sm:gap-3 sm:px-6">
-        {/* Logo: apenas em telas maiores */}
-        <div className="flex min-w-0 items-center gap-2">
+        {/* Esquerda: Explore no mobile, logo no desktop */}
+        <div className="flex min-w-0 items-center justify-start gap-2">
+          <div className="sm:hidden">{exploreMenu}</div>
           <Link to="/" className="hidden min-w-0 items-center gap-2 sm:flex" aria-label="Venuespace — início">
             <VenuespaceLogo className={cn("h-5 w-auto", onHero ? "text-primary-foreground" : "text-brand")} />
           </Link>
         </div>
 
+        {/* Centro: "Cadastrar empresa" no mobile, Explore no desktop */}
         <div className="min-w-0 justify-self-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "gap-1.5",
-                  onHero
-                    ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                    : "text-muted-foreground",
-                )}
-              >
-                <Compass className="h-4 w-4" />
-                <span className="hidden sm:inline">Explore</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="sm:min-w-40">
-              {list.map((c) => {
-                const s = categorySlug(c);
-                return (
-                  <DropdownMenuItem key={c.id} asChild>
-                    <Link
-                      to="/categoria/$slug"
-                      params={{ slug: s }}
-                      preload="intent"
-                      className={activeCategorySlug === s ? "text-foreground" : ""}
-                    >
-                      {c.name}
-                    </Link>
-                  </DropdownMenuItem>
-                );
-              })}
-              {list.length === 0 ? <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem> : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Link to="/auth" className="sm:hidden">
+            <Button
+              size="sm"
+              variant={onHero ? "secondary" : "default"}
+              className="h-10 rounded-full px-4 whitespace-nowrap"
+            >
+              Cadastrar empresa
+            </Button>
+          </Link>
+          <div className="hidden sm:block">{exploreMenu}</div>
         </div>
 
+        {/* Direita: "Cadastrar empresa" no desktop + login */}
         <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
-          <Link to="/auth">
+          <Link to="/auth" className="hidden sm:block">
             <Button
               size="sm"
               variant={onHero ? "secondary" : "default"}
@@ -125,7 +143,7 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
                 size="icon"
                 aria-label="Entrar"
                 className={cn(
-                  "h-9 w-9",
+                  "h-10 w-10 sm:h-9 sm:w-9",
                   onHero ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" : "",
                 )}
               >

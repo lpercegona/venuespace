@@ -5,27 +5,20 @@
 import { parseFilterValues, parseRangeValue, toFilterNumber } from "@/lib/filter-params";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { cached, cachedSWR, cacheGet, cacheSet, TTL_MEDIUM, TTL_SHORT, TTL_SIGNED } from "@/lib/server-cache";
+import { publicImageUrl } from "@/lib/public-image";
 
 /** Cards de listagem mostram poucas fotos: assinamos só as primeiras por item. */
 const LISTING_GALLERY_LIMIT = 5;
 
-/** Assina caminhos do storage reutilizando URLs já assinadas (cache em memória). */
+/**
+ * Converte caminhos do storage em URLs públicas estáveis (`/api/public/img/*`).
+ * Antes usávamos URLs assinadas de 1h: elas expiravam (imagens sumiam) e
+ * mudavam a cada revalidação (imagens piscavam ao navegar).
+ */
 export async function signPathsCached(paths: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
-  const missing: string[] = [];
   for (const p of Array.from(new Set(paths.filter(Boolean)))) {
-    const hit = cacheGet<string>(`signed:${p}`);
-    if (hit) out.set(p, hit);
-    else missing.push(p);
-  }
-  if (missing.length > 0) {
-    const { data } = await supabaseAdmin.storage.from("venue-uploads").createSignedUrls(missing, 60 * 60);
-    (data ?? []).forEach((row: any, i: number) => {
-      const path = row?.path ?? missing[i];
-      if (!row?.signedUrl || !path) return;
-      cacheSet(`signed:${path}`, row.signedUrl as string, TTL_SIGNED);
-      out.set(path, row.signedUrl as string);
-    });
+    out.set(p, publicImageUrl(p));
   }
   return out;
 }
@@ -1034,20 +1027,8 @@ export async function loadPublicRecord(slug: string, tableId: string, recordId: 
       });
     }
   }
-  const allPaths = [...paths.map((p) => p.path), ...galleryPaths.map((p) => p.path)];
-  if (allPaths.length > 0) {
-    const { data: signedList } = await sb.storage
-      .from("venue-uploads")
-      .createSignedUrls(allPaths, 60 * 60);
-    (signedList ?? []).forEach((s, i) => {
-      if (!s?.signedUrl) return;
-      if (i < paths.length) signed[paths[i].key] = s.signedUrl;
-      else {
-        const gp = galleryPaths[i - paths.length];
-        galleries[gp.key][gp.index] = s.signedUrl;
-      }
-    });
-  }
+  paths.forEach((p) => { signed[p.key] = publicImageUrl(p.path); });
+  galleryPaths.forEach((gp) => { galleries[gp.key][gp.index] = publicImageUrl(gp.path); });
 
   // Resolve relation labels so the detail page shows names instead of UUIDs.
   const relations: Record<string, Record<string, { id: string; label: string }>> = {};
