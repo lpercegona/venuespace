@@ -844,7 +844,9 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     layout: (r.org_category_id && layouts.get(r.org_category_id)) || [],
   }));
 
+  trimListingPayload(items);
   await signImagePathsInItems(items, LISTING_GALLERY_LIMIT);
+
   return { items, total };
 }
 
