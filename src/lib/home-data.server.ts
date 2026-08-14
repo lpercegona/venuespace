@@ -30,8 +30,11 @@ async function signPaths(paths: string[]): Promise<Map<string, string>> {
 }
 
 /**
- * Resolve todos os blocos de um agrupamento em sequência, garantindo que uma
- * mesma organização/registro não se repita entre blocos da mesma página.
+ * Resolve todos os blocos de um agrupamento em paralelo (antes eram
+ * sequenciais, ~4s de idas ao banco encadeadas) e só então aplica a regra de
+ * não repetir a mesma organização/registro entre blocos, na ordem original.
+ * Cada bloco é buscado com folga (`limit` + margem) para que a deduplicação
+ * não reduza a quantidade de cards exibidos.
  */
 export async function loadHomeGroupingData(groupingId: string) {
   const { data: blocks, error } = await supabaseAdmin
@@ -42,55 +45,65 @@ export async function loadHomeGroupingData(groupingId: string) {
     .order("order_index", { ascending: true });
   if (error) throw new Error(error.message);
 
-  const categorySlugs = await loadCategorySlugs();
+  const list = ((blocks ?? []) as any[]);
+  const cardBlocks = list.filter((b) => (b.block_type ?? "cards") !== "links");
+  const totalCardLimit = cardBlocks.reduce(
+    (acc, b) => acc + Math.min(Math.max(Number(b.limit_count ?? 6), 1), 60),
+    0,
+  );
+
+  const [categorySlugs, resolved] = await Promise.all([
+    loadCategorySlugs(),
+    Promise.all(
+      list.map(async (b) => {
+        const blockType = (b.block_type ?? "cards") as "cards" | "links";
+        if (blockType === "links") {
+          const raw = (Array.isArray(b.items) ? b.items : []) as HomeBlockLinkItem[];
+          const signed = await signPaths(raw.map((i) => i.image_path ?? "").filter(Boolean) as string[]);
+          return { id: b.id, source: "links" as const, raw, signed };
+        }
+        const limit = Math.min(Math.max(Number(b.limit_count ?? 6), 1), 60);
+        const fetchLimit = Math.min(limit + totalCardLimit, 60);
+        const rules = (b.rules ?? []) as PublicFilterRule[];
+        if (b.source === "records") {
+          const { items } = await listPublicRecords({ limit: fetchLimit, offset: 0, rules });
+          return { id: b.id, source: "records" as const, items, limit };
+        }
+        const { items } = await listPublicOrganizations({ limit: fetchLimit, offset: 0, rules });
+        return { id: b.id, source: "organizations" as const, items, limit };
+      }),
+    ),
+  ]);
+
   const seenOrgs = new Set<string>();
   const seenRecords = new Set<string>();
   const result: Array<{ id: string; items: any[]; links: HomeBlockLinkItem[] }> = [];
 
-  for (const b of ((blocks ?? []) as any[])) {
-    const blockType = (b.block_type ?? "cards") as "cards" | "links";
-    if (blockType === "links") {
-      const raw = (Array.isArray(b.items) ? b.items : []) as HomeBlockLinkItem[];
-      const signed = await signPaths(raw.map((i) => i.image_path ?? "").filter(Boolean) as string[]);
+  for (const r of resolved) {
+    if (r.source === "links") {
       result.push({
-        id: b.id,
+        id: r.id,
         items: [],
-        links: raw.map((i) => ({
+        links: r.raw.map((i) => ({
           ...i,
           category_slug: i.category_id ? (categorySlugs.get(i.category_id) ?? null) : null,
           image_url: i.image_path && !/^https?:\/\//i.test(i.image_path)
-            ? (signed.get(i.image_path) ?? null)
+            ? (r.signed.get(i.image_path) ?? null)
             : (i.image_path ?? null),
         })),
       });
       continue;
     }
-
-    const limit = Math.min(Math.max(Number(b.limit_count ?? 6), 1), 60);
-    const rules = (b.rules ?? []) as PublicFilterRule[];
-    if (b.source === "records") {
-      const { items } = await listPublicRecords({
-        limit,
-        offset: 0,
-        rules,
-        exclude_ids: Array.from(seenRecords),
-      });
-      for (const it of items) seenRecords.add(it.record_id);
-      result.push({ id: b.id, items, links: [] });
-    } else {
-      const { items } = await listPublicOrganizations({
-        limit,
-        offset: 0,
-        rules,
-        exclude_ids: Array.from(seenOrgs),
-      });
-      for (const it of items) seenOrgs.add(it.id);
-      result.push({ id: b.id, items, links: [] });
-    }
+    const seen = r.source === "records" ? seenRecords : seenOrgs;
+    const idOf = (it: any) => (r.source === "records" ? it.record_id : it.id);
+    const items = r.items.filter((it: any) => !seen.has(idOf(it))).slice(0, r.limit);
+    for (const it of items) seen.add(idOf(it));
+    result.push({ id: r.id, items, links: [] });
   }
 
   return { blocks: result };
 }
+
 
 export type FieldKeyOption = { value: string; label: string };
 export type FieldKeyInfo = { key: string; label: string; type: string; scope: string; options?: FieldKeyOption[] };

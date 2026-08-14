@@ -18,6 +18,7 @@ export const Route = createFileRoute("/api/public/home-block-data")({
           }
         })();
 
+        const headers = { "cache-control": "public, max-age=60, s-maxage=300, stale-while-revalidate=600" };
         try {
           if (source === "records") {
             const { listPublicRecords } = await import("@/lib/public.server");
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/api/public/home-block-data")({
               offset: 0,
               rules: rules as any,
             });
-            return Response.json(payload);
+            return Response.json(payload, { headers });
           }
 
           const { listPublicOrganizations } = await import("@/lib/public.server");
@@ -35,7 +36,8 @@ export const Route = createFileRoute("/api/public/home-block-data")({
             offset: 0,
             rules: rules as any,
           });
-          return Response.json(payload);
+          return Response.json(payload, { headers });
+
         } catch (e) {
           return Response.json({ error: (e as Error).message }, { status: 500 });
         }

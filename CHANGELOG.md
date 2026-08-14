@@ -1,4 +1,13 @@
+## 2026-08-14 14:10 (America/Sao_Paulo) — Correção das Iterações 30/31/33 (performance das páginas públicas — Iteração B do plano)
+- Cache stale-while-revalidate: novo `cachedSWR` em `src/lib/server-cache.ts` — o valor vencido é servido imediatamente enquanto a recarga acontece em segundo plano (nenhuma requisição paga o custo do miss).
+- Snapshots estáveis (Correção da Iteração 31): `listPublicOrganizations` e `listPublicRecords` (`src/lib/public.server.ts`) leem um snapshot único por 5 min e recortam categoria/filtros em memória; `loadLayoutsBatch`, `loadOrgCategoryFieldsBatch` e `loadOptionAliases` também passam a snapshot com SWR.
+- Blocos da home em paralelo (Correção da Iteração 30): `loadHomeGroupingData` resolve todos os blocos com `Promise.all` e busca com folga (`limit + total`) para que a deduplicação não deixe blocos incompletos.
+- Payload das listagens (Correção da Iteração 33): novo `trimListingPayload` envia apenas os campos e valores efetivamente plotados pelo layout configurado (−25% no payload dos blocos da home); `category_data` redundante removido dos resumos.
+- Cache de borda: `home-block-data` e `home-grouping-data` com `s-maxage=300` e `stale-while-revalidate`.
+- Medição: dados dos blocos da home de ~4,6s (frio) / 0,65s (quente) para ~2,6s / 0,25s; payload do agrupamento de 191 kB para 146 kB.
+
 ## 2026-08-14 12:25 (America/Sao_Paulo) — Correção das Iterações 1, 4, 31 e 32 (estabilidade e performance — Iteração A do plano)
+
 - Hidratação SSR (Correção da Iteração 31): `setupRouterSsrQueryIntegration` em `src/router.tsx` desidrata o cache do servidor para o cliente, eliminando divergência de hidratação e refetch duplicado.
 - "JWT issued at future" (Correção da Iteração 1): `isTransientAuthError` + renovação de sessão em `src/hooks/use-auth.ts` (não derruba mais o usuário por desvio de relógio/rede) e novo `retryOnTokenError` (`src/lib/auth-retry-middleware.ts`) registrado em `src/start.ts`, que renova o token e repete a server function uma única vez.
 - Payload de galeria (Correção da Iteração 31): `signImagePathsInItems` aceita `maxGallery`; listagens públicas assinam no máximo 5 imagens por item (`LISTING_GALLERY_LIMIT`) em vez do álbum inteiro.

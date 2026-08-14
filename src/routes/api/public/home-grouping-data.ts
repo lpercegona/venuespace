@@ -11,8 +11,9 @@ export const Route = createFileRoute("/api/public/home-grouping-data")({
           const { loadHomeGroupingData } = await import("@/lib/home-data.server");
           const payload = await loadHomeGroupingData(groupingId);
           return Response.json(payload, {
-            headers: { "cache-control": "public, max-age=30, s-maxage=60, stale-while-revalidate=300" },
+            headers: { "cache-control": "public, max-age=60, s-maxage=300, stale-while-revalidate=600" },
           });
+
         } catch (e) {
           return Response.json({ error: (e as Error).message }, { status: 500 });
         }

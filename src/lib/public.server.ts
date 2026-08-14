@@ -4,7 +4,7 @@
 
 import { parseFilterValues, parseRangeValue, toFilterNumber } from "@/lib/filter-params";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { cached, cacheGet, cacheSet, TTL_MEDIUM, TTL_SHORT, TTL_SIGNED } from "@/lib/server-cache";
+import { cached, cachedSWR, cacheGet, cacheSet, TTL_MEDIUM, TTL_SHORT, TTL_SIGNED } from "@/lib/server-cache";
 
 /** Cards de listagem mostram poucas fotos: assinamos só as primeiras por item. */
 const LISTING_GALLERY_LIMIT = 5;
@@ -282,18 +282,21 @@ const RECORD_BUILTIN_FIELDS: PublicRendererField[] = [
 ];
 
 
+// Layouts e campos de categoria são poucos e mudam raramente: carregamos o
+// conjunto completo uma única vez (chave de cache estável) em vez de uma
+// consulta por combinação de categorias — cada bloco da home usava uma chave
+// diferente e provocava falha de cache.
 async function loadLayoutsBatch(categoryIds: string[], scope: "organization_card" | "record_card" | "organization_page"): Promise<Map<string, PublicLayoutField[]>> {
   if (categoryIds.length === 0) return new Map<string, PublicLayoutField[]>();
-  return cached(`layouts:${scope}:${[...categoryIds].sort().join(",")}`, TTL_SHORT, () => loadLayoutsBatchUncached(categoryIds, scope));
+  return cachedSWR(`layouts:all:${scope}`, TTL_MEDIUM, () => loadLayoutsBatchUncached(scope));
 }
 
-async function loadLayoutsBatchUncached(categoryIds: string[], scope: "organization_card" | "record_card" | "organization_page"): Promise<Map<string, PublicLayoutField[]>> {
+async function loadLayoutsBatchUncached(scope: "organization_card" | "record_card" | "organization_page"): Promise<Map<string, PublicLayoutField[]>> {
   const out = new Map<string, PublicLayoutField[]>();
   const sb = supabaseAdmin;
   const { data: parents } = await (sb as any)
     .from("category_public_layouts")
     .select("id, category_id, card_style")
-    .in("category_id", categoryIds)
     .eq("scope", scope);
   const parentList = (parents ?? []) as Array<{ id: string; category_id: string; card_style?: string | null }>;
   if (parentList.length === 0) return out;
@@ -321,15 +324,14 @@ async function loadLayoutsBatchUncached(categoryIds: string[], scope: "organizat
 
 async function loadOrgCategoryFieldsBatch(categoryIds: string[]): Promise<Map<string, PublicRendererField[]>> {
   if (categoryIds.length === 0) return new Map<string, PublicRendererField[]>();
-  return cached(`orgfields:${[...categoryIds].sort().join(",")}`, TTL_SHORT, () => loadOrgCategoryFieldsBatchUncached(categoryIds));
+  return cachedSWR("orgfields:all", TTL_MEDIUM, loadOrgCategoryFieldsBatchUncached);
 }
 
-async function loadOrgCategoryFieldsBatchUncached(categoryIds: string[]): Promise<Map<string, PublicRendererField[]>> {
+async function loadOrgCategoryFieldsBatchUncached(): Promise<Map<string, PublicRendererField[]>> {
   const out = new Map<string, PublicRendererField[]>();
   const { data } = await (supabaseAdmin as any)
     .from("category_org_fields")
     .select("category_id, field_key, label, field_type, config, order_index")
-    .in("category_id", categoryIds)
     .order("order_index", { ascending: true });
   for (const r of ((data ?? []) as any[])) {
     const arr = out.get(r.category_id) ?? [];
@@ -338,6 +340,7 @@ async function loadOrgCategoryFieldsBatchUncached(categoryIds: string[]): Promis
   }
   return out;
 }
+
 
 
 
@@ -387,26 +390,24 @@ function optionEntries(config: any): Array<{ value: string; label: string }> {
   return out;
 }
 
+// Chave estável: carregamos os apelidos de todos os campos da tabela de uma vez
+// (a chave por conjunto de field_keys variava a cada bloco/filtro e nunca reusava).
 async function loadOptionAliases(
   table: "category_org_fields" | "category_standard_table_fields",
   fieldKeys: string[],
 ): Promise<OptionAliasMap> {
-  const keysSorted = Array.from(new Set(fieldKeys.filter(Boolean))).sort();
-  if (keysSorted.length === 0) return new Map();
-  return cached(`aliases:${table}:${keysSorted.join(",")}`, TTL_SHORT, () => loadOptionAliasesUncached(table, keysSorted));
+  if (fieldKeys.filter(Boolean).length === 0) return new Map();
+  return cachedSWR(`aliases:${table}:all`, TTL_MEDIUM, () => loadOptionAliasesUncached(table));
 }
 
 async function loadOptionAliasesUncached(
   table: "category_org_fields" | "category_standard_table_fields",
-  fieldKeys: string[],
 ): Promise<OptionAliasMap> {
   const map: OptionAliasMap = new Map();
-  const keys = Array.from(new Set(fieldKeys.filter(Boolean)));
-  if (keys.length === 0) return map;
   const { data } = await (supabaseAdmin as any)
     .from(table)
-    .select("field_key, field_type, config")
-    .in("field_key", keys);
+    .select("field_key, field_type, config");
+
   for (const f of ((data ?? []) as any[])) {
     const entries = optionEntries(f.config);
     if (entries.length === 0) continue;
@@ -474,17 +475,18 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   const filters = opts.filters ?? {};
 
   // Toda organização pública é listada, mesmo sem registros publicados.
-  let query = sb.from("organizations")
-    .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at")
-    .eq("is_public", true)
-    .order("updated_at", { ascending: false });
-
-  if (categoryId) query = query.eq("category_id", categoryId);
-  const { data, error } = await cached(`orgs:public:${categoryId ?? "all"}`, TTL_SHORT, async () => {
-    const res = await query;
-    return res as { data: any[] | null; error: { message: string } | null };
+  // Snapshot único (chave estável, 5 min, revalidação em segundo plano): o
+  // recorte por categoria é feito em memória para não multiplicar consultas.
+  const all = await cachedSWR("orgs:public:snapshot", TTL_MEDIUM, async () => {
+    const { data, error } = await sb.from("organizations")
+      .select("id, slug, name, description, logo_url, category_id, category_data, address, updated_at")
+      .eq("is_public", true)
+      .order("updated_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as any[];
   });
-  if (error) throw new Error(error.message);
+  const data = categoryId ? all.filter((o) => o.category_id === categoryId) : all;
+
 
   const resolveOrgVal = (o: any, key: string): unknown => {
     if (key === "name") return o.name;
@@ -499,7 +501,14 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
   };
 
   const { loadFilterKeys } = await import("@/lib/explore-filters.server");
-  const { searchKeys, ranges } = await loadFilterKeys("organization", categoryId);
+  // Em paralelo: nenhuma das duas leituras depende da outra.
+  const [{ searchKeys, ranges }, orgAliases] = await Promise.all([
+    loadFilterKeys("organization", categoryId),
+    loadOptionAliases(
+      "category_org_fields",
+      [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
+    ),
+  ]);
   const rangeByKey = new Map(ranges.map((r) => [r.key, r]));
 
   let base = ((data ?? []) as any[]).map((o) => ({
@@ -510,10 +519,6 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
     updated_at: o.updated_at,
   }));
 
-  const orgAliases = await loadOptionAliases(
-    "category_org_fields",
-    [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
-  );
 
   for (const [key, val] of Object.entries(filters)) {
     // Faixa numérica vinculada a dois campos: exige a faixa do item contida na pedida.
@@ -586,10 +591,15 @@ export async function listPublicOrganizations(opts: { limit?: number; offset?: n
       "address.city_state_full": [addr.city, expandState(addr.state ?? "")].filter(Boolean).join(" - "),
       ...o.category_data,
     };
-    return { id: o.id, slug: o.slug, name: o.name, description: o.description, logo_url: o.logo_url, category_id: o.category_id, category_data: o.category_data, updated_at: o.updated_at, data, fields, layout };
+    // `category_data` já viaja dentro de `data` (spread acima): não repetimos
+    // o objeto inteiro no payload da listagem.
+    return { id: o.id, slug: o.slug, name: o.name, description: o.description, logo_url: o.logo_url, category_id: o.category_id, category_data: {}, updated_at: o.updated_at, data, fields, layout };
+
   });
+  trimListingPayload(items);
   await signImagePathsInItems(items, LISTING_GALLERY_LIMIT);
   return { items, total };
+
 }
 
 export async function getPublicOrganization(slug: string): Promise<any> {
@@ -720,13 +730,18 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   const slug = opts.slug?.trim() || undefined;
   const filters = opts.filters ?? {};
 
-  const { data, error } = await sb.from("records")
-    .select("id, data, deal_status, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(slug, name, category_id, is_public))")
-    .eq("status", "published")
-    .order("created_at", { ascending: false })
-    .limit(2000);
-  if (error) throw new Error(error.message);
-  let base = ((data ?? []) as any[])
+  // Snapshot único dos registros publicados (chave estável + revalidação em
+  // segundo plano): antes cada bloco/listagem refazia esta consulta.
+  const rows = await cachedSWR("records:public:snapshot", TTL_MEDIUM, async () => {
+    const { data, error } = await sb.from("records")
+      .select("id, data, deal_status, created_at, table:tables!inner(id, slug, name, icon, is_public, organization:organizations!inner(slug, name, category_id, is_public))")
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(2000);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as any[];
+  });
+  let base = rows
     .filter((r) => r.table?.organization?.is_public !== false && r.table?.is_public !== false)
     .map((r) => ({
       record_id: r.id,
@@ -745,13 +760,15 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
   if (slug) base = base.filter((i) => i.org_slug === slug);
 
   const { loadFilterKeys: loadRecFilterKeys } = await import("@/lib/explore-filters.server");
-  const recFilterKeys = await loadRecFilterKeys("record", categoryId);
+  const [recFilterKeys, recAliases] = await Promise.all([
+    loadRecFilterKeys("record", categoryId),
+    loadOptionAliases(
+      "category_standard_table_fields",
+      [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
+    ),
+  ]);
   const recRangeByKey = new Map(recFilterKeys.ranges.map((r) => [r.key, r]));
 
-  const recAliases = await loadOptionAliases(
-    "category_standard_table_fields",
-    [...Object.keys(filters), ...((opts.rules ?? []).map((r) => r.field_key))],
-  );
 
   for (const [key, val] of Object.entries(filters)) {
     const rangeDef = recRangeByKey.get(key);
@@ -802,18 +819,22 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
 
   const tableIds = Array.from(new Set(paged.map((r) => r.table_id)));
   const catIds = Array.from(new Set(paged.map((r) => r.org_category_id).filter(Boolean))) as string[];
-  const [fieldsRes, layouts] = await Promise.all([
+  const [fieldsRows, layouts] = await Promise.all([
     tableIds.length
-      ? sb.from("fields").select("table_id, key, label, type, position, config").in("table_id", tableIds).order("position", { ascending: true })
-      : Promise.resolve({ data: [] as any[] } as any),
+      ? cachedSWR(`fields:tables:${[...tableIds].sort().join(",")}`, TTL_MEDIUM, async () => {
+          const { data } = await sb.from("fields").select("table_id, key, label, type, position, config").in("table_id", tableIds).order("position", { ascending: true });
+          return (data ?? []) as any[];
+        })
+      : Promise.resolve([] as any[]),
     loadLayoutsBatch(catIds, "record_card"),
   ]);
   const fieldsByTable = new Map<string, PublicRendererField[]>();
-  for (const f of (((fieldsRes as any).data ?? []) as any[])) {
+  for (const f of fieldsRows) {
     const arr = fieldsByTable.get(f.table_id) ?? [];
     arr.push({ key: f.key, label: f.label, type: f.type, config: (f as any).config ?? {} });
     fieldsByTable.set(f.table_id, arr);
   }
+
 
   const items: PublicRecordSummary[] = paged.map((r) => ({
     ...r,
@@ -823,14 +844,37 @@ export async function listPublicRecords(opts: { limit?: number; offset?: number;
     layout: (r.org_category_id && layouts.get(r.org_category_id)) || [],
   }));
 
+  trimListingPayload(items);
   await signImagePathsInItems(items, LISTING_GALLERY_LIMIT);
+
   return { items, total };
 }
 
 // Batch-sign image/gallery paths across items so listing cards can render <img>.
 // `maxGallery` limita quantas imagens de cada galeria são assinadas e enviadas:
 // nas listagens o card mostra poucas, então não faz sentido assinar o álbum todo.
+// Chaves sempre usadas pelos componentes de listagem, fora do layout.
+const LISTING_ALWAYS_KEYS = new Set(["name", "slug", "description", "logo_url", "org_name", "table_name", "deal_status"]);
+
+/**
+ * Os cards plotam apenas os campos presentes no layout configurado. Enviar a
+ * definição completa de campos e todos os valores por item duplicava dezenas de
+ * kB por listagem; aqui recortamos ao que é efetivamente renderizado.
+ */
+function trimListingPayload(
+  items: Array<{ data: Record<string, any>; fields: PublicRendererField[]; layout: PublicLayoutField[] }>,
+) {
+  for (const it of items) {
+    const keys = new Set([...it.layout.map((l) => l.field_key), ...LISTING_ALWAYS_KEYS]);
+    it.fields = it.fields.filter((f) => keys.has(f.key));
+    const data: Record<string, any> = {};
+    for (const k of Object.keys(it.data)) if (keys.has(k)) data[k] = it.data[k];
+    it.data = data;
+  }
+}
+
 async function signImagePathsInItems(
+
   items: Array<{ data: Record<string, any>; fields: PublicRendererField[] }>,
   maxGallery?: number,
 ) {

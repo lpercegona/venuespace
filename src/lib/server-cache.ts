@@ -40,7 +40,36 @@ export async function cached<T>(key: string, ttlMs: number, fn: () => Promise<T>
   return p;
 }
 
+/**
+ * Igual a `cached`, mas serve o valor vencido enquanto revalida em segundo
+ * plano (stale-while-revalidate): nenhuma requisição paga o custo de recarga.
+ */
+export async function cachedSWR<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
+  const entry = store.get(key) as Entry<T> | undefined;
+  const revalidate = () => {
+    if (inflight.has(key)) return inflight.get(key) as Promise<T>;
+    const p = (async () => {
+      try {
+        const value = await fn();
+        cacheSet(key, value, ttlMs);
+        return value;
+      } finally {
+        inflight.delete(key);
+      }
+    })();
+    inflight.set(key, p);
+    return p;
+  };
+  if (!entry) return revalidate();
+  if (entry.expires < Date.now()) {
+    // Dispara a atualização sem bloquear a resposta atual.
+    revalidate().catch(() => undefined);
+  }
+  return entry.value;
+}
+
 export const TTL_SHORT = 30_000;
 export const TTL_MEDIUM = 5 * 60_000;
 /** URLs assinadas expiram em 1h; guardamos por 45min com margem de segurança. */
 export const TTL_SIGNED = 45 * 60_000;
+
