@@ -59,8 +59,7 @@ export function CookieConsent() {
           <div className="mx-auto w-full max-w-4xl rounded-2xl border border-border/50 bg-card/95 backdrop-blur-sm p-4 text-card-foreground shadow-2xl shadow-black/5 sm:p-5">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 gap-3">
-                <Cookie className="mt-0.5 hidden h-5 w-5 shrink-0 text-brand sm:block" aria-hidden />
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-xm leading-relaxed text-muted-foreground">
                   Usamos cookies necessários para o funcionamento do site e, mediante seu consentimento, cookies
                   analíticos e de marketing para medir audiência e personalizar comunicação (LGPD, Lei nº 13.709/2018,
                   art. 7º). Você pode aceitar, recusar os não essenciais ou escolher por categoria a qualquer momento.
