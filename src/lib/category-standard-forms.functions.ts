@@ -133,7 +133,7 @@ export const listCategoryStandardFormFields = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("category_standard_form_fields")
-      .select("id, form_id, field_key, label, field_type, required, config, order_index")
+      .select("id, form_id, field_key, label, field_type, required, config, order_index, visible, source_standard_field_key")
       .eq("form_id", data.form_id)
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
@@ -149,6 +149,8 @@ const upsertField = z.object({
   required: z.boolean(),
   config: z.record(z.string(), z.any()).optional(),
   order_index: z.number().int().min(0),
+  visible: z.boolean().optional(),
+  source_standard_field_key: z.string().max(60).nullable().optional(),
 });
 
 export const upsertCategoryStandardFormField = createServerFn({ method: "POST" })
@@ -165,7 +167,10 @@ export const upsertCategoryStandardFormField = createServerFn({ method: "POST" }
       required: data.required,
       config: (data.config ?? {}) as any,
       order_index: data.order_index,
+      visible: data.visible ?? true,
+      source_standard_field_key: data.source_standard_field_key ?? null,
     };
+
     let id = data.id;
     if (id) {
       const { error } = await (supabaseAdmin as any)
