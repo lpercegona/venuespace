@@ -16,6 +16,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { EmptyState } from "@/components/venue/empty-state";
 import {
@@ -49,20 +50,23 @@ export function FieldCatalogSection() {
 
   const [search, setSearch] = useState("");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
+  const [catFilter, setCatFilter] = useState<string>("all");
   const [depFilter, setDepFilter] = useState<string>("all");
 
   const entries = useMemo(() => {
     const q = norm(search.trim());
     return (catalog.data ?? []).filter((e) => {
       if (q && !norm(e.field_key).includes(q) && !norm(e.label).includes(q)) return false;
-      if (scopeFilter !== "all" && !e.usages.some((u) => u.scope === scopeFilter)) return false;
+      if (scopeFilter !== "all" && e.scope !== scopeFilter) return false;
+      if (catFilter !== "all" && !e.is_base && !e.usages.some((u) => u.category_id === catFilter)) return false;
       if (depFilter === "with" && e.dependencies.length === 0) return false;
       if (depFilter === "base" && !e.is_base) return false;
       return true;
     });
-  }, [catalog.data, search, scopeFilter, depFilter]);
+  }, [catalog.data, search, scopeFilter, catFilter, depFilter]);
 
   const catName = (id: string) => (cats.data ?? []).find((c) => c.id === id)?.name ?? id.slice(0, 8);
+  const scopeLabel = (s: CatalogScope) => SCOPES.find((x) => x.value === s)?.label ?? s;
 
   // ---- diálogo de edição ----
   const [open, setOpen] = useState(false);
@@ -73,11 +77,11 @@ export function FieldCatalogSection() {
   const [order, setOrder] = useState(0);
   const [tooltip, setTooltip] = useState("");
   const [isBase, setIsBase] = useState(false);
-  const [targets, setTargets] = useState<Set<string>>(new Set());
+  const [scope, setScope] = useState<CatalogScope>("org");
+  const [categories, setCategories] = useState<Set<string>>(new Set());
   const [draft, setDraft] = useState<TypeDraft>(emptyTypeDraft());
   const [saving, setSaving] = useState(false);
-
-  const tKey = (categoryId: string, scope: CatalogScope) => `${categoryId}::${scope}`;
+  const [confirmScope, setConfirmScope] = useState(false);
 
   function openEdit(e: FieldCatalogEntry) {
     setEditing(e);
@@ -87,31 +91,26 @@ export function FieldCatalogSection() {
     setOrder(e.order_index);
     setTooltip(typeof e.config?.tooltip === "string" ? e.config.tooltip : "");
     setIsBase(e.is_base);
-    setTargets(new Set(e.usages.map((u) => tKey(u.category_id, u.scope))));
+    setScope(e.scope);
+    setCategories(new Set(e.usages.map((u) => u.category_id)));
     setDraft(draftFromConfig(e.config));
     setOpen(true);
   }
 
-  function toggleTarget(categoryId: string, scope: CatalogScope) {
-    setTargets((prev) => {
+  function toggleCategory(categoryId: string) {
+    setCategories((prev) => {
       const next = new Set(prev);
-      const k = tKey(categoryId, scope);
-      if (next.has(k)) next.delete(k);
-      else next.add(k);
+      if (next.has(categoryId)) next.delete(categoryId);
+      else next.add(categoryId);
       return next;
     });
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function save() {
     if (!editing) return;
     setSaving(true);
     try {
       const config = applyDraftToConfig(editing.config, type, draft, tooltip);
-      const list = [...targets].map((k) => {
-        const [category_id, scope] = k.split("::");
-        return { category_id, scope: scope as CatalogScope };
-      });
       await applyFieldCatalogEntry({
         data: {
           field_key: editing.field_key,
@@ -121,7 +120,8 @@ export function FieldCatalogSection() {
           order_index: order,
           config,
           is_base: isBase,
-          targets: list,
+          scope,
+          category_ids: [...categories],
         },
       });
       toast.success("Campo atualizado na plataforma");
@@ -131,7 +131,18 @@ export function FieldCatalogSection() {
       toast.error((err as Error).message);
     } finally {
       setSaving(false);
+      setConfirmScope(false);
     }
+  }
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) return;
+    if (scope !== editing.scope || editing.scope_divergent) {
+      setConfirmScope(true);
+      return;
+    }
+    void save();
   }
 
   function invalidate() {
@@ -154,8 +165,6 @@ export function FieldCatalogSection() {
     }
   }
 
-  const scopeCount = (e: FieldCatalogEntry, scope: CatalogScope) =>
-    e.usages.filter((u) => u.scope === scope).length;
 
   return (
     <Card>
@@ -178,7 +187,7 @@ export function FieldCatalogSection() {
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
           <div className="relative min-w-0">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -190,14 +199,21 @@ export function FieldCatalogSection() {
             />
           </div>
           <Select value={scopeFilter} onValueChange={setScopeFilter}>
-            <SelectTrigger className="sm:w-44" aria-label="Filtrar por escopo"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="lg:w-44" aria-label="Filtrar por escopo"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os escopos</SelectItem>
               {SCOPES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={catFilter} onValueChange={setCatFilter}>
+            <SelectTrigger className="lg:w-48" aria-label="Filtrar por categoria"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={depFilter} onValueChange={setDepFilter}>
-            <SelectTrigger className="sm:w-48" aria-label="Filtrar por dependência"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="lg:w-48" aria-label="Filtrar por dependência"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os campos</SelectItem>
               <SelectItem value="with">Com dependência</SelectItem>
@@ -205,6 +221,7 @@ export function FieldCatalogSection() {
             </SelectContent>
           </Select>
         </div>
+
 
         {catalog.isLoading ? (
           <div className="py-10 text-center"><Loader2 className="inline h-5 w-5 animate-spin text-muted-foreground" /></div>
@@ -230,13 +247,10 @@ export function FieldCatalogSection() {
                       <p className="mt-1 truncate text-xs text-muted-foreground">{String(e.config.tooltip)}</p>
                     ) : null}
                     <p className="mt-2 flex flex-wrap gap-1">
-                      {SCOPES.map((s) =>
-                        scopeCount(e, s.value) > 0 ? (
-                          <Badge key={s.value} variant="secondary">
-                            {s.label}: {scopeCount(e, s.value)}
-                          </Badge>
-                        ) : null,
-                      )}
+                      <Badge variant="secondary">{scopeLabel(e.scope)}</Badge>
+                      {e.scope_divergent ? (
+                        <Badge variant="destructive">escopo divergente</Badge>
+                      ) : null}
                       {e.dependencies.map((d) => (
                         <Badge key={d} variant="outline" className="border-destructive/50 text-destructive">{d}</Badge>
                       ))}
@@ -369,36 +383,58 @@ export function FieldCatalogSection() {
             </div>
 
             <div className="space-y-2 rounded-lg border border-border p-3">
+              <p className="text-sm font-medium">Escopo do campo</p>
+              <p className="text-xs text-muted-foreground">
+                Um campo pertence a um único escopo: Organização, Tabela ou Registro.
+              </p>
+              <RadioGroup
+                className="mt-2 grid gap-2 sm:grid-cols-3"
+                value={scope}
+                onValueChange={(v) => setScope(v as CatalogScope)}
+              >
+                {SCOPES.map((s) => (
+                  <Label
+                    key={s.value}
+                    htmlFor={`fc-scope-${s.value}`}
+                    className="flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm"
+                  >
+                    <RadioGroupItem id={`fc-scope-${s.value}`} value={s.value} />
+                    {s.label}
+                  </Label>
+                ))}
+              </RadioGroup>
+              {editing?.scope_divergent ? (
+                <p className="text-xs text-destructive">
+                  Este campo hoje existe em mais de um escopo. Ao salvar, ele passa a existir apenas no escopo selecionado.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2 rounded-lg border border-border p-3">
               <p className="text-sm font-medium">Categorias que usam o campo</p>
               <p className="text-xs text-muted-foreground">
                 {isBase
                   ? "Campo base: aplicado automaticamente em todas as categorias."
-                  : "Marque em quais categorias e escopos o campo deve existir."}
+                  : "Marque em quais categorias o campo deve existir, no escopo selecionado."}
               </p>
               <div className="mt-2 space-y-2">
-                {(cats.data ?? []).map((c) => (
-                  <div key={c.id} className="rounded-md border border-border p-3">
-                    <p className="text-sm font-medium">{c.name}</p>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                      {SCOPES.map((s) => {
-                        const id = `fc-${c.id}-${s.value}`;
-                        return (
-                          <div key={s.value} className="flex min-h-11 items-center justify-between gap-2 rounded-md border border-border px-3">
-                            <Label htmlFor={id} className="text-xs">{s.label}</Label>
-                            <Switch
-                              id={id}
-                              disabled={isBase}
-                              checked={isBase || targets.has(tKey(c.id, s.value))}
-                              onCheckedChange={() => toggleTarget(c.id, s.value)}
-                            />
-                          </div>
-                        );
-                      })}
+                {(cats.data ?? []).map((c) => {
+                  const id = `fc-cat-${c.id}`;
+                  return (
+                    <div key={c.id} className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3">
+                      <Label htmlFor={id} className="min-w-0 truncate text-sm">{c.name}</Label>
+                      <Switch
+                        id={id}
+                        disabled={isBase}
+                        checked={isBase || categories.has(c.id)}
+                        onCheckedChange={() => toggleCategory(c.id)}
+                      />
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
+
 
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -409,6 +445,23 @@ export function FieldCatalogSection() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmScope} onOpenChange={setConfirmScope}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar mudança de escopo</AlertDialogTitle>
+            <AlertDialogDescription>
+              O campo passará a existir apenas no escopo “{scopeLabel(scope)}” e será removido dos demais escopos
+              em todas as categorias. Esta ação afeta todas as organizações da plataforma.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void save()}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
+
   );
 }
