@@ -227,6 +227,19 @@ function OrgDashboard() {
   );
 }
 
+function ShortcutCard({ to, params, icon, label: text }: { to: string; params: Record<string, string>; icon: React.ReactNode; label: string }) {
+  return (
+    <Link to={to as any} params={params as any}>
+      <Card className="h-full transition-shadow hover:shadow-elegant">
+        <CardContent className="flex min-h-24 items-center gap-3 p-4">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground">{icon}</span>
+          <p className="min-w-0 truncate font-display text-base font-semibold">{text}</p>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
 function TableCard({
   t, orgSlug, orgCategoryId, canEdit, isOwner, isSA, onSaved,
 }: { t: any; orgSlug: string; orgCategoryId: string | null; canEdit: boolean; isOwner: boolean; isSA: boolean; onSaved: () => void }) {
