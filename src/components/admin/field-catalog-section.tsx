@@ -445,6 +445,23 @@ export function FieldCatalogSection() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmScope} onOpenChange={setConfirmScope}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar mudança de escopo</AlertDialogTitle>
+            <AlertDialogDescription>
+              O campo passará a existir apenas no escopo “{scopeLabel(scope)}” e será removido dos demais escopos
+              em todas as categorias. Esta ação afeta todas as organizações da plataforma.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void save()}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
+
   );
 }
