@@ -19,6 +19,9 @@ import { BookingFormDialog, type BookingEditTarget } from "@/components/venue/bo
 import { BookingAvailabilityFilter, todayISO, type BookingRange } from "@/components/venue/booking-availability-filter";
 import { BookingStatusActions, DealBadge } from "@/components/venue/booking-status-actions";
 import { useLabels } from "@/hooks/use-instance-context";
+import { BookingCalendarView } from "@/components/venue/booking-calendar-view";
+import { BookingTimelineView } from "@/components/venue/booking-timeline-view";
+import { currentMonth, type CalendarBooking } from "@/components/venue/booking-calendar-shared";
 
 export const Route = createFileRoute("/_authenticated/app/$orgSlug/calendar")({
   head: ({ params }) => ({
