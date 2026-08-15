@@ -48,7 +48,8 @@ function RecordsPage() {
   const canEdit = org.data?.myRole === "owner" || org.data?.myRole === "editor";
   const isSA = !!(org.data as any)?.isSuperAdmin;
   // Standard (locked) tables hide structural surfaces from regular users.
-  const showStructure = isSA || !(table.data as any)?.is_locked;
+  const isContactsTable = (((table.data as any)?.system_data ?? {}).kind ?? "") === "contacts";
+  const showStructure = isSA || (!(table.data as any)?.is_locked && !isContactsTable);
   const fields = records.data?.fields ?? [];
   const rows: RecordRow[] = (records.data?.records ?? []) as RecordRow[];
   const relations = records.data?.relations ?? {};
