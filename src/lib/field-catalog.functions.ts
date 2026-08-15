@@ -270,6 +270,9 @@ const applySchema = z.object({
   scope: scopeSchema,
   /** Categorias em que o campo existe nesse escopo (ignorado quando is_base). */
   category_ids: z.array(z.string().uuid()),
+  /** Propaga rótulo/tipo/config para os campos já criados dentro de organizações. */
+  sync_org_fields: z.boolean().optional(),
+
 });
 
 export const applyFieldCatalogEntry = createServerFn({ method: "POST" })
