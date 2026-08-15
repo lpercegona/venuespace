@@ -40,9 +40,14 @@ export type FieldCatalogEntry = {
   /** Escopo predominante do campo (um campo pertence a um único escopo). */
   scope: CatalogScope;
   scope_divergent: boolean;
+  /** Origem: catálogo por categoria ou campo criado dentro de organizações. */
+  origin: "catalog" | "organization";
+  /** Quantidade de organizações que já usam a chave (apenas origem "organization"). */
+  organizations: number;
   usages: FieldUsage[];
   dependencies: string[];
 };
+
 
 
 async function requireSA(supabase: any, userId: string) {
