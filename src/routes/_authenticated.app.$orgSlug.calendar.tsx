@@ -95,9 +95,28 @@ function BookingTablePanel({
   const [stage, setStage] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
   const [editing, setEditing] = useState<BookingEditTarget | null>(null);
+  const [view, setView] = useState<string>(() => {
+    if (typeof window === "undefined") return "list";
+    return window.sessionStorage.getItem(`bkview-${tableId}`) ?? "list";
+  });
+  const [calMode, setCalMode] = useState<string>(() => {
+    if (typeof window === "undefined") return "month";
+    return window.sessionStorage.getItem(`bkcal-${tableId}`) ?? "month";
+  });
+  const [month, setMonth] = useState<string>(() => currentMonth());
 
-  const from = filtering ? range.from : null;
-  const to = filtering ? (range.mode === "single" ? range.from : range.to) : null;
+  const setViewPersisted = (v: string) => {
+    setView(v);
+    if (typeof window !== "undefined") window.sessionStorage.setItem(`bkview-${tableId}`, v);
+  };
+  const setCalModePersisted = (v: string) => {
+    setCalMode(v);
+    if (typeof window !== "undefined") window.sessionStorage.setItem(`bkcal-${tableId}`, v);
+  };
+
+  const isCalendar = view === "calendar";
+  const from = !isCalendar && filtering ? range.from : null;
+  const to = !isCalendar && filtering ? (range.mode === "single" ? range.from : range.to) : null;
 
   const bookings = useQuery({
     queryKey: ["bookings", tableId, from, to, includeArchived],
@@ -108,7 +127,7 @@ function BookingTablePanel({
   const availability = useQuery({
     queryKey: ["booking-availability", tableId, from, to],
     queryFn: () => listAvailableResources({ data: { table_id: tableId, from: from!, to: to! } }),
-    enabled: filtering && !!from && !!to,
+    enabled: !isCalendar && filtering && !!from && !!to,
     placeholderData: keepPreviousData,
   });
 
@@ -119,10 +138,19 @@ function BookingTablePanel({
     return all.filter((b) => b.deal_status === stage);
   }, [bookings.data, stage]);
 
+  const openEdit = (b: any) =>
+    setEditing({
+      id: b.id,
+      data: b.data ?? {},
+      items: b.items ?? [],
+      contact: b.contact ? { id: b.contact.id } : null,
+    });
+
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["bookings", tableId] });
     qc.invalidateQueries({ queryKey: ["booking-availability", tableId] });
   };
+
 
   return (
     <Card>
