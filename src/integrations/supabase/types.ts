@@ -547,6 +547,7 @@ export type Database = {
           description: string | null
           icon: string | null
           id: string
+          is_hidden: boolean
           is_public: boolean
           is_system: boolean
           kind: string
@@ -562,6 +563,7 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          is_hidden?: boolean
           is_public?: boolean
           is_system?: boolean
           kind?: string
@@ -577,6 +579,7 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          is_hidden?: boolean
           is_public?: boolean
           is_system?: boolean
           kind?: string
@@ -1580,6 +1583,7 @@ export type Database = {
           description: string | null
           icon: string | null
           id: string
+          is_hidden: boolean
           is_locked: boolean
           is_public: boolean
           is_system: boolean
@@ -1598,6 +1602,7 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          is_hidden?: boolean
           is_locked?: boolean
           is_public?: boolean
           is_system?: boolean
@@ -1616,6 +1621,7 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          is_hidden?: boolean
           is_locked?: boolean
           is_public?: boolean
           is_system?: boolean
