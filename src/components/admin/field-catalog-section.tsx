@@ -254,11 +254,6 @@ export function FieldCatalogSection() {
                         <Badge key={d} variant="outline" className="border-destructive/50 text-destructive">{d}</Badge>
                       ))}
                     </p>
-
-                      {e.dependencies.map((d) => (
-                        <Badge key={d} variant="outline" className="border-destructive/50 text-destructive">{d}</Badge>
-                      ))}
-                    </p>
                     <p className="mt-2 text-xs text-muted-foreground">
                       {e.is_base
                         ? "Aplicado a todas as categorias da plataforma."
