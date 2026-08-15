@@ -31,6 +31,11 @@ function AuthPage() {
   const [mfaCode, setMfaCode] = useState("");
   /** Conta criada aguardando confirmação de e-mail. */
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  /** Fluxo de recuperação de senha dentro do mesmo cartão. */
+  const [forgot, setForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
