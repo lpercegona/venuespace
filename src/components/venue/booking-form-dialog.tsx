@@ -51,6 +51,77 @@ function itemTotal(v: BookingItemValue) {
   return Math.max(0, sub - disc);
 }
 
+/** Campo do formulário de reserva renderizado a partir da estrutura da tabela. */
+function BookingFieldInput({
+  field,
+  value,
+  onChange,
+}: {
+  field: { key: string; type: string; config?: any };
+  value: any;
+  onChange: (v: any) => void;
+}) {
+  const id = `bkf-${field.key}`;
+  const options: string[] = Array.isArray(field.config?.options)
+    ? field.config.options.map((o: any) => (typeof o === "string" ? o : o?.value ?? o?.label)).filter(Boolean)
+    : [];
+
+  switch (field.type) {
+    case "long_text":
+    case "textarea":
+      return <Textarea id={id} rows={4} value={value ?? ""} onChange={(e) => onChange(e.target.value)} />;
+    case "boolean":
+      return (
+        <label className="flex min-h-11 items-center gap-3">
+          <Checkbox checked={!!value} onCheckedChange={(v) => onChange(v === true)} />
+          <span className="text-sm text-muted-foreground">Sim</span>
+        </label>
+      );
+    case "number":
+    case "currency":
+      return (
+        <Input
+          id={id} type="number" step={field.type === "currency" ? "0.01" : "1"} min={0}
+          className="h-11 sm:h-10"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value) || 0)}
+        />
+      );
+    case "date":
+    case "datetime":
+      return (
+        <Input
+          id={id} type={field.type === "datetime" ? "datetime-local" : "date"}
+          className="h-11 sm:h-10"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value || null)}
+        />
+      );
+    case "select":
+      return (
+        <Select value={value ?? ""} onValueChange={(v) => onChange(v || null)}>
+          <SelectTrigger id={id} className="h-11 sm:h-10"><SelectValue placeholder="Selecione" /></SelectTrigger>
+          <SelectContent>
+            {options.map((o) => (
+              <SelectItem key={o} value={o}>{o}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    default:
+      return (
+        <Input
+          id={id}
+          type={field.type === "email" ? "email" : field.type === "url" ? "url" : field.type === "phone" ? "tel" : "text"}
+          className="h-11 sm:h-10"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      );
+  }
+}
+
+
 /** Dialog de reserva manual (criação e edição): período, itens disponíveis, valores e contato. */
 export function BookingFormDialog({
   open,
