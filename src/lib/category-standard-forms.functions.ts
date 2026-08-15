@@ -11,6 +11,7 @@ export type CategoryStandardForm = {
   category_id: string;
   scope: "organization" | "record";
   standard_table_id: string | null;
+  target_standard_table_id: string | null;
   name: string;
   submit_label: string;
   target_table_name: string;
@@ -26,7 +27,10 @@ export type CategoryStandardFormField = {
   required: boolean;
   config: Record<string, any>;
   order_index: number;
+  visible: boolean;
+  source_standard_field_key: string | null;
 };
+
 
 async function requireSA(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("is_super_admin", { _user_id: userId });
