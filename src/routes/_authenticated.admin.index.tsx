@@ -3578,8 +3578,11 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
           required,
           config,
           order_index: order,
+          visible,
+          source_standard_field_key: editing?.source_standard_field_key ?? null,
         },
       });
+
       toast.success(editing ? "Campo atualizado" : "Campo criado");
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["admin-std-form-fields", formId] });
