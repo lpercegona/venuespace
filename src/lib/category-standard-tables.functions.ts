@@ -60,7 +60,7 @@ export const listCategoryStandardTables = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("category_standard_tables")
-      .select("id, category_id, name, slug, icon, description, order_index, is_public, bookable")
+      .select("id, category_id, name, slug, icon, description, order_index, is_public, bookable, kind, is_system")
       .eq("category_id", data.category_id)
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
