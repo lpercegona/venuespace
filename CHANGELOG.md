@@ -1,3 +1,12 @@
+## 2026-08-15 19:10 (America/Sao_Paulo) — Correção/extensão das Iterações 40 e 3 (tabelas de sistema editáveis, formulários a partir de tabela, colunas do catálogo)
+
+- Migração: `category_standard_tables` ganha `kind` e `is_system`; `category_standard_forms` ganha `target_standard_table_id`; `category_standard_form_fields` ganha `visible` e `source_standard_field_key`. Modelos "Contatos" e "Reservas" semeados para todas as categorias; `ensure_contacts_table`, `ensure_bookings_table`, `create_organization`, `sync_category_standard_tables` e `apply_standard_forms_to_org` passam a materializar tabelas de sistema a partir dos modelos e a respeitar destino e visibilidade dos campos do formulário.
+- `src/components/admin/field-catalog-section.tsx`: coluna "Origem" substituída por "Base"; coluna "Tipo" removida (badge de tipo ao lado da chave); ordem das colunas Campo — Categorias — Escopo — Base — Dependências — Ações; filtro de origem substituído por filtro base/não base.
+- `src/lib/category-standard-tables.functions.ts`: tipos com `kind`/`is_system`; bloqueio de alteração de slug/kind e de exclusão em tabelas de sistema.
+- `src/lib/category-standard-forms.functions.ts`: suporte a `target_standard_table_id`, `visible` e `source_standard_field_key`; nova `createCategoryStandardFormFromTable`, que cria o formulário vinculado à tabela-modelo copiando os campos.
+- `src/routes/_authenticated.admin.index.tsx`: Estrutura > Tabelas exibe coluna Tipo (sistema/catálogo), impede exclusão de tabelas de sistema e trava o slug na edição; Estrutura > Formulários ganha "A partir de tabela", seleção de tabela de destino e, no editor de campos, interruptor e coluna de visibilidade no formulário.
+- Validação: typecheck limpo; sem cores hardcoded; nenhuma rota pública nova (sitemap inalterado).
+
 ## 2026-08-15 17:40 (America/Sao_Paulo) — Correção da Iteração 40 (aba "Todos os campos": estilo, escopo do cabeçalho, campos de organização e tabela)
 
 - `src/routes/_authenticated.admin.index.tsx`: `Tabs` passa a ser controlado; a aba "Todos os campos" recebe texto destrutivo quando inativa e fundo destrutivo com texto em contraste quando ativa; o seletor de categoria do cabeçalho e o bloco de reconciliação ficam ocultos enquanto a aba está ativa.

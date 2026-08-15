@@ -17,7 +17,10 @@ export type CategoryStandardTable = {
   order_index: number;
   is_public: boolean;
   bookable: boolean;
+  kind: "normal" | "contacts" | "bookings";
+  is_system: boolean;
 };
+
 
 export type CategoryStandardTableField = {
   id: string;
@@ -57,7 +60,7 @@ export const listCategoryStandardTables = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("category_standard_tables")
-      .select("id, category_id, name, slug, icon, description, order_index, is_public, bookable")
+      .select("id, category_id, name, slug, icon, description, order_index, is_public, bookable, kind, is_system")
       .eq("category_id", data.category_id)
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
@@ -84,29 +87,50 @@ export const upsertCategoryStandardTable = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const slug = data.slug ?? slugify(data.name);
     if (!slug) throw new Error("Slug inválido");
-    const payload = {
-      category_id: data.category_id,
-      name: data.name,
-      slug,
-      icon: data.icon ?? null,
-      description: data.description ?? null,
-      order_index: data.order_index,
-      is_public: data.is_public ?? false,
-      bookable: data.bookable ?? false,
-    };
+
     if (data.id) {
+      const { data: current, error: curErr } = await (supabaseAdmin as any)
+        .from("category_standard_tables").select("is_system").eq("id", data.id).single();
+      if (curErr) throw new Error(curErr.message);
+      const isSystem = !!(current as any).is_system;
+      const payload = isSystem
+        ? {
+            name: data.name,
+            description: data.description ?? null,
+            icon: data.icon ?? null,
+            order_index: data.order_index,
+          }
+        : {
+            category_id: data.category_id,
+            name: data.name,
+            slug,
+            icon: data.icon ?? null,
+            description: data.description ?? null,
+            order_index: data.order_index,
+            is_public: data.is_public ?? false,
+            bookable: data.bookable ?? false,
+          };
       const { error } = await (supabaseAdmin as any)
         .from("category_standard_tables").update(payload).eq("id", data.id);
       if (error) throw new Error(error.message);
       await syncCategory(context.supabase, data.category_id);
       return { id: data.id };
-    } else {
-      const { data: row, error } = await (supabaseAdmin as any)
-        .from("category_standard_tables").insert(payload).select("id").single();
-      if (error) throw new Error(error.message);
-      await syncCategory(context.supabase, data.category_id);
-      return { id: (row as any).id };
     }
+
+    const { data: row, error } = await (supabaseAdmin as any)
+      .from("category_standard_tables").insert({
+        category_id: data.category_id,
+        name: data.name,
+        slug,
+        icon: data.icon ?? null,
+        description: data.description ?? null,
+        order_index: data.order_index,
+        is_public: data.is_public ?? false,
+        bookable: data.bookable ?? false,
+      }).select("id").single();
+    if (error) throw new Error(error.message);
+    await syncCategory(context.supabase, data.category_id);
+    return { id: (row as any).id };
   });
 
 export const deleteCategoryStandardTable = createServerFn({ method: "POST" })
@@ -115,13 +139,20 @@ export const deleteCategoryStandardTable = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSA(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const category_id = await resolveCategoryIdByTable(supabaseAdmin, data.id);
+    const { data: current, error: curErr } = await (supabaseAdmin as any)
+      .from("category_standard_tables").select("is_system, category_id").eq("id", data.id).single();
+    if (curErr) throw new Error(curErr.message);
+    if ((current as any).is_system) {
+      throw new Error("Tabelas de sistema não podem ser removidas.");
+    }
+    const category_id = (current as any).category_id as string;
     const { error } = await (supabaseAdmin as any)
       .from("category_standard_tables").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     await syncCategory(context.supabase, category_id);
     return { ok: true };
   });
+
 
 // -------- Standard table fields --------
 

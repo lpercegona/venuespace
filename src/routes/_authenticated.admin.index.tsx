@@ -110,6 +110,8 @@ import {
 import {
   listCategoryStandardForms,
   upsertCategoryStandardForm,
+  createCategoryStandardFormFromTable,
+
   deleteCategoryStandardForm,
   listCategoryStandardFormFields,
   upsertCategoryStandardFormField,
@@ -2864,9 +2866,16 @@ function StandardTablesSection() {
                         required
                         pattern="^[a-z0-9-]+$"
                         value={tSlugV}
+                        disabled={!!(editingTable as any)?.is_system}
                         onChange={(e) => setTSlugV(e.target.value)}
                       />
+                      {(editingTable as any)?.is_system ? (
+                        <p className="text-xs text-muted-foreground">
+                          Tabela de sistema ({(editingTable as any)?.kind}): o slug não pode ser alterado.
+                        </p>
+                      ) : null}
                     </div>
+
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Ícone (lucide)</Label>
@@ -2928,6 +2937,7 @@ function StandardTablesSection() {
                       <TableHead className="w-16">Ordem</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead>Slug</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Ícone</TableHead>
                       <TableHead className="w-32"></TableHead>
                     </TableRow>
@@ -2938,6 +2948,13 @@ function StandardTablesSection() {
                         <TableCell>{t.order_index}</TableCell>
                         <TableCell className="font-medium">{t.name}</TableCell>
                         <TableCell className="font-mono text-xs">{t.slug}</TableCell>
+                        <TableCell>
+                          {(t as any).is_system ? (
+                            <Badge variant="secondary">sistema · {(t as any).kind}</Badge>
+                          ) : (
+                            <Badge variant="outline">catálogo</Badge>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs text-muted-foreground">{t.icon ?? "—"}</TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-1">
@@ -2947,26 +2964,28 @@ function StandardTablesSection() {
                             <Button size="icon" variant="ghost" onClick={() => openEditTable(t)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="icon" variant="ghost" className="text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remover tabela-modelo?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Novas organizações da categoria deixarão de receber esta tabela. Organizações já
-                                    criadas não são afetadas.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => removeTable(t.id)}>Remover</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            {(t as any).is_system ? null : (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Remover tabela-modelo?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Novas organizações da categoria deixarão de receber esta tabela. Organizações já
+                                      criadas não são afetadas.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => removeTable(t.id)}>Remover</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -2975,6 +2994,7 @@ function StandardTablesSection() {
                 </Table>
               </div>
             )}
+
 
             {selectedTable ? <StandardTableFieldsEditor standardTableId={selectedTable} /> : null}
           </>
@@ -3254,16 +3274,24 @@ function StandardFormsSection() {
   const [editing, setEditing] = useState<CategoryStandardForm | null>(null);
   const [scope, setScope] = useState<"organization" | "record">("organization");
   const [stdTableId, setStdTableId] = useState<string>("");
+  const [targetStdTableId, setTargetStdTableId] = useState<string>("");
   const [name, setName] = useState("");
   const [submitLabel, setSubmitLabel] = useState("Enviar");
   const [targetName, setTargetName] = useState("Contatos");
   const [active, setActive] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  const [openFromTable, setOpenFromTable] = useState(false);
+  const [ftTableId, setFtTableId] = useState("");
+  const [ftScope, setFtScope] = useState<"organization" | "record">("record");
+  const [ftName, setFtName] = useState("");
+  const [ftBusy, setFtBusy] = useState(false);
+
   function openNew() {
     setEditing(null);
     setScope("organization");
     setStdTableId("");
+    setTargetStdTableId("");
     setName("Fale com a organização");
     setSubmitLabel("Enviar");
     setTargetName("Contatos");
@@ -3274,12 +3302,37 @@ function StandardFormsSection() {
     setEditing(f);
     setScope(f.scope);
     setStdTableId(f.standard_table_id ?? "");
+    setTargetStdTableId(f.target_standard_table_id ?? "");
     setName(f.name);
     setSubmitLabel(f.submit_label);
     setTargetName(f.target_table_name);
     setActive(f.is_active);
     setOpen(true);
   }
+
+  async function createFromTable(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedCat || !ftTableId) return;
+    setFtBusy(true);
+    try {
+      await createCategoryStandardFormFromTable({
+        data: {
+          category_id: selectedCat,
+          standard_table_id: ftTableId,
+          scope: ftScope,
+          name: ftName || (stdTables.data ?? []).find((t) => t.id === ftTableId)?.name || "Formulário",
+        },
+      });
+      toast.success("Formulário criado a partir da tabela");
+      setOpenFromTable(false);
+      qc.invalidateQueries({ queryKey: ["admin-std-forms", selectedCat] });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setFtBusy(false);
+    }
+  }
+
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -3292,6 +3345,8 @@ function StandardFormsSection() {
           category_id: selectedCat,
           scope,
           standard_table_id: scope === "record" ? stdTableId || null : null,
+          target_standard_table_id: targetStdTableId || null,
+
           name,
           submit_label: submitLabel,
           target_table_name: targetName,
@@ -3359,9 +3414,82 @@ function StandardFormsSection() {
           <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p>
         ) : (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-medium">Formulários</p>
+              <Dialog open={openFromTable} onOpenChange={setOpenFromTable}>
+                <DialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setFtTableId("");
+                      setFtScope("record");
+                      setFtName("");
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    A partir de tabela
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="font-display">Criar formulário a partir de tabela</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={createFromTable} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Tabela-modelo</Label>
+                      <Select
+                        value={ftTableId}
+                        onValueChange={(v) => {
+                          setFtTableId(v);
+                          if (!ftName) setFtName((stdTables.data ?? []).find((t) => t.id === v)?.name ?? "");
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a tabela" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(stdTables.data ?? []).map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Os campos da tabela são copiados para o formulário; depois é possível editar rótulo, ordem,
+                        obrigatoriedade e visibilidade de cada um.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Escopo</Label>
+                      <Select value={ftScope} onValueChange={(v) => setFtScope(v as "organization" | "record")}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="organization">Página pública da organização</SelectItem>
+                          <SelectItem value="record">Página pública de registro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Nome do formulário</Label>
+                      <Input required value={ftName} onChange={(e) => setFtName(e.target.value)} />
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="ghost" onClick={() => setOpenFromTable(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={ftBusy || !ftTableId}>
+                        {ftBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
               <Dialog open={open} onOpenChange={setOpen}>
+
                 <DialogTrigger asChild>
                   <Button size="sm" onClick={openNew}>
                     <Plus className="h-4 w-4" />
@@ -3415,9 +3543,36 @@ function StandardFormsSection() {
                       </div>
                       <div className="space-y-2">
                         <Label>Tabela de destino</Label>
-                        <Input required value={targetName} onChange={(e) => setTargetName(e.target.value)} />
+                        <Select
+                          value={targetStdTableId || "__contacts"}
+                          onValueChange={(v) => {
+                            if (v === "__contacts") {
+                              setTargetStdTableId("");
+                              setTargetName("Contatos");
+                            } else {
+                              setTargetStdTableId(v);
+                              setTargetName((stdTables.data ?? []).find((t) => t.id === v)?.name ?? "Contatos");
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__contacts">Contatos (padrão)</SelectItem>
+                            {(stdTables.data ?? []).map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Onde as submissões deste formulário são gravadas em cada organização.
+                        </p>
                       </div>
                     </div>
+
                     <div className="flex items-center justify-between rounded-md border border-border p-3">
                       <div>
                         <Label className="text-sm">Ativo</Label>
@@ -3528,6 +3683,7 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
   const [key, setKey] = useState("");
   const [type, setType] = useState<string>("text");
   const [required, setRequired] = useState(false);
+  const [visible, setVisible] = useState(true);
   const [optionsText, setOptionsText] = useState("");
   const [order, setOrder] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -3538,6 +3694,7 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
     setKey("");
     setType("text");
     setRequired(false);
+    setVisible(true);
     setOptionsText("");
     setOrder((list.data ?? []).length);
     setOpen(true);
@@ -3548,10 +3705,12 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
     setKey(f.field_key);
     setType(f.field_type);
     setRequired(f.required);
+    setVisible(f.visible !== false);
     setOptionsText(Array.isArray((f.config ?? {}).options) ? ((f.config as any).options as string[]).join("\n") : "");
     setOrder(f.order_index);
     setOpen(true);
   }
+
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -3574,8 +3733,11 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
           required,
           config,
           order_index: order,
+          visible,
+          source_standard_field_key: editing?.source_standard_field_key ?? null,
         },
       });
+
       toast.success(editing ? "Campo atualizado" : "Campo criado");
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["admin-std-form-fields", formId] });
@@ -3658,6 +3820,17 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
                 <Label className="text-sm">Obrigatório</Label>
                 <Switch checked={required} onCheckedChange={setRequired} />
               </div>
+              <div className="flex items-center justify-between rounded-md border border-border p-3">
+                <div className="min-w-0">
+                  <Label className="text-sm">Visível no formulário</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Desativado: o campo continua na tabela de destino, mas não aparece nem é aceito no formulário
+                    público.
+                  </p>
+                </div>
+                <Switch checked={visible} onCheckedChange={setVisible} className="shrink-0" />
+              </div>
+
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                   Cancelar
@@ -3685,6 +3858,7 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
                 <TableHead>Chave</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead className="w-24">Obrig.</TableHead>
+                <TableHead className="w-24">Visível</TableHead>
                 <TableHead className="w-24"></TableHead>
               </TableRow>
             </TableHeader>
@@ -3696,6 +3870,12 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
                   <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{f.field_type}</TableCell>
                   <TableCell>{f.required ? "Sim" : "Não"}</TableCell>
+                  <TableCell>
+                    <Badge variant={f.visible === false ? "outline" : "secondary"}>
+                      {f.visible === false ? "Oculto" : "Sim"}
+                    </Badge>
+                  </TableCell>
+
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
                       <Button size="icon" variant="ghost" onClick={() => openEdit(f)}>

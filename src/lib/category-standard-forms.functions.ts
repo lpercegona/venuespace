@@ -11,6 +11,7 @@ export type CategoryStandardForm = {
   category_id: string;
   scope: "organization" | "record";
   standard_table_id: string | null;
+  target_standard_table_id: string | null;
   name: string;
   submit_label: string;
   target_table_name: string;
@@ -26,7 +27,10 @@ export type CategoryStandardFormField = {
   required: boolean;
   config: Record<string, any>;
   order_index: number;
+  visible: boolean;
+  source_standard_field_key: string | null;
 };
+
 
 async function requireSA(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("is_super_admin", { _user_id: userId });
@@ -54,7 +58,7 @@ export const listCategoryStandardForms = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("category_standard_forms")
-      .select("id, category_id, scope, standard_table_id, name, submit_label, target_table_name, is_active")
+      .select("id, category_id, scope, standard_table_id, target_standard_table_id, name, submit_label, target_table_name, is_active")
       .eq("category_id", data.category_id)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -66,6 +70,7 @@ const upsertForm = z.object({
   category_id: z.string().uuid(),
   scope: z.enum(["organization", "record"]),
   standard_table_id: z.string().uuid().nullable().optional(),
+  target_standard_table_id: z.string().uuid().nullable().optional(),
   name: z.string().min(1).max(80),
   submit_label: z.string().min(1).max(40).optional(),
   target_table_name: z.string().min(1).max(60).optional(),
@@ -85,11 +90,13 @@ export const upsertCategoryStandardForm = createServerFn({ method: "POST" })
       category_id: data.category_id,
       scope: data.scope,
       standard_table_id: data.scope === "record" ? data.standard_table_id : null,
+      target_standard_table_id: data.target_standard_table_id ?? null,
       name: data.name,
       submit_label: data.submit_label ?? "Enviar",
       target_table_name: data.target_table_name ?? "Contatos",
       is_active: data.is_active ?? true,
     };
+
     let id = data.id;
     if (id) {
       const { error } = await (supabaseAdmin as any)
@@ -126,7 +133,7 @@ export const listCategoryStandardFormFields = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("category_standard_form_fields")
-      .select("id, form_id, field_key, label, field_type, required, config, order_index")
+      .select("id, form_id, field_key, label, field_type, required, config, order_index, visible, source_standard_field_key")
       .eq("form_id", data.form_id)
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
@@ -142,6 +149,8 @@ const upsertField = z.object({
   required: z.boolean(),
   config: z.record(z.string(), z.any()).optional(),
   order_index: z.number().int().min(0),
+  visible: z.boolean().optional(),
+  source_standard_field_key: z.string().max(60).nullable().optional(),
 });
 
 export const upsertCategoryStandardFormField = createServerFn({ method: "POST" })
@@ -158,7 +167,10 @@ export const upsertCategoryStandardFormField = createServerFn({ method: "POST" }
       required: data.required,
       config: (data.config ?? {}) as any,
       order_index: data.order_index,
+      visible: data.visible ?? true,
+      source_standard_field_key: data.source_standard_field_key ?? null,
     };
+
     let id = data.id;
     if (id) {
       const { error } = await (supabaseAdmin as any)
@@ -189,4 +201,77 @@ export const deleteCategoryStandardFormField = createServerFn({ method: "POST" }
     if (error) throw new Error(error.message);
     await syncForms(context.supabase, category_id);
     return { ok: true };
+  });
+
+const createFromTable = z.object({
+  category_id: z.string().uuid(),
+  standard_table_id: z.string().uuid(),
+  scope: z.enum(["organization", "record"]),
+  name: z.string().min(1).max(80),
+  submit_label: z.string().min(1).max(40).optional(),
+});
+
+/** Cria um formulário a partir de um modelo de tabela, copiando os campos do modelo. */
+export const createCategoryStandardFormFromTable = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => createFromTable.parse(d))
+  .handler(async ({ data, context }) => {
+    await requireSA(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: model, error: modelErr } = await (supabaseAdmin as any)
+      .from("category_standard_tables")
+      .select("id, name, category_id")
+      .eq("id", data.standard_table_id)
+      .single();
+    if (modelErr) throw new Error(modelErr.message);
+    if ((model as any).category_id !== data.category_id) {
+      throw new Error("Tabela padrão de outra categoria.");
+    }
+
+    const { data: form, error: formErr } = await (supabaseAdmin as any)
+      .from("category_standard_forms")
+      .insert({
+        category_id: data.category_id,
+        scope: data.scope,
+        standard_table_id: data.scope === "record" ? data.standard_table_id : null,
+        target_standard_table_id: data.standard_table_id,
+        name: data.name,
+        submit_label: data.submit_label ?? "Enviar",
+        target_table_name: (model as any).name,
+        is_active: true,
+      })
+      .select("id")
+      .single();
+    if (formErr) throw new Error(formErr.message);
+    const form_id = (form as any).id as string;
+
+    const { data: modelFields, error: mfErr } = await (supabaseAdmin as any)
+      .from("category_standard_table_fields")
+      .select("field_key, label, field_type, required, config, order_index")
+      .eq("standard_table_id", data.standard_table_id)
+      .order("order_index", { ascending: true });
+    if (mfErr) throw new Error(mfErr.message);
+
+    const allowed = new Set<string>(FIELD_TYPES as readonly string[]);
+    const rows = (modelFields ?? [])
+      .filter((f: any) => allowed.has(f.field_type))
+      .map((f: any, i: number) => ({
+        form_id,
+        field_key: f.field_key,
+        label: f.label,
+        field_type: f.field_type,
+        required: f.required,
+        config: f.config ?? {},
+        order_index: i,
+        visible: true,
+        source_standard_field_key: f.field_key,
+      }));
+    if (rows.length > 0) {
+      const { error } = await (supabaseAdmin as any).from("category_standard_form_fields").insert(rows);
+      if (error) throw new Error(error.message);
+    }
+
+    await syncForms(context.supabase, data.category_id);
+    return { id: form_id };
   });

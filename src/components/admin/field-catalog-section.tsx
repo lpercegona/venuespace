@@ -51,7 +51,7 @@ export function FieldCatalogSection() {
   const [scopeFilter, setScopeFilter] = useState<string>("all");
   const [catFilter, setCatFilter] = useState<string>("all");
   const [depFilter, setDepFilter] = useState<string>("all");
-  const [originFilter, setOriginFilter] = useState<string>("all");
+  const [baseFilter, setBaseFilter] = useState<string>("all");
 
   const entries = useMemo(() => {
     const q = norm(search.trim());
@@ -60,11 +60,12 @@ export function FieldCatalogSection() {
       if (scopeFilter !== "all" && e.scope !== scopeFilter) return false;
       if (catFilter !== "all" && !e.is_base && !e.usages.some((u) => u.category_id === catFilter)) return false;
       if (depFilter === "with" && e.dependencies.length === 0) return false;
-      if (depFilter === "base" && !e.is_base) return false;
-      if (originFilter !== "all" && e.origin !== originFilter) return false;
+      if (baseFilter === "base" && !e.is_base) return false;
+      if (baseFilter === "not_base" && e.is_base) return false;
       return true;
     });
-  }, [catalog.data, search, scopeFilter, catFilter, depFilter, originFilter]);
+  }, [catalog.data, search, scopeFilter, catFilter, depFilter, baseFilter]);
+
 
   const catName = (id: string) => (cats.data ?? []).find((c) => c.id === id)?.name ?? id.slice(0, 8);
   const scopeLabel = (s: CatalogScope) => SCOPES.find((x) => x.value === s)?.label ?? s;
@@ -213,12 +214,12 @@ export function FieldCatalogSection() {
               {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={originFilter} onValueChange={setOriginFilter}>
-            <SelectTrigger className="lg:w-44" aria-label="Filtrar por origem"><SelectValue /></SelectTrigger>
+          <Select value={baseFilter} onValueChange={setBaseFilter}>
+            <SelectTrigger className="lg:w-44" aria-label="Filtrar por campo base"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas as origens</SelectItem>
-              <SelectItem value="catalog">Catálogo</SelectItem>
-              <SelectItem value="organization">Criado em organização</SelectItem>
+              <SelectItem value="all">Base e não base</SelectItem>
+              <SelectItem value="base">Somente base</SelectItem>
+              <SelectItem value="not_base">Somente não base</SelectItem>
             </SelectContent>
           </Select>
           <Select value={depFilter} onValueChange={setDepFilter}>
@@ -226,9 +227,9 @@ export function FieldCatalogSection() {
             <SelectContent>
               <SelectItem value="all">Todos os campos</SelectItem>
               <SelectItem value="with">Com dependência</SelectItem>
-              <SelectItem value="base">Somente base</SelectItem>
             </SelectContent>
           </Select>
+
         </div>
 
 
@@ -244,10 +245,9 @@ export function FieldCatalogSection() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Campo</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Escopo</TableHead>
-                  <TableHead>Origem</TableHead>
                   <TableHead>Categorias</TableHead>
+                  <TableHead>Escopo</TableHead>
+                  <TableHead>Base</TableHead>
                   <TableHead>Dependências</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -255,15 +255,20 @@ export function FieldCatalogSection() {
               <TableBody>
                 {entries.map((e) => (
                   <TableRow key={e.field_key}>
-                    <TableCell className="max-w-[260px]">
+                    <TableCell className="max-w-[320px]">
                       <span className="block truncate font-medium">{e.label}</span>
-                      <span className="block truncate font-mono text-xs text-muted-foreground">{e.field_key}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="flex flex-wrap gap-1">
+                      <span className="mt-1 flex flex-wrap items-center gap-1">
+                        <span className="truncate font-mono text-xs text-muted-foreground">{e.field_key}</span>
                         <Badge variant="secondary">{e.field_type}</Badge>
                         {e.required ? <Badge variant="secondary">obrigatório</Badge> : null}
                         {e.divergent ? <Badge variant="destructive">divergente</Badge> : null}
+                      </span>
+                    </TableCell>
+                    <TableCell className="max-w-[260px] text-xs text-muted-foreground">
+                      <span className="block truncate">
+                        {e.is_base
+                          ? "Todas as categorias"
+                          : [...new Set(e.usages.map((u) => catName(u.category_id)))].join(", ") || "—"}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -273,23 +278,13 @@ export function FieldCatalogSection() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {e.origin === "organization" ? (
-                        <Badge variant="outline" className="border-destructive/50 text-destructive">organização</Badge>
-                      ) : e.is_base ? (
-                        <Badge variant="outline">base</Badge>
+                      {e.is_base ? (
+                        <Badge variant="outline">Base</Badge>
                       ) : (
-                        <Badge variant="outline">catálogo</Badge>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="max-w-[260px] text-xs text-muted-foreground">
-                      <span className="block truncate">
-                        {e.origin === "organization"
-                          ? `${e.organizations} organização(ões)`
-                          : e.is_base
-                            ? "Todas as categorias"
-                            : [...new Set(e.usages.map((u) => catName(u.category_id)))].join(", ") || "—"}
-                      </span>
-                    </TableCell>
+
                     <TableCell className="max-w-[220px]">
                       {e.dependencies.length === 0 ? (
                         <span className="text-xs text-muted-foreground">—</span>
