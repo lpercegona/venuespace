@@ -42,6 +42,12 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
   const myOrgs = useQuery({ queryKey: ["my-orgs"], queryFn: () => listMyOrganizations(), staleTime: 60_000 });
   const isAdmin = useQuery({ queryKey: ["am-super-admin"], queryFn: () => amISuperAdmin(), staleTime: 60_000 });
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const moduleState = useQuery({
+    queryKey: ["org-modules", org.data?.id],
+    queryFn: () => getOrgModuleState({ data: { organization_id: org.data!.id } }),
+    enabled: !!org.data?.id,
+    staleTime: 60_000,
+  });
 
   const initial = (me.data?.display_name ?? me.data?.email ?? "?").slice(0, 1).toUpperCase();
 
