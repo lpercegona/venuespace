@@ -98,7 +98,6 @@ export const createOrganization = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const slug = data.slug ?? slugify(data.name);
     if (!slug) throw new Error("Slug inválido");
-    await checkTableCreationAllowed(context.supabase, context.userId, data.organization_id);
     // Create via SECURITY DEFINER RPC (bypasses org SELECT during insert-and-return).
     const { data: rows, error } = await context.supabase
       .rpc("create_organization", {
