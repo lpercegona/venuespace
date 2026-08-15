@@ -866,6 +866,8 @@ function DefaultFieldsSection() {
     }
   }
 
+  const [tab, setTab] = useState("org");
+
   return (
     <Card>
       <CardHeader className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -876,29 +878,36 @@ function DefaultFieldsSection() {
             {t("table", "tabela").toLowerCase()} e {t("record", "registro").toLowerCase()}.
           </p>
         </div>
-        <Select value={selected ?? ""} onValueChange={setSelected}>
-          <SelectTrigger className="w-64">
-            <SelectValue placeholder="Selecione categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            {(cats.data ?? []).map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {tab === "all" ? null : (
+          <Select value={selected ?? ""} onValueChange={setSelected}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Selecione categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              {(cats.data ?? []).map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </CardHeader>
       <CardContent>
         {!selected ? (
           <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p>
         ) : (
-          <Tabs defaultValue="org">
+          <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="org">Organização</TabsTrigger>
               <TabsTrigger value="table">Tabela</TabsTrigger>
               <TabsTrigger value="record">Registro</TabsTrigger>
-              <TabsTrigger value="all">Todos os campos</TabsTrigger>
+              <TabsTrigger
+                value="all"
+                className="text-destructive data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground"
+              >
+                Todos os campos
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="org">
               <ScopeEditor categoryId={selected} scope="org" />
@@ -915,7 +924,8 @@ function DefaultFieldsSection() {
           </Tabs>
         )}
 
-        {selected ? (
+        {selected && tab !== "all" ? (
+
           <div className="mt-6 rounded-lg border border-border p-4">
             <p className="text-sm font-medium">Reconciliação retroativa</p>
             <p className="mt-1 text-xs text-muted-foreground">
