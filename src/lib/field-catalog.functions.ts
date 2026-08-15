@@ -175,10 +175,9 @@ export const listOrphanOrgFieldKeys = createServerFn({ method: "GET" })
     ]);
 
     const known = new Set<string>([
-      ...((org.data ?? []) as any[]).map((r) => r.key ?? r.field_key),
+      ...((org.data ?? []) as any[]).map((r) => r.field_key),
       ...((tbl.data ?? []) as any[]).map((r) => r.field_key),
       ...((rec.data ?? []) as any[]).map((r) => r.field_key),
-      ...((org.data ?? []) as any[]).map((r) => r.field_key),
     ]);
 
     const map = new Map<string, { key: string; label: string; type: string; orgs: Set<string> }>();
