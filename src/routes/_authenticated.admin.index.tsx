@@ -2755,6 +2755,7 @@ function StandardTablesSection() {
   const [tOrder, setTOrder] = useState(0);
   const [tPub, setTPub] = useState(false);
   const [tBook, setTBook] = useState(false);
+  const [tHidden, setTHidden] = useState(false);
   const [tBusy, setTBusy] = useState(false);
 
   function openNewTable() {
@@ -2766,6 +2767,7 @@ function StandardTablesSection() {
     setTOrder((tables.data ?? []).length);
     setTPub(false);
     setTBook(false);
+    setTHidden(false);
     setOpenTable(true);
   }
   function openEditTable(t: CategoryStandardTable) {
@@ -2777,6 +2779,7 @@ function StandardTablesSection() {
     setTOrder(t.order_index);
     setTPub(!!t.is_public);
     setTBook(!!(t as any).bookable);
+    setTHidden(!!(t as any).is_hidden);
     setOpenTable(true);
   }
   async function saveTable(e: React.FormEvent) {
@@ -2795,6 +2798,7 @@ function StandardTablesSection() {
           order_index: tOrder,
           is_public: tPub,
           bookable: tBook,
+          is_hidden: tHidden,
         },
       });
       toast.success(editingTable ? "Tabela atualizada" : "Tabela criada");
@@ -2938,6 +2942,16 @@ function StandardTablesSection() {
                       </div>
                       <Switch checked={tBook} onCheckedChange={setTBook} />
                     </div>
+                    <div className="flex items-center justify-between rounded-md border border-border p-3">
+                      <div>
+                        <Label className="text-sm">Ocultar tabela</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Quando ligado, a tabela não aparece para admins e usuários das organizações — apenas para o
+                          super admin.
+                        </p>
+                      </div>
+                      <Switch checked={tHidden} onCheckedChange={setTHidden} />
+                    </div>
                     <DialogFooter>
                       <Button type="button" variant="ghost" onClick={() => setOpenTable(false)}>
                         Cancelar
@@ -2973,11 +2987,14 @@ function StandardTablesSection() {
                         <TableCell className="font-medium">{t.name}</TableCell>
                         <TableCell className="font-mono text-xs">{t.slug}</TableCell>
                         <TableCell>
-                          {(t as any).is_system ? (
-                            <Badge variant="secondary">sistema · {(t as any).kind}</Badge>
-                          ) : (
-                            <Badge variant="outline">catálogo</Badge>
-                          )}
+                          <div className="flex flex-wrap gap-1">
+                            {(t as any).is_system ? (
+                              <Badge variant="secondary">sistema · {(t as any).kind}</Badge>
+                            ) : (
+                              <Badge variant="outline">catálogo</Badge>
+                            )}
+                            {(t as any).is_hidden ? <Badge variant="outline">oculta</Badge> : null}
+                          </div>
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">{t.icon ?? "—"}</TableCell>
                         <TableCell>
