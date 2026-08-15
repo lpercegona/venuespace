@@ -132,22 +132,25 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
           config: (row.config ?? {}) as Record<string, any>,
           is_base: !!row.is_base,
           divergent: false,
+          scope,
+          scope_divergent: false,
           usages: [],
           dependencies: deps[key] ?? [],
         };
         byKey.set(key, entry);
       }
+      const e: FieldCatalogEntry = entry;
       // Definição canônica: prioriza a linha marcada como base.
-      if (row.is_base && !entry.is_base) {
-        entry.label = row.label;
-        entry.field_type = row.field_type;
-        entry.required = !!row.required;
-        entry.order_index = row.order_index ?? 0;
-        entry.config = (row.config ?? {}) as Record<string, any>;
-        entry.is_base = true;
+      if (row.is_base && !e.is_base) {
+        e.label = row.label;
+        e.field_type = row.field_type;
+        e.required = !!row.required;
+        e.order_index = row.order_index ?? 0;
+        e.config = (row.config ?? {}) as Record<string, any>;
+        e.is_base = true;
       }
-      if (row.label !== entry.label || row.field_type !== entry.field_type) entry.divergent = true;
-      entry.usages.push({
+      if (row.label !== e.label || row.field_type !== e.field_type) e.divergent = true;
+      e.usages.push({
         id: row.id,
         category_id: row.category_id,
         scope,
@@ -160,7 +163,19 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
       });
     }
 
+    // Escopo predominante e divergência de escopo.
+    for (const e of byKey.values()) {
+      const counts = new Map<CatalogScope, number>();
+      for (const u of e.usages) counts.set(u.scope, (counts.get(u.scope) ?? 0) + 1);
+      e.scope_divergent = counts.size > 1;
+      let best: CatalogScope = e.scope;
+      let bestN = -1;
+      for (const [s, n] of counts) if (n > bestN) { best = s; bestN = n; }
+      e.scope = best;
+    }
+
     return [...byKey.values()].sort((a, b) => a.field_key.localeCompare(b.field_key));
+
   });
 
 /** Chaves criadas dentro de organizações que não existem no catálogo por categoria. */
