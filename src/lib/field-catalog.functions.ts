@@ -220,7 +220,10 @@ const applySchema = z.object({
   order_index: z.number().int().min(0).max(999),
   config: z.record(z.string(), z.unknown()),
   is_base: z.boolean(),
-  targets: z.array(z.object({ category_id: z.string().uuid(), scope: scopeSchema })),
+  /** Escopo único do campo. */
+  scope: scopeSchema,
+  /** Categorias em que o campo existe nesse escopo (ignorado quando is_base). */
+  category_ids: z.array(z.string().uuid()),
 });
 
 export const applyFieldCatalogEntry = createServerFn({ method: "POST" })
@@ -230,44 +233,46 @@ export const applyFieldCatalogEntry = createServerFn({ method: "POST" })
     await requireSA(context.supabase, context.userId);
     const sb = context.supabase as any;
 
-    let targets = data.targets;
+    let categoryIds = [...new Set(data.category_ids)];
     if (data.is_base) {
       const { data: cats, error: catErr } = await sb.from("organization_categories").select("id");
       if (catErr) throw new Error(catErr.message);
-      const scopes = [...new Set(data.targets.map((t) => t.scope))] as CatalogScope[];
-      const useScopes: CatalogScope[] = scopes.length > 0 ? scopes : ["org"];
-      targets = ((cats ?? []) as any[]).flatMap((c) =>
-        useScopes.map((scope) => ({ category_id: c.id as string, scope })),
-      );
+      categoryIds = ((cats ?? []) as any[]).map((c) => c.id as string);
     }
 
-    const scopes: CatalogScope[] = ["org", "table", "record"];
-    for (const scope of scopes) {
-      const wanted = targets.filter((t) => t.scope === scope);
-      if (wanted.length > 0) {
-        const rows = wanted.map((t) => ({
-          category_id: t.category_id,
-          field_key: data.field_key,
-          label: data.label,
-          field_type: data.field_type,
-          required: data.required,
-          config: data.config,
-          order_index: data.order_index,
-          is_base: data.is_base,
-        }));
-        const { error } = await sb.from(tableFor(scope)).upsert(rows, { onConflict: "category_id,field_key" });
-        if (error) throw new Error(error.message);
-      }
-      // Remove das categorias que saíram da seleção.
-      const keep = wanted.map((t) => t.category_id);
-      let del = sb.from(tableFor(scope)).delete().eq("field_key", data.field_key);
-      if (keep.length > 0) del = del.not("category_id", "in", `(${keep.join(",")})`);
-      const { error: delErr } = await del;
-      if (delErr) throw new Error(delErr.message);
+    // Upsert no escopo escolhido.
+    if (categoryIds.length > 0) {
+      const rows = categoryIds.map((category_id) => ({
+        category_id,
+        field_key: data.field_key,
+        label: data.label,
+        field_type: data.field_type,
+        required: data.required,
+        config: data.config,
+        order_index: data.order_index,
+        is_base: data.is_base,
+      }));
+      const { error } = await sb
+        .from(tableFor(data.scope))
+        .upsert(rows, { onConflict: "category_id,field_key" });
+      if (error) throw new Error(error.message);
     }
 
-    return { ok: true, applied: targets.length };
+    // Remove das categorias fora da seleção, no escopo escolhido.
+    let del = sb.from(tableFor(data.scope)).delete().eq("field_key", data.field_key);
+    if (categoryIds.length > 0) del = del.not("category_id", "in", `(${categoryIds.join(",")})`);
+    const { error: delErr } = await del;
+    if (delErr) throw new Error(delErr.message);
+
+    // Segmentação: a chave não pode existir nos outros escopos.
+    for (const other of (["org", "table", "record"] as CatalogScope[]).filter((s) => s !== data.scope)) {
+      const { error } = await sb.from(tableFor(other)).delete().eq("field_key", data.field_key);
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true, applied: categoryIds.length };
   });
+
 
 export const deleteFieldCatalogEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
