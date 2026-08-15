@@ -1,4 +1,13 @@
+## 2026-08-15 16:20 (America/Sao_Paulo) — Correção da Iteração 40 (escopo único por campo e filtro de categoria)
+
+- Causa raiz: o catálogo global permitia marcar a mesma chave em Organização, Tabela e Registro simultaneamente, criando campos duplicados entre escopos.
+- `src/lib/field-catalog.functions.ts`: `FieldCatalogEntry` passa a expor `scope` (escopo predominante) e `scope_divergent`; `applyFieldCatalogEntry` recebe `scope` + `category_ids` (em vez de pares categoria×escopo), faz upsert apenas no escopo escolhido, remove das categorias desmarcadas e apaga a chave dos outros dois escopos, garantindo segmentação estrita.
+- `src/components/admin/field-catalog-section.tsx`: seleção de escopo por `RadioGroup` (Organização | Tabela | Registro), lista simples de categorias com interruptor, badge único de escopo no card (com aviso "escopo divergente" para campos legados) e confirmação por `AlertDialog` antes de aplicar mudança de escopo.
+- Novo filtro de categoria na barra de busca de "Todos os campos", ao lado dos filtros de escopo e dependência.
+- Validação: typecheck limpo; sem cores hardcoded; alvos de toque `min-h-11`; nenhuma alteração de RLS/GRANT nem de rotas públicas (sitemap inalterado).
+
 ## 2026-08-15 14:03 (America/Sao_Paulo) — Iteração 40 (catálogo global de campos da plataforma)
+
 
 - Migração de dados: campos de instância (`organization_fields`, `table_fields`, `record_fields`) transferidos para a cascata por categoria (`category_org_fields`, `category_table_fields`, `organization_category_default_fields`) marcados como `is_base = true`. O rótulo "instância" foi substituído por "base" em toda a administração.
 - `src/lib/field-catalog.functions.ts` (novo): `listFieldCatalog` (agrega por chave de campo, com usos por categoria/escopo, sinalização de divergência e dependências detectadas — PDF de orçamento, reservas, filtros públicos, layouts de card), `listOrphanOrgFieldKeys` (diagnóstico de campos criados dentro de organizações), `applyFieldCatalogEntry` (aplica rótulo/tipo/obrigatoriedade/ordem/config/tooltip em todas as categorias selecionadas, ou em todas quando `is_base`) e `deleteFieldCatalogEntry` (remoção global com bloqueio quando há dependência crítica).
