@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, ChevronDown, Loader2, Pencil, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, Loader2, Pencil, Search, Trash2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,13 +17,13 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/venue/empty-state";
 import {
   FieldTypeConfig, applyDraftToConfig, draftFromConfig, emptyTypeDraft, type TypeDraft,
 } from "@/components/admin/field-type-config";
 import {
-  listFieldCatalog, listOrphanOrgFieldKeys, applyFieldCatalogEntry, deleteFieldCatalogEntry,
+  listFieldCatalog, applyFieldCatalogEntry, deleteFieldCatalogEntry,
   type FieldCatalogEntry, type CatalogScope,
 } from "@/lib/field-catalog.functions";
 import { listOrganizationCategoriesPublic } from "@/lib/organization-categories.functions";
@@ -45,13 +45,13 @@ function norm(s: string) {
 export function FieldCatalogSection() {
   const qc = useQueryClient();
   const catalog = useQuery({ queryKey: ["admin-field-catalog"], queryFn: () => listFieldCatalog() });
-  const orphans = useQuery({ queryKey: ["admin-field-orphans"], queryFn: () => listOrphanOrgFieldKeys() });
   const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
 
   const [search, setSearch] = useState("");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
   const [catFilter, setCatFilter] = useState<string>("all");
   const [depFilter, setDepFilter] = useState<string>("all");
+  const [originFilter, setOriginFilter] = useState<string>("all");
 
   const entries = useMemo(() => {
     const q = norm(search.trim());
@@ -61,9 +61,10 @@ export function FieldCatalogSection() {
       if (catFilter !== "all" && !e.is_base && !e.usages.some((u) => u.category_id === catFilter)) return false;
       if (depFilter === "with" && e.dependencies.length === 0) return false;
       if (depFilter === "base" && !e.is_base) return false;
+      if (originFilter !== "all" && e.origin !== originFilter) return false;
       return true;
     });
-  }, [catalog.data, search, scopeFilter, catFilter, depFilter]);
+  }, [catalog.data, search, scopeFilter, catFilter, depFilter, originFilter]);
 
   const catName = (id: string) => (cats.data ?? []).find((c) => c.id === id)?.name ?? id.slice(0, 8);
   const scopeLabel = (s: CatalogScope) => SCOPES.find((x) => x.value === s)?.label ?? s;
@@ -122,6 +123,7 @@ export function FieldCatalogSection() {
           is_base: isBase,
           scope,
           category_ids: [...categories],
+          sync_org_fields: editing.origin === "organization",
         },
       });
       toast.success("Campo atualizado na plataforma");
@@ -138,7 +140,7 @@ export function FieldCatalogSection() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) return;
-    if (scope !== editing.scope || editing.scope_divergent) {
+    if (editing.origin !== "organization" && (scope !== editing.scope || editing.scope_divergent)) {
       setConfirmScope(true);
       return;
     }
@@ -147,7 +149,6 @@ export function FieldCatalogSection() {
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["admin-field-catalog"] });
-    qc.invalidateQueries({ queryKey: ["admin-field-orphans"] });
     qc.invalidateQueries({ queryKey: ["admin-defaults"] });
     qc.invalidateQueries({ queryKey: ["admin-field-groups"] });
     qc.invalidateQueries({ queryKey: ["admin-base-field-config"] });
@@ -187,7 +188,7 @@ export function FieldCatalogSection() {
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]">
           <div className="relative min-w-0">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -210,6 +211,14 @@ export function FieldCatalogSection() {
             <SelectContent>
               <SelectItem value="all">Todas as categorias</SelectItem>
               {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={originFilter} onValueChange={setOriginFilter}>
+            <SelectTrigger className="lg:w-44" aria-label="Filtrar por origem"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as origens</SelectItem>
+              <SelectItem value="catalog">Catálogo</SelectItem>
+              <SelectItem value="organization">Criado em organização</SelectItem>
             </SelectContent>
           </Select>
           <Select value={depFilter} onValueChange={setDepFilter}>
