@@ -3272,16 +3272,24 @@ function StandardFormsSection() {
   const [editing, setEditing] = useState<CategoryStandardForm | null>(null);
   const [scope, setScope] = useState<"organization" | "record">("organization");
   const [stdTableId, setStdTableId] = useState<string>("");
+  const [targetStdTableId, setTargetStdTableId] = useState<string>("");
   const [name, setName] = useState("");
   const [submitLabel, setSubmitLabel] = useState("Enviar");
   const [targetName, setTargetName] = useState("Contatos");
   const [active, setActive] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  const [openFromTable, setOpenFromTable] = useState(false);
+  const [ftTableId, setFtTableId] = useState("");
+  const [ftScope, setFtScope] = useState<"organization" | "record">("record");
+  const [ftName, setFtName] = useState("");
+  const [ftBusy, setFtBusy] = useState(false);
+
   function openNew() {
     setEditing(null);
     setScope("organization");
     setStdTableId("");
+    setTargetStdTableId("");
     setName("Fale com a organização");
     setSubmitLabel("Enviar");
     setTargetName("Contatos");
@@ -3292,12 +3300,37 @@ function StandardFormsSection() {
     setEditing(f);
     setScope(f.scope);
     setStdTableId(f.standard_table_id ?? "");
+    setTargetStdTableId(f.target_standard_table_id ?? "");
     setName(f.name);
     setSubmitLabel(f.submit_label);
     setTargetName(f.target_table_name);
     setActive(f.is_active);
     setOpen(true);
   }
+
+  async function createFromTable(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedCat || !ftTableId) return;
+    setFtBusy(true);
+    try {
+      await createCategoryStandardFormFromTable({
+        data: {
+          category_id: selectedCat,
+          standard_table_id: ftTableId,
+          scope: ftScope,
+          name: ftName || (stdTables.data ?? []).find((t) => t.id === ftTableId)?.name || "Formulário",
+        },
+      });
+      toast.success("Formulário criado a partir da tabela");
+      setOpenFromTable(false);
+      qc.invalidateQueries({ queryKey: ["admin-std-forms", selectedCat] });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setFtBusy(false);
+    }
+  }
+
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
