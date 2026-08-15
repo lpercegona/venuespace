@@ -168,10 +168,6 @@ function OrgDashboard() {
       }
     >
       <section className="mb-10">
-        <div className="mb-3 flex items-center gap-2">
-          <TableIcon className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-display text-lg font-semibold">{t("tables", "Tabelas")}</h2>
-        </div>
         {tables.isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : !tables.data || tables.data.length === 0 ? (
@@ -194,74 +190,25 @@ function OrgDashboard() {
                 isSA={isSA}
                 onSaved={() => tables.refetch()}
               />
-
             ))}
+            <ShortcutCard to="/me/applications" params={{}} icon={<FileHeart className="h-5 w-5" />} label="Interações" />
+            {MODULE_REGISTRY.filter((m) => m.menu && moduleState.data?.[m.key as "bookings"] === true).map((m) => (
+              <ShortcutCard
+                key={m.key}
+                to={m.menu!.to}
+                params={{ orgSlug }}
+                icon={<CalendarDays className="h-5 w-5" />}
+                label={t(m.menu!.labelKey, m.menu!.labelFallback)}
+              />
+            ))}
+            <ShortcutCard
+              to="/app/$orgSlug/members"
+              params={{ orgSlug }}
+              icon={<Users className="h-5 w-5" />}
+              label={t("memberships", "Membros")}
+            />
           </div>
-
         )}
-      </section>
-
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-display text-lg font-semibold">Membros</h2>
-          </div>
-          {isOwner ? (
-            <Dialog open={openMember} onOpenChange={setOpenMember}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm"><UserPlus className="h-4 w-4" />Adicionar</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle className="font-display">Adicionar membro</DialogTitle></DialogHeader>
-                <form onSubmit={handleAddMember} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="m-email">E-mail</Label>
-                    <Input id="m-email" type="email" required value={mEmail} onChange={(e) => setMEmail(e.target.value)} />
-                    <p className="text-xs text-muted-foreground">A pessoa precisa ter conta no Venuespace.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Papel</Label>
-                    <Select value={mRole} onValueChange={(v) => setMRole(v as any)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="owner">Owner — controle total</SelectItem>
-                        <SelectItem value="editor">Editor — edita dados</SelectItem>
-                        <SelectItem value="viewer">Viewer — apenas lê</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => setOpenMember(false)}>Cancelar</Button>
-                    <Button type="submit" disabled={savingM}>{savingM ? <Loader2 className="h-4 w-4 animate-spin" /> : "Adicionar"}</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          ) : null}
-        </div>
-        <div className="rounded-xl border border-border bg-card">
-          {members.isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-          ) : (
-            <ul className="divide-y divide-border">
-              {(members.data ?? []).map((m: any) => (
-                <li key={m.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:flex sm:justify-between">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarFallback>{(m.profile?.display_name ?? m.profile?.email ?? "?").slice(0, 1).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{m.profile?.display_name ?? m.profile?.email ?? "—"}</p>
-                      <p className="truncate text-xs text-muted-foreground">{m.profile?.email}</p>
-                    </div>
-                  </div>
-                  <Badge variant={m.role === "owner" ? "default" : "secondary"} className="shrink-0">{m.role}</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </section>
       {isOwner ? (
         <EditOrgDialog open={openEditOrg} onOpenChange={setOpenEditOrg} org={{
