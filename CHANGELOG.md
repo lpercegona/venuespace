@@ -1,3 +1,18 @@
+## 2026-08-15 21:05 (America/Sao_Paulo) — Iteração 41 — Módulos da plataforma (extensão das Iterações 7/32 — Reservas)
+
+- Migração: novas tabelas `platform_modules` (catálogo de módulos) e `category_modules` (ativação e `config` jsonb por categoria), com GRANTs e RLS (leitura para autenticados, escrita restrita a super admin); módulo `bookings` semeado.
+- `src/lib/modules.ts`: tipos, defaults e normalização da configuração do módulo Reservas (campos do formulário e layout do PDF), `applyTemplate` para variáveis de texto e `applyFormConfig` para aplicar visibilidade/rótulo/obrigatoriedade/ordem sobre os campos reais da tabela.
+- `src/lib/module-registry.ts`: registro extensível de módulos — novos módulos entram como uma nova entrada.
+- `src/lib/modules.server.ts`: `loadCategoryModule`, `loadOrgModule` e `assertModuleEnabled`.
+- `src/lib/modules.functions.ts`: `listPlatformModules`, `listCategoryModules`, `listBookingsModuleFields`, `setCategoryModuleEnabled`, `saveCategoryModuleConfig`, `getOrgModuleState` e `previewBookingsQuotePdf` (pré-visualização com dados de exemplo, sem gravação).
+- `src/lib/bookings.functions.ts`: `getBookingContext` passa a devolver `formFields` derivados da tabela de reservas (menos período, relação de recurso e computados) já filtrados/ordenados pela configuração do módulo; `createBooking` e `updateBooking` bloqueiam quando o módulo está desativado; `generateBookingQuote` usa o layout configurado.
+- `src/lib/bookings.server.ts`: `buildQuotePdf` passa a aceitar `layout` — cor de destaque, tamanho da logo, blocos habilitados e ordenáveis, colunas da tabela de itens e textos com variáveis.
+- `src/components/venue/booking-form-dialog.tsx`: campos fixos (`event_location`, `booking_notes`, `travel_fee`) substituídos por renderização dinâmica vinculada aos campos da tabela de reservas; itens do orçamento e contato continuam com seletor próprio.
+- `src/components/admin/modules-section.tsx` e `module-bookings-config.tsx`: nova área "Módulos" na administração — visão geral e configuração de Reservas (ativação por categoria, editor do formulário e editor do layout do PDF com pré-visualização).
+- `src/routes/_authenticated.admin.index.tsx`: novo grupo "Módulos" no menu do super admin.
+- `src/routes/_authenticated.app.$orgSlug.calendar.tsx`: exibe estado vazio quando o módulo está desativado para a categoria.
+- Validação: typecheck limpo; sem cores hardcoded; nenhuma rota pública nova (sitemap inalterado).
+
 ## 2026-08-15 19:10 (America/Sao_Paulo) — Correção/extensão das Iterações 40 e 3 (tabelas de sistema editáveis, formulários a partir de tabela, colunas do catálogo)
 
 - Migração: `category_standard_tables` ganha `kind` e `is_system`; `category_standard_forms` ganha `target_standard_table_id`; `category_standard_form_fields` ganha `visible` e `source_standard_field_key`. Modelos "Contatos" e "Reservas" semeados para todas as categorias; `ensure_contacts_table`, `ensure_bookings_table`, `create_organization`, `sync_category_standard_tables` e `apply_standard_forms_to_org` passam a materializar tabelas de sistema a partir dos modelos e a respeitar destino e visibilidade dos campos do formulário.
