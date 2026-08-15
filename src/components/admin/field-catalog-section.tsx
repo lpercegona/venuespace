@@ -400,6 +400,13 @@ export function FieldCatalogSection() {
               />
             </div>
 
+            {editing?.origin === "organization" ? (
+              <p className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
+                Campo criado dentro de organizações. A edição atualiza o campo em todas as organizações que o utilizam
+                ({editing.organizations}) e não altera o catálogo por categoria.
+              </p>
+            ) : (
+              <>
             <div className="space-y-2 rounded-lg border border-border p-3">
               <p className="text-sm font-medium">Escopo do campo</p>
               <p className="text-xs text-muted-foreground">
@@ -452,6 +459,8 @@ export function FieldCatalogSection() {
                 })}
               </div>
             </div>
+              </>
+            )}
 
 
             <DialogFooter>
