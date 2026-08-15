@@ -173,3 +173,13 @@ export const previewBookingsQuotePdf = createServerFn({ method: "POST" })
     for (const b of bytes) bin += String.fromCharCode(b);
     return { base64: btoa(bin) };
   });
+
+/** Estado dos módulos para uma organização (usado pelo app do organizador). */
+export const getOrgModuleState = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ organization_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { loadOrgModule } = await import("./modules.server");
+    const bookings = await loadOrgModule(context.supabase, data.organization_id, "bookings");
+    return { bookings: bookings.enabled };
+  });
