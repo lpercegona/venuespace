@@ -37,9 +37,13 @@ export type FieldCatalogEntry = {
   config: Record<string, any>;
   is_base: boolean;
   divergent: boolean;
+  /** Escopo predominante do campo (um campo pertence a um único escopo). */
+  scope: CatalogScope;
+  scope_divergent: boolean;
   usages: FieldUsage[];
   dependencies: string[];
 };
+
 
 async function requireSA(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("is_super_admin", { _user_id: userId });
