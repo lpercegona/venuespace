@@ -2935,6 +2935,7 @@ function StandardTablesSection() {
                       <TableHead className="w-16">Ordem</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead>Slug</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Ícone</TableHead>
                       <TableHead className="w-32"></TableHead>
                     </TableRow>
@@ -2945,6 +2946,13 @@ function StandardTablesSection() {
                         <TableCell>{t.order_index}</TableCell>
                         <TableCell className="font-medium">{t.name}</TableCell>
                         <TableCell className="font-mono text-xs">{t.slug}</TableCell>
+                        <TableCell>
+                          {(t as any).is_system ? (
+                            <Badge variant="secondary">sistema · {(t as any).kind}</Badge>
+                          ) : (
+                            <Badge variant="outline">catálogo</Badge>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs text-muted-foreground">{t.icon ?? "—"}</TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-1">
@@ -2954,26 +2962,28 @@ function StandardTablesSection() {
                             <Button size="icon" variant="ghost" onClick={() => openEditTable(t)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="icon" variant="ghost" className="text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remover tabela-modelo?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Novas organizações da categoria deixarão de receber esta tabela. Organizações já
-                                    criadas não são afetadas.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => removeTable(t.id)}>Remover</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            {(t as any).is_system ? null : (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Remover tabela-modelo?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Novas organizações da categoria deixarão de receber esta tabela. Organizações já
+                                      criadas não são afetadas.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => removeTable(t.id)}>Remover</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -2982,6 +2992,7 @@ function StandardTablesSection() {
                 </Table>
               </div>
             )}
+
 
             {selectedTable ? <StandardTableFieldsEditor standardTableId={selectedTable} /> : null}
           </>
