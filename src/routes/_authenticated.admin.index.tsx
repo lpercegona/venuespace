@@ -1284,52 +1284,8 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
       const finalKey = editing ? key : uniqueKey(toSnake(key || label));
       // Merge com o config existente: preserva chaves desconhecidas e limpa as
       // que não se aplicam mais ao tipo escolhido.
-      const config: Record<string, any> = { ...(editing?.config ?? {}) };
-      if (type === "select" || type === "multiselect") {
-        const parsed = parseOptionLines(optionsText);
-        if (parsed.options.length > 0) config.options = parsed.options;
-        else delete config.options;
-        if (Object.keys(parsed.option_icons).length > 0) config.option_icons = parsed.option_icons;
-        else delete config.option_icons;
-      } else {
-        delete config.options;
-        delete config.option_icons;
-      }
-      if (type === "text" && cepRole) config.role = "cep";
-      else if (config.role === "cep") delete config.role;
+      const config = applyDraftToConfig(editing?.config ?? null, type, typeDraft, tooltip);
 
-      if (tooltip.trim()) config.tooltip = tooltip.trim();
-      else delete config.tooltip;
-
-      if (type === "computed") {
-        config.compute = {
-          mode: computedMode,
-          source_table: computedSource.trim() || null,
-          value_key: computedValueKey.trim() || null,
-          qty_key: computedQtyKey.trim() || null,
-          filter: computedFilter.trim() || null,
-        };
-      } else {
-        delete config.compute;
-      }
-      if (type === "relation") {
-        config.target_table = relationTarget.trim() || null;
-        config.display_key = relationDisplay.trim() || null;
-        config.multiple = relationMultiple;
-      } else {
-        delete config.target_table;
-        delete config.display_key;
-        delete config.multiple;
-      }
-      if (type === "boolean") {
-        config.true_label = boolTrue.trim() || null;
-        config.false_label = boolFalse.trim() || null;
-        config.default = boolDefault;
-      } else {
-        delete config.true_label;
-        delete config.false_label;
-        delete config.default;
-      }
 
       const payload = {
         id: editing?.id,
