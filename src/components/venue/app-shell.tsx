@@ -14,6 +14,8 @@ import { getOrganizationBySlug, listMyOrganizations } from "@/lib/orgs.functions
 import { getMyProfile } from "@/lib/profile.functions";
 import { amISuperAdmin } from "@/lib/instance-settings.functions";
 import { useLabels } from "@/hooks/use-instance-context";
+import { MODULE_REGISTRY } from "@/lib/module-registry";
+import { getOrgModuleState } from "@/lib/modules.functions";
 import { NotificationsBell } from "./notifications-bell";
 import { ChatWidget } from "./chat-widget";
 import { SettingsModal } from "./settings-modal";
