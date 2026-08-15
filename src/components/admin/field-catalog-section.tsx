@@ -49,20 +49,23 @@ export function FieldCatalogSection() {
 
   const [search, setSearch] = useState("");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
+  const [catFilter, setCatFilter] = useState<string>("all");
   const [depFilter, setDepFilter] = useState<string>("all");
 
   const entries = useMemo(() => {
     const q = norm(search.trim());
     return (catalog.data ?? []).filter((e) => {
       if (q && !norm(e.field_key).includes(q) && !norm(e.label).includes(q)) return false;
-      if (scopeFilter !== "all" && !e.usages.some((u) => u.scope === scopeFilter)) return false;
+      if (scopeFilter !== "all" && e.scope !== scopeFilter) return false;
+      if (catFilter !== "all" && !e.is_base && !e.usages.some((u) => u.category_id === catFilter)) return false;
       if (depFilter === "with" && e.dependencies.length === 0) return false;
       if (depFilter === "base" && !e.is_base) return false;
       return true;
     });
-  }, [catalog.data, search, scopeFilter, depFilter]);
+  }, [catalog.data, search, scopeFilter, catFilter, depFilter]);
 
   const catName = (id: string) => (cats.data ?? []).find((c) => c.id === id)?.name ?? id.slice(0, 8);
+  const scopeLabel = (s: CatalogScope) => SCOPES.find((x) => x.value === s)?.label ?? s;
 
   // ---- diálogo de edição ----
   const [open, setOpen] = useState(false);
@@ -73,11 +76,11 @@ export function FieldCatalogSection() {
   const [order, setOrder] = useState(0);
   const [tooltip, setTooltip] = useState("");
   const [isBase, setIsBase] = useState(false);
-  const [targets, setTargets] = useState<Set<string>>(new Set());
+  const [scope, setScope] = useState<CatalogScope>("org");
+  const [categories, setCategories] = useState<Set<string>>(new Set());
   const [draft, setDraft] = useState<TypeDraft>(emptyTypeDraft());
   const [saving, setSaving] = useState(false);
-
-  const tKey = (categoryId: string, scope: CatalogScope) => `${categoryId}::${scope}`;
+  const [confirmScope, setConfirmScope] = useState(false);
 
   function openEdit(e: FieldCatalogEntry) {
     setEditing(e);
@@ -87,31 +90,26 @@ export function FieldCatalogSection() {
     setOrder(e.order_index);
     setTooltip(typeof e.config?.tooltip === "string" ? e.config.tooltip : "");
     setIsBase(e.is_base);
-    setTargets(new Set(e.usages.map((u) => tKey(u.category_id, u.scope))));
+    setScope(e.scope);
+    setCategories(new Set(e.usages.map((u) => u.category_id)));
     setDraft(draftFromConfig(e.config));
     setOpen(true);
   }
 
-  function toggleTarget(categoryId: string, scope: CatalogScope) {
-    setTargets((prev) => {
+  function toggleCategory(categoryId: string) {
+    setCategories((prev) => {
       const next = new Set(prev);
-      const k = tKey(categoryId, scope);
-      if (next.has(k)) next.delete(k);
-      else next.add(k);
+      if (next.has(categoryId)) next.delete(categoryId);
+      else next.add(categoryId);
       return next;
     });
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function save() {
     if (!editing) return;
     setSaving(true);
     try {
       const config = applyDraftToConfig(editing.config, type, draft, tooltip);
-      const list = [...targets].map((k) => {
-        const [category_id, scope] = k.split("::");
-        return { category_id, scope: scope as CatalogScope };
-      });
       await applyFieldCatalogEntry({
         data: {
           field_key: editing.field_key,
@@ -121,7 +119,8 @@ export function FieldCatalogSection() {
           order_index: order,
           config,
           is_base: isBase,
-          targets: list,
+          scope,
+          category_ids: [...categories],
         },
       });
       toast.success("Campo atualizado na plataforma");
@@ -131,7 +130,18 @@ export function FieldCatalogSection() {
       toast.error((err as Error).message);
     } finally {
       setSaving(false);
+      setConfirmScope(false);
     }
+  }
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) return;
+    if (scope !== editing.scope || editing.scope_divergent) {
+      setConfirmScope(true);
+      return;
+    }
+    void save();
   }
 
   function invalidate() {
@@ -154,8 +164,6 @@ export function FieldCatalogSection() {
     }
   }
 
-  const scopeCount = (e: FieldCatalogEntry, scope: CatalogScope) =>
-    e.usages.filter((u) => u.scope === scope).length;
 
   return (
     <Card>
