@@ -2864,9 +2864,16 @@ function StandardTablesSection() {
                         required
                         pattern="^[a-z0-9-]+$"
                         value={tSlugV}
+                        disabled={!!(editingTable as any)?.is_system}
                         onChange={(e) => setTSlugV(e.target.value)}
                       />
+                      {(editingTable as any)?.is_system ? (
+                        <p className="text-xs text-muted-foreground">
+                          Tabela de sistema ({(editingTable as any)?.kind}): o slug não pode ser alterado.
+                        </p>
+                      ) : null}
                     </div>
+
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Ícone (lucide)</Label>
