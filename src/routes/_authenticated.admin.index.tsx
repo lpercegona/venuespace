@@ -425,24 +425,6 @@ function GeneralSection() {
 }
 
 /** "Opção | Icone" por linha → { options, option_icons }. */
-function parseOptionLines(text: string) {
-  const options: string[] = [];
-  const option_icons: Record<string, string> = {};
-  for (const line of text.split(/\n/)) {
-    const raw = line.trim();
-    if (!raw) continue;
-    const [labelPart, iconPart] = raw.split("|").map((x) => x.trim());
-    if (!labelPart) continue;
-    options.push(labelPart);
-    if (iconPart) option_icons[labelPart] = iconPart;
-  }
-  return { options, option_icons };
-}
-
-/** Inverso de parseOptionLines, para preencher o textarea de edição. */
-function formatOptionLines(options: string[], icons: Record<string, string> | undefined) {
-  return options.map((o) => (icons?.[o] ? `${o} | ${icons[o]}` : o)).join("\n");
-}
 
 // ---------- Labels ----------
 
@@ -964,14 +946,6 @@ const SCOPE_BASE_KEY: Record<DefaultsScope, "organization" | "table" | null> = {
   record: null,
 };
 
-const TYPE_HELP: Record<string, string> = {
-  computed:
-    "Campo calculado: escolha o modo (soma, contagem ou soma de quantidade x valor), a tabela de origem e as chaves usadas no cálculo. O valor é resolvido na leitura e não é editável no formulário.",
-  relation:
-    "Campo de relação: aponta para registros de outra tabela padrão da categoria. Informe a tabela de destino e a chave do campo usado como texto de exibição.",
-  boolean:
-    "Campo sim/não: define os rótulos exibidos para verdadeiro e falso e o valor inicial do formulário.",
-};
 
 function FieldGroupsManager({ categoryId, scope }: { categoryId: string; scope: DefaultsScope }) {
   const qc = useQueryClient();
@@ -1245,25 +1219,13 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
   const [type, setType] = useState<(typeof FIELD_TYPES)[number]>("text");
   const [required, setRequired] = useState(false);
   const [order, setOrder] = useState(0);
-  const [optionsText, setOptionsText] = useState("");
-  const [cepRole, setCepRole] = useState(false);
   const [tooltip, setTooltip] = useState("");
   const [groupId, setGroupId] = useState("__none__");
   const [isBase, setIsBase] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // configuração por tipo
-  const [computedMode, setComputedMode] = useState("sum");
-  const [computedSource, setComputedSource] = useState("");
-  const [computedValueKey, setComputedValueKey] = useState("");
-  const [computedQtyKey, setComputedQtyKey] = useState("");
-  const [computedFilter, setComputedFilter] = useState("");
-  const [relationTarget, setRelationTarget] = useState("");
-  const [relationDisplay, setRelationDisplay] = useState("");
-  const [relationMultiple, setRelationMultiple] = useState(false);
-  const [boolTrue, setBoolTrue] = useState("");
-  const [boolFalse, setBoolFalse] = useState("");
-  const [boolDefault, setBoolDefault] = useState(false);
+  const [typeDraft, setTypeDraft] = useState<TypeDraft>(emptyTypeDraft());
 
   function reset() {
     setEditing(null);
@@ -1272,22 +1234,10 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setType("text");
     setRequired(false);
     setOrder(0);
-    setOptionsText("");
-    setCepRole(false);
     setTooltip("");
     setGroupId("__none__");
     setIsBase(false);
-    setComputedMode("sum");
-    setComputedSource("");
-    setComputedValueKey("");
-    setComputedQtyKey("");
-    setComputedFilter("");
-    setRelationTarget("");
-    setRelationDisplay("");
-    setRelationMultiple(false);
-    setBoolTrue("");
-    setBoolFalse("");
-    setBoolDefault(false);
+    setTypeDraft(emptyTypeDraft());
   }
 
   function uniqueKey(base: string) {
@@ -1320,24 +1270,10 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setRequired(f.required);
     setOrder(f.order_index);
     const cfg = f.config ?? {};
-    const opts = Array.isArray(cfg.options) ? (cfg.options as any[]).map(String) : [];
-    setOptionsText(formatOptionLines(opts, cfg.option_icons as Record<string, string> | undefined));
-    setCepRole(cfg.role === "cep");
     setTooltip(typeof cfg.tooltip === "string" ? cfg.tooltip : "");
     setGroupId(f.group_id ?? "__none__");
     setIsBase(!!f.is_base);
-    const comp = (cfg.compute ?? {}) as Record<string, any>;
-    setComputedMode(typeof comp.mode === "string" ? comp.mode : "sum");
-    setComputedSource(typeof comp.source_table === "string" ? comp.source_table : "");
-    setComputedValueKey(typeof comp.value_key === "string" ? comp.value_key : "");
-    setComputedQtyKey(typeof comp.qty_key === "string" ? comp.qty_key : "");
-    setComputedFilter(typeof comp.filter === "string" ? comp.filter : "");
-    setRelationTarget(typeof cfg.target_table === "string" ? cfg.target_table : "");
-    setRelationDisplay(typeof cfg.display_key === "string" ? cfg.display_key : "");
-    setRelationMultiple(!!cfg.multiple);
-    setBoolTrue(typeof cfg.true_label === "string" ? cfg.true_label : "");
-    setBoolFalse(typeof cfg.false_label === "string" ? cfg.false_label : "");
-    setBoolDefault(!!cfg.default);
+    setTypeDraft(draftFromConfig(cfg));
     setOpen(true);
   }
 
