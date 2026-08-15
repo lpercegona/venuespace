@@ -9,13 +9,11 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, FileHeart, CalendarDays, Users, ChevronDown, Building2, Check, List, Shield, Search } from "lucide-react";
+import { LogOut, Settings, ChevronDown, Building2, Check, List, Shield, Search } from "lucide-react";
 import { getOrganizationBySlug, listMyOrganizations } from "@/lib/orgs.functions";
 import { getMyProfile } from "@/lib/profile.functions";
 import { amISuperAdmin } from "@/lib/instance-settings.functions";
 import { useLabels } from "@/hooks/use-instance-context";
-import { MODULE_REGISTRY } from "@/lib/module-registry";
-import { getOrgModuleState } from "@/lib/modules.functions";
 import { NotificationsBell } from "./notifications-bell";
 import { ChatWidget } from "./chat-widget";
 import { SettingsModal } from "./settings-modal";
@@ -42,12 +40,6 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
   const myOrgs = useQuery({ queryKey: ["my-orgs"], queryFn: () => listMyOrganizations(), staleTime: 60_000 });
   const isAdmin = useQuery({ queryKey: ["am-super-admin"], queryFn: () => amISuperAdmin(), staleTime: 60_000 });
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const moduleState = useQuery({
-    queryKey: ["org-modules", org.data?.id],
-    queryFn: () => getOrgModuleState({ data: { organization_id: org.data!.id } }),
-    enabled: !!org.data?.id,
-    staleTime: 60_000,
-  });
 
   const initial = (me.data?.display_name ?? me.data?.email ?? "?").slice(0, 1).toUpperCase();
 
@@ -161,27 +153,6 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                 <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSettingsOpen(true); }}>
                   <Settings className="h-4 w-4" />Configurações
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => navigate({ to: "/me/applications" })}>
-                  <FileHeart className="h-4 w-4" />Interações
-                </DropdownMenuItem>
-                {orgSlug ? (
-                  <>
-                    {MODULE_REGISTRY.filter(
-                      (m) => m.menu && moduleState.data?.[m.key as "bookings"] === true,
-                    ).map((m) => (
-                      <DropdownMenuItem
-                        key={m.key}
-                        onSelect={() => navigate({ to: m.menu!.to as any, params: { orgSlug } as any })}
-                      >
-                        <CalendarDays className="h-4 w-4" />
-                        {t(m.menu!.labelKey, m.menu!.labelFallback)}
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuItem onSelect={() => navigate({ to: "/app/$orgSlug/members", params: { orgSlug } })}>
-                      <Users className="h-4 w-4" />{t("memberships", "Membros")}
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
                 {isAdmin.data?.is_super_admin ? (
                   <>
                     <DropdownMenuSeparator />

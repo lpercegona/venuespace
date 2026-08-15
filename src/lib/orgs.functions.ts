@@ -146,7 +146,26 @@ export const getOrganizationBySlug = createServerFn({ method: "GET" })
       .maybeSingle();
     if (meErr) throw new Error(meErr.message);
     const isSA = await isSuperAdmin(context.supabase, context.userId);
-    return { ...org, myRole: me?.role ?? (isSA ? "owner" : null), isSuperAdmin: isSA };
+
+    const [{ data: cat }, { data: setting }] = await Promise.all([
+      context.supabase
+        .from("organization_categories")
+        .select("allow_custom_tables")
+        .eq("id", (org as any).category_id)
+        .maybeSingle(),
+      context.supabase.from("instance_settings").select("allow_user_field_management").eq("id", 1).maybeSingle(),
+    ]);
+    const categoryAllows = (cat as any)?.allow_custom_tables ?? true;
+    const instanceAllows = (setting as any)?.allow_user_field_management ?? true;
+    const canCreateTables = isSA || (categoryAllows && instanceAllows);
+
+    return {
+      ...org,
+      myRole: me?.role ?? (isSA ? "owner" : null),
+      isSuperAdmin: isSA,
+      canCreateTables,
+      categoryAllowsCustomTables: categoryAllows,
+    };
   });
 
 const orgUpdate = z.object({
@@ -279,12 +298,37 @@ export const listTables = createServerFn({ method: "GET" })
   });
 
 
+/** Bloqueia criação de tabelas quando a categoria ou a instância desativam o recurso. */
+async function checkTableCreationAllowed(supabase: any, userId: string, organizationId: string) {
+  const { data: isSA } = await supabase.rpc("is_super_admin", { _user_id: userId });
+  if (isSA) return;
+  const [{ data: setting }, { data: org }] = await Promise.all([
+    supabase.from("instance_settings").select("allow_user_field_management").eq("id", 1).maybeSingle(),
+    supabase.from("organizations").select("category_id").eq("id", organizationId).maybeSingle(),
+  ]);
+  if (((setting as any)?.allow_user_field_management ?? true) === false) {
+    throw new Error("Criação de novas tabelas está desativada nas configurações da instância.");
+  }
+  const catId = (org as any)?.category_id as string | undefined;
+  if (catId) {
+    const { data: cat } = await supabase
+      .from("organization_categories")
+      .select("allow_custom_tables")
+      .eq("id", catId)
+      .maybeSingle();
+    if (((cat as any)?.allow_custom_tables ?? true) === false) {
+      throw new Error("Criação de novas tabelas está desativada para esta categoria.");
+    }
+  }
+}
+
 export const createTable = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => tableCreate.parse(d))
   .handler(async ({ data, context }) => {
     const slug = data.slug ?? slugify(data.name);
     if (!slug) throw new Error("Slug inválido");
+    await checkTableCreationAllowed(context.supabase, context.userId, data.organization_id);
     const { data: row, error } = await context.supabase
       .from("tables")
       .insert({

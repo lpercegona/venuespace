@@ -1063,6 +1063,7 @@ export type Database = {
       }
       organization_categories: {
         Row: {
+          allow_custom_tables: boolean
           base_field_config: Json
           created_at: string
           description: string | null
@@ -1072,6 +1073,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_custom_tables?: boolean
           base_field_config?: Json
           created_at?: string
           description?: string | null
@@ -1081,6 +1083,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_custom_tables?: boolean
           base_field_config?: Json
           created_at?: string
           description?: string | null

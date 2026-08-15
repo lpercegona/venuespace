@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { getOrganizationBySlug, listTables, createTable, updateTable, deleteTable, listMembers, addMemberByEmail } from "@/lib/orgs.functions";
+import { getOrganizationBySlug, listTables, createTable, updateTable, deleteTable } from "@/lib/orgs.functions";
+import { getOrgModuleState } from "@/lib/modules.functions";
+import { MODULE_REGISTRY } from "@/lib/module-registry";
 import { amISuperAdmin } from "@/lib/instance-settings.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { richTextToPlainText } from "@/lib/rich-text";
@@ -13,12 +15,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table as TableIcon, Plus, Loader2, Lock, UserPlus, Users, Pencil, Trash2 } from "lucide-react";
+import { Table as TableIcon, Plus, Loader2, Users, Pencil, Trash2, FileHeart, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
@@ -43,8 +42,6 @@ function OrgDashboard() {
   const fetchOrg = (getOrganizationBySlug);
   const fetchTables = (listTables);
   const doCreateTable = (createTable);
-  const fetchMembers = (listMembers);
-  const doAddMember = (addMemberByEmail);
 
   const org = useQuery({ queryKey: ["org", orgSlug], queryFn: () => fetchOrg({ data: { slug: orgSlug } }) });
   const tables = useQuery({
@@ -52,10 +49,11 @@ function OrgDashboard() {
     queryFn: () => fetchTables({ data: { organization_id: org.data!.id } }),
     enabled: !!org.data?.id,
   });
-  const members = useQuery({
-    queryKey: ["members", org.data?.id],
-    queryFn: () => fetchMembers({ data: { organization_id: org.data!.id } }),
+  const moduleState = useQuery({
+    queryKey: ["org-modules", org.data?.id],
+    queryFn: () => getOrgModuleState({ data: { organization_id: org.data!.id } }),
     enabled: !!org.data?.id,
+    staleTime: 60_000,
   });
 
   const canEdit = org.data?.myRole === "owner" || org.data?.myRole === "editor";
@@ -100,28 +98,6 @@ function OrgDashboard() {
     }
   }
 
-  const [openMember, setOpenMember] = useState(false);
-  const [mEmail, setMEmail] = useState("");
-  const [mRole, setMRole] = useState<"owner" | "editor" | "viewer">("editor");
-  const [savingM, setSavingM] = useState(false);
-
-  async function handleAddMember(e: React.FormEvent) {
-    e.preventDefault();
-    if (!org.data) return;
-    setSavingM(true);
-    try {
-      await doAddMember({ data: { organization_id: org.data.id, email: mEmail, role: mRole } });
-      toast.success("Membro adicionado");
-      setOpenMember(false);
-      setMEmail(""); setMRole("editor");
-      await members.refetch();
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setSavingM(false);
-    }
-  }
-
   if (org.isLoading) {
     return (
       <AppShell><div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></AppShell>
@@ -142,7 +118,7 @@ function OrgDashboard() {
               <Pencil className="h-4 w-4" />Editar {organizationLabel}
             </Button>
           ) : null}
-          {canEdit ? (
+          {canEdit && (org.data as any)?.canCreateTables ? (
             <Dialog open={openTable} onOpenChange={setOpenTable}>
               <DialogTrigger asChild>
                 <Button><Plus className="h-4 w-4" />Nova {tableLabel}</Button>
@@ -192,10 +168,6 @@ function OrgDashboard() {
       }
     >
       <section className="mb-10">
-        <div className="mb-3 flex items-center gap-2">
-          <TableIcon className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-display text-lg font-semibold">{t("tables", "Tabelas")}</h2>
-        </div>
         {tables.isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : !tables.data || tables.data.length === 0 ? (
@@ -203,7 +175,7 @@ function OrgDashboard() {
             icon={<TableIcon className="h-5 w-5" />}
             title={`Nenhuma ${tableLabel} ainda`}
             description={`Crie sua primeira ${tableLabel} para começar a modelar seus dados.`}
-            action={canEdit ? <Button onClick={() => setOpenTable(true)}><Plus className="h-4 w-4" />Nova {tableLabel}</Button> : undefined}
+            action={canEdit && (org.data as any)?.canCreateTables ? <Button onClick={() => setOpenTable(true)}><Plus className="h-4 w-4" />Nova {tableLabel}</Button> : undefined}
           />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -218,74 +190,25 @@ function OrgDashboard() {
                 isSA={isSA}
                 onSaved={() => tables.refetch()}
               />
-
             ))}
+            <ShortcutCard to="/me/applications" params={{}} icon={<FileHeart className="h-5 w-5" />} label="Interações" />
+            {MODULE_REGISTRY.filter((m) => m.menu && moduleState.data?.[m.key as "bookings"] === true).map((m) => (
+              <ShortcutCard
+                key={m.key}
+                to={m.menu!.to}
+                params={{ orgSlug }}
+                icon={<CalendarDays className="h-5 w-5" />}
+                label={t(m.menu!.labelKey, m.menu!.labelFallback)}
+              />
+            ))}
+            <ShortcutCard
+              to="/app/$orgSlug/members"
+              params={{ orgSlug }}
+              icon={<Users className="h-5 w-5" />}
+              label={t("memberships", "Membros")}
+            />
           </div>
-
         )}
-      </section>
-
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-display text-lg font-semibold">Membros</h2>
-          </div>
-          {isOwner ? (
-            <Dialog open={openMember} onOpenChange={setOpenMember}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm"><UserPlus className="h-4 w-4" />Adicionar</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle className="font-display">Adicionar membro</DialogTitle></DialogHeader>
-                <form onSubmit={handleAddMember} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="m-email">E-mail</Label>
-                    <Input id="m-email" type="email" required value={mEmail} onChange={(e) => setMEmail(e.target.value)} />
-                    <p className="text-xs text-muted-foreground">A pessoa precisa ter conta no Venuespace.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Papel</Label>
-                    <Select value={mRole} onValueChange={(v) => setMRole(v as any)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="owner">Owner — controle total</SelectItem>
-                        <SelectItem value="editor">Editor — edita dados</SelectItem>
-                        <SelectItem value="viewer">Viewer — apenas lê</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => setOpenMember(false)}>Cancelar</Button>
-                    <Button type="submit" disabled={savingM}>{savingM ? <Loader2 className="h-4 w-4 animate-spin" /> : "Adicionar"}</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          ) : null}
-        </div>
-        <div className="rounded-xl border border-border bg-card">
-          {members.isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-          ) : (
-            <ul className="divide-y divide-border">
-              {(members.data ?? []).map((m: any) => (
-                <li key={m.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:flex sm:justify-between">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarFallback>{(m.profile?.display_name ?? m.profile?.email ?? "?").slice(0, 1).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{m.profile?.display_name ?? m.profile?.email ?? "—"}</p>
-                      <p className="truncate text-xs text-muted-foreground">{m.profile?.email}</p>
-                    </div>
-                  </div>
-                  <Badge variant={m.role === "owner" ? "default" : "secondary"} className="shrink-0">{m.role}</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </section>
       {isOwner ? (
         <EditOrgDialog open={openEditOrg} onOpenChange={setOpenEditOrg} org={{
@@ -301,6 +224,19 @@ function OrgDashboard() {
         }} canManageMembers={isSA} />
       ) : null}
     </AppShell>
+  );
+}
+
+function ShortcutCard({ to, params, icon, label: text }: { to: string; params: Record<string, string>; icon: React.ReactNode; label: string }) {
+  return (
+    <Link to={to as any} params={params as any}>
+      <Card className="h-full transition-shadow hover:shadow-elegant">
+        <CardContent className="flex min-h-24 items-center gap-3 p-4">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground">{icon}</span>
+          <p className="min-w-0 truncate font-display text-base font-semibold">{text}</p>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
 
@@ -343,18 +279,11 @@ function TableCard({
     <div className="relative">
       <Link to="/app/$orgSlug/tables/$tableId" params={{ orgSlug, tableId: t.id }}>
         <Card className="h-full transition-shadow hover:shadow-elegant">
-          <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base pr-8">{t.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">{t.description || "Sem descrição."}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="font-mono">/{t.slug}</Badge>
-              {t.bookable ? <Badge>reservas</Badge> : null}
-              {t.is_public ? <Badge variant="outline">pública</Badge> : null}
-              {isLocked ? <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" />padrão</Badge> : null}
-            </div>
-
+          <CardContent className="flex min-h-24 items-center gap-3 p-4">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground">
+              <TableIcon className="h-5 w-5" />
+            </span>
+            <p className="min-w-0 truncate pr-8 font-display text-base font-semibold">{t.name}</p>
           </CardContent>
         </Card>
       </Link>

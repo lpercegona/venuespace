@@ -96,17 +96,16 @@ export const getBookingContext = createServerFn({ method: "GET" })
       formFields,
       contacts,
       contactSchema: (() => {
-        const base = setup.standard.length > 0 ? setup.standard : setup.fields.map((f) => ({
-          key: f.key, label: f.label, type: f.type, required: f.required, config: f.config, position: f.position,
-        }));
-        const clientKeys = ["contact_company", "contact_cnpj", "contact_address"];
-        const seen = new Set(base.map((f) => f.key));
-        const extras = setup.fields
-          .filter((f) => clientKeys.includes(f.key) && !seen.has(f.key))
+        // Vinculado à tabela de Contatos da organização (campos padrão da categoria).
+        const fromTable = setup.fields
+          .filter((f) => f.key !== "__origem" && f.type !== "computed" && f.type !== "relation")
           .map((f) => ({
-            key: f.key, label: f.label, type: f.type, required: false, config: f.config, position: 900 + clientKeys.indexOf(f.key),
-          }));
-        return [...base, ...extras];
+            key: f.key, label: f.label, type: f.type, required: !!f.required,
+            config: f.config, position: f.position,
+          }))
+          .sort((a, b) => a.position - b.position);
+        if (fromTable.length > 0) return fromTable;
+        return setup.standard;
       })(),
     };
   });

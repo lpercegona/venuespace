@@ -610,6 +610,7 @@ function CategoriesSection() {
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("");
   const [description, setDescription] = useState("");
+  const [allowTables, setAllowTables] = useState(true);
   const [saving, setSaving] = useState(false);
 
   function openNew() {
@@ -617,6 +618,7 @@ function CategoriesSection() {
     setName("");
     setIcon("");
     setDescription("");
+    setAllowTables(true);
     setOpen(true);
   }
   function openEdit(c: OrganizationCategory) {
@@ -624,6 +626,7 @@ function CategoriesSection() {
     setName(c.name);
     setIcon(c.icon ?? "");
     setDescription(c.description ?? "");
+    setAllowTables((c as any).allow_custom_tables ?? true);
     setOpen(true);
   }
 
@@ -633,11 +636,11 @@ function CategoriesSection() {
     try {
       if (editing) {
         await updateOrganizationCategory({
-          data: { id: editing.id, name, icon: icon || null, description: description || null },
+          data: { id: editing.id, name, icon: icon || null, description: description || null, allow_custom_tables: allowTables },
         });
         toast.success("Categoria atualizada");
       } else {
-        await createOrganizationCategory({ data: { name, icon: icon || null, description: description || null } });
+        await createOrganizationCategory({ data: { name, icon: icon || null, description: description || null, allow_custom_tables: allowTables } });
         toast.success("Categoria criada");
       }
       setOpen(false);
@@ -693,6 +696,15 @@ function CategoriesSection() {
               <div className="space-y-2">
                 <Label htmlFor="c-desc">Descrição</Label>
                 <Textarea id="c-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+              </div>
+              <div className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
+                <div className="min-w-0">
+                  <Label htmlFor="c-allow-tables" className="text-sm">Permitir novas tabelas</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Quando desativado, organizações desta categoria não podem criar novas tabelas.
+                  </p>
+                </div>
+                <Switch id="c-allow-tables" checked={allowTables} onCheckedChange={setAllowTables} />
               </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>

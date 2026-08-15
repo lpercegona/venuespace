@@ -34,7 +34,7 @@ Hoje a tabela-modelo "Contatos" de cada categoria tem apenas Empresa/Razão soci
 - Removido o bloco "Membros" da página.
 - Removidos o título e o ícone "Tabelas".
 - Cards de tabela no novo estilo: apenas ícone + nome (sem descrição, sem badges), mantendo as ações de editar/excluir para quem tem permissão.
-- Intera\u00e7ões, Reservas (quando o módulo está ativo) e Membros passam a ser cards de atalho na mesma grade, com o mesmo estilo.
+- Interações, Reservas (quando o módulo está ativo) e Membros passam a ser cards de atalho na mesma grade, com o mesmo estilo.
 - Esses três itens saem do menu dropdown do perfil no cabeçalho.
 
 ## Detalhes técnicos

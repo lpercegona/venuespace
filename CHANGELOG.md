@@ -1,3 +1,15 @@
+## 2026-08-15 23:40 (America/Sao_Paulo) — Correção/extensão das Iterações 25, 40 e 41 — Governança de tabelas e painel da organização
+
+- Migração anterior aplicada: `public.organization_categories.allow_custom_tables` (padrão `true`).
+- `src/lib/organization-categories.functions.ts`: `allow_custom_tables` exposto na leitura pública e aceito na criação/edição de categoria.
+- `src/routes/_authenticated.admin.index.tsx`: toggle "Permitir novas tabelas" no formulário de categoria (criar/editar).
+- `src/lib/orgs.functions.ts`: `getOrganizationBySlug` devolve `canCreateTables` e `categoryAllowsCustomTables`; `createTable` valida a trava da categoria e a configuração de instância (`allow_user_field_management` agora também bloqueia criação de tabelas). Super admin permanece sem restrição.
+- `src/routes/_authenticated.app.$orgSlug.index.tsx`: botão "Nova tabela" só aparece quando permitido; cards de tabela simplificados (apenas ícone e título); títulos "Tabelas" e bloco "Membros" removidos; novos cards de atalho — Interações, Reservas (apenas com módulo ativo) e Membros — no mesmo estilo.
+- `src/components/venue/app-shell.tsx`: itens Interações, Reservas e Membros removidos do menu do perfil (migraram para os cards).
+- `src/routes/_authenticated.app.$orgSlug.tables.$tableId.index.tsx`: botão "Ver público" apenas quando a tabela é pública; bloco de formulários públicos visível somente para super admin.
+- Campos padrão de contato (`contact_company`, `contact_name`, CNPJ, endereço, telefone, e-mail) editáveis por categoria em Estrutura — Tabelas, com propagação às tabelas de contato das organizações.
+- Sem nova rota pública — sitemap inalterado.
+
 ## 2026-08-15 15:20 (America/Sao_Paulo) — Correção/extensão das Iterações 32 e 41 — Menu por módulo ativo e visualização em calendário das reservas
 
 - `src/lib/module-registry.ts`: definição de módulo passa a declarar opcionalmente seu item de menu (`menu: { labelKey, labelFallback, to }`), de modo que novos módulos apareçam no menu sem alterar componentes.

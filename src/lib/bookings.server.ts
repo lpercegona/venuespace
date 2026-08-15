@@ -660,6 +660,9 @@ export async function loadContactSetup(supabase: any, orgId: string): Promise<{
   return { contactsTableId, fields, standard };
 }
 
+export const CONTACT_NAME_KEY = "contact_name";
+export const CONTACT_EMAIL_KEY = "contact_email";
+export const CONTACT_PHONE_KEY = "contact_phone";
 export const CONTACT_COMPANY_KEY = "contact_company";
 export const CONTACT_CNPJ_KEY = "contact_cnpj";
 export const CONTACT_ADDRESS_KEY = "contact_address";
@@ -677,9 +680,11 @@ export type ContactRow = {
 export function contactLabel(fields: ContactFieldDef[], data: Record<string, any>) {
   const base = fields.filter((f) => !CLIENT_KEYS.includes(f.key));
   const nameKey =
+    base.find((f) => f.key === CONTACT_NAME_KEY)?.key ??
     base.find((f) => /nome|name/i.test(f.key) && f.type === "text")?.key ??
     base.find((f) => f.type === "text")?.key ?? null;
   const emailKey =
+    base.find((f) => f.key === CONTACT_EMAIL_KEY)?.key ??
     base.find((f) => f.type === "email")?.key ??
     base.find((f) => /email/i.test(f.key))?.key ?? null;
   const label = String((nameKey ? data?.[nameKey] : null) ?? (emailKey ? data?.[emailKey] : null) ?? "Contato");
