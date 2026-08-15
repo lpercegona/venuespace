@@ -363,36 +363,30 @@ export function BookingFormDialog({
               )}
             </section>
 
-            <section className="space-y-1.5">
-              <Label htmlFor="bkf-travel" className="text-sm font-medium">Deslocamento</Label>
-              <Input
-                id="bkf-travel"
-                type="number"
-                min={0}
-                step="0.01"
-                className="h-11 sm:h-10"
-                value={period["travel_fee"] ?? ""}
-                onChange={(e) =>
-                  setPeriod((p) => ({ ...p, travel_fee: e.target.value === "" ? null : Number(e.target.value) || 0 }))
-                }
-              />
-              <p className="text-xs text-muted-foreground">Somado ao total da reserva e exibido no orçamento.</p>
-            </section>
-
-            {otherFields.length > 0 ? (
+            {formFields.length > 0 ? (
               <section className="space-y-3">
                 <h3 className="text-sm font-medium">Detalhes da reserva</h3>
-                {otherFields.map((f: any) => (
-                  <div key={f.id} className="space-y-1.5">
-                    <Label htmlFor={`bkf-${f.key}`} className="text-xs text-muted-foreground">{f.label}</Label>
-                    <Textarea
-                      id={`bkf-${f.key}`}
-                      rows={f.key === "booking_notes" ? 4 : 2}
-                      value={period[f.key] ?? ""}
-                      onChange={(e) => setPeriod((p) => ({ ...p, [f.key]: e.target.value }))}
-                    />
-                  </div>
-                ))}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {formFields.map((f: any) => (
+                    <div
+                      key={f.id ?? f.key}
+                      className={f.type === "long_text" || f.type === "textarea" ? "space-y-1.5 sm:col-span-2" : "space-y-1.5"}
+                    >
+                      <Label htmlFor={`bkf-${f.key}`} className="text-xs text-muted-foreground">
+                        {f.label}
+                        {f.required ? " *" : ""}
+                      </Label>
+                      <BookingFieldInput
+                        field={f}
+                        value={period[f.key]}
+                        onChange={(v) => setPeriod((p) => ({ ...p, [f.key]: v }))}
+                      />
+                      {f.config?.tooltip ? (
+                        <p className="text-xs text-muted-foreground">{f.config.tooltip}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
               </section>
             ) : null}
 
