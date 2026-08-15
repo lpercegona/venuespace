@@ -17,7 +17,10 @@ export type CategoryStandardTable = {
   order_index: number;
   is_public: boolean;
   bookable: boolean;
+  kind: "normal" | "contacts" | "bookings";
+  is_system: boolean;
 };
+
 
 export type CategoryStandardTableField = {
   id: string;
