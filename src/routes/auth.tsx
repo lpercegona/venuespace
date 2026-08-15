@@ -288,20 +288,7 @@ function AuthPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="in-pass">Senha</Label>
-                          <button
-                            type="button"
-                            className="text-xs font-medium text-primary hover:underline"
-                            onClick={() => {
-                              setForgotEmail(signInEmail);
-                              setForgot(true);
-                            }}
-                          >
-                            Esqueci minha senha
-                          </button>
-                        </div>
-
+                        <Label htmlFor="in-pass">Senha</Label>
                         <Input
                           id="in-pass"
                           type="password"
@@ -314,6 +301,16 @@ function AuthPage() {
                       <Button type="submit" className="w-full h-11" disabled={loading}>
                         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
                       </Button>
+                      <button
+                        type="button"
+                        className="mx-auto block text-xs font-medium text-primary hover:underline"
+                        onClick={() => {
+                          setForgotEmail(signInEmail);
+                          setForgot(true);
+                        }}
+                      >
+                        Esqueci minha senha
+                      </button>
                     </form>
                   </TabsContent>
                   <TabsContent value="signup">
