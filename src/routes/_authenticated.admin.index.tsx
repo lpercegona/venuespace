@@ -3414,9 +3414,82 @@ function StandardFormsSection() {
           <p className="text-sm text-muted-foreground">Crie uma categoria primeiro.</p>
         ) : (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-medium">Formulários</p>
+              <Dialog open={openFromTable} onOpenChange={setOpenFromTable}>
+                <DialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setFtTableId("");
+                      setFtScope("record");
+                      setFtName("");
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    A partir de tabela
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="font-display">Criar formulário a partir de tabela</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={createFromTable} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Tabela-modelo</Label>
+                      <Select
+                        value={ftTableId}
+                        onValueChange={(v) => {
+                          setFtTableId(v);
+                          if (!ftName) setFtName((stdTables.data ?? []).find((t) => t.id === v)?.name ?? "");
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a tabela" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(stdTables.data ?? []).map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Os campos da tabela são copiados para o formulário; depois é possível editar rótulo, ordem,
+                        obrigatoriedade e visibilidade de cada um.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Escopo</Label>
+                      <Select value={ftScope} onValueChange={(v) => setFtScope(v as "organization" | "record")}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="organization">Página pública da organização</SelectItem>
+                          <SelectItem value="record">Página pública de registro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Nome do formulário</Label>
+                      <Input required value={ftName} onChange={(e) => setFtName(e.target.value)} />
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="ghost" onClick={() => setOpenFromTable(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={ftBusy || !ftTableId}>
+                        {ftBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
               <Dialog open={open} onOpenChange={setOpen}>
+
                 <DialogTrigger asChild>
                   <Button size="sm" onClick={openNew}>
                     <Plus className="h-4 w-4" />
