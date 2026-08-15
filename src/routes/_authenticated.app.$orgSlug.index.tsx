@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { getOrganizationBySlug, listTables, createTable, updateTable, deleteTable, listMembers, addMemberByEmail } from "@/lib/orgs.functions";
+import { getOrganizationBySlug, listTables, createTable, updateTable, deleteTable } from "@/lib/orgs.functions";
+import { getOrgModuleState } from "@/lib/modules.functions";
+import { MODULE_REGISTRY } from "@/lib/module-registry";
 import { amISuperAdmin } from "@/lib/instance-settings.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { richTextToPlainText } from "@/lib/rich-text";
@@ -13,12 +15,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table as TableIcon, Plus, Loader2, Lock, UserPlus, Users, Pencil, Trash2 } from "lucide-react";
+import { Table as TableIcon, Plus, Loader2, Users, Pencil, Trash2, FileHeart, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
@@ -43,8 +42,6 @@ function OrgDashboard() {
   const fetchOrg = (getOrganizationBySlug);
   const fetchTables = (listTables);
   const doCreateTable = (createTable);
-  const fetchMembers = (listMembers);
-  const doAddMember = (addMemberByEmail);
 
   const org = useQuery({ queryKey: ["org", orgSlug], queryFn: () => fetchOrg({ data: { slug: orgSlug } }) });
   const tables = useQuery({
@@ -52,10 +49,11 @@ function OrgDashboard() {
     queryFn: () => fetchTables({ data: { organization_id: org.data!.id } }),
     enabled: !!org.data?.id,
   });
-  const members = useQuery({
-    queryKey: ["members", org.data?.id],
-    queryFn: () => fetchMembers({ data: { organization_id: org.data!.id } }),
+  const moduleState = useQuery({
+    queryKey: ["org-modules", org.data?.id],
+    queryFn: () => getOrgModuleState({ data: { organization_id: org.data!.id } }),
     enabled: !!org.data?.id,
+    staleTime: 60_000,
   });
 
   const canEdit = org.data?.myRole === "owner" || org.data?.myRole === "editor";
@@ -100,28 +98,6 @@ function OrgDashboard() {
     }
   }
 
-  const [openMember, setOpenMember] = useState(false);
-  const [mEmail, setMEmail] = useState("");
-  const [mRole, setMRole] = useState<"owner" | "editor" | "viewer">("editor");
-  const [savingM, setSavingM] = useState(false);
-
-  async function handleAddMember(e: React.FormEvent) {
-    e.preventDefault();
-    if (!org.data) return;
-    setSavingM(true);
-    try {
-      await doAddMember({ data: { organization_id: org.data.id, email: mEmail, role: mRole } });
-      toast.success("Membro adicionado");
-      setOpenMember(false);
-      setMEmail(""); setMRole("editor");
-      await members.refetch();
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setSavingM(false);
-    }
-  }
-
   if (org.isLoading) {
     return (
       <AppShell><div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></AppShell>
@@ -142,7 +118,7 @@ function OrgDashboard() {
               <Pencil className="h-4 w-4" />Editar {organizationLabel}
             </Button>
           ) : null}
-          {canEdit ? (
+          {canEdit && (org.data as any)?.canCreateTables ? (
             <Dialog open={openTable} onOpenChange={setOpenTable}>
               <DialogTrigger asChild>
                 <Button><Plus className="h-4 w-4" />Nova {tableLabel}</Button>
@@ -203,7 +179,7 @@ function OrgDashboard() {
             icon={<TableIcon className="h-5 w-5" />}
             title={`Nenhuma ${tableLabel} ainda`}
             description={`Crie sua primeira ${tableLabel} para começar a modelar seus dados.`}
-            action={canEdit ? <Button onClick={() => setOpenTable(true)}><Plus className="h-4 w-4" />Nova {tableLabel}</Button> : undefined}
+            action={canEdit && (org.data as any)?.canCreateTables ? <Button onClick={() => setOpenTable(true)}><Plus className="h-4 w-4" />Nova {tableLabel}</Button> : undefined}
           />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
