@@ -51,7 +51,7 @@ export function FieldCatalogSection() {
   const [scopeFilter, setScopeFilter] = useState<string>("all");
   const [catFilter, setCatFilter] = useState<string>("all");
   const [depFilter, setDepFilter] = useState<string>("all");
-  const [originFilter, setOriginFilter] = useState<string>("all");
+  const [baseFilter, setBaseFilter] = useState<string>("all");
 
   const entries = useMemo(() => {
     const q = norm(search.trim());
@@ -60,11 +60,12 @@ export function FieldCatalogSection() {
       if (scopeFilter !== "all" && e.scope !== scopeFilter) return false;
       if (catFilter !== "all" && !e.is_base && !e.usages.some((u) => u.category_id === catFilter)) return false;
       if (depFilter === "with" && e.dependencies.length === 0) return false;
-      if (depFilter === "base" && !e.is_base) return false;
-      if (originFilter !== "all" && e.origin !== originFilter) return false;
+      if (baseFilter === "base" && !e.is_base) return false;
+      if (baseFilter === "not_base" && e.is_base) return false;
       return true;
     });
-  }, [catalog.data, search, scopeFilter, catFilter, depFilter, originFilter]);
+  }, [catalog.data, search, scopeFilter, catFilter, depFilter, baseFilter]);
+
 
   const catName = (id: string) => (cats.data ?? []).find((c) => c.id === id)?.name ?? id.slice(0, 8);
   const scopeLabel = (s: CatalogScope) => SCOPES.find((x) => x.value === s)?.label ?? s;
