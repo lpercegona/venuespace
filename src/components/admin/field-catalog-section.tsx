@@ -186,7 +186,7 @@ export function FieldCatalogSection() {
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
           <div className="relative min-w-0">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -198,14 +198,21 @@ export function FieldCatalogSection() {
             />
           </div>
           <Select value={scopeFilter} onValueChange={setScopeFilter}>
-            <SelectTrigger className="sm:w-44" aria-label="Filtrar por escopo"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="lg:w-44" aria-label="Filtrar por escopo"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os escopos</SelectItem>
               {SCOPES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={catFilter} onValueChange={setCatFilter}>
+            <SelectTrigger className="lg:w-48" aria-label="Filtrar por categoria"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={depFilter} onValueChange={setDepFilter}>
-            <SelectTrigger className="sm:w-48" aria-label="Filtrar por dependência"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="lg:w-48" aria-label="Filtrar por dependência"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os campos</SelectItem>
               <SelectItem value="with">Com dependência</SelectItem>
@@ -213,6 +220,7 @@ export function FieldCatalogSection() {
             </SelectContent>
           </Select>
         </div>
+
 
         {catalog.isLoading ? (
           <div className="py-10 text-center"><Loader2 className="inline h-5 w-5 animate-spin text-muted-foreground" /></div>
