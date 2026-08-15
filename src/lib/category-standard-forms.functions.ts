@@ -58,7 +58,7 @@ export const listCategoryStandardForms = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("category_standard_forms")
-      .select("id, category_id, scope, standard_table_id, name, submit_label, target_table_name, is_active")
+      .select("id, category_id, scope, standard_table_id, target_standard_table_id, name, submit_label, target_table_name, is_active")
       .eq("category_id", data.category_id)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -70,6 +70,7 @@ const upsertForm = z.object({
   category_id: z.string().uuid(),
   scope: z.enum(["organization", "record"]),
   standard_table_id: z.string().uuid().nullable().optional(),
+  target_standard_table_id: z.string().uuid().nullable().optional(),
   name: z.string().min(1).max(80),
   submit_label: z.string().min(1).max(40).optional(),
   target_table_name: z.string().min(1).max(60).optional(),
@@ -89,11 +90,13 @@ export const upsertCategoryStandardForm = createServerFn({ method: "POST" })
       category_id: data.category_id,
       scope: data.scope,
       standard_table_id: data.scope === "record" ? data.standard_table_id : null,
+      target_standard_table_id: data.target_standard_table_id ?? null,
       name: data.name,
       submit_label: data.submit_label ?? "Enviar",
       target_table_name: data.target_table_name ?? "Contatos",
       is_active: data.is_active ?? true,
     };
+
     let id = data.id;
     if (id) {
       const { error } = await (supabaseAdmin as any)
