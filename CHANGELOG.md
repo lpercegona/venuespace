@@ -1,3 +1,12 @@
+## 2026-08-15 14:03 (America/Sao_Paulo) — Iteração 40 (catálogo global de campos da plataforma)
+
+- Migração de dados: campos de instância (`organization_fields`, `table_fields`, `record_fields`) transferidos para a cascata por categoria (`category_org_fields`, `category_table_fields`, `organization_category_default_fields`) marcados como `is_base = true`. O rótulo "instância" foi substituído por "base" em toda a administração.
+- `src/lib/field-catalog.functions.ts` (novo): `listFieldCatalog` (agrega por chave de campo, com usos por categoria/escopo, sinalização de divergência e dependências detectadas — PDF de orçamento, reservas, filtros públicos, layouts de card), `listOrphanOrgFieldKeys` (diagnóstico de campos criados dentro de organizações), `applyFieldCatalogEntry` (aplica rótulo/tipo/obrigatoriedade/ordem/config/tooltip em todas as categorias selecionadas, ou em todas quando `is_base`) e `deleteFieldCatalogEntry` (remoção global com bloqueio quando há dependência crítica).
+- `src/components/admin/field-type-config.tsx` (novo): configuração por tipo compartilhada (opções de select/multiselect com ícone, papel CEP, computed, relation e boolean) com `TYPE_HELP`, `emptyTypeDraft`, `draftFromConfig` e `applyDraftToConfig`, agora reutilizada pelo `ScopeEditor` — que deixou de duplicar 12 estados locais.
+- `src/components/admin/field-catalog-section.tsx` (novo): aba "Todos os campos" em Estrutura > Campos, com busca instantânea por chave/rótulo, filtros por escopo e por dependência, aviso de zona de risco, badges de escopo/dependência/divergência, edição completa do campo (incluindo tooltip), interruptor "Campo base da plataforma" (desabilita a seleção manual) e seleção de categorias/escopos por campo, além do painel recolhível de campos órfãos de organização.
+- `src/routes/_authenticated.admin.index.tsx`: nova aba integrada; invalidação cruzada de caches mantém as abas Organização/Tabela/Registro sincronizadas com o catálogo.
+- Validação: typecheck limpo; sem tokens novos fora de `src/styles.css`; nenhuma cor hardcoded; RLS inalterada (todas as funções novas exigem super admin).
+
 ## 2026-08-14 18:55 (America/Sao_Paulo) — Correção/Extensão das Iterações 26/28/31 (breadcrumbs públicos e skeleton do perfil)
 
 - `src/components/venue/public-breadcrumbs.tsx` (novo): trilha compartilhada das páginas públicas, extraída da faixa já usada na página imersiva (borda inferior, `bg-surface`, uppercase com `tracking-[0.18em]`), agora com `nav aria-label="Trilha"`, `ol/li` semânticos, `aria-current="page"` e truncamento.
