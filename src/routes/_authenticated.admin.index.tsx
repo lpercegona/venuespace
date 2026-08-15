@@ -130,6 +130,8 @@ import {
 import { listPendingReviewsAdmin, moderateReviewAdmin, type ReviewModerationItem } from "@/lib/reviews.functions";
 import { HomeGroupingsSection } from "@/components/admin/home-groupings-section";
 import { HomeBlocksSection } from "@/components/admin/home-blocks-section";
+import { ModulesSection } from "@/components/admin/modules-section";
+import { ModuleBookingsConfig } from "@/components/admin/module-bookings-config";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({ meta: [{ title: "Admin — Venuespace" }, { name: "robots", content: "noindex" }] }),
