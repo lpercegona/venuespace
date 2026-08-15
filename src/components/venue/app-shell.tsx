@@ -171,7 +171,7 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                     ).map((m) => (
                       <DropdownMenuItem
                         key={m.key}
-                        onSelect={() => navigate({ to: m.menu!.to, params: { orgSlug } })}
+                        onSelect={() => navigate({ to: m.menu!.to as any, params: { orgSlug } as any })}
                       >
                         <CalendarDays className="h-4 w-4" />
                         {t(m.menu!.labelKey, m.menu!.labelFallback)}
