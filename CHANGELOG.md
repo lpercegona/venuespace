@@ -970,3 +970,8 @@ Registro cronológico de todas as implementações do projeto. Norma soberana da
 - Novo `public/robots.txt`: rastreamento liberado, `/app/`, `/admin/`, `/me/`, `/auth`, `/lead/` e `/api/` bloqueados, apontando para `https://venuespace.com.br/sitemap.xml`.
 - `AGENTS.md`: nova seção "Sitemap (obrigatório)" tornando a inclusão de novas páginas públicas no sitemap uma regra de governança.
 - Pendência: acima de 45.000 URLs será necessário migrar para `sitemapindex`.
+
+## Iteração 39 — recuperação de senha e remetente de e-mails (2026-08-15)
+- `src/routes/auth.tsx`: aba "Entrar" ganhou o link "Esqueci minha senha", que abre no mesmo cartão o formulário de recuperação (`supabase.auth.resetPasswordForEmail` com `redirectTo` para `/redefinir-senha`). Resposta sempre neutra — não revela se o e-mail existe na base.
+- Nova rota pública `src/routes/redefinir-senha.tsx` (`ssr: false`, `noindex`): aguarda o evento `PASSWORD_RECOVERY`/sessão do link, pede nova senha + confirmação (mínimo 8 caracteres, iguais) via `supabase.auth.updateUser`, e trata link expirado/usado com atalho para pedir novo link. Fora do sitemap (rota de autenticação) e bloqueada em `public/robots.txt`.
+- Remetente: projeto ainda sem domínio de e-mail configurado — e-mails de confirmação de cadastro e recuperação saem pelo remetente padrão da plataforma. A troca para `naoresponda@venuespace.com.br` depende da configuração do domínio `venuespace.com.br` (registros DNS) e, na sequência, da geração dos modelos de e-mail de autenticação com identidade Venuespace. Referência: Iteração 34 (verificação de e-mail e 2FA).
