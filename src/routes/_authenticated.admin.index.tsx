@@ -16,6 +16,7 @@ import {
   Settings2,
   Layers,
   LayoutGrid,
+  Blocks,
   Menu,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
