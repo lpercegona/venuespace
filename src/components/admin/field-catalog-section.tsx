@@ -382,36 +382,58 @@ export function FieldCatalogSection() {
             </div>
 
             <div className="space-y-2 rounded-lg border border-border p-3">
+              <p className="text-sm font-medium">Escopo do campo</p>
+              <p className="text-xs text-muted-foreground">
+                Um campo pertence a um único escopo: Organização, Tabela ou Registro.
+              </p>
+              <RadioGroup
+                className="mt-2 grid gap-2 sm:grid-cols-3"
+                value={scope}
+                onValueChange={(v) => setScope(v as CatalogScope)}
+              >
+                {SCOPES.map((s) => (
+                  <Label
+                    key={s.value}
+                    htmlFor={`fc-scope-${s.value}`}
+                    className="flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm"
+                  >
+                    <RadioGroupItem id={`fc-scope-${s.value}`} value={s.value} />
+                    {s.label}
+                  </Label>
+                ))}
+              </RadioGroup>
+              {editing?.scope_divergent ? (
+                <p className="text-xs text-destructive">
+                  Este campo hoje existe em mais de um escopo. Ao salvar, ele passa a existir apenas no escopo selecionado.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2 rounded-lg border border-border p-3">
               <p className="text-sm font-medium">Categorias que usam o campo</p>
               <p className="text-xs text-muted-foreground">
                 {isBase
                   ? "Campo base: aplicado automaticamente em todas as categorias."
-                  : "Marque em quais categorias e escopos o campo deve existir."}
+                  : "Marque em quais categorias o campo deve existir, no escopo selecionado."}
               </p>
               <div className="mt-2 space-y-2">
-                {(cats.data ?? []).map((c) => (
-                  <div key={c.id} className="rounded-md border border-border p-3">
-                    <p className="text-sm font-medium">{c.name}</p>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                      {SCOPES.map((s) => {
-                        const id = `fc-${c.id}-${s.value}`;
-                        return (
-                          <div key={s.value} className="flex min-h-11 items-center justify-between gap-2 rounded-md border border-border px-3">
-                            <Label htmlFor={id} className="text-xs">{s.label}</Label>
-                            <Switch
-                              id={id}
-                              disabled={isBase}
-                              checked={isBase || targets.has(tKey(c.id, s.value))}
-                              onCheckedChange={() => toggleTarget(c.id, s.value)}
-                            />
-                          </div>
-                        );
-                      })}
+                {(cats.data ?? []).map((c) => {
+                  const id = `fc-cat-${c.id}`;
+                  return (
+                    <div key={c.id} className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3">
+                      <Label htmlFor={id} className="min-w-0 truncate text-sm">{c.name}</Label>
+                      <Switch
+                        id={id}
+                        disabled={isBase}
+                        checked={isBase || categories.has(c.id)}
+                        onCheckedChange={() => toggleCategory(c.id)}
+                      />
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
+
 
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
