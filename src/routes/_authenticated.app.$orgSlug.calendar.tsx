@@ -60,7 +60,7 @@ function BookingsPage() {
   return (
     <AppShell
       title="Gestão de reservas"
-      subtitle="Agenda, disponibilidade por data, orçamento em PDF e ciclo de negociação → fechamento → encerramento."
+      subtitle="Aqui você pode visualizar, gerir e criar novos agendamentos e reservas."
     >
       {moduleOff ? (
         <EmptyState
