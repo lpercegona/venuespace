@@ -131,6 +131,18 @@ function AuthPage() {
     toast.success("Link de confirmação reenviado.");
   }
 
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      redirectTo: `${window.location.origin}/redefinir-senha`,
+    });
+    setLoading(false);
+    // Resposta neutra: não revela se o e-mail existe na base.
+    setForgotSent(true);
+  }
+
+
   async function handleGoogle() {
     setLoading(true);
     sessionStorage.setItem(OAUTH_REDIRECT_KEY, "/app");
