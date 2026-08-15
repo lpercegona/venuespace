@@ -7,6 +7,7 @@ export type OrganizationCategory = {
   name: string;
   icon: string | null;
   description: string | null;
+  allow_custom_tables?: boolean;
 };
 
 export type CategoryDefaultField = {
@@ -27,7 +28,7 @@ export const listOrganizationCategoriesPublic = createServerFn({ method: "GET" }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("organization_categories")
-    .select("id, name, icon, description")
+    .select("id, name, icon, description, allow_custom_tables")
     .order("name", { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []) as OrganizationCategory[];
@@ -43,6 +44,7 @@ const catCreate = z.object({
   name: z.string().min(1).max(80),
   icon: z.string().max(60).nullable().optional(),
   description: z.string().max(500).nullable().optional(),
+  allow_custom_tables: z.boolean().optional(),
 });
 
 const catUpdate = catCreate.partial().extend({ id: z.string().uuid() });
@@ -54,7 +56,12 @@ export const createOrganizationCategory = createServerFn({ method: "POST" })
     await requireSA(context.supabase, context.userId);
     const { data: row, error } = await context.supabase
       .from("organization_categories")
-      .insert({ name: data.name, icon: data.icon ?? null, description: data.description ?? null } as any)
+      .insert({
+        name: data.name,
+        icon: data.icon ?? null,
+        description: data.description ?? null,
+        allow_custom_tables: data.allow_custom_tables ?? true,
+      } as any)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -71,6 +78,7 @@ export const updateOrganizationCategory = createServerFn({ method: "POST" })
     if (rest.name !== undefined) patch.name = rest.name;
     if (rest.icon !== undefined) patch.icon = rest.icon;
     if (rest.description !== undefined) patch.description = rest.description;
+    if (rest.allow_custom_tables !== undefined) patch.allow_custom_tables = rest.allow_custom_tables;
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await context.supabase
       .from("organization_categories")
