@@ -110,10 +110,11 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
     const admin = supabaseAdmin as any;
     const sel = "id, category_id, field_key, label, field_type, required, config, order_index, group_id, is_base";
 
-    const [org, tbl, rec, deps] = await Promise.all([
+    const [org, tbl, rec, orgFields, deps] = await Promise.all([
       admin.from("category_org_fields").select(sel),
       admin.from("category_table_fields").select(sel),
       admin.from("organization_category_default_fields").select(sel),
+      admin.from("fields").select("key, label, type, required, config, position, tables!inner(organization_id)").limit(5000),
       loadDependencies(admin),
     ]);
 
@@ -139,6 +140,8 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
           divergent: false,
           scope,
           scope_divergent: false,
+          origin: "catalog",
+          organizations: 0,
           usages: [],
           dependencies: deps[key] ?? [],
         };
@@ -179,7 +182,45 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
       e.scope = best;
     }
 
+    // Campos criados dentro de organizações que ainda não existem no catálogo.
+    const orgOnly = new Map<string, { entry: FieldCatalogEntry; orgs: Set<string> }>();
+    for (const r of ((orgFields.data ?? []) as any[])) {
+      const key = r.key as string;
+      if (!key || byKey.has(key)) continue;
+      let cur = orgOnly.get(key);
+      if (!cur) {
+        cur = {
+          orgs: new Set<string>(),
+          entry: {
+            field_key: key,
+            label: r.label ?? key,
+            field_type: r.type ?? "text",
+            required: !!r.required,
+            order_index: r.position ?? 0,
+            config: (r.config ?? {}) as Record<string, any>,
+            is_base: false,
+            divergent: false,
+            scope: "record",
+            scope_divergent: false,
+            origin: "organization",
+            organizations: 0,
+            usages: [],
+            dependencies: deps[key] ?? [],
+          },
+        };
+        orgOnly.set(key, cur);
+      }
+      const orgId = Array.isArray(r.tables) ? r.tables[0]?.organization_id : r.tables?.organization_id;
+      if (orgId) cur.orgs.add(orgId);
+      if (r.label !== cur.entry.label || r.type !== cur.entry.field_type) cur.entry.divergent = true;
+    }
+    for (const { entry, orgs } of orgOnly.values()) {
+      entry.organizations = orgs.size;
+      byKey.set(entry.field_key, entry);
+    }
+
     return [...byKey.values()].sort((a, b) => a.field_key.localeCompare(b.field_key));
+
 
   });
 
