@@ -4,6 +4,8 @@ Disallow: /app/
 Disallow: /admin/
 Disallow: /me/
 Disallow: /auth
+Disallow: /redefinir-senha
+
 Disallow: /lead/
 Disallow: /api/
 

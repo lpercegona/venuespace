@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermosECondicoesRouteImport } from './routes/termos-e-condicoes'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as PoliticaDeCookiesRouteImport } from './routes/politica-de-cookies'
 import { Route as ParaEmpresasRouteImport } from './routes/para-empresas'
@@ -78,6 +79,11 @@ const TermosECondicoesRoute = TermosECondicoesRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
+  id: '/redefinir-senha',
+  path: '/redefinir-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
@@ -400,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/para-empresas': typeof ParaEmpresasRoute
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -460,6 +467,7 @@ export interface FileRoutesByTo {
   '/para-empresas': typeof ParaEmpresasRoute
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -522,6 +530,7 @@ export interface FileRoutesById {
   '/para-empresas': typeof ParaEmpresasRoute
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos-e-condicoes': typeof TermosECondicoesRoute
   '/auth_/callback': typeof AuthCallbackRoute
@@ -585,6 +594,7 @@ export interface FileRouteTypes {
     | '/para-empresas'
     | '/politica-de-cookies'
     | '/politica-de-privacidade'
+    | '/redefinir-senha'
     | '/sitemap.xml'
     | '/termos-e-condicoes'
     | '/auth/callback'
@@ -645,6 +655,7 @@ export interface FileRouteTypes {
     | '/para-empresas'
     | '/politica-de-cookies'
     | '/politica-de-privacidade'
+    | '/redefinir-senha'
     | '/sitemap.xml'
     | '/termos-e-condicoes'
     | '/auth/callback'
@@ -706,6 +717,7 @@ export interface FileRouteTypes {
     | '/para-empresas'
     | '/politica-de-cookies'
     | '/politica-de-privacidade'
+    | '/redefinir-senha'
     | '/sitemap.xml'
     | '/termos-e-condicoes'
     | '/auth_/callback'
@@ -769,6 +781,7 @@ export interface RootRouteChildren {
   ParaEmpresasRoute: typeof ParaEmpresasRoute
   PoliticaDeCookiesRoute: typeof PoliticaDeCookiesRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
+  RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermosECondicoesRoute: typeof TermosECondicoesRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -817,6 +830,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redefinir-senha': {
+      id: '/redefinir-senha'
+      path: '/redefinir-senha'
+      fullPath: '/redefinir-senha'
+      preLoaderRoute: typeof RedefinirSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/politica-de-privacidade': {
@@ -1340,6 +1360,7 @@ const rootRouteChildren: RootRouteChildren = {
   ParaEmpresasRoute: ParaEmpresasRoute,
   PoliticaDeCookiesRoute: PoliticaDeCookiesRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
+  RedefinirSenhaRoute: RedefinirSenhaRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermosECondicoesRoute: TermosECondicoesRoute,
   AuthCallbackRoute: AuthCallbackRoute,
