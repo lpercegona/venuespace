@@ -259,14 +259,14 @@ function BookingTablePanel({
               month={month}
               onMonthChange={setMonth}
               bookings={items as any}
-              onSelect={(b) => openEdit(items.find((i) => i.id === b.id) ?? b)}
+              onSelect={(b: CalendarBooking) => openEdit(items.find((i) => i.id === b.id) ?? b)}
             />
           ) : (
             <BookingCalendarView
               month={month}
               onMonthChange={setMonth}
               bookings={items as any}
-              onSelect={(b) => openEdit(items.find((i) => i.id === b.id) ?? b)}
+              onSelect={(b: CalendarBooking) => openEdit(items.find((i) => i.id === b.id) ?? b)}
             />
           )
         ) : bookings.isPending ? (
