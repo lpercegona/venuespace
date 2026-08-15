@@ -168,11 +168,36 @@ function BookingTablePanel({
 
       <CardContent className="space-y-5">
         <div className="space-y-3 rounded-lg border border-border p-3">
-          <BookingAvailabilityFilter
-            value={range}
-            onChange={(next) => { setRange(next); setFiltering(true); }}
-            onClear={() => setFiltering(false)}
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <SegmentedToggle
+              ariaLabel="Modo de visualização"
+              value={view}
+              onValueChange={setViewPersisted}
+              options={[
+                { value: "list", label: "Lista" },
+                { value: "calendar", label: "Calendário" },
+              ]}
+            />
+            {isCalendar ? (
+              <SegmentedToggle
+                ariaLabel="Tipo de calendário"
+                value={calMode}
+                onValueChange={setCalModePersisted}
+                options={[
+                  { value: "month", label: "Mês" },
+                  { value: "timeline", label: "Ocupação" },
+                ]}
+              />
+            ) : null}
+          </div>
+
+          {isCalendar ? null : (
+            <BookingAvailabilityFilter
+              value={range}
+              onChange={(next) => { setRange(next); setFiltering(true); }}
+              onClear={() => setFiltering(false)}
+            />
+          )}
           <div className="flex flex-wrap items-center gap-4">
             <SegmentedToggle
               ariaLabel="Estágio da reserva"
@@ -197,7 +222,7 @@ function BookingTablePanel({
           </div>
         </div>
 
-        {filtering ? (
+        {!isCalendar && filtering ? (
           <div className="rounded-lg border border-border p-3">
             <p className="mb-2 text-sm font-medium">
               Disponibilidade {range.mode === "single" ? `em ${range.from}` : `de ${range.from} a ${range.to}`}
@@ -221,7 +246,28 @@ function BookingTablePanel({
           </div>
         ) : null}
 
-        {bookings.isPending ? (
+        {isCalendar ? (
+          bookings.isPending ? (
+            <Skeleton className="h-72 w-full" />
+          ) : bookings.isError ? (
+            <p className="text-sm text-destructive">{(bookings.error as Error).message}</p>
+          ) : calMode === "timeline" ? (
+            <BookingTimelineView
+              month={month}
+              onMonthChange={setMonth}
+              bookings={items as any}
+              onSelect={(b) => openEdit(items.find((i) => i.id === b.id) ?? b)}
+            />
+          ) : (
+            <BookingCalendarView
+              month={month}
+              onMonthChange={setMonth}
+              bookings={items as any}
+              onSelect={(b) => openEdit(items.find((i) => i.id === b.id) ?? b)}
+            />
+          )
+        ) : bookings.isPending ? (
+
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : bookings.isError ? (
           <p className="text-sm text-destructive">{(bookings.error as Error).message}</p>
