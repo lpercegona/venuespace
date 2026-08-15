@@ -266,18 +266,11 @@ function TableCard({
     <div className="relative">
       <Link to="/app/$orgSlug/tables/$tableId" params={{ orgSlug, tableId: t.id }}>
         <Card className="h-full transition-shadow hover:shadow-elegant">
-          <CardHeader className="pb-2">
-            <CardTitle className="font-display text-base pr-8">{t.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">{t.description || "Sem descrição."}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="font-mono">/{t.slug}</Badge>
-              {t.bookable ? <Badge>reservas</Badge> : null}
-              {t.is_public ? <Badge variant="outline">pública</Badge> : null}
-              {isLocked ? <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" />padrão</Badge> : null}
-            </div>
-
+          <CardContent className="flex min-h-24 items-center gap-3 p-4">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground">
+              <TableIcon className="h-5 w-5" />
+            </span>
+            <p className="min-w-0 truncate pr-8 font-display text-base font-semibold">{t.name}</p>
           </CardContent>
         </Card>
       </Link>
