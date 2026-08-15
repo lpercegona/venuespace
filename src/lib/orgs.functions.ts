@@ -277,11 +277,16 @@ export const listTables = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("tables")
-      .select("id, slug, name, description, icon, bookable, is_public, category_data, updated_at, is_locked, origin_standard_table_id, system_data")
+      .select("id, slug, name, description, icon, bookable, is_public, category_data, updated_at, is_locked, origin_standard_table_id, system_data, is_hidden")
       .eq("organization_id", data.organization_id)
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
-    const list = (rows ?? []) as any[];
+    let list = (rows ?? []) as any[];
+    // Tabelas ocultas pelo super admin só aparecem para o super admin.
+    if (list.some((t) => t.is_hidden)) {
+      const isSA = await isSuperAdmin(context.supabase, context.userId);
+      if (!isSA) list = list.filter((t) => !t.is_hidden);
+    }
     // Master de reservas definido pelo super admin na tabela padrão de origem (Iteração 24).
     const originIds = Array.from(new Set(list.map((t) => t.origin_standard_table_id).filter(Boolean))) as string[];
     let masters: Record<string, boolean> = {};
