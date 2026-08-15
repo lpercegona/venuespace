@@ -196,6 +196,15 @@ const ADMIN_GROUPS: AdminGroup[] = [
     ],
   },
   {
+    value: "modules",
+    label: "Módulos",
+    icon: Blocks,
+    sections: [
+      { value: "modules-overview", label: "Visão geral", render: () => <ModulesSection /> },
+      { value: "module-bookings", label: "Reservas", render: () => <ModuleBookingsConfig /> },
+    ],
+  },
+  {
     value: "layout",
     label: "Layout",
     icon: LayoutGrid,
