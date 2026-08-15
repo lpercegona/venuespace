@@ -319,6 +319,15 @@ export const applyFieldCatalogEntry = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
+    if (data.sync_org_fields) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await (supabaseAdmin as any)
+        .from("fields")
+        .update({ label: data.label, type: data.field_type, required: data.required, config: data.config })
+        .eq("key", data.field_key);
+      if (error) throw new Error(error.message);
+    }
+
     return { ok: true, applied: categoryIds.length };
   });
 
