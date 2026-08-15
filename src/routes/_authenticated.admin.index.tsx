@@ -3345,6 +3345,8 @@ function StandardFormsSection() {
           category_id: selectedCat,
           scope,
           standard_table_id: scope === "record" ? stdTableId || null : null,
+          target_standard_table_id: targetStdTableId || null,
+
           name,
           submit_label: submitLabel,
           target_table_name: targetName,
