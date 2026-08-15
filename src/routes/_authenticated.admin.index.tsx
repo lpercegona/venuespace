@@ -26,6 +26,16 @@ import { cn } from "@/lib/utils";
 import { listBlogPostsAdmin, deleteBlogPost, type BlogPostListItem } from "@/lib/blog.functions";
 
 import { AppShell } from "@/components/venue/app-shell";
+import { FieldCatalogSection } from "@/components/admin/field-catalog-section";
+import {
+  FieldTypeConfig,
+  applyDraftToConfig,
+  draftFromConfig,
+  emptyTypeDraft,
+  formatOptionLines,
+  parseOptionLines,
+  type TypeDraft,
+} from "@/components/admin/field-type-config";
 import { EmptyState } from "@/components/venue/empty-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -906,6 +916,7 @@ function DefaultFieldsSection() {
               <TabsTrigger value="org">Organização</TabsTrigger>
               <TabsTrigger value="table">Tabela</TabsTrigger>
               <TabsTrigger value="record">Registro</TabsTrigger>
+              <TabsTrigger value="all">Todos os campos</TabsTrigger>
             </TabsList>
             <TabsContent value="org">
               <ScopeEditor categoryId={selected} scope="org" />
@@ -915,6 +926,9 @@ function DefaultFieldsSection() {
             </TabsContent>
             <TabsContent value="record">
               <ScopeEditor categoryId={selected} scope="record" />
+            </TabsContent>
+            <TabsContent value="all">
+              <FieldCatalogSection />
             </TabsContent>
           </Tabs>
         )}
@@ -1585,7 +1599,7 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                 <div className="sm:col-span-2 flex items-center justify-between gap-3 rounded-lg border border-border p-3">
                   <div className="min-w-0">
                     <Label htmlFor="df-base" className="text-sm">
-                      Campo base da instância
+                      Campo base da plataforma
                     </Label>
                     <p className="text-xs text-muted-foreground">
                       Semeia este campo automaticamente em todas as categorias.
@@ -1814,7 +1828,7 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                   <TableCell>
                     <span className="flex flex-wrap items-center gap-2">
                       {f.label}
-                      {f.is_base ? <Badge variant="outline">instância</Badge> : null}
+                      {f.is_base ? <Badge variant="outline">base</Badge> : null}
                       {groupTitle(f.group_id) ? <Badge variant="secondary">{groupTitle(f.group_id)}</Badge> : null}
                     </span>
                     {f.config?.tooltip ? (
