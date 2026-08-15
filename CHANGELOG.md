@@ -1,3 +1,9 @@
+## 2026-08-15 17:40 (America/Sao_Paulo) — Correção da Iteração 40 (aba "Todos os campos": estilo, escopo do cabeçalho, campos de organização e tabela)
+
+- `src/routes/_authenticated.admin.index.tsx`: `Tabs` passa a ser controlado; a aba "Todos os campos" recebe texto destrutivo quando inativa e fundo destrutivo com texto em contraste quando ativa; o seletor de categoria do cabeçalho e o bloco de reconciliação ficam ocultos enquanto a aba está ativa.
+- `src/lib/field-catalog.functions.ts`: `listFieldCatalog` passa a incluir as chaves criadas dentro de organizações (`public.fields`) que não existem no catálogo por categoria, com `origin` ("catalog" | "organization") e contagem de organizações; `applyFieldCatalogEntry` ganha `sync_org_fields` para propagar rótulo, tipo, obrigatoriedade e config a esses campos.
+- `src/components/admin/field-catalog-section.tsx`: cards substituídos por tabela de colunas em linha única com scroll horizontal; painel de diagnóstico recolhível removido (campos de organização agora são editáveis na própria listagem); novo filtro de origem; diálogo de edição oculta escopo/categorias para campos de origem organização.
+
 ## 2026-08-15 16:20 (America/Sao_Paulo) — Correção da Iteração 40 (escopo único por campo e filtro de categoria)
 
 - Causa raiz: o catálogo global permitia marcar a mesma chave em Organização, Tabela e Registro simultaneamente, criando campos duplicados entre escopos.

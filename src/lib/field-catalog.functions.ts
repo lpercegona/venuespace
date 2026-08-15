@@ -40,9 +40,14 @@ export type FieldCatalogEntry = {
   /** Escopo predominante do campo (um campo pertence a um único escopo). */
   scope: CatalogScope;
   scope_divergent: boolean;
+  /** Origem: catálogo por categoria ou campo criado dentro de organizações. */
+  origin: "catalog" | "organization";
+  /** Quantidade de organizações que já usam a chave (apenas origem "organization"). */
+  organizations: number;
   usages: FieldUsage[];
   dependencies: string[];
 };
+
 
 
 async function requireSA(supabase: any, userId: string) {
@@ -105,10 +110,11 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
     const admin = supabaseAdmin as any;
     const sel = "id, category_id, field_key, label, field_type, required, config, order_index, group_id, is_base";
 
-    const [org, tbl, rec, deps] = await Promise.all([
+    const [org, tbl, rec, orgFields, deps] = await Promise.all([
       admin.from("category_org_fields").select(sel),
       admin.from("category_table_fields").select(sel),
       admin.from("organization_category_default_fields").select(sel),
+      admin.from("fields").select("key, label, type, required, config, position, tables!inner(organization_id)").limit(5000),
       loadDependencies(admin),
     ]);
 
@@ -134,6 +140,8 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
           divergent: false,
           scope,
           scope_divergent: false,
+          origin: "catalog",
+          organizations: 0,
           usages: [],
           dependencies: deps[key] ?? [],
         };
@@ -174,7 +182,45 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
       e.scope = best;
     }
 
+    // Campos criados dentro de organizações que ainda não existem no catálogo.
+    const orgOnly = new Map<string, { entry: FieldCatalogEntry; orgs: Set<string> }>();
+    for (const r of ((orgFields.data ?? []) as any[])) {
+      const key = r.key as string;
+      if (!key || byKey.has(key)) continue;
+      let cur = orgOnly.get(key);
+      if (!cur) {
+        cur = {
+          orgs: new Set<string>(),
+          entry: {
+            field_key: key,
+            label: r.label ?? key,
+            field_type: r.type ?? "text",
+            required: !!r.required,
+            order_index: r.position ?? 0,
+            config: (r.config ?? {}) as Record<string, any>,
+            is_base: false,
+            divergent: false,
+            scope: "record",
+            scope_divergent: false,
+            origin: "organization",
+            organizations: 0,
+            usages: [],
+            dependencies: deps[key] ?? [],
+          },
+        };
+        orgOnly.set(key, cur);
+      }
+      const orgId = Array.isArray(r.tables) ? r.tables[0]?.organization_id : r.tables?.organization_id;
+      if (orgId) cur.orgs.add(orgId);
+      if (r.label !== cur.entry.label || r.type !== cur.entry.field_type) cur.entry.divergent = true;
+    }
+    for (const { entry, orgs } of orgOnly.values()) {
+      entry.organizations = orgs.size;
+      byKey.set(entry.field_key, entry);
+    }
+
     return [...byKey.values()].sort((a, b) => a.field_key.localeCompare(b.field_key));
+
 
   });
 
@@ -224,6 +270,9 @@ const applySchema = z.object({
   scope: scopeSchema,
   /** Categorias em que o campo existe nesse escopo (ignorado quando is_base). */
   category_ids: z.array(z.string().uuid()),
+  /** Propaga rótulo/tipo/config para os campos já criados dentro de organizações. */
+  sync_org_fields: z.boolean().optional(),
+
 });
 
 export const applyFieldCatalogEntry = createServerFn({ method: "POST" })
@@ -267,6 +316,15 @@ export const applyFieldCatalogEntry = createServerFn({ method: "POST" })
     // Segmentação: a chave não pode existir nos outros escopos.
     for (const other of (["org", "table", "record"] as CatalogScope[]).filter((s) => s !== data.scope)) {
       const { error } = await sb.from(tableFor(other)).delete().eq("field_key", data.field_key);
+      if (error) throw new Error(error.message);
+    }
+
+    if (data.sync_org_fields) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await (supabaseAdmin as any)
+        .from("fields")
+        .update({ label: data.label, type: data.field_type, required: data.required, config: data.config })
+        .eq("key", data.field_key);
       if (error) throw new Error(error.message);
     }
 
