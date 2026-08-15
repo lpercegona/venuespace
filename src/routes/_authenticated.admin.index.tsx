@@ -1499,111 +1499,13 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                   </div>
                   <Switch id="df-base" checked={isBase} onCheckedChange={setIsBase} />
                 </div>
-                {type === "select" || type === "multiselect" ? (
-                  <div className="sm:col-span-2 space-y-2">
-                    <Label htmlFor="df-options">Opções (uma por linha — use "Opção | Icone" para ícone)</Label>
-                    <Textarea
-                      id="df-options"
-                      rows={4}
-                      value={optionsText}
-                      onChange={(e) => setOptionsText(e.target.value)}
-                      placeholder="Ex: Aluguel&#10;Venda&#10;Temporada"
-                    />
-                  </div>
-                ) : null}
-                {type === "text" ? (
-                  <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
-                    <div>
-                      <Label htmlFor="df-cep" className="text-sm">
-                        Autocompletar via ViaCEP
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Ao preencher, busca endereço e preenche logradouro/bairro/cidade/estado.
-                      </p>
-                    </div>
-                    <Switch id="df-cep" checked={cepRole} onCheckedChange={setCepRole} />
-                  </div>
-                ) : null}
-                {type === "computed" ? (
-                  <div className="sm:col-span-2 space-y-3 rounded-lg border border-dashed border-border p-3">
-                    <p className="text-xs text-muted-foreground">{TYPE_HELP.computed}</p>
-                    <div className="space-y-2">
-                      <Label>Modo</Label>
-                      <Select value={computedMode} onValueChange={setComputedMode}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sum">Soma de um campo</SelectItem>
-                          <SelectItem value="count">Contagem de registros</SelectItem>
-                          <SelectItem value="sum_qty_value">Soma de quantidade × valor</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="df-comp-src">Tabela de origem (slug)</Label>
-                        <Input id="df-comp-src" className="font-mono" value={computedSource} onChange={(e) => setComputedSource(e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="df-comp-val">Campo de valor</Label>
-                        <Input id="df-comp-val" className="font-mono" value={computedValueKey} onChange={(e) => setComputedValueKey(e.target.value)} />
-                      </div>
-                      {computedMode === "sum_qty_value" ? (
-                        <div className="space-y-2">
-                          <Label htmlFor="df-comp-qty">Campo de quantidade</Label>
-                          <Input id="df-comp-qty" className="font-mono" value={computedQtyKey} onChange={(e) => setComputedQtyKey(e.target.value)} />
-                        </div>
-                      ) : null}
-                      <div className="space-y-2">
-                        <Label htmlFor="df-comp-filter">Filtro (opcional)</Label>
-                        <Input
-                          id="df-comp-filter"
-                          className="font-mono"
-                          placeholder="contribution_status=confirmed"
-                          value={computedFilter}
-                          onChange={(e) => setComputedFilter(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-                {type === "relation" ? (
-                  <div className="sm:col-span-2 space-y-3 rounded-lg border border-dashed border-border p-3">
-                    <p className="text-xs text-muted-foreground">{TYPE_HELP.relation}</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="df-rel-target">Tabela de destino (slug)</Label>
-                        <Input id="df-rel-target" className="font-mono" value={relationTarget} onChange={(e) => setRelationTarget(e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="df-rel-display">Campo de exibição</Label>
-                        <Input id="df-rel-display" className="font-mono" value={relationDisplay} onChange={(e) => setRelationDisplay(e.target.value)} />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between rounded-md border border-border p-3">
-                      <Label htmlFor="df-rel-multi" className="text-sm">Permitir múltiplos registros</Label>
-                      <Switch id="df-rel-multi" checked={relationMultiple} onCheckedChange={setRelationMultiple} />
-                    </div>
-                  </div>
-                ) : null}
-                {type === "boolean" ? (
-                  <div className="sm:col-span-2 space-y-3 rounded-lg border border-dashed border-border p-3">
-                    <p className="text-xs text-muted-foreground">{TYPE_HELP.boolean}</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="df-bool-true">Rótulo para verdadeiro</Label>
-                        <Input id="df-bool-true" value={boolTrue} onChange={(e) => setBoolTrue(e.target.value)} placeholder="Sim" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="df-bool-false">Rótulo para falso</Label>
-                        <Input id="df-bool-false" value={boolFalse} onChange={(e) => setBoolFalse(e.target.value)} placeholder="Não" />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between rounded-md border border-border p-3">
-                      <Label htmlFor="df-bool-def" className="text-sm">Valor padrão ligado</Label>
-                      <Switch id="df-bool-def" checked={boolDefault} onCheckedChange={setBoolDefault} />
-                    </div>
-                  </div>
-                ) : null}
+                <FieldTypeConfig
+                  type={type}
+                  draft={typeDraft}
+                  onChange={(patch) => setTypeDraft((d) => ({ ...d, ...patch }))}
+                  idPrefix="df"
+                />
+
               </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
