@@ -110,6 +110,8 @@ import {
 import {
   listCategoryStandardForms,
   upsertCategoryStandardForm,
+  createCategoryStandardFormFromTable,
+
   deleteCategoryStandardForm,
   listCategoryStandardFormFields,
   upsertCategoryStandardFormField,
