@@ -288,7 +288,20 @@ function AuthPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="in-pass">Senha</Label>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="in-pass">Senha</Label>
+                          <button
+                            type="button"
+                            className="text-xs font-medium text-primary hover:underline"
+                            onClick={() => {
+                              setForgotEmail(signInEmail);
+                              setForgot(true);
+                            }}
+                          >
+                            Esqueci minha senha
+                          </button>
+                        </div>
+
                         <Input
                           id="in-pass"
                           type="password"
