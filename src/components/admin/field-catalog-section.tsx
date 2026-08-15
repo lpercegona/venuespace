@@ -214,12 +214,12 @@ export function FieldCatalogSection() {
               {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={originFilter} onValueChange={setOriginFilter}>
-            <SelectTrigger className="lg:w-44" aria-label="Filtrar por origem"><SelectValue /></SelectTrigger>
+          <Select value={baseFilter} onValueChange={setBaseFilter}>
+            <SelectTrigger className="lg:w-44" aria-label="Filtrar por campo base"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas as origens</SelectItem>
-              <SelectItem value="catalog">Catálogo</SelectItem>
-              <SelectItem value="organization">Criado em organização</SelectItem>
+              <SelectItem value="all">Base e não base</SelectItem>
+              <SelectItem value="base">Somente base</SelectItem>
+              <SelectItem value="not_base">Somente não base</SelectItem>
             </SelectContent>
           </Select>
           <Select value={depFilter} onValueChange={setDepFilter}>
@@ -227,9 +227,9 @@ export function FieldCatalogSection() {
             <SelectContent>
               <SelectItem value="all">Todos os campos</SelectItem>
               <SelectItem value="with">Com dependência</SelectItem>
-              <SelectItem value="base">Somente base</SelectItem>
             </SelectContent>
           </Select>
+
         </div>
 
 
