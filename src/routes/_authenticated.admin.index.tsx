@@ -3433,9 +3433,36 @@ function StandardFormsSection() {
                       </div>
                       <div className="space-y-2">
                         <Label>Tabela de destino</Label>
-                        <Input required value={targetName} onChange={(e) => setTargetName(e.target.value)} />
+                        <Select
+                          value={targetStdTableId || "__contacts"}
+                          onValueChange={(v) => {
+                            if (v === "__contacts") {
+                              setTargetStdTableId("");
+                              setTargetName("Contatos");
+                            } else {
+                              setTargetStdTableId(v);
+                              setTargetName((stdTables.data ?? []).find((t) => t.id === v)?.name ?? "Contatos");
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__contacts">Contatos (padrão)</SelectItem>
+                            {(stdTables.data ?? []).map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Onde as submissões deste formulário são gravadas em cada organização.
+                        </p>
                       </div>
                     </div>
+
                     <div className="flex items-center justify-between rounded-md border border-border p-3">
                       <div>
                         <Label className="text-sm">Ativo</Label>
