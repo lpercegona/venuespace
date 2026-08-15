@@ -17,6 +17,7 @@ export type CategoryStandardTable = {
   order_index: number;
   is_public: boolean;
   bookable: boolean;
+  is_hidden: boolean;
   kind: "normal" | "contacts" | "bookings";
   is_system: boolean;
 };
@@ -60,7 +61,7 @@ export const listCategoryStandardTables = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("category_standard_tables")
-      .select("id, category_id, name, slug, icon, description, order_index, is_public, bookable, kind, is_system")
+      .select("id, category_id, name, slug, icon, description, order_index, is_public, bookable, is_hidden, kind, is_system")
       .eq("category_id", data.category_id)
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
@@ -77,6 +78,7 @@ const upsertTable = z.object({
   order_index: z.number().int().min(0),
   is_public: z.boolean().optional(),
   bookable: z.boolean().optional(),
+  is_hidden: z.boolean().optional(),
 });
 
 export const upsertCategoryStandardTable = createServerFn({ method: "POST" })
@@ -99,6 +101,7 @@ export const upsertCategoryStandardTable = createServerFn({ method: "POST" })
             description: data.description ?? null,
             icon: data.icon ?? null,
             order_index: data.order_index,
+            is_hidden: data.is_hidden ?? false,
           }
         : {
             category_id: data.category_id,
@@ -109,6 +112,7 @@ export const upsertCategoryStandardTable = createServerFn({ method: "POST" })
             order_index: data.order_index,
             is_public: data.is_public ?? false,
             bookable: data.bookable ?? false,
+            is_hidden: data.is_hidden ?? false,
           };
       const { error } = await (supabaseAdmin as any)
         .from("category_standard_tables").update(payload).eq("id", data.id);
@@ -127,6 +131,7 @@ export const upsertCategoryStandardTable = createServerFn({ method: "POST" })
         order_index: data.order_index,
         is_public: data.is_public ?? false,
         bookable: data.bookable ?? false,
+        is_hidden: data.is_hidden ?? false,
       }).select("id").single();
     if (error) throw new Error(error.message);
     await syncCategory(context.supabase, data.category_id);
