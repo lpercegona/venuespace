@@ -4,6 +4,7 @@ import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-quer
 import { CalendarDays, Loader2, Plus } from "lucide-react";
 import { getOrganizationBySlug, listTables } from "@/lib/orgs.functions";
 import { listBookings, listAvailableResources } from "@/lib/bookings.functions";
+import { getOrgModuleState } from "@/lib/modules.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
