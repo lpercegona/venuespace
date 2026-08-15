@@ -26,6 +26,16 @@ import { cn } from "@/lib/utils";
 import { listBlogPostsAdmin, deleteBlogPost, type BlogPostListItem } from "@/lib/blog.functions";
 
 import { AppShell } from "@/components/venue/app-shell";
+import { FieldCatalogSection } from "@/components/admin/field-catalog-section";
+import {
+  FieldTypeConfig,
+  applyDraftToConfig,
+  draftFromConfig,
+  emptyTypeDraft,
+  formatOptionLines,
+  parseOptionLines,
+  type TypeDraft,
+} from "@/components/admin/field-type-config";
 import { EmptyState } from "@/components/venue/empty-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -415,24 +425,6 @@ function GeneralSection() {
 }
 
 /** "Opção | Icone" por linha → { options, option_icons }. */
-function parseOptionLines(text: string) {
-  const options: string[] = [];
-  const option_icons: Record<string, string> = {};
-  for (const line of text.split(/\n/)) {
-    const raw = line.trim();
-    if (!raw) continue;
-    const [labelPart, iconPart] = raw.split("|").map((x) => x.trim());
-    if (!labelPart) continue;
-    options.push(labelPart);
-    if (iconPart) option_icons[labelPart] = iconPart;
-  }
-  return { options, option_icons };
-}
-
-/** Inverso de parseOptionLines, para preencher o textarea de edição. */
-function formatOptionLines(options: string[], icons: Record<string, string> | undefined) {
-  return options.map((o) => (icons?.[o] ? `${o} | ${icons[o]}` : o)).join("\n");
-}
 
 // ---------- Labels ----------
 
@@ -906,6 +898,7 @@ function DefaultFieldsSection() {
               <TabsTrigger value="org">Organização</TabsTrigger>
               <TabsTrigger value="table">Tabela</TabsTrigger>
               <TabsTrigger value="record">Registro</TabsTrigger>
+              <TabsTrigger value="all">Todos os campos</TabsTrigger>
             </TabsList>
             <TabsContent value="org">
               <ScopeEditor categoryId={selected} scope="org" />
@@ -915,6 +908,9 @@ function DefaultFieldsSection() {
             </TabsContent>
             <TabsContent value="record">
               <ScopeEditor categoryId={selected} scope="record" />
+            </TabsContent>
+            <TabsContent value="all">
+              <FieldCatalogSection />
             </TabsContent>
           </Tabs>
         )}
@@ -950,14 +946,6 @@ const SCOPE_BASE_KEY: Record<DefaultsScope, "organization" | "table" | null> = {
   record: null,
 };
 
-const TYPE_HELP: Record<string, string> = {
-  computed:
-    "Campo calculado: escolha o modo (soma, contagem ou soma de quantidade x valor), a tabela de origem e as chaves usadas no cálculo. O valor é resolvido na leitura e não é editável no formulário.",
-  relation:
-    "Campo de relação: aponta para registros de outra tabela padrão da categoria. Informe a tabela de destino e a chave do campo usado como texto de exibição.",
-  boolean:
-    "Campo sim/não: define os rótulos exibidos para verdadeiro e falso e o valor inicial do formulário.",
-};
 
 function FieldGroupsManager({ categoryId, scope }: { categoryId: string; scope: DefaultsScope }) {
   const qc = useQueryClient();
@@ -1231,25 +1219,13 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
   const [type, setType] = useState<(typeof FIELD_TYPES)[number]>("text");
   const [required, setRequired] = useState(false);
   const [order, setOrder] = useState(0);
-  const [optionsText, setOptionsText] = useState("");
-  const [cepRole, setCepRole] = useState(false);
   const [tooltip, setTooltip] = useState("");
   const [groupId, setGroupId] = useState("__none__");
   const [isBase, setIsBase] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // configuração por tipo
-  const [computedMode, setComputedMode] = useState("sum");
-  const [computedSource, setComputedSource] = useState("");
-  const [computedValueKey, setComputedValueKey] = useState("");
-  const [computedQtyKey, setComputedQtyKey] = useState("");
-  const [computedFilter, setComputedFilter] = useState("");
-  const [relationTarget, setRelationTarget] = useState("");
-  const [relationDisplay, setRelationDisplay] = useState("");
-  const [relationMultiple, setRelationMultiple] = useState(false);
-  const [boolTrue, setBoolTrue] = useState("");
-  const [boolFalse, setBoolFalse] = useState("");
-  const [boolDefault, setBoolDefault] = useState(false);
+  const [typeDraft, setTypeDraft] = useState<TypeDraft>(emptyTypeDraft());
 
   function reset() {
     setEditing(null);
@@ -1258,22 +1234,10 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setType("text");
     setRequired(false);
     setOrder(0);
-    setOptionsText("");
-    setCepRole(false);
     setTooltip("");
     setGroupId("__none__");
     setIsBase(false);
-    setComputedMode("sum");
-    setComputedSource("");
-    setComputedValueKey("");
-    setComputedQtyKey("");
-    setComputedFilter("");
-    setRelationTarget("");
-    setRelationDisplay("");
-    setRelationMultiple(false);
-    setBoolTrue("");
-    setBoolFalse("");
-    setBoolDefault(false);
+    setTypeDraft(emptyTypeDraft());
   }
 
   function uniqueKey(base: string) {
@@ -1306,24 +1270,10 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
     setRequired(f.required);
     setOrder(f.order_index);
     const cfg = f.config ?? {};
-    const opts = Array.isArray(cfg.options) ? (cfg.options as any[]).map(String) : [];
-    setOptionsText(formatOptionLines(opts, cfg.option_icons as Record<string, string> | undefined));
-    setCepRole(cfg.role === "cep");
     setTooltip(typeof cfg.tooltip === "string" ? cfg.tooltip : "");
     setGroupId(f.group_id ?? "__none__");
     setIsBase(!!f.is_base);
-    const comp = (cfg.compute ?? {}) as Record<string, any>;
-    setComputedMode(typeof comp.mode === "string" ? comp.mode : "sum");
-    setComputedSource(typeof comp.source_table === "string" ? comp.source_table : "");
-    setComputedValueKey(typeof comp.value_key === "string" ? comp.value_key : "");
-    setComputedQtyKey(typeof comp.qty_key === "string" ? comp.qty_key : "");
-    setComputedFilter(typeof comp.filter === "string" ? comp.filter : "");
-    setRelationTarget(typeof cfg.target_table === "string" ? cfg.target_table : "");
-    setRelationDisplay(typeof cfg.display_key === "string" ? cfg.display_key : "");
-    setRelationMultiple(!!cfg.multiple);
-    setBoolTrue(typeof cfg.true_label === "string" ? cfg.true_label : "");
-    setBoolFalse(typeof cfg.false_label === "string" ? cfg.false_label : "");
-    setBoolDefault(!!cfg.default);
+    setTypeDraft(draftFromConfig(cfg));
     setOpen(true);
   }
 
@@ -1334,52 +1284,8 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
       const finalKey = editing ? key : uniqueKey(toSnake(key || label));
       // Merge com o config existente: preserva chaves desconhecidas e limpa as
       // que não se aplicam mais ao tipo escolhido.
-      const config: Record<string, any> = { ...(editing?.config ?? {}) };
-      if (type === "select" || type === "multiselect") {
-        const parsed = parseOptionLines(optionsText);
-        if (parsed.options.length > 0) config.options = parsed.options;
-        else delete config.options;
-        if (Object.keys(parsed.option_icons).length > 0) config.option_icons = parsed.option_icons;
-        else delete config.option_icons;
-      } else {
-        delete config.options;
-        delete config.option_icons;
-      }
-      if (type === "text" && cepRole) config.role = "cep";
-      else if (config.role === "cep") delete config.role;
+      const config = applyDraftToConfig(editing?.config ?? null, type, typeDraft, tooltip);
 
-      if (tooltip.trim()) config.tooltip = tooltip.trim();
-      else delete config.tooltip;
-
-      if (type === "computed") {
-        config.compute = {
-          mode: computedMode,
-          source_table: computedSource.trim() || null,
-          value_key: computedValueKey.trim() || null,
-          qty_key: computedQtyKey.trim() || null,
-          filter: computedFilter.trim() || null,
-        };
-      } else {
-        delete config.compute;
-      }
-      if (type === "relation") {
-        config.target_table = relationTarget.trim() || null;
-        config.display_key = relationDisplay.trim() || null;
-        config.multiple = relationMultiple;
-      } else {
-        delete config.target_table;
-        delete config.display_key;
-        delete config.multiple;
-      }
-      if (type === "boolean") {
-        config.true_label = boolTrue.trim() || null;
-        config.false_label = boolFalse.trim() || null;
-        config.default = boolDefault;
-      } else {
-        delete config.true_label;
-        delete config.false_label;
-        delete config.default;
-      }
 
       const payload = {
         id: editing?.id,
@@ -1585,7 +1491,7 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                 <div className="sm:col-span-2 flex items-center justify-between gap-3 rounded-lg border border-border p-3">
                   <div className="min-w-0">
                     <Label htmlFor="df-base" className="text-sm">
-                      Campo base da instância
+                      Campo base da plataforma
                     </Label>
                     <p className="text-xs text-muted-foreground">
                       Semeia este campo automaticamente em todas as categorias.
@@ -1593,111 +1499,13 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                   </div>
                   <Switch id="df-base" checked={isBase} onCheckedChange={setIsBase} />
                 </div>
-                {type === "select" || type === "multiselect" ? (
-                  <div className="sm:col-span-2 space-y-2">
-                    <Label htmlFor="df-options">Opções (uma por linha — use "Opção | Icone" para ícone)</Label>
-                    <Textarea
-                      id="df-options"
-                      rows={4}
-                      value={optionsText}
-                      onChange={(e) => setOptionsText(e.target.value)}
-                      placeholder="Ex: Aluguel&#10;Venda&#10;Temporada"
-                    />
-                  </div>
-                ) : null}
-                {type === "text" ? (
-                  <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
-                    <div>
-                      <Label htmlFor="df-cep" className="text-sm">
-                        Autocompletar via ViaCEP
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Ao preencher, busca endereço e preenche logradouro/bairro/cidade/estado.
-                      </p>
-                    </div>
-                    <Switch id="df-cep" checked={cepRole} onCheckedChange={setCepRole} />
-                  </div>
-                ) : null}
-                {type === "computed" ? (
-                  <div className="sm:col-span-2 space-y-3 rounded-lg border border-dashed border-border p-3">
-                    <p className="text-xs text-muted-foreground">{TYPE_HELP.computed}</p>
-                    <div className="space-y-2">
-                      <Label>Modo</Label>
-                      <Select value={computedMode} onValueChange={setComputedMode}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sum">Soma de um campo</SelectItem>
-                          <SelectItem value="count">Contagem de registros</SelectItem>
-                          <SelectItem value="sum_qty_value">Soma de quantidade × valor</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="df-comp-src">Tabela de origem (slug)</Label>
-                        <Input id="df-comp-src" className="font-mono" value={computedSource} onChange={(e) => setComputedSource(e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="df-comp-val">Campo de valor</Label>
-                        <Input id="df-comp-val" className="font-mono" value={computedValueKey} onChange={(e) => setComputedValueKey(e.target.value)} />
-                      </div>
-                      {computedMode === "sum_qty_value" ? (
-                        <div className="space-y-2">
-                          <Label htmlFor="df-comp-qty">Campo de quantidade</Label>
-                          <Input id="df-comp-qty" className="font-mono" value={computedQtyKey} onChange={(e) => setComputedQtyKey(e.target.value)} />
-                        </div>
-                      ) : null}
-                      <div className="space-y-2">
-                        <Label htmlFor="df-comp-filter">Filtro (opcional)</Label>
-                        <Input
-                          id="df-comp-filter"
-                          className="font-mono"
-                          placeholder="contribution_status=confirmed"
-                          value={computedFilter}
-                          onChange={(e) => setComputedFilter(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-                {type === "relation" ? (
-                  <div className="sm:col-span-2 space-y-3 rounded-lg border border-dashed border-border p-3">
-                    <p className="text-xs text-muted-foreground">{TYPE_HELP.relation}</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="df-rel-target">Tabela de destino (slug)</Label>
-                        <Input id="df-rel-target" className="font-mono" value={relationTarget} onChange={(e) => setRelationTarget(e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="df-rel-display">Campo de exibição</Label>
-                        <Input id="df-rel-display" className="font-mono" value={relationDisplay} onChange={(e) => setRelationDisplay(e.target.value)} />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between rounded-md border border-border p-3">
-                      <Label htmlFor="df-rel-multi" className="text-sm">Permitir múltiplos registros</Label>
-                      <Switch id="df-rel-multi" checked={relationMultiple} onCheckedChange={setRelationMultiple} />
-                    </div>
-                  </div>
-                ) : null}
-                {type === "boolean" ? (
-                  <div className="sm:col-span-2 space-y-3 rounded-lg border border-dashed border-border p-3">
-                    <p className="text-xs text-muted-foreground">{TYPE_HELP.boolean}</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="df-bool-true">Rótulo para verdadeiro</Label>
-                        <Input id="df-bool-true" value={boolTrue} onChange={(e) => setBoolTrue(e.target.value)} placeholder="Sim" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="df-bool-false">Rótulo para falso</Label>
-                        <Input id="df-bool-false" value={boolFalse} onChange={(e) => setBoolFalse(e.target.value)} placeholder="Não" />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between rounded-md border border-border p-3">
-                      <Label htmlFor="df-bool-def" className="text-sm">Valor padrão ligado</Label>
-                      <Switch id="df-bool-def" checked={boolDefault} onCheckedChange={setBoolDefault} />
-                    </div>
-                  </div>
-                ) : null}
+                <FieldTypeConfig
+                  type={type}
+                  draft={typeDraft}
+                  onChange={(patch) => setTypeDraft((d) => ({ ...d, ...patch }))}
+                  idPrefix="df"
+                />
+
               </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
@@ -1814,7 +1622,7 @@ function ScopeEditor({ categoryId, scope }: { categoryId: string; scope: Default
                   <TableCell>
                     <span className="flex flex-wrap items-center gap-2">
                       {f.label}
-                      {f.is_base ? <Badge variant="outline">instância</Badge> : null}
+                      {f.is_base ? <Badge variant="outline">base</Badge> : null}
                       {groupTitle(f.group_id) ? <Badge variant="secondary">{groupTitle(f.group_id)}</Badge> : null}
                     </span>
                     {f.config?.tooltip ? (
