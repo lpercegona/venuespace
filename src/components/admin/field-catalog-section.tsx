@@ -245,10 +245,9 @@ export function FieldCatalogSection() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Campo</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Escopo</TableHead>
-                  <TableHead>Origem</TableHead>
                   <TableHead>Categorias</TableHead>
+                  <TableHead>Escopo</TableHead>
+                  <TableHead>Base</TableHead>
                   <TableHead>Dependências</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -256,15 +255,20 @@ export function FieldCatalogSection() {
               <TableBody>
                 {entries.map((e) => (
                   <TableRow key={e.field_key}>
-                    <TableCell className="max-w-[260px]">
+                    <TableCell className="max-w-[320px]">
                       <span className="block truncate font-medium">{e.label}</span>
-                      <span className="block truncate font-mono text-xs text-muted-foreground">{e.field_key}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="flex flex-wrap gap-1">
+                      <span className="mt-1 flex flex-wrap items-center gap-1">
+                        <span className="truncate font-mono text-xs text-muted-foreground">{e.field_key}</span>
                         <Badge variant="secondary">{e.field_type}</Badge>
                         {e.required ? <Badge variant="secondary">obrigatório</Badge> : null}
                         {e.divergent ? <Badge variant="destructive">divergente</Badge> : null}
+                      </span>
+                    </TableCell>
+                    <TableCell className="max-w-[260px] text-xs text-muted-foreground">
+                      <span className="block truncate">
+                        {e.is_base
+                          ? "Todas as categorias"
+                          : [...new Set(e.usages.map((u) => catName(u.category_id)))].join(", ") || "—"}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -274,23 +278,13 @@ export function FieldCatalogSection() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {e.origin === "organization" ? (
-                        <Badge variant="outline" className="border-destructive/50 text-destructive">organização</Badge>
-                      ) : e.is_base ? (
-                        <Badge variant="outline">base</Badge>
+                      {e.is_base ? (
+                        <Badge variant="outline">Base</Badge>
                       ) : (
-                        <Badge variant="outline">catálogo</Badge>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="max-w-[260px] text-xs text-muted-foreground">
-                      <span className="block truncate">
-                        {e.origin === "organization"
-                          ? `${e.organizations} organização(ões)`
-                          : e.is_base
-                            ? "Todas as categorias"
-                            : [...new Set(e.usages.map((u) => catName(u.category_id)))].join(", ") || "—"}
-                      </span>
-                    </TableCell>
+
                     <TableCell className="max-w-[220px]">
                       {e.dependencies.length === 0 ? (
                         <span className="text-xs text-muted-foreground">—</span>
