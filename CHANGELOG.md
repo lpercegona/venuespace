@@ -1,3 +1,11 @@
+## 2026-08-15 23:55 (America/Sao_Paulo) — Correção/extensão das Iterações 40 e 41 — Tabelas ocultas e campos da tabela de contatos
+
+- Migração: `category_standard_tables.is_hidden` e `tables.is_hidden` (padrão `false`); `sync_category_standard_tables` propaga o estado para as tabelas das organizações, incluindo tabelas de sistema (contatos/reservas).
+- `src/lib/category-standard-tables.functions.ts`: `is_hidden` na leitura e no upsert das tabelas-modelo (também para tabelas de sistema).
+- `src/routes/_authenticated.admin.index.tsx`: toggle "Ocultar tabela" no formulário de tabela-modelo e badge "oculta" na listagem.
+- `src/lib/orgs.functions.ts`: `listTables` filtra tabelas ocultas para quem não é super admin.
+- `src/routes/_authenticated.app.$orgSlug.tables.$tableId.index.tsx`: botão/estrutura de campos ocultos na tabela de Contatos para quem não é super admin.
+
 ## 2026-08-15 23:40 (America/Sao_Paulo) — Correção/extensão das Iterações 25, 40 e 41 — Governança de tabelas e painel da organização
 
 - Migração anterior aplicada: `public.organization_categories.allow_custom_tables` (padrão `true`).
