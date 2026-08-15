@@ -158,9 +158,17 @@ export function AppShell({ title, subtitle, actions, children }: Props) {
                 </DropdownMenuItem>
                 {orgSlug ? (
                   <>
-                    <DropdownMenuItem onSelect={() => navigate({ to: "/app/$orgSlug/calendar", params: { orgSlug } })}>
-                      <CalendarDays className="h-4 w-4" />{t("bookings", "Reservas")}
-                    </DropdownMenuItem>
+                    {MODULE_REGISTRY.filter(
+                      (m) => m.menu && moduleState.data?.[m.key as "bookings"] === true,
+                    ).map((m) => (
+                      <DropdownMenuItem
+                        key={m.key}
+                        onSelect={() => navigate({ to: m.menu!.to, params: { orgSlug } })}
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                        {t(m.menu!.labelKey, m.menu!.labelFallback)}
+                      </DropdownMenuItem>
+                    ))}
                     <DropdownMenuItem onSelect={() => navigate({ to: "/app/$orgSlug/members", params: { orgSlug } })}>
                       <Users className="h-4 w-4" />{t("memberships", "Membros")}
                     </DropdownMenuItem>
