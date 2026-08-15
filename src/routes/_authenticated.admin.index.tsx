@@ -3665,6 +3665,17 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
                 <Label className="text-sm">Obrigatório</Label>
                 <Switch checked={required} onCheckedChange={setRequired} />
               </div>
+              <div className="flex items-center justify-between rounded-md border border-border p-3">
+                <div className="min-w-0">
+                  <Label className="text-sm">Visível no formulário</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Desativado: o campo continua na tabela de destino, mas não aparece nem é aceito no formulário
+                    público.
+                  </p>
+                </div>
+                <Switch checked={visible} onCheckedChange={setVisible} className="shrink-0" />
+              </div>
+
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                   Cancelar
