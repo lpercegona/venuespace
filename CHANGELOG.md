@@ -1,3 +1,13 @@
+## 2026-08-15 15:20 (America/Sao_Paulo) — Correção/extensão das Iterações 32 e 41 — Menu por módulo ativo e visualização em calendário das reservas
+
+- `src/lib/module-registry.ts`: definição de módulo passa a declarar opcionalmente seu item de menu (`menu: { labelKey, labelFallback, to }`), de modo que novos módulos apareçam no menu sem alterar componentes.
+- `src/components/venue/app-shell.tsx`: consulta `getOrgModuleState` da organização atual e renderiza os itens de menu de módulo apenas quando o módulo está ativo para a categoria; enquanto carrega, o item fica oculto (sem piscar).
+- `src/components/venue/booking-calendar-shared.ts`: utilidades de datas, ocupação por dia e tons semânticos por estágio de negociação (tokens `--status-*`).
+- `src/components/venue/booking-calendar-view.tsx`: nova visualização mensal das reservas, com navegação de mês, destaque do dia atual e clique para editar.
+- `src/components/venue/booking-timeline-view.tsx`: nova grade de ocupação (timeline) com uma linha por item reservável, colunas por dia e barras contínuas por reserva, com rolagem horizontal.
+- `src/routes/_authenticated.app.$orgSlug.calendar.tsx`: alternância Lista/Calendário por tabela (persistida na sessão) e, dentro do calendário, alternância Mês/Ocupação; filtros de estágio e arquivadas continuam válidos nas duas visões; filtro de disponibilidade permanece exclusivo da lista.
+- Sem migração, sem novo endpoint e sem rota pública nova — sitemap inalterado.
+
 ## 2026-08-15 21:05 (America/Sao_Paulo) — Iteração 41 — Módulos da plataforma (extensão das Iterações 7/32 — Reservas)
 
 - Migração: novas tabelas `platform_modules` (catálogo de módulos) e `category_modules` (ativação e `config` jsonb por categoria), com GRANTs e RLS (leitura para autenticados, escrita restrita a super admin); módulo `bookings` semeado.

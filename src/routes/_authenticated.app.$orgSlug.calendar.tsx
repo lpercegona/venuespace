@@ -19,6 +19,9 @@ import { BookingFormDialog, type BookingEditTarget } from "@/components/venue/bo
 import { BookingAvailabilityFilter, todayISO, type BookingRange } from "@/components/venue/booking-availability-filter";
 import { BookingStatusActions, DealBadge } from "@/components/venue/booking-status-actions";
 import { useLabels } from "@/hooks/use-instance-context";
+import { BookingCalendarView } from "@/components/venue/booking-calendar-view";
+import { BookingTimelineView } from "@/components/venue/booking-timeline-view";
+import { currentMonth, type CalendarBooking } from "@/components/venue/booking-calendar-shared";
 
 export const Route = createFileRoute("/_authenticated/app/$orgSlug/calendar")({
   head: ({ params }) => ({
@@ -95,9 +98,28 @@ function BookingTablePanel({
   const [stage, setStage] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
   const [editing, setEditing] = useState<BookingEditTarget | null>(null);
+  const [view, setView] = useState<string>(() => {
+    if (typeof window === "undefined") return "list";
+    return window.sessionStorage.getItem(`bkview-${tableId}`) ?? "list";
+  });
+  const [calMode, setCalMode] = useState<string>(() => {
+    if (typeof window === "undefined") return "month";
+    return window.sessionStorage.getItem(`bkcal-${tableId}`) ?? "month";
+  });
+  const [month, setMonth] = useState<string>(() => currentMonth());
 
-  const from = filtering ? range.from : null;
-  const to = filtering ? (range.mode === "single" ? range.from : range.to) : null;
+  const setViewPersisted = (v: string) => {
+    setView(v);
+    if (typeof window !== "undefined") window.sessionStorage.setItem(`bkview-${tableId}`, v);
+  };
+  const setCalModePersisted = (v: string) => {
+    setCalMode(v);
+    if (typeof window !== "undefined") window.sessionStorage.setItem(`bkcal-${tableId}`, v);
+  };
+
+  const isCalendar = view === "calendar";
+  const from = !isCalendar && filtering ? range.from : null;
+  const to = !isCalendar && filtering ? (range.mode === "single" ? range.from : range.to) : null;
 
   const bookings = useQuery({
     queryKey: ["bookings", tableId, from, to, includeArchived],
@@ -108,7 +130,7 @@ function BookingTablePanel({
   const availability = useQuery({
     queryKey: ["booking-availability", tableId, from, to],
     queryFn: () => listAvailableResources({ data: { table_id: tableId, from: from!, to: to! } }),
-    enabled: filtering && !!from && !!to,
+    enabled: !isCalendar && filtering && !!from && !!to,
     placeholderData: keepPreviousData,
   });
 
@@ -119,10 +141,19 @@ function BookingTablePanel({
     return all.filter((b) => b.deal_status === stage);
   }, [bookings.data, stage]);
 
+  const openEdit = (b: any) =>
+    setEditing({
+      id: b.id,
+      data: b.data ?? {},
+      items: b.items ?? [],
+      contact: b.contact ? { id: b.contact.id } : null,
+    });
+
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["bookings", tableId] });
     qc.invalidateQueries({ queryKey: ["booking-availability", tableId] });
   };
+
 
   return (
     <Card>
@@ -140,11 +171,36 @@ function BookingTablePanel({
 
       <CardContent className="space-y-5">
         <div className="space-y-3 rounded-lg border border-border p-3">
-          <BookingAvailabilityFilter
-            value={range}
-            onChange={(next) => { setRange(next); setFiltering(true); }}
-            onClear={() => setFiltering(false)}
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <SegmentedToggle
+              ariaLabel="Modo de visualização"
+              value={view}
+              onValueChange={setViewPersisted}
+              options={[
+                { value: "list", label: "Lista" },
+                { value: "calendar", label: "Calendário" },
+              ]}
+            />
+            {isCalendar ? (
+              <SegmentedToggle
+                ariaLabel="Tipo de calendário"
+                value={calMode}
+                onValueChange={setCalModePersisted}
+                options={[
+                  { value: "month", label: "Mês" },
+                  { value: "timeline", label: "Ocupação" },
+                ]}
+              />
+            ) : null}
+          </div>
+
+          {isCalendar ? null : (
+            <BookingAvailabilityFilter
+              value={range}
+              onChange={(next) => { setRange(next); setFiltering(true); }}
+              onClear={() => setFiltering(false)}
+            />
+          )}
           <div className="flex flex-wrap items-center gap-4">
             <SegmentedToggle
               ariaLabel="Estágio da reserva"
@@ -169,7 +225,7 @@ function BookingTablePanel({
           </div>
         </div>
 
-        {filtering ? (
+        {!isCalendar && filtering ? (
           <div className="rounded-lg border border-border p-3">
             <p className="mb-2 text-sm font-medium">
               Disponibilidade {range.mode === "single" ? `em ${range.from}` : `de ${range.from} a ${range.to}`}
@@ -193,7 +249,28 @@ function BookingTablePanel({
           </div>
         ) : null}
 
-        {bookings.isPending ? (
+        {isCalendar ? (
+          bookings.isPending ? (
+            <Skeleton className="h-72 w-full" />
+          ) : bookings.isError ? (
+            <p className="text-sm text-destructive">{(bookings.error as Error).message}</p>
+          ) : calMode === "timeline" ? (
+            <BookingTimelineView
+              month={month}
+              onMonthChange={setMonth}
+              bookings={items as any}
+              onSelect={(b: CalendarBooking) => openEdit(items.find((i) => i.id === b.id) ?? b)}
+            />
+          ) : (
+            <BookingCalendarView
+              month={month}
+              onMonthChange={setMonth}
+              bookings={items as any}
+              onSelect={(b: CalendarBooking) => openEdit(items.find((i) => i.id === b.id) ?? b)}
+            />
+          )
+        ) : bookings.isPending ? (
+
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : bookings.isError ? (
           <p className="text-sm text-destructive">{(bookings.error as Error).message}</p>

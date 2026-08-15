@@ -6,6 +6,8 @@ export type ModuleDefinition = {
   description: string;
   /** Recursos configuráveis expostos pelo módulo na administração. */
   features: Array<"form" | "pdf">;
+  /** Item de menu da organização exibido apenas quando o módulo está ativo. */
+  menu?: { labelKey: string; labelFallback: string; to: string };
 };
 
 /** Registro de módulos: novos módulos entram apenas como uma nova entrada aqui. */
@@ -16,8 +18,10 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
     description:
       "Agenda, disponibilidade por data, formulário de nova reserva e orçamento em PDF.",
     features: ["form", "pdf"],
+    menu: { labelKey: "bookings", labelFallback: "Reservas", to: "/app/$orgSlug/calendar" },
   },
 ];
+
 
 export function getModuleDefinition(key: string): ModuleDefinition | null {
   return MODULE_REGISTRY.find((m) => m.key === key) ?? null;
