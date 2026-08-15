@@ -199,7 +199,49 @@ function AuthPage() {
                       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verificar"}
                     </Button>
                   </form>
+                ) : forgot ? (
+                  forgotSent ? (
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Se houver uma conta com esse e-mail, enviamos um link para redefinir a senha. Verifique
+                        também a caixa de spam.
+                      </p>
+                      <Button
+                        variant="ghost"
+                        className="h-11 w-full"
+                        onClick={() => {
+                          setForgot(false);
+                          setForgotSent(false);
+                        }}
+                      >
+                        Voltar para o login
+                      </Button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleForgot} className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Informe seu e-mail e enviaremos um link para criar uma nova senha.
+                      </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="forgot-email">E-mail</Label>
+                        <Input
+                          id="forgot-email"
+                          type="email"
+                          required
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                        />
+                      </div>
+                      <Button type="submit" className="h-11 w-full" disabled={loading}>
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar link de recuperação"}
+                      </Button>
+                      <Button variant="ghost" className="h-11 w-full" onClick={() => setForgot(false)}>
+                        Voltar
+                      </Button>
+                    </form>
+                  )
                 ) : pendingEmail ? (
+
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">
                       Enviamos um link de confirmação para <strong className="text-foreground">{pendingEmail}</strong>.
