@@ -74,11 +74,13 @@ export const listBookingsModuleFields = createServerFn({ method: "GET" })
 export const setCategoryModuleEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      category_id: z.string().uuid(),
-      module_key: z.string().min(1),
-      is_enabled: z.boolean(),
-    }).parse(d),
+    z
+      .object({
+        category_id: z.string().uuid(),
+        module_key: z.string().min(1),
+        is_enabled: z.boolean(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await requireSA(context.supabase, context.userId);
@@ -95,11 +97,13 @@ export const setCategoryModuleEnabled = createServerFn({ method: "POST" })
 export const saveCategoryModuleConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      category_id: z.string().uuid(),
-      module_key: z.string().min(1),
-      config: z.record(z.string(), z.unknown()),
-    }).parse(d),
+    z
+      .object({
+        category_id: z.string().uuid(),
+        module_key: z.string().min(1),
+        config: z.record(z.string(), z.unknown()),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await requireSA(context.supabase, context.userId);
@@ -147,19 +151,31 @@ export const previewBookingsQuotePdf = createServerFn({ method: "POST" })
       recordId: "00000000-0000-0000-0000-000000000000",
       client: "Cliente de exemplo — cliente@exemplo.com",
       clientCompany: "Empresa Exemplo LTDA",
-      clientCnpj: "11.222.333/0001-44",
-      clientAddress: "Rua Exemplo, 100 — São Paulo/SP",
-      location: "Salão principal",
+      clientCnpj: "00.000.000/0000-00",
+      clientAddress: "Rua Exemplo, 000 — Cidade/UF",
+      location: "Local de Instalação/Prestação de Serviço",
       periodStart: today,
       periodEnd: today,
       items: [
         {
-          record_id: "demo-1", label: "Item de exemplo A", daily_value: 1200, days: 2,
-          discount: 10, discount_type: "percent", note: "Montagem inclusa.", courtesy: "Suporte técnico",
+          record_id: "demo-1",
+          label: "Item de exemplo A",
+          daily_value: 1000,
+          days: 2,
+          discount: 10,
+          discount_type: "percent",
+          note: "Montagem inclusa.",
+          courtesy: "Suporte técnico",
         },
         {
-          record_id: "demo-2", label: "Item de exemplo B", daily_value: 450, days: 2,
-          discount: 0, discount_type: "amount", note: null, courtesy: null,
+          record_id: "demo-2",
+          label: "Item de exemplo B",
+          daily_value: 500,
+          days: 2,
+          discount: 0,
+          discount_type: "amount",
+          note: null,
+          courtesy: null,
         },
       ],
       travelFee: 250,
