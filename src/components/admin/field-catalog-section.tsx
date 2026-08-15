@@ -230,97 +230,106 @@ export function FieldCatalogSection() {
         ) : entries.length === 0 ? (
           <EmptyState title="Nenhum campo encontrado" description="Ajuste a busca ou os filtros." />
         ) : (
-          <div className="space-y-3">
-            {entries.map((e) => (
-              <div key={e.field_key} className="rounded-lg border border-border p-4">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                  <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2">
-                      <span className="truncate font-medium">{e.label}</span>
-                      <span className="font-mono text-xs text-muted-foreground">{e.field_key}</span>
-                      <Badge variant="secondary">{e.field_type}</Badge>
-                      {e.is_base ? <Badge variant="outline">base</Badge> : null}
-                      {e.required ? <Badge variant="secondary">obrigatório</Badge> : null}
-                      {e.divergent ? <Badge variant="destructive">divergente</Badge> : null}
-                    </p>
-                    {e.config?.tooltip ? (
-                      <p className="mt-1 truncate text-xs text-muted-foreground">{String(e.config.tooltip)}</p>
-                    ) : null}
-                    <p className="mt-2 flex flex-wrap gap-1">
-                      <Badge variant="secondary">{scopeLabel(e.scope)}</Badge>
-                      {e.scope_divergent ? (
-                        <Badge variant="destructive">escopo divergente</Badge>
-                      ) : null}
-                      {e.dependencies.map((d) => (
-                        <Badge key={d} variant="outline" className="border-destructive/50 text-destructive">{d}</Badge>
-                      ))}
-                    </p>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {e.is_base
-                        ? "Aplicado a todas as categorias da plataforma."
-                        : [...new Set(e.usages.map((u) => catName(u.category_id)))].join(", ")}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 gap-1">
-                    <Button size="sm" variant="outline" onClick={() => openEdit(e)} aria-label={`Editar ${e.field_key}`}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="outline" aria-label={`Remover ${e.field_key}`}>
-                          <Trash2 className="h-4 w-4" />
+          <div className="w-full overflow-x-auto rounded-lg border border-border">
+            <Table className="min-w-[980px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Campo</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Escopo</TableHead>
+                  <TableHead>Origem</TableHead>
+                  <TableHead>Categorias</TableHead>
+                  <TableHead>Dependências</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {entries.map((e) => (
+                  <TableRow key={e.field_key}>
+                    <TableCell className="max-w-[260px]">
+                      <span className="block truncate font-medium">{e.label}</span>
+                      <span className="block truncate font-mono text-xs text-muted-foreground">{e.field_key}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex flex-wrap gap-1">
+                        <Badge variant="secondary">{e.field_type}</Badge>
+                        {e.required ? <Badge variant="secondary">obrigatório</Badge> : null}
+                        {e.divergent ? <Badge variant="destructive">divergente</Badge> : null}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex flex-wrap gap-1">
+                        <Badge variant="secondary">{scopeLabel(e.scope)}</Badge>
+                        {e.scope_divergent ? <Badge variant="destructive">divergente</Badge> : null}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {e.origin === "organization" ? (
+                        <Badge variant="outline" className="border-destructive/50 text-destructive">organização</Badge>
+                      ) : e.is_base ? (
+                        <Badge variant="outline">base</Badge>
+                      ) : (
+                        <Badge variant="outline">catálogo</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="max-w-[260px] text-xs text-muted-foreground">
+                      <span className="block truncate">
+                        {e.origin === "organization"
+                          ? `${e.organizations} organização(ões)`
+                          : e.is_base
+                            ? "Todas as categorias"
+                            : [...new Set(e.usages.map((u) => catName(u.category_id)))].join(", ") || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="max-w-[220px]">
+                      {e.dependencies.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
+                        <span className="flex flex-wrap gap-1">
+                          {e.dependencies.map((d) => (
+                            <Badge key={d} variant="outline" className="border-destructive/50 text-destructive">{d}</Badge>
+                          ))}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex justify-end gap-1">
+                        <Button size="sm" variant="outline" onClick={() => openEdit(e)} aria-label={`Editar ${e.field_key}`}>
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Remover “{e.field_key}” da plataforma?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            O campo sai de {e.usages.length} definição(ões) em{" "}
-                            {new Set(e.usages.map((u) => u.category_id)).size} categoria(s).
-                            {e.dependencies.length > 0
-                              ? ` Atenção: há dependências (${e.dependencies.join(", ")}).`
-                              : ""}{" "}
-                            Ação irreversível.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => removeEntry(e)}>Remover</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </div>
-            ))}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="outline" aria-label={`Remover ${e.field_key}`}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remover “{e.field_key}” da plataforma?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                O campo sai de {e.usages.length} definição(ões) em{" "}
+                                {new Set(e.usages.map((u) => u.category_id)).size} categoria(s).
+                                {e.dependencies.length > 0
+                                  ? ` Atenção: há dependências (${e.dependencies.join(", ")}).`
+                                  : ""}{" "}
+                                Ação irreversível.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => removeEntry(e)}>Remover</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
 
-        <Collapsible>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full justify-between">
-              Campos criados dentro de organizações ({orphans.data?.length ?? 0})
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3 space-y-2">
-            <p className="text-xs text-muted-foreground">
-              Somente diagnóstico. Estes campos foram criados por organizações e não existem no catálogo por categoria.
-            </p>
-            {(orphans.data ?? []).length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nenhum campo fora do catálogo.</p>
-            ) : (
-              (orphans.data ?? []).map((o) => (
-                <div key={o.key} className="flex flex-wrap items-center gap-2 rounded-md border border-border p-3">
-                  <span className="font-mono text-xs">{o.key}</span>
-                  <span className="truncate text-sm">{o.label}</span>
-                  <Badge variant="secondary">{o.type}</Badge>
-                  <Badge variant="outline">{o.organizations} organização(ões)</Badge>
-                </div>
-              ))
-            )}
-          </CollapsibleContent>
-        </Collapsible>
       </CardContent>
 
       <Dialog open={open} onOpenChange={setOpen}>
