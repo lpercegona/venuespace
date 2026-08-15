@@ -3703,6 +3703,7 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
                 <TableHead>Chave</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead className="w-24">Obrig.</TableHead>
+                <TableHead className="w-24">Visível</TableHead>
                 <TableHead className="w-24"></TableHead>
               </TableRow>
             </TableHeader>
@@ -3714,6 +3715,12 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
                   <TableCell className="font-mono text-xs">{f.field_key}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{f.field_type}</TableCell>
                   <TableCell>{f.required ? "Sim" : "Não"}</TableCell>
+                  <TableCell>
+                    <Badge variant={f.visible === false ? "outline" : "secondary"}>
+                      {f.visible === false ? "Oculto" : "Sim"}
+                    </Badge>
+                  </TableCell>
+
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
                       <Button size="icon" variant="ghost" onClick={() => openEdit(f)}>
