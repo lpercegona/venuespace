@@ -246,13 +246,15 @@ export function FieldCatalogSection() {
                       <p className="mt-1 truncate text-xs text-muted-foreground">{String(e.config.tooltip)}</p>
                     ) : null}
                     <p className="mt-2 flex flex-wrap gap-1">
-                      {SCOPES.map((s) =>
-                        scopeCount(e, s.value) > 0 ? (
-                          <Badge key={s.value} variant="secondary">
-                            {s.label}: {scopeCount(e, s.value)}
-                          </Badge>
-                        ) : null,
-                      )}
+                      <Badge variant="secondary">{scopeLabel(e.scope)}</Badge>
+                      {e.scope_divergent ? (
+                        <Badge variant="destructive">escopo divergente</Badge>
+                      ) : null}
+                      {e.dependencies.map((d) => (
+                        <Badge key={d} variant="outline" className="border-destructive/50 text-destructive">{d}</Badge>
+                      ))}
+                    </p>
+
                       {e.dependencies.map((d) => (
                         <Badge key={d} variant="outline" className="border-destructive/50 text-destructive">{d}</Badge>
                       ))}
