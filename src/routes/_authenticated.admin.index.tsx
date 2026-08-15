@@ -3528,6 +3528,7 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
   const [key, setKey] = useState("");
   const [type, setType] = useState<string>("text");
   const [required, setRequired] = useState(false);
+  const [visible, setVisible] = useState(true);
   const [optionsText, setOptionsText] = useState("");
   const [order, setOrder] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -3538,6 +3539,7 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
     setKey("");
     setType("text");
     setRequired(false);
+    setVisible(true);
     setOptionsText("");
     setOrder((list.data ?? []).length);
     setOpen(true);
@@ -3548,10 +3550,12 @@ function StandardFormFieldsEditor({ formId }: { formId: string }) {
     setKey(f.field_key);
     setType(f.field_type);
     setRequired(f.required);
+    setVisible(f.visible !== false);
     setOptionsText(Array.isArray((f.config ?? {}).options) ? ((f.config as any).options as string[]).join("\n") : "");
     setOrder(f.order_index);
     setOpen(true);
   }
+
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
