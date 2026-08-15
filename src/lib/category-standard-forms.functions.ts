@@ -202,3 +202,76 @@ export const deleteCategoryStandardFormField = createServerFn({ method: "POST" }
     await syncForms(context.supabase, category_id);
     return { ok: true };
   });
+
+const createFromTable = z.object({
+  category_id: z.string().uuid(),
+  standard_table_id: z.string().uuid(),
+  scope: z.enum(["organization", "record"]),
+  name: z.string().min(1).max(80),
+  submit_label: z.string().min(1).max(40).optional(),
+});
+
+/** Cria um formulário a partir de um modelo de tabela, copiando os campos do modelo. */
+export const createCategoryStandardFormFromTable = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => createFromTable.parse(d))
+  .handler(async ({ data, context }) => {
+    await requireSA(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: model, error: modelErr } = await (supabaseAdmin as any)
+      .from("category_standard_tables")
+      .select("id, name, category_id")
+      .eq("id", data.standard_table_id)
+      .single();
+    if (modelErr) throw new Error(modelErr.message);
+    if ((model as any).category_id !== data.category_id) {
+      throw new Error("Tabela padrão de outra categoria.");
+    }
+
+    const { data: form, error: formErr } = await (supabaseAdmin as any)
+      .from("category_standard_forms")
+      .insert({
+        category_id: data.category_id,
+        scope: data.scope,
+        standard_table_id: data.scope === "record" ? data.standard_table_id : null,
+        target_standard_table_id: data.standard_table_id,
+        name: data.name,
+        submit_label: data.submit_label ?? "Enviar",
+        target_table_name: (model as any).name,
+        is_active: true,
+      })
+      .select("id")
+      .single();
+    if (formErr) throw new Error(formErr.message);
+    const form_id = (form as any).id as string;
+
+    const { data: modelFields, error: mfErr } = await (supabaseAdmin as any)
+      .from("category_standard_table_fields")
+      .select("field_key, label, field_type, required, config, order_index")
+      .eq("standard_table_id", data.standard_table_id)
+      .order("order_index", { ascending: true });
+    if (mfErr) throw new Error(mfErr.message);
+
+    const allowed = new Set<string>(FIELD_TYPES as readonly string[]);
+    const rows = (modelFields ?? [])
+      .filter((f: any) => allowed.has(f.field_type))
+      .map((f: any, i: number) => ({
+        form_id,
+        field_key: f.field_key,
+        label: f.label,
+        field_type: f.field_type,
+        required: f.required,
+        config: f.config ?? {},
+        order_index: i,
+        visible: true,
+        source_standard_field_key: f.field_key,
+      }));
+    if (rows.length > 0) {
+      const { error } = await (supabaseAdmin as any).from("category_standard_form_fields").insert(rows);
+      if (error) throw new Error(error.message);
+    }
+
+    await syncForms(context.supabase, data.category_id);
+    return { id: form_id };
+  });
