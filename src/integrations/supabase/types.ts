@@ -341,7 +341,9 @@ export type Database = {
           label: string
           order_index: number
           required: boolean
+          source_standard_field_key: string | null
           updated_at: string
+          visible: boolean
         }
         Insert: {
           config?: Json
@@ -353,7 +355,9 @@ export type Database = {
           label: string
           order_index?: number
           required?: boolean
+          source_standard_field_key?: string | null
           updated_at?: string
+          visible?: boolean
         }
         Update: {
           config?: Json
@@ -365,7 +369,9 @@ export type Database = {
           label?: string
           order_index?: number
           required?: boolean
+          source_standard_field_key?: string | null
           updated_at?: string
+          visible?: boolean
         }
         Relationships: [
           {
@@ -387,6 +393,7 @@ export type Database = {
           scope: string
           standard_table_id: string | null
           submit_label: string
+          target_standard_table_id: string | null
           target_table_name: string
           updated_at: string
         }
@@ -399,6 +406,7 @@ export type Database = {
           scope: string
           standard_table_id?: string | null
           submit_label?: string
+          target_standard_table_id?: string | null
           target_table_name?: string
           updated_at?: string
         }
@@ -411,6 +419,7 @@ export type Database = {
           scope?: string
           standard_table_id?: string | null
           submit_label?: string
+          target_standard_table_id?: string | null
           target_table_name?: string
           updated_at?: string
         }
@@ -425,6 +434,13 @@ export type Database = {
           {
             foreignKeyName: "category_standard_forms_standard_table_id_fkey"
             columns: ["standard_table_id"]
+            isOneToOne: false
+            referencedRelation: "category_standard_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_standard_forms_target_standard_table_id_fkey"
+            columns: ["target_standard_table_id"]
             isOneToOne: false
             referencedRelation: "category_standard_tables"
             referencedColumns: ["id"]
@@ -487,6 +503,8 @@ export type Database = {
           icon: string | null
           id: string
           is_public: boolean
+          is_system: boolean
+          kind: string
           name: string
           order_index: number
           slug: string
@@ -500,6 +518,8 @@ export type Database = {
           icon?: string | null
           id?: string
           is_public?: boolean
+          is_system?: boolean
+          kind?: string
           name: string
           order_index?: number
           slug: string
@@ -513,6 +533,8 @@ export type Database = {
           icon?: string | null
           id?: string
           is_public?: boolean
+          is_system?: boolean
+          kind?: string
           name?: string
           order_index?: number
           slug?: string
@@ -1613,6 +1635,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_standard_fields_to_table: {
+        Args: { _standard_table_id: string; _table_id: string }
+        Returns: undefined
+      }
       apply_standard_forms_to_org: {
         Args: { _category_id: string; _org_id: string }
         Returns: undefined
