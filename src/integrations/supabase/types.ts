@@ -200,6 +200,51 @@ export type Database = {
           },
         ]
       }
+      category_modules: {
+        Row: {
+          category_id: string
+          config: Json
+          created_at: string
+          id: string
+          is_enabled: boolean
+          module_key: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          config?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          module_key: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          config?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          module_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_modules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_modules_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "platform_modules"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       category_org_fields: {
         Row: {
           category_id: string
@@ -1304,6 +1349,36 @@ export type Database = {
           icon?: string | null
           key?: string
           label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_modules: {
+        Row: {
+          created_at: string
+          description: string | null
+          is_active: boolean
+          key: string
+          name: string
+          order_index: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          is_active?: boolean
+          key: string
+          name: string
+          order_index?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          is_active?: boolean
+          key?: string
+          name?: string
+          order_index?: number
           updated_at?: string
         }
         Relationships: []

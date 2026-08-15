@@ -200,6 +200,7 @@ export type QuoteInput = {
   paymentTerms: string[];
   notes: string[];
   validityDays: number;
+  layout?: import("@/lib/modules").BookingsPdfConfig;
 };
 
 const INK = rgb(0.11, 0.12, 0.14);
@@ -262,20 +263,20 @@ function drawRight(ctx: Ctx, s: string, xRight: number, y: number, size: number,
   draw(ctx, t, xRight - f.widthOfTextAtSize(t, size), y, size, f, color);
 }
 
-function sectionTitle(ctx: Ctx, title: string) {
+function sectionTitle(ctx: Ctx, title: string, accent: any = ACCENT) {
   ensure(ctx, 40);
-  ctx.page.drawRectangle({ x: L, y: ctx.y - 3, width: 4, height: 16, color: ACCENT });
+  ctx.page.drawRectangle({ x: L, y: ctx.y - 3, width: 4, height: 16, color: accent });
   draw(ctx, title.toUpperCase(), L + 12, ctx.y, 12, ctx.bold, INK);
   ctx.y -= 22;
 }
 
-async function drawHeader(ctx: Ctx, org: QuoteOrg, logo: any) {
+async function drawHeader(ctx: Ctx, org: QuoteOrg, logo: any, accent: any, logoSize: number) {
   const h = 96;
   ctx.page.drawRectangle({ x: 0, y: PH - h, width: PW, height: h, color: DARK });
-  ctx.page.drawRectangle({ x: 0, y: PH - h - 5, width: PW, height: 5, color: AMBER });
+  ctx.page.drawRectangle({ x: 0, y: PH - h - 5, width: PW, height: 5, color: accent });
 
   if (logo) {
-    const box = 58;
+    const box = Math.max(24, Math.min(90, logoSize));
     const dims = logo.scale(1);
     const scale = Math.min(box / dims.width, box / dims.height);
     ctx.page.drawImage(logo, {
@@ -313,155 +314,199 @@ async function loadLogo(doc: PDFDocument, url: string | null | undefined) {
   }
 }
 
+function hexColor(hex: string, fallback: any) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex ?? "").trim());
+  if (!m) return fallback;
+  const n = parseInt(m[1], 16);
+  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+}
+
 export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Array; total: number }> {
+  const { DEFAULT_PDF_CONFIG, applyTemplate } = await import("@/lib/modules");
+  const layout = input.layout ?? DEFAULT_PDF_CONFIG;
+  const accent = hexColor(layout.accent, ACCENT);
+  const cols = layout.item_columns;
+  const enabled = new Map(layout.blocks.map((b) => [b.key, b.enabled !== false]));
+  const order = layout.blocks.map((b) => b.key);
+
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const ctx: Ctx = { doc, page: null, y: 0, font, bold, pages: [] };
   newPage(ctx);
 
-  const logo = await loadLogo(doc, input.org.logoUrl);
-  await drawHeader(ctx, input.org, logo);
-
-  // Título
-  draw(ctx, "ORÇAMENTO DE LOCAÇÃO", L, ctx.y, 21, bold, INK);
-  ctx.y -= 14;
-  ctx.page.drawLine({ start: { x: L, y: ctx.y }, end: { x: R, y: ctx.y }, thickness: 0.8, color: LINE });
-  ctx.y -= 28;
-
-  // Dados do cliente e evento
-  sectionTitle(ctx, "Dados do cliente e evento");
   const emitted = new Date().toISOString().slice(0, 10);
-  const valueW = R - (L + 150) - 12;
-  const rows: Array<[string, string[]]> = [
-    ["Cliente:", [input.client ?? "-"]],
-    ...(input.clientCompany ? ([["Empresa:", wrapText(input.clientCompany, font, 10, valueW)]] as Array<[string, string[]]>) : []),
-    ...(input.clientCnpj ? ([["CNPJ:", [input.clientCnpj]]] as Array<[string, string[]]>) : []),
-    ...(input.clientAddress ? ([["Endereço:", wrapText(input.clientAddress, font, 10, valueW)]] as Array<[string, string[]]>) : []),
-    ["Local de Instalação:", wrapText(input.location ?? "-", font, 10, valueW)],
-    ["Data de Emissão:", [longDate(emitted)]],
-    ["Validade:", [`${input.validityDays} dias (a partir da data de emissão) — até ${longDate(addDays(emitted, input.validityDays))}`]],
-  ];
-  const labelW = 150;
-  for (const [k, lines] of rows) {
-    const h = 12 + lines.length * 13;
-    ensure(ctx, h);
-    ctx.page.drawRectangle({ x: L, y: ctx.y - h + 12, width: labelW, height: h, color: PAPER });
-    ctx.page.drawRectangle({
-      x: L, y: ctx.y - h + 12, width: R - L, height: h,
-      borderColor: LINE, borderWidth: 0.7,
-    });
-    draw(ctx, k, L + 10, ctx.y, 9.5, bold, INK);
-    let ly = ctx.y;
-    for (const ln of lines) {
-      draw(ctx, ln, L + labelW + 12, ly, 10, font, INK);
-      ly -= 13;
-    }
-    ctx.y -= h;
-  }
-  ctx.y -= 22;
+  const period = longPeriod(input.periodStart, input.periodEnd);
+  const itemsTotal = quoteTotal(input.items);
+  const travelFee = Math.max(0, Number(input.travelFee) || 0);
+  const total = itemsTotal + travelFee;
+  const vars: Record<string, string> = {
+    organizacao: input.org.name,
+    cliente: input.client ?? "-",
+    periodo: period,
+    total: brl(total),
+    numero: input.recordId.slice(0, 8).toUpperCase(),
+    data: longDate(emitted),
+  };
+  const tpl = (s: string) => applyTemplate(s, vars);
 
-  // Itens
-  sectionTitle(ctx, "Especificação dos serviços / itens");
+  const logo = await loadLogo(doc, input.org.logoUrl);
+
+  const drawTitle = () => {
+    draw(ctx, tpl(layout.texts.title || DEFAULT_PDF_CONFIG.texts.title), L, ctx.y, 21, bold, INK);
+    ctx.y -= 14;
+    ctx.page.drawLine({ start: { x: L, y: ctx.y }, end: { x: R, y: ctx.y }, thickness: 0.8, color: LINE });
+    ctx.y -= 28;
+    const intro = tpl(layout.texts.intro ?? "").trim();
+    if (intro) {
+      for (const ln of wrapText(intro, font, 10, R - L)) {
+        ensure(ctx, 16);
+        draw(ctx, ln, L, ctx.y, 10, font, SOFT);
+        ctx.y -= 14;
+      }
+      ctx.y -= 12;
+    }
+  };
+
+  const drawClient = () => {
+    sectionTitle(ctx, "Dados do cliente e evento", accent);
+    const valueW = R - (L + 150) - 12;
+    const rows: Array<[string, string[]]> = [
+      ["Cliente:", [input.client ?? "-"]],
+      ...(input.clientCompany ? ([["Empresa:", wrapText(input.clientCompany, font, 10, valueW)]] as Array<[string, string[]]>) : []),
+      ...(input.clientCnpj ? ([["CNPJ:", [input.clientCnpj]]] as Array<[string, string[]]>) : []),
+      ...(input.clientAddress ? ([["Endereço:", wrapText(input.clientAddress, font, 10, valueW)]] as Array<[string, string[]]>) : []),
+      ["Local de Instalação:", wrapText(input.location ?? "-", font, 10, valueW)],
+      ["Data de Emissão:", [longDate(emitted)]],
+      ["Validade:", [`${input.validityDays} dias (a partir da data de emissão) — até ${longDate(addDays(emitted, input.validityDays))}`]],
+    ];
+    const labelW = 150;
+    for (const [k, lines] of rows) {
+      const h = 12 + lines.length * 13;
+      ensure(ctx, h);
+      ctx.page.drawRectangle({ x: L, y: ctx.y - h + 12, width: labelW, height: h, color: PAPER });
+      ctx.page.drawRectangle({
+        x: L, y: ctx.y - h + 12, width: R - L, height: h,
+        borderColor: LINE, borderWidth: 0.7,
+      });
+      draw(ctx, k, L + 10, ctx.y, 9.5, bold, INK);
+      let ly = ctx.y;
+      for (const ln of lines) {
+        draw(ctx, ln, L + labelW + 12, ly, 10, font, INK);
+        ly -= 13;
+      }
+      ctx.y -= h;
+    }
+    ctx.y -= 22;
+  };
 
   const colPeriod = L + 250;
   const colDaily = L + 372;
-  const headerH = 26;
-  const drawTableHead = () => {
-    ensure(ctx, headerH + 24);
-    ctx.page.drawRectangle({ x: L, y: ctx.y - 8, width: R - L, height: headerH, color: DARK });
-    draw(ctx, "DESCRIÇÃO DO ITEM", L + 10, ctx.y, 8.5, bold, WHITE);
-    draw(ctx, "PERÍODO DE LOCAÇÃO", colPeriod, ctx.y, 8.5, bold, WHITE);
-    draw(ctx, "VALOR DIÁRIA", colDaily, ctx.y, 8.5, bold, WHITE);
-    drawRight(ctx, "VALOR TOTAL", R - 10, ctx.y, 8.5, bold, WHITE);
-    ctx.y -= headerH + 8;
+
+  const drawItems = () => {
+    sectionTitle(ctx, "Especificação dos serviços / itens", accent);
+    const headerH = 26;
+    const drawTableHead = () => {
+      ensure(ctx, headerH + 24);
+      ctx.page.drawRectangle({ x: L, y: ctx.y - 8, width: R - L, height: headerH, color: DARK });
+      draw(ctx, "DESCRIÇÃO DO ITEM", L + 10, ctx.y, 8.5, bold, WHITE);
+      if (cols.period) draw(ctx, "PERÍODO DE LOCAÇÃO", colPeriod, ctx.y, 8.5, bold, WHITE);
+      if (cols.daily) draw(ctx, "VALOR DIÁRIA", colDaily, ctx.y, 8.5, bold, WHITE);
+      drawRight(ctx, "VALOR TOTAL", R - 10, ctx.y, 8.5, bold, WHITE);
+      ctx.y -= headerH + 8;
+    };
+    drawTableHead();
+
+    for (const item of input.items) {
+      const descW = colPeriod - L - 20;
+      const titleLines = wrapText(item.label, bold, 10, descW);
+      const noteLines = cols.note && item.note ? wrapText(item.note, font, 8.5, descW) : [];
+      const periodLines = cols.period
+        ? wrapText(`${period} (${item.days} diária${item.days === 1 ? "" : "s"})`, font, 9, colDaily - colPeriod - 10)
+        : [];
+      const discount = cols.discount ? itemDiscountValue(item) : 0;
+      const showCourtesy = cols.courtesy && !!item.courtesy;
+      const rowH =
+        Math.max(
+          titleLines.length * 13 + noteLines.length * 11 + (showCourtesy ? 18 : 0),
+          periodLines.length * 12,
+          14,
+        ) + (discount > 0 ? 12 : 0) + 14;
+
+      ensure(ctx, rowH + 10);
+      const top = ctx.y;
+      let dy = top;
+      for (const ln of titleLines) {
+        draw(ctx, ln, L + 10, dy, 10, bold, INK);
+        dy -= 13;
+      }
+      for (const ln of noteLines) {
+        draw(ctx, ln, L + 10, dy, 8.5, font, SOFT);
+        dy -= 11;
+      }
+      if (showCourtesy) {
+        const txt = latin1(`CORTESIA: ${String(item.courtesy).toUpperCase()}`);
+        const w = bold.widthOfTextAtSize(txt, 8) + 12;
+        ctx.page.drawRectangle({ x: L + 10, y: dy - 4, width: Math.min(w, descW), height: 15, color: GREEN_BG });
+        draw(ctx, txt, L + 16, dy, 8, bold, GREEN);
+        dy -= 18;
+      }
+      if (discount > 0) {
+        draw(
+          ctx,
+          `Desconto: ${item.discount_type === "percent" ? `${item.discount}% (${brl(discount)})` : brl(discount)}`,
+          L + 10, dy, 8.5, font, SOFT,
+        );
+        dy -= 12;
+      }
+
+      let py = top;
+      for (const ln of periodLines) {
+        draw(ctx, ln, colPeriod, py, 9, font, INK);
+        py -= 12;
+      }
+      if (cols.daily) draw(ctx, brl(item.daily_value), colDaily, top, 10, font, INK);
+      drawRight(ctx, brl(itemTotal(item)), R - 10, top, 10, bold, INK);
+
+      ctx.y = Math.min(dy, py) - 8;
+      ctx.page.drawLine({ start: { x: L, y: ctx.y + 4 }, end: { x: R, y: ctx.y + 4 }, thickness: 0.6, color: LINE });
+      ctx.y -= 8;
+    }
+
+    if (input.items.length === 0) {
+      draw(ctx, "Nenhum item selecionado para esta reserva.", L + 10, ctx.y, 9, font, SOFT);
+      ctx.y -= 18;
+    }
   };
-  drawTableHead();
 
-  const period = longPeriod(input.periodStart, input.periodEnd);
-  let total = 0;
-  for (const item of input.items) {
-    const descW = colPeriod - L - 20;
-    const titleLines = wrapText(item.label, bold, 10, descW);
-    const noteLines = item.note ? wrapText(item.note, font, 8.5, descW) : [];
-    const periodLines = wrapText(`${period} (${item.days} diária${item.days === 1 ? "" : "s"})`, font, 9, colDaily - colPeriod - 10);
-    const discount = itemDiscountValue(item);
-    const rowH =
-      Math.max(
-        titleLines.length * 13 + noteLines.length * 11 + (item.courtesy ? 18 : 0),
-        periodLines.length * 12,
-        14,
-      ) + (discount > 0 ? 12 : 0) + 14;
-
-    ensure(ctx, rowH + 10);
-    const top = ctx.y;
-    let dy = top;
-    for (const ln of titleLines) {
-      draw(ctx, ln, L + 10, dy, 10, bold, INK);
-      dy -= 13;
+  const drawTotals = () => {
+    const maxDays = input.items.reduce((m, i) => Math.max(m, Number(i.days) || 1), 1);
+    if (travelFee > 0) {
+      ensure(ctx, 44);
+      drawRight(ctx, "Subtotal dos itens:", R - 120, ctx.y, 10, font, INK);
+      drawRight(ctx, brl(itemsTotal), R - 10, ctx.y, 10, font, INK);
+      ctx.y -= 16;
+      drawRight(ctx, "Deslocamento:", R - 120, ctx.y, 10, font, INK);
+      drawRight(ctx, brl(travelFee), R - 10, ctx.y, 10, font, INK);
+      ctx.y -= 20;
     }
-    for (const ln of noteLines) {
-      draw(ctx, ln, L + 10, dy, 8.5, font, SOFT);
-      dy -= 11;
-    }
-    if (item.courtesy) {
-      const txt = latin1(`CORTESIA: ${item.courtesy.toUpperCase()}`);
-      const w = bold.widthOfTextAtSize(txt, 8) + 12;
-      ctx.page.drawRectangle({ x: L + 10, y: dy - 4, width: Math.min(w, descW), height: 15, color: GREEN_BG });
-      draw(ctx, txt, L + 16, dy, 8, bold, GREEN);
-      dy -= 18;
-    }
-    if (discount > 0) {
-      draw(
-        ctx,
-        `Desconto: ${item.discount_type === "percent" ? `${item.discount}% (${brl(discount)})` : brl(discount)}`,
-        L + 10, dy, 8.5, font, SOFT,
-      );
-      dy -= 12;
-    }
+    ensure(ctx, 40);
+    ctx.page.drawRectangle({ x: L, y: ctx.y - 10, width: R - L, height: 28, color: PAPER });
+    drawRight(ctx, `Valor Total do Orçamento (${maxDays} diária${maxDays === 1 ? "" : "s"}):`, R - 120, ctx.y, 10.5, bold, INK);
+    drawRight(ctx, brl(total), R - 10, ctx.y, 11.5, bold, INK);
+    ctx.y -= 46;
+  };
 
-    let py = top;
-    for (const ln of periodLines) {
-      draw(ctx, ln, colPeriod, py, 9, font, INK);
-      py -= 12;
-    }
-    draw(ctx, brl(item.daily_value), colDaily, top, 10, font, INK);
-    drawRight(ctx, brl(itemTotal(item)), R - 10, top, 10, bold, INK);
-
-    total += itemTotal(item);
-    ctx.y = Math.min(dy, py) - 8;
-    ctx.page.drawLine({ start: { x: L, y: ctx.y + 4 }, end: { x: R, y: ctx.y + 4 }, thickness: 0.6, color: LINE });
-    ctx.y -= 8;
-  }
-
-  if (input.items.length === 0) {
-    draw(ctx, "Nenhum item selecionado para esta reserva.", L + 10, ctx.y, 9, font, SOFT);
-    ctx.y -= 18;
-  }
-
-  const maxDays = input.items.reduce((m, i) => Math.max(m, Number(i.days) || 1), 1);
-  const travelFee = Math.max(0, Number(input.travelFee) || 0);
-  if (travelFee > 0) {
-    ensure(ctx, 44);
-    drawRight(ctx, "Subtotal dos itens:", R - 120, ctx.y, 10, font, INK);
-    drawRight(ctx, brl(total), R - 10, ctx.y, 10, font, INK);
-    ctx.y -= 16;
-    drawRight(ctx, "Deslocamento:", R - 120, ctx.y, 10, font, INK);
-    drawRight(ctx, brl(travelFee), R - 10, ctx.y, 10, font, INK);
-    ctx.y -= 20;
-  }
-  total += travelFee;
-  ensure(ctx, 40);
-  ctx.page.drawRectangle({ x: L, y: ctx.y - 10, width: R - L, height: 28, color: PAPER });
-  drawRight(ctx, `Valor Total do Orçamento (${maxDays} diária${maxDays === 1 ? "" : "s"}):`, R - 120, ctx.y, 10.5, bold, INK);
-  drawRight(ctx, brl(total), R - 10, ctx.y, 11.5, bold, INK);
-  ctx.y -= 46;
-
-  // Condições de pagamento
-  if (input.paymentTerms.length > 0) {
-    sectionTitle(ctx, "Condições de pagamento");
+  const drawTerms = () => {
+    const extra = tpl(layout.texts.terms ?? "")
+      .split("\n")
+      .map((s) => s.replace(/^[-•*]\s*/, "").trim())
+      .filter(Boolean);
+    const all = [...input.paymentTerms, ...extra];
+    if (all.length === 0) return;
+    sectionTitle(ctx, "Condições de pagamento", accent);
     const lines: string[] = [];
-    for (const t of input.paymentTerms) lines.push(...wrapText(`• ${t}`, font, 10, R - L - 40));
+    for (const t of all) lines.push(...wrapText(`• ${t}`, font, 10, R - L - 40));
     const h = lines.length * 15 + 18;
     ensure(ctx, h + 10);
     ctx.page.drawRectangle({ x: L, y: ctx.y - h + 12, width: R - L, height: h, color: CREAM });
@@ -472,11 +517,11 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
       ly -= 15;
     }
     ctx.y -= h + 22;
-  }
+  };
 
-  // Observações e cortesias
-  if (input.notes.length > 0) {
-    sectionTitle(ctx, "Observações e cortesias");
+  const drawNotes = () => {
+    if (input.notes.length === 0) return;
+    sectionTitle(ctx, "Observações e cortesias", accent);
     for (const n of input.notes) {
       const lines = wrapText(`• ${n}`, font, 9.5, R - L - 16);
       ensure(ctx, lines.length * 13 + 8);
@@ -486,27 +531,49 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
       }
       ctx.y -= 5;
     }
+  };
+
+  const drawClosing = () => {
+    const msg = tpl(layout.texts.closing ?? "").trim();
+    ensure(ctx, 40);
+    ctx.y -= 10;
+    if (msg) {
+      for (const ln of wrapText(msg, font, 9.5, R - L)) {
+        draw(ctx, ln, L, ctx.y, 9.5, font, SOFT);
+        ctx.y -= 14;
+      }
+    }
+    ctx.y -= 1;
+    draw(ctx, input.org.name, L, ctx.y, 10, bold, INK);
+  };
+
+  for (const key of order) {
+    if (!enabled.get(key)) continue;
+    if (key === "header") await drawHeader(ctx, input.org, logo, accent, layout.logo_size);
+    else if (key === "title") drawTitle();
+    else if (key === "client") drawClient();
+    else if (key === "items") drawItems();
+    else if (key === "totals") drawTotals();
+    else if (key === "terms") drawTerms();
+    else if (key === "notes") drawNotes();
+    else if (key === "closing") drawClosing();
   }
 
-  ensure(ctx, 40);
-  ctx.y -= 10;
-  draw(ctx, "Ficamos à disposição para esclarecer qualquer dúvida.", L, ctx.y, 9.5, font, SOFT);
-  ctx.y -= 15;
-  draw(ctx, input.org.name, L, ctx.y, 10, bold, INK);
-
-  // Rodapé com paginação
-  const totalPages = ctx.pages.length;
-  ctx.pages.forEach((p, i) => {
-    const txt = latin1(`Página ${i + 1} de ${totalPages}`);
-    p.drawText(txt, { x: R - font.widthOfTextAtSize(txt, 8), y: 36, size: 8, font, color: SOFT });
-    p.drawText(latin1(`Orçamento #${input.recordId.slice(0, 8).toUpperCase()}`), {
-      x: L, y: 36, size: 8, font, color: SOFT,
+  if (enabled.get("footer")) {
+    const totalPages = ctx.pages.length;
+    ctx.pages.forEach((p, i) => {
+      const txt = latin1(`Página ${i + 1} de ${totalPages}`);
+      p.drawText(txt, { x: R - font.widthOfTextAtSize(txt, 8), y: 36, size: 8, font, color: SOFT });
+      p.drawText(latin1(`Orçamento #${input.recordId.slice(0, 8).toUpperCase()}`), {
+        x: L, y: 36, size: 8, font, color: SOFT,
+      });
     });
-  });
+  }
 
   const bytes = await doc.save();
   return { bytes, total };
 }
+
 
 // ============ Correção/extensão da Iteração 32 — itens e contato ============
 

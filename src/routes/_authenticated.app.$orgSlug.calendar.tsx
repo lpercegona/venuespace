@@ -4,6 +4,7 @@ import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-quer
 import { CalendarDays, Loader2, Plus } from "lucide-react";
 import { getOrganizationBySlug, listTables } from "@/lib/orgs.functions";
 import { listBookings, listAvailableResources } from "@/lib/bookings.functions";
+import { getOrgModuleState } from "@/lib/modules.functions";
 import { AppShell } from "@/components/venue/app-shell";
 import { EmptyState } from "@/components/venue/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,15 +44,27 @@ function BookingsPage() {
     enabled: !!org.data?.id,
   });
 
+  const modules = useQuery({
+    queryKey: ["org-modules", org.data?.id],
+    queryFn: () => getOrgModuleState({ data: { organization_id: org.data!.id } }),
+    enabled: !!org.data?.id,
+  });
+
   const bookable = (tables.data ?? []).filter((tb: any) => tb.bookable);
   const canEdit = org.data?.myRole === "owner" || org.data?.myRole === "editor" || !!(org.data as any)?.isSuperAdmin;
+  const moduleOff = modules.data ? modules.data.bookings === false : false;
 
   return (
     <AppShell
       title="Gestão de reservas"
       subtitle="Agenda, disponibilidade por data, orçamento em PDF e ciclo de negociação → fechamento → encerramento."
     >
-      {tables.isLoading ? (
+      {moduleOff ? (
+        <EmptyState
+          title="Módulo Reservas desativado"
+          description="Este módulo está desativado para a categoria desta organização."
+        />
+      ) : tables.isLoading ? (
         <div className="grid gap-4">
           <Skeleton className="h-40 w-full" />
           <Skeleton className="h-40 w-full" />

@@ -67,11 +67,24 @@ export const getBookingContext = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { loadBookingMeta, loadBookableItems, loadContactSetup, loadContacts } =
       await import("./bookings.server");
+    const { loadOrgModule } = await import("./modules.server");
+    const { applyFormConfig } = await import("./modules");
     const { source, bookingsTableId } = await resolveBookings(context.supabase, data.table_id);
     const meta = await loadBookingMeta(context.supabase, bookingsTableId);
     const items = await loadBookableItems(context.supabase, source.id);
     const setup = await loadContactSetup(context.supabase, source.organization_id);
     const contacts = await loadContacts(context.supabase, setup.contactsTableId, setup.fields);
+    const mod = await loadOrgModule(context.supabase, source.organization_id, "bookings");
+
+    // Campos livres do formulário: tudo da tabela de reservas, menos período,
+    // relação de recurso e campos computados (itens e contato têm seletor próprio).
+    const reserved = new Set([meta.startKey, meta.endKey, meta.relKey].filter(Boolean) as string[]);
+    const formFields = applyFormConfig(
+      meta.fields
+        .filter((f) => !reserved.has(f.key) && f.type !== "computed" && f.type !== "relation")
+        .map((f) => ({ ...f, required: !!(f.config as any)?.required })),
+      mod.config.form,
+    );
 
     return {
       table: { id: source.id, name: source.name, organization_id: source.organization_id },
@@ -79,6 +92,8 @@ export const getBookingContext = createServerFn({ method: "GET" })
       meta,
       items,
       periodFields: meta.periodFields,
+      module: { enabled: mod.enabled },
+      formFields,
       contacts,
       contactSchema: (() => {
         const base = setup.standard.length > 0 ? setup.standard : setup.fields.map((f) => ({
@@ -307,8 +322,10 @@ export const createBooking = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { loadBookingMeta, loadBookableItems, daysBetween, buildItems, assertNoConflict } = await import("./bookings.server");
+    const { assertModuleEnabled } = await import("./modules.server");
     const { source, bookingsTableId } = await resolveBookings(context.supabase, data.table_id);
     await assertCanEdit(context.supabase, source.organization_id, context.userId);
+    await assertModuleEnabled(context.supabase, source.organization_id, "bookings");
 
     const meta = await loadBookingMeta(context.supabase, bookingsTableId);
     const values = (data.data ?? {}) as Record<string, any>;
@@ -392,6 +409,8 @@ export const updateBooking = createServerFn({ method: "POST" })
     if (recErr) throw new Error(recErr.message);
     if (!rec) throw new Error("Reserva não encontrada.");
     await assertCanEdit(context.supabase, rec.organization_id, context.userId);
+    const { assertModuleEnabled } = await import("./modules.server");
+    await assertModuleEnabled(context.supabase, rec.organization_id, "bookings");
 
     const { source, bookingsTableId } = await resolveBookings(context.supabase, rec.table_id);
     const meta = await loadBookingMeta(context.supabase, bookingsTableId);
@@ -566,6 +585,7 @@ export const generateBookingQuote = createServerFn({ method: "POST" })
       paymentTerms,
       notes,
       validityDays: Number(orgSys.validity_days ?? 15) || 15,
+      layout: (await (await import("./modules.server")).loadOrgModule(context.supabase, rec.organization_id, "bookings")).config.pdf,
     });
 
     const path = `orcamentos/${rec.organization_id}/${rec.id}/${Date.now()}.pdf`;
