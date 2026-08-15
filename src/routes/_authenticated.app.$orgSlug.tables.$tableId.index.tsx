@@ -162,7 +162,7 @@ function RecordsPage() {
               <Button variant="outline" size="sm"><Settings2 className="h-4 w-4" />{t("fields", "Campos")}</Button>
             </Link>
           ) : null}
-          {publicUrl ? (
+          {publicUrl && (table.data as any)?.is_public ? (
             <a href={publicUrl} target="_blank" rel="noreferrer">
               <Button variant="outline" size="sm"><ExternalLink className="h-4 w-4" />Ver público</Button>
             </a>
@@ -205,8 +205,8 @@ function RecordsPage() {
         />
       )}
 
-      {/* Views panel */}
-      {showStructure ? (
+      {/* Views panel — visível apenas para super admin */}
+      {isSA ? (
       <section className="mt-10">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
