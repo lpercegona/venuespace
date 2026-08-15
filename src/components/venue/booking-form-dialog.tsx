@@ -201,9 +201,8 @@ export function BookingFormDialog({
     }
   }
 
-  const otherFields = (meta?.fields ?? []).filter(
-    (f: any) => f.key === "event_location" || f.key === "booking_notes",
-  );
+  // Campos livres da tabela de reservas, já filtrados/ordenados pela config do módulo.
+  const formFields = (ctx.data?.formFields ?? []) as any[];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
