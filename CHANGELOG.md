@@ -1,3 +1,10 @@
+## 2026-08-16 17:52 (America/Sao_Paulo) — Correção das Iterações 40/41 — Replicação de campos-base por categoria
+
+- Causa raiz: a replicação de `upsertCategoryCascadeField` recriava campos-base nas demais categorias com `group_id: null`, removendo o vínculo com blocos já configurados por categoria.
+- `src/lib/category-cascade.functions.ts`: antes de montar as linhas replicadas, a função consulta os campos existentes para o mesmo `field_key` no escopo afetado (`category_org_fields` ou `category_table_fields`) e preserva o `group_id` anterior de cada `category_id + field_key`; categorias sem linha prévia continuam recebendo `group_id: null`.
+- Auditoria de propagação: `base_field_config` de `organization_categories` permanece isolado em `updateCategoryBaseFieldConfig`/`getCategoryBaseFieldConfig` e na leitura pública do schema, sem conflito com a replicação de campos-base fixos de organização/tabela.
+- Sem nova rota pública — sitemap inalterado.
+
 ## 2026-08-16 17:08 (America/Sao_Paulo) — Correção da Iteração 40 — Defaults em campos de categoria
 
 - Causa raiz: `CategoryFieldsForm` substituía valores ausentes por string vazia antes de consultar `config.default`, impedindo defaults explícitos em campos de categoria com e sem `system_key`.
