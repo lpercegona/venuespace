@@ -10,26 +10,76 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
-  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { EmptyState } from "@/components/venue/empty-state";
 import {
-  FieldTypeConfig, applyDraftToConfig, draftFromConfig, emptyTypeDraft, type TypeDraft,
+  FieldTypeConfig,
+  applyDraftToConfig,
+  draftFromConfig,
+  emptyTypeDraft,
+  type TypeDraft,
 } from "@/components/admin/field-type-config";
 import {
-  listFieldCatalog, applyFieldCatalogEntry, deleteFieldCatalogEntry,
-  type FieldCatalogEntry, type CatalogScope,
+  listFieldCatalog,
+  applyFieldCatalogEntry,
+  deleteFieldCatalogEntry,
+  type FieldCatalogEntry,
+  type CatalogScope,
 } from "@/lib/field-catalog.functions";
 import { listOrganizationCategoriesPublic } from "@/lib/organization-categories.functions";
+import { listAllCategoryFieldGroups } from "@/lib/category-field-groups.functions";
 
 const FIELD_TYPES = [
-  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file","relation","computed",
+  "text",
+  "long_text",
+  "number",
+  "currency",
+  "boolean",
+  "date",
+  "datetime",
+  "select",
+  "multiselect",
+  "email",
+  "phone",
+  "url",
+  "image",
+  "gallery",
+  "file",
+  "relation",
+  "computed",
 ] as const;
 
 const SCOPES: { value: CatalogScope; label: string }[] = [
@@ -39,13 +89,26 @@ const SCOPES: { value: CatalogScope; label: string }[] = [
 ];
 
 function norm(s: string) {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 export function FieldCatalogSection() {
   const qc = useQueryClient();
-  const catalog = useQuery({ queryKey: ["admin-field-catalog"], queryFn: () => listFieldCatalog() });
-  const cats = useQuery({ queryKey: ["admin-org-cats"], queryFn: () => listOrganizationCategoriesPublic() });
+  const catalog = useQuery({
+    queryKey: ["admin-field-catalog"],
+    queryFn: () => listFieldCatalog(),
+  });
+  const cats = useQuery({
+    queryKey: ["admin-org-cats"],
+    queryFn: () => listOrganizationCategoriesPublic(),
+  });
+  const groups = useQuery({
+    queryKey: ["admin-field-groups", "all"],
+    queryFn: () => listAllCategoryFieldGroups(),
+  });
 
   const [search, setSearch] = useState("");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
@@ -58,7 +121,8 @@ export function FieldCatalogSection() {
     return (catalog.data ?? []).filter((e) => {
       if (q && !norm(e.field_key).includes(q) && !norm(e.label).includes(q)) return false;
       if (scopeFilter !== "all" && e.scope !== scopeFilter) return false;
-      if (catFilter !== "all" && !e.is_base && !e.usages.some((u) => u.category_id === catFilter)) return false;
+      if (catFilter !== "all" && !e.is_base && !e.usages.some((u) => u.category_id === catFilter))
+        return false;
       if (depFilter === "with" && e.dependencies.length === 0) return false;
       if (baseFilter === "base" && !e.is_base) return false;
       if (baseFilter === "not_base" && e.is_base) return false;
@@ -66,9 +130,11 @@ export function FieldCatalogSection() {
     });
   }, [catalog.data, search, scopeFilter, catFilter, depFilter, baseFilter]);
 
-
-  const catName = (id: string) => (cats.data ?? []).find((c) => c.id === id)?.name ?? id.slice(0, 8);
+  const catName = (id: string) =>
+    (cats.data ?? []).find((c) => c.id === id)?.name ?? id.slice(0, 8);
   const scopeLabel = (s: CatalogScope) => SCOPES.find((x) => x.value === s)?.label ?? s;
+  const groupsFor = (categoryId: string, currentScope: CatalogScope) =>
+    (groups.data ?? []).filter((g) => g.category_id === categoryId && g.scope === currentScope);
 
   // ---- diálogo de edição ----
   const [open, setOpen] = useState(false);
@@ -81,6 +147,7 @@ export function FieldCatalogSection() {
   const [isBase, setIsBase] = useState(false);
   const [scope, setScope] = useState<CatalogScope>("org");
   const [categories, setCategories] = useState<Set<string>>(new Set());
+  const [categoryGroupIds, setCategoryGroupIds] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState<TypeDraft>(emptyTypeDraft());
   const [saving, setSaving] = useState(false);
   const [confirmScope, setConfirmScope] = useState(false);
@@ -95,21 +162,55 @@ export function FieldCatalogSection() {
     setIsBase(e.is_base);
     setScope(e.scope);
     setCategories(new Set(e.usages.map((u) => u.category_id)));
+    setCategoryGroupIds(
+      Object.fromEntries(e.usages.map((u) => [u.category_id, u.group_id ?? "__none__"])),
+    );
     setDraft(draftFromConfig(e.config));
     setOpen(true);
+  }
+
+  function handleScopeChange(nextScope: CatalogScope) {
+    setScope(nextScope);
+    setCategoryGroupIds((prev) => {
+      const next = { ...prev };
+      for (const categoryId of categories) {
+        const persisted = editing?.usages.find(
+          (usage) => usage.category_id === categoryId && usage.scope === nextScope,
+        );
+        next[categoryId] = persisted ? (persisted.group_id ?? "__none__") : "__unset__";
+      }
+      return next;
+    });
   }
 
   function toggleCategory(categoryId: string) {
     setCategories((prev) => {
       const next = new Set(prev);
-      if (next.has(categoryId)) next.delete(categoryId);
-      else next.add(categoryId);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+        setCategoryGroupIds((prevGroups) => ({
+          ...prevGroups,
+          [categoryId]: prevGroups[categoryId] ?? "__unset__",
+        }));
+      }
       return next;
     });
   }
 
   async function save() {
     if (!editing) return;
+    const missingGroupChoice =
+      !isBase &&
+      [...categories].some(
+        (categoryId) =>
+          !categoryGroupIds[categoryId] || categoryGroupIds[categoryId] === "__unset__",
+      );
+    if (missingGroupChoice) {
+      toast.error("Escolha um bloco ou Sem bloco para cada categoria selecionada.");
+      return;
+    }
     setSaving(true);
     try {
       const config = applyDraftToConfig(editing.config, type, draft, tooltip);
@@ -124,6 +225,17 @@ export function FieldCatalogSection() {
           is_base: isBase,
           scope,
           category_ids: [...categories],
+          category_group_ids: Object.fromEntries(
+            [...categories]
+              .filter(
+                (categoryId) =>
+                  categoryGroupIds[categoryId] && categoryGroupIds[categoryId] !== "__unset__",
+              )
+              .map((categoryId) => [
+                categoryId,
+                categoryGroupIds[categoryId] === "__none__" ? null : categoryGroupIds[categoryId],
+              ]),
+          ),
           sync_org_fields: editing.origin === "organization",
         },
       });
@@ -167,13 +279,13 @@ export function FieldCatalogSection() {
     }
   }
 
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="font-display">Todos os campos da plataforma</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Visão consolidada por chave de campo, com as categorias e escopos em que cada campo é usado.
+          Visão consolidada por chave de campo, com as categorias e escopos em que cada campo é
+          usado.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -183,15 +295,18 @@ export function FieldCatalogSection() {
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
           <p className="text-xs text-destructive">
-            <strong>Zona de risco.</strong> Alterações aqui atingem todas as categorias e organizações da
-            plataforma. Mudar o tipo, remover o campo ou desmarcar categorias pode invalidar dados já
-            preenchidos, filtros públicos, cards e o PDF de orçamento.
+            <strong>Zona de risco.</strong> Alterações aqui atingem todas as categorias e
+            organizações da plataforma. Mudar o tipo, remover o campo ou desmarcar categorias pode
+            invalidar dados já preenchidos, filtros públicos, cards e o PDF de orçamento.
           </p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]">
           <div className="relative min-w-0">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
               className="pl-9"
               placeholder="Buscar por chave ou rótulo"
@@ -201,21 +316,35 @@ export function FieldCatalogSection() {
             />
           </div>
           <Select value={scopeFilter} onValueChange={setScopeFilter}>
-            <SelectTrigger className="lg:w-44" aria-label="Filtrar por escopo"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="lg:w-44" aria-label="Filtrar por escopo">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os escopos</SelectItem>
-              {SCOPES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+              {SCOPES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={catFilter} onValueChange={setCatFilter}>
-            <SelectTrigger className="lg:w-48" aria-label="Filtrar por categoria"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="lg:w-48" aria-label="Filtrar por categoria">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as categorias</SelectItem>
-              {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              {(cats.data ?? []).map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={baseFilter} onValueChange={setBaseFilter}>
-            <SelectTrigger className="lg:w-44" aria-label="Filtrar por campo base"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="lg:w-44" aria-label="Filtrar por campo base">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Base e não base</SelectItem>
               <SelectItem value="base">Somente base</SelectItem>
@@ -223,18 +352,20 @@ export function FieldCatalogSection() {
             </SelectContent>
           </Select>
           <Select value={depFilter} onValueChange={setDepFilter}>
-            <SelectTrigger className="lg:w-48" aria-label="Filtrar por dependência"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="lg:w-48" aria-label="Filtrar por dependência">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os campos</SelectItem>
               <SelectItem value="with">Com dependência</SelectItem>
             </SelectContent>
           </Select>
-
         </div>
 
-
         {catalog.isLoading ? (
-          <div className="py-10 text-center"><Loader2 className="inline h-5 w-5 animate-spin text-muted-foreground" /></div>
+          <div className="py-10 text-center">
+            <Loader2 className="inline h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
         ) : catalog.isError ? (
           <p className="text-sm text-destructive">{(catalog.error as Error).message}</p>
         ) : entries.length === 0 ? (
@@ -258,7 +389,9 @@ export function FieldCatalogSection() {
                     <TableCell className="max-w-[320px]">
                       <span className="block truncate font-medium">{e.label}</span>
                       <span className="mt-1 flex flex-wrap items-center gap-1">
-                        <span className="truncate font-mono text-xs text-muted-foreground">{e.field_key}</span>
+                        <span className="truncate font-mono text-xs text-muted-foreground">
+                          {e.field_key}
+                        </span>
                         <Badge variant="secondary">{e.field_type}</Badge>
                         {e.required ? <Badge variant="secondary">obrigatório</Badge> : null}
                         {e.divergent ? <Badge variant="destructive">divergente</Badge> : null}
@@ -268,7 +401,8 @@ export function FieldCatalogSection() {
                       <span className="block truncate">
                         {e.is_base
                           ? "Todas as categorias"
-                          : [...new Set(e.usages.map((u) => catName(u.category_id)))].join(", ") || "—"}
+                          : [...new Set(e.usages.map((u) => catName(u.category_id)))].join(", ") ||
+                            "—"}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -291,25 +425,42 @@ export function FieldCatalogSection() {
                       ) : (
                         <span className="flex flex-wrap gap-1">
                           {e.dependencies.map((d) => (
-                            <Badge key={d} variant="outline" className="border-destructive/50 text-destructive">{d}</Badge>
+                            <Badge
+                              key={d}
+                              variant="outline"
+                              className="border-destructive/50 text-destructive"
+                            >
+                              {d}
+                            </Badge>
                           ))}
                         </span>
                       )}
                     </TableCell>
                     <TableCell>
                       <span className="flex justify-end gap-1">
-                        <Button size="sm" variant="outline" onClick={() => openEdit(e)} aria-label={`Editar ${e.field_key}`}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openEdit(e)}
+                          aria-label={`Editar ${e.field_key}`}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" aria-label={`Remover ${e.field_key}`}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              aria-label={`Remover ${e.field_key}`}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Remover “{e.field_key}” da plataforma?</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Remover “{e.field_key}” da plataforma?
+                              </AlertDialogTitle>
                               <AlertDialogDescription>
                                 O campo sai de {e.usages.length} definição(ões) em{" "}
                                 {new Set(e.usages.map((u) => u.category_id)).size} categoria(s).
@@ -321,7 +472,9 @@ export function FieldCatalogSection() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => removeEntry(e)}>Remover</AlertDialogAction>
+                              <AlertDialogAction onClick={() => removeEntry(e)}>
+                                Remover
+                              </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -333,7 +486,6 @@ export function FieldCatalogSection() {
             </Table>
           </div>
         )}
-
       </CardContent>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -348,41 +500,69 @@ export function FieldCatalogSection() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="fc-label">Rótulo</Label>
-              <Input id="fc-label" required value={label} onChange={(ev) => setLabel(ev.target.value)} />
+              <Input
+                id="fc-label"
+                required
+                value={label}
+                onChange={(ev) => setLabel(ev.target.value)}
+              />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Tipo</Label>
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {FIELD_TYPES.map((tp) => <SelectItem key={tp} value={tp}>{tp}</SelectItem>)}
+                    {FIELD_TYPES.map((tp) => (
+                      <SelectItem key={tp} value={tp}>
+                        {tp}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {editing && editing.dependencies.length > 0 && type !== editing.field_type ? (
                   <p className="text-xs text-destructive">
-                    Este campo é usado em: {editing.dependencies.join(", ")}. Mudar o tipo pode quebrar essas funções.
+                    Este campo é usado em: {editing.dependencies.join(", ")}. Mudar o tipo pode
+                    quebrar essas funções.
                   </p>
                 ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="fc-order">Ordem</Label>
-                <Input id="fc-order" type="number" min={0} value={order} onChange={(ev) => setOrder(Number(ev.target.value))} />
+                <Input
+                  id="fc-order"
+                  type="number"
+                  min={0}
+                  value={order}
+                  onChange={(ev) => setOrder(Number(ev.target.value))}
+                />
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="fc-tooltip">Texto de ajuda (tooltip)</Label>
-                <Textarea id="fc-tooltip" rows={2} value={tooltip} onChange={(ev) => setTooltip(ev.target.value)}
-                  placeholder="Exibido em ícone (i) ao lado do rótulo no formulário." />
+                <Textarea
+                  id="fc-tooltip"
+                  rows={2}
+                  value={tooltip}
+                  onChange={(ev) => setTooltip(ev.target.value)}
+                  placeholder="Exibido em ícone (i) ao lado do rótulo no formulário."
+                />
               </div>
               <div className="sm:col-span-2 flex items-center justify-between rounded-lg border border-border p-3">
-                <Label htmlFor="fc-req" className="text-sm">Obrigatório</Label>
+                <Label htmlFor="fc-req" className="text-sm">
+                  Obrigatório
+                </Label>
                 <Switch id="fc-req" checked={required} onCheckedChange={setRequired} />
               </div>
               <div className="sm:col-span-2 flex items-center justify-between gap-3 rounded-lg border border-border p-3">
                 <div className="min-w-0">
-                  <Label htmlFor="fc-base" className="text-sm">Campo base da plataforma</Label>
+                  <Label htmlFor="fc-base" className="text-sm">
+                    Campo base da plataforma
+                  </Label>
                   <p className="text-xs text-muted-foreground">
-                    Aplica o campo a todas as categorias, existentes e futuras. Desabilita a seleção manual.
+                    Aplica o campo a todas as categorias, existentes e futuras. Desabilita a seleção
+                    manual.
                   </p>
                 </div>
                 <Switch id="fc-base" checked={isBase} onCheckedChange={setIsBase} />
@@ -397,69 +577,113 @@ export function FieldCatalogSection() {
 
             {editing?.origin === "organization" ? (
               <p className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
-                Campo criado dentro de organizações. A edição atualiza o campo em todas as organizações que o utilizam
-                ({editing.organizations}) e não altera o catálogo por categoria.
+                Campo criado dentro de organizações. A edição atualiza o campo em todas as
+                organizações que o utilizam ({editing.organizations}) e não altera o catálogo por
+                categoria.
               </p>
             ) : (
               <>
-            <div className="space-y-2 rounded-lg border border-border p-3">
-              <p className="text-sm font-medium">Escopo do campo</p>
-              <p className="text-xs text-muted-foreground">
-                Um campo pertence a um único escopo: Organização, Tabela ou Registro.
-              </p>
-              <RadioGroup
-                className="mt-2 grid gap-2 sm:grid-cols-3"
-                value={scope}
-                onValueChange={(v) => setScope(v as CatalogScope)}
-              >
-                {SCOPES.map((s) => (
-                  <Label
-                    key={s.value}
-                    htmlFor={`fc-scope-${s.value}`}
-                    className="flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm"
+                <div className="space-y-2 rounded-lg border border-border p-3">
+                  <p className="text-sm font-medium">Escopo do campo</p>
+                  <p className="text-xs text-muted-foreground">
+                    Um campo pertence a um único escopo: Organização, Tabela ou Registro.
+                  </p>
+                  <RadioGroup
+                    className="mt-2 grid gap-2 sm:grid-cols-3"
+                    value={scope}
+                    onValueChange={(v) => handleScopeChange(v as CatalogScope)}
                   >
-                    <RadioGroupItem id={`fc-scope-${s.value}`} value={s.value} />
-                    {s.label}
-                  </Label>
-                ))}
-              </RadioGroup>
-              {editing?.scope_divergent ? (
-                <p className="text-xs text-destructive">
-                  Este campo hoje existe em mais de um escopo. Ao salvar, ele passa a existir apenas no escopo selecionado.
-                </p>
-              ) : null}
-            </div>
+                    {SCOPES.map((s) => (
+                      <Label
+                        key={s.value}
+                        htmlFor={`fc-scope-${s.value}`}
+                        className="flex min-h-11 items-center gap-2 rounded-md border border-border px-3 text-sm"
+                      >
+                        <RadioGroupItem id={`fc-scope-${s.value}`} value={s.value} />
+                        {s.label}
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                  {editing?.scope_divergent ? (
+                    <p className="text-xs text-destructive">
+                      Este campo hoje existe em mais de um escopo. Ao salvar, ele passa a existir
+                      apenas no escopo selecionado.
+                    </p>
+                  ) : null}
+                </div>
 
-            <div className="space-y-2 rounded-lg border border-border p-3">
-              <p className="text-sm font-medium">Categorias que usam o campo</p>
-              <p className="text-xs text-muted-foreground">
-                {isBase
-                  ? "Campo base: aplicado automaticamente em todas as categorias."
-                  : "Marque em quais categorias o campo deve existir, no escopo selecionado."}
-              </p>
-              <div className="mt-2 space-y-2">
-                {(cats.data ?? []).map((c) => {
-                  const id = `fc-cat-${c.id}`;
-                  return (
-                    <div key={c.id} className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3">
-                      <Label htmlFor={id} className="min-w-0 truncate text-sm">{c.name}</Label>
-                      <Switch
-                        id={id}
-                        disabled={isBase}
-                        checked={isBase || categories.has(c.id)}
-                        onCheckedChange={() => toggleCategory(c.id)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                <div className="space-y-2 rounded-lg border border-border p-3">
+                  <p className="text-sm font-medium">Categorias que usam o campo</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isBase
+                      ? "Campo base: aplicado automaticamente em todas as categorias."
+                      : "Marque em quais categorias o campo deve existir, no escopo selecionado."}
+                  </p>
+                  <div className="mt-2 space-y-2">
+                    {(cats.data ?? []).map((c) => {
+                      const id = `fc-cat-${c.id}`;
+                      const selected = isBase || categories.has(c.id);
+                      const categoryGroups = groupsFor(c.id, scope);
+                      return (
+                        <div
+                          key={c.id}
+                          className="space-y-3 rounded-md border border-border px-3 py-3"
+                        >
+                          <div className="flex min-h-11 items-center justify-between gap-3">
+                            <Label htmlFor={id} className="min-w-0 truncate text-sm">
+                              {c.name}
+                            </Label>
+                            <Switch
+                              id={id}
+                              disabled={isBase}
+                              checked={selected}
+                              onCheckedChange={() => toggleCategory(c.id)}
+                            />
+                          </div>
+                          {selected ? (
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor={`fc-cat-group-${c.id}`}
+                                className="text-xs text-muted-foreground"
+                              >
+                                Bloco nesta categoria
+                              </Label>
+                              <Select
+                                value={categoryGroupIds[c.id] ?? "__unset__"}
+                                onValueChange={(value) =>
+                                  setCategoryGroupIds((prev) => ({ ...prev, [c.id]: value }))
+                                }
+                                disabled={isBase}
+                              >
+                                <SelectTrigger id={`fc-cat-group-${c.id}`}>
+                                  <SelectValue placeholder="Escolha um bloco" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__unset__" disabled>
+                                    Escolha um bloco
+                                  </SelectItem>
+                                  <SelectItem value="__none__">Sem bloco</SelectItem>
+                                  {categoryGroups.map((group) => (
+                                    <SelectItem key={group.id} value={group.id}>
+                                      {group.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </>
             )}
 
-
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
               <Button type="submit" disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
               </Button>
@@ -473,8 +697,9 @@ export function FieldCatalogSection() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar mudança de escopo</AlertDialogTitle>
             <AlertDialogDescription>
-              O campo passará a existir apenas no escopo “{scopeLabel(scope)}” e será removido dos demais escopos
-              em todas as categorias. Esta ação afeta todas as organizações da plataforma.
+              O campo passará a existir apenas no escopo “{scopeLabel(scope)}” e será removido dos
+              demais escopos em todas as categorias. Esta ação afeta todas as organizações da
+              plataforma.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -484,6 +709,5 @@ export function FieldCatalogSection() {
         </AlertDialogContent>
       </AlertDialog>
     </Card>
-
   );
 }
