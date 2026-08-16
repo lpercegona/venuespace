@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, ExternalLink, Loader2, Pencil, Plus, Rows3, Settings2, Share2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Loader2, Pencil, Plus, Rows3, Settings2, Share2, Table as TableIcon } from "lucide-react";
 import { AppShell } from "@/components/venue/app-shell";
+import { IconByName } from "@/components/venue/lucide-icon";
 import { EmptyState } from "@/components/venue/empty-state";
 import { DynamicGrid, type RecordRow } from "@/components/venue/dynamic-grid";
 import { DynamicForm } from "@/components/venue/dynamic-form";
@@ -151,7 +152,12 @@ function RecordsPage() {
 
   return (
     <AppShell
-      title={table.data?.name ?? t("table", "Tabela")}
+      title={
+        <span className="flex min-w-0 items-center gap-2">
+          <IconByName name={(table.data as any)?.icon} className="h-6 w-6 shrink-0" fallback={TableIcon} />
+          <span className="truncate">{table.data?.name ?? t("table", "Tabela")}</span>
+        </span>
+      }
       subtitle={table.data?.description ?? undefined}
       actions={
         <div className="flex flex-wrap items-center gap-2">

@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { slugify } from "@/lib/slug";
 import { useLabels } from "@/hooks/use-instance-context";
 import { CategoryFieldsForm } from "@/components/venue/category-fields-form";
+import { IconByName } from "@/components/venue/lucide-icon";
 
 export const Route = createFileRoute("/_authenticated/app/$orgSlug/")({
   head: ({ params }) => ({
@@ -244,8 +245,10 @@ function TableCard({
   t, orgSlug, orgCategoryId, canEdit, isOwner, isSA, onSaved,
 }: { t: any; orgSlug: string; orgCategoryId: string | null; canEdit: boolean; isOwner: boolean; isSA: boolean; onSaved: () => void }) {
   const isLocked = !!t.is_locked;
-  const canStruct = (canEdit && (!isLocked || isSA));
-  const canDeleteStruct = (isOwner && (!isLocked || isSA));
+  const isStandard = !!t.origin_standard_table_id || (((t.system_data ?? {}).kind || "normal") !== "normal");
+  const canStruct = (canEdit && ((!isLocked && !isStandard) || isSA));
+  const canDeleteStruct = (isOwner && ((!isLocked && !isStandard) || isSA));
+
 
   const { t: label } = useLabels();
   const tableLabel = label("table", "tabela").toLowerCase();
@@ -281,7 +284,7 @@ function TableCard({
         <Card className="h-full transition-shadow hover:shadow-elegant">
           <CardContent className="flex min-h-24 items-center gap-3 p-4">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground">
-              <TableIcon className="h-5 w-5" />
+              <IconByName name={t.icon} className="h-5 w-5" fallback={TableIcon} />
             </span>
             <p className="min-w-0 truncate pr-8 font-display text-base font-semibold">{t.name}</p>
           </CardContent>

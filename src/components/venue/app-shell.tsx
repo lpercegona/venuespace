@@ -19,7 +19,7 @@ import { ChatWidget } from "./chat-widget";
 import { SettingsModal } from "./settings-modal";
 
 type Props = {
-  title?: string;
+  title?: ReactNode;
   subtitle?: string;
   actions?: ReactNode;
   children?: ReactNode;
