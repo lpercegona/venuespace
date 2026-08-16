@@ -20,19 +20,7 @@ export type LayoutItem = {
 
 export type RendererField = { key: string; label: string; type: string; config?: Record<string, any> };
 
-function toPascal(name: string) {
-  return name.split(/[-_\s]+/).filter(Boolean).map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join("");
-}
-function resolveLucide(name: string | null | undefined): LucideIcon | null {
-  if (!name) return null;
-  const M = LucideIcons as any;
-  return (M[name] ?? M[toPascal(name)] ?? M[name.charAt(0).toUpperCase() + name.slice(1)] ?? null) as LucideIcon | null;
-}
-function IconByName({ name, className }: { name: string | null | undefined; className?: string }) {
-  const Cmp = resolveLucide(name);
-  if (!Cmp) return null;
-  return <Cmp className={className ?? "h-4 w-4 shrink-0"} />;
-}
+import { IconByName, resolveLucide } from "@/components/venue/lucide-icon";
 
 function formatValue(field: RendererField | undefined, raw: any): string {
   if (raw == null || raw === "") return "";
