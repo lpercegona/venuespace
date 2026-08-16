@@ -245,7 +245,7 @@ function TableCard({
   t, orgSlug, orgCategoryId, canEdit, isOwner, isSA, onSaved,
 }: { t: any; orgSlug: string; orgCategoryId: string | null; canEdit: boolean; isOwner: boolean; isSA: boolean; onSaved: () => void }) {
   const isLocked = !!t.is_locked;
-  const isStandard = !!t.origin_standard_table_id || ((t.system_data ?? {}).kind ?? "normal") !== "normal";
+  const isStandard = !!t.origin_standard_table_id || (((t.system_data ?? {}).kind || "normal") !== "normal");
   const canStruct = (canEdit && ((!isLocked && !isStandard) || isSA));
   const canDeleteStruct = (isOwner && ((!isLocked && !isStandard) || isSA));
 
