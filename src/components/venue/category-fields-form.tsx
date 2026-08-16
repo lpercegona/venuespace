@@ -85,9 +85,14 @@ export function CategoryFieldsForm({
   }
 
   function get(f: CascadeField) {
-    const systemKey = (f.config ?? {}).system_key as string | undefined;
-    if (systemKey) return readSystem(systemValue ?? {}, systemKey) ?? "";
-    return value[f.field_key] ?? "";
+    const config = f.config ?? {};
+    const systemKey = config.system_key as string | undefined;
+    if (systemKey) {
+      const persistedSystemValue = readSystem(systemValue ?? {}, systemKey);
+      return persistedSystemValue !== undefined ? persistedSystemValue : config.default;
+    }
+    const persistedValue = value[f.field_key];
+    return persistedValue !== undefined ? persistedValue : config.default;
   }
 
   if (!categoryId || !loaded || fields.length === 0) return null;
