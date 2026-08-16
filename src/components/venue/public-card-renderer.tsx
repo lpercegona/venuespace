@@ -19,7 +19,7 @@ export type LayoutItem = {
 
 export type RendererField = { key: string; label: string; type: string; config?: Record<string, any> };
 
-import { IconByName, resolveLucide } from "@/components/venue/lucide-icon";
+
 
 function formatValue(field: RendererField | undefined, raw: any): string {
   if (raw == null || raw === "") return "";
