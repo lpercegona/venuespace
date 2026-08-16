@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { listMyOrganizations, createOrganization } from "@/lib/orgs.functions";
 import { amISuperAdmin } from "@/lib/instance-settings.functions";
 
@@ -57,6 +57,17 @@ function OrgsPage() {
           .includes(orgSearch.trim().toLowerCase())
       : true,
   );
+
+  // Usuário comum com exatamente uma organização entra direto no painel dela.
+  const isSA = isSuperAdmin.data?.is_super_admin === true;
+  const orgs = (data ?? []) as any[];
+  useEffect(() => {
+    if (isLoading || isSuperAdmin.isLoading) return;
+    if (isSA) return;
+    if (orgs.length === 1) {
+      navigate({ to: "/app/$orgSlug", params: { orgSlug: orgs[0].slug }, replace: true });
+    }
+  }, [isLoading, isSuperAdmin.isLoading, isSA, orgs, navigate]);
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
