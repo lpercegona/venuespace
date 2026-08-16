@@ -38,11 +38,27 @@ export const listCategoryFieldGroups = createServerFn({ method: "GET" })
     return (rows ?? []) as CategoryFieldGroup[];
   });
 
+export const listAllCategoryFieldGroups = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: rows, error } = await (supabaseAdmin as any)
+    .from("category_field_groups")
+    .select("id, category_id, scope, key, title, description, order_index")
+    .order("category_id", { ascending: true })
+    .order("scope", { ascending: true })
+    .order("order_index", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (rows ?? []) as CategoryFieldGroup[];
+});
+
 const upsertSchema = z.object({
   id: z.string().uuid().optional(),
   category_id: z.string().uuid(),
   scope: scopeSchema,
-  key: z.string().min(1).max(60).regex(/^[a-z][a-z0-9_]*$/, "use snake_case"),
+  key: z
+    .string()
+    .min(1)
+    .max(60)
+    .regex(/^[a-z][a-z0-9_]*$/, "use snake_case"),
   title: z.string().min(1).max(120),
   description: z.string().max(400).nullable().optional(),
   order_index: z.number().int().min(0).max(999).optional(),

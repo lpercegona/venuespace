@@ -3,7 +3,23 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const FIELD_TYPES = [
-  "text","long_text","number","currency","boolean","date","datetime","select","multiselect","email","phone","url","image","gallery","file","relation","computed",
+  "text",
+  "long_text",
+  "number",
+  "currency",
+  "boolean",
+  "date",
+  "datetime",
+  "select",
+  "multiselect",
+  "email",
+  "phone",
+  "url",
+  "image",
+  "gallery",
+  "file",
+  "relation",
+  "computed",
 ] as const;
 
 export type CatalogScope = "org" | "table" | "record";
@@ -48,8 +64,6 @@ export type FieldCatalogEntry = {
   dependencies: string[];
 };
 
-
-
 async function requireSA(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("is_super_admin", { _user_id: userId });
   if (error) throw new Error(error.message);
@@ -84,7 +98,10 @@ async function loadDependencies(admin: any): Promise<Record<string, string[]>> {
     const rules = r.rules ?? {};
     const collect = (v: any) => {
       if (!v) return;
-      if (Array.isArray(v)) { v.forEach(collect); return; }
+      if (Array.isArray(v)) {
+        v.forEach(collect);
+        return;
+      }
       if (typeof v === "object") {
         if (typeof v.field_key === "string") add(v.field_key, "Seção da home");
         Object.values(v).forEach(collect);
@@ -108,13 +125,17 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
     await requireSA(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
-    const sel = "id, category_id, field_key, label, field_type, required, config, order_index, group_id, is_base";
+    const sel =
+      "id, category_id, field_key, label, field_type, required, config, order_index, group_id, is_base";
 
     const [org, tbl, rec, orgFields, deps] = await Promise.all([
       admin.from("category_org_fields").select(sel),
       admin.from("category_table_fields").select(sel),
       admin.from("organization_category_default_fields").select(sel),
-      admin.from("fields").select("key, label, type, required, config, position, tables!inner(organization_id)").limit(5000),
+      admin
+        .from("fields")
+        .select("key, label, type, required, config, position, tables!inner(organization_id)")
+        .limit(5000),
       loadDependencies(admin),
     ]);
 
@@ -178,13 +199,17 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
       e.scope_divergent = counts.size > 1;
       let best: CatalogScope = e.scope;
       let bestN = -1;
-      for (const [s, n] of counts) if (n > bestN) { best = s; bestN = n; }
+      for (const [s, n] of counts)
+        if (n > bestN) {
+          best = s;
+          bestN = n;
+        }
       e.scope = best;
     }
 
     // Campos criados dentro de organizações que ainda não existem no catálogo.
     const orgOnly = new Map<string, { entry: FieldCatalogEntry; orgs: Set<string> }>();
-    for (const r of ((orgFields.data ?? []) as any[])) {
+    for (const r of (orgFields.data ?? []) as any[]) {
       const key = r.key as string;
       if (!key || byKey.has(key)) continue;
       let cur = orgOnly.get(key);
@@ -210,9 +235,12 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
         };
         orgOnly.set(key, cur);
       }
-      const orgId = Array.isArray(r.tables) ? r.tables[0]?.organization_id : r.tables?.organization_id;
+      const orgId = Array.isArray(r.tables)
+        ? r.tables[0]?.organization_id
+        : r.tables?.organization_id;
       if (orgId) cur.orgs.add(orgId);
-      if (r.label !== cur.entry.label || r.type !== cur.entry.field_type) cur.entry.divergent = true;
+      if (r.label !== cur.entry.label || r.type !== cur.entry.field_type)
+        cur.entry.divergent = true;
     }
     for (const { entry, orgs } of orgOnly.values()) {
       entry.organizations = orgs.size;
@@ -220,8 +248,6 @@ export const listFieldCatalog = createServerFn({ method: "GET" })
     }
 
     return [...byKey.values()].sort((a, b) => a.field_key.localeCompare(b.field_key));
-
-
   });
 
 /** Chaves criadas dentro de organizações que não existem no catálogo por categoria. */
@@ -248,8 +274,15 @@ export const listOrphanOrgFieldKeys = createServerFn({ method: "GET" })
     const map = new Map<string, { key: string; label: string; type: string; orgs: Set<string> }>();
     for (const r of (orgFields.data ?? []) as any[]) {
       if (known.has(r.key)) continue;
-      const cur = map.get(r.key) ?? { key: r.key, label: r.label, type: r.type, orgs: new Set<string>() };
-      const orgId = Array.isArray(r.tables) ? r.tables[0]?.organization_id : r.tables?.organization_id;
+      const cur = map.get(r.key) ?? {
+        key: r.key,
+        label: r.label,
+        type: r.type,
+        orgs: new Set<string>(),
+      };
+      const orgId = Array.isArray(r.tables)
+        ? r.tables[0]?.organization_id
+        : r.tables?.organization_id;
       if (orgId) cur.orgs.add(orgId);
       map.set(r.key, cur);
     }
@@ -259,7 +292,11 @@ export const listOrphanOrgFieldKeys = createServerFn({ method: "GET" })
   });
 
 const applySchema = z.object({
-  field_key: z.string().min(1).max(60).regex(/^[a-z][a-z0-9_]*$/, "use snake_case"),
+  field_key: z
+    .string()
+    .min(1)
+    .max(60)
+    .regex(/^[a-z][a-z0-9_]*$/, "use snake_case"),
   label: z.string().min(1).max(120),
   field_type: z.enum(FIELD_TYPES),
   required: z.boolean(),
@@ -270,9 +307,10 @@ const applySchema = z.object({
   scope: scopeSchema,
   /** Categorias em que o campo existe nesse escopo (ignorado quando is_base). */
   category_ids: z.array(z.string().uuid()),
+  /** Bloco selecionado por categoria. Chave ausente preserva o bloco persistido. */
+  category_group_ids: z.record(z.string().uuid(), z.string().uuid().nullable()).optional(),
   /** Propaga rótulo/tipo/config para os campos já criados dentro de organizações. */
   sync_org_fields: z.boolean().optional(),
-
 });
 
 export const applyFieldCatalogEntry = createServerFn({ method: "POST" })
@@ -289,18 +327,40 @@ export const applyFieldCatalogEntry = createServerFn({ method: "POST" })
       categoryIds = ((cats ?? []) as any[]).map((c) => c.id as string);
     }
 
+    const existingGroupIds = new Map<string, string | null>();
+    if (categoryIds.length > 0) {
+      const { data: existingRows, error: existingErr } = await sb
+        .from(tableFor(data.scope))
+        .select("category_id, group_id")
+        .eq("field_key", data.field_key)
+        .in("category_id", categoryIds);
+      if (existingErr) throw new Error(existingErr.message);
+      for (const row of (existingRows ?? []) as any[]) {
+        existingGroupIds.set(row.category_id as string, row.group_id ?? null);
+      }
+    }
+
     // Upsert no escopo escolhido.
     if (categoryIds.length > 0) {
-      const rows = categoryIds.map((category_id) => ({
-        category_id,
-        field_key: data.field_key,
-        label: data.label,
-        field_type: data.field_type,
-        required: data.required,
-        config: data.config,
-        order_index: data.order_index,
-        is_base: data.is_base,
-      }));
+      const rows = categoryIds.map((category_id) => {
+        const hasNewGroup = Object.prototype.hasOwnProperty.call(
+          data.category_group_ids ?? {},
+          category_id,
+        );
+        return {
+          category_id,
+          field_key: data.field_key,
+          label: data.label,
+          field_type: data.field_type,
+          required: data.required,
+          config: data.config,
+          order_index: data.order_index,
+          group_id: hasNewGroup
+            ? (data.category_group_ids?.[category_id] ?? null)
+            : (existingGroupIds.get(category_id) ?? null),
+          is_base: data.is_base,
+        };
+      });
       const { error } = await sb
         .from(tableFor(data.scope))
         .upsert(rows, { onConflict: "category_id,field_key" });
@@ -314,7 +374,9 @@ export const applyFieldCatalogEntry = createServerFn({ method: "POST" })
     if (delErr) throw new Error(delErr.message);
 
     // Segmentação: a chave não pode existir nos outros escopos.
-    for (const other of (["org", "table", "record"] as CatalogScope[]).filter((s) => s !== data.scope)) {
+    for (const other of (["org", "table", "record"] as CatalogScope[]).filter(
+      (s) => s !== data.scope,
+    )) {
       const { error } = await sb.from(tableFor(other)).delete().eq("field_key", data.field_key);
       if (error) throw new Error(error.message);
     }
@@ -323,14 +385,18 @@ export const applyFieldCatalogEntry = createServerFn({ method: "POST" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { error } = await (supabaseAdmin as any)
         .from("fields")
-        .update({ label: data.label, type: data.field_type, required: data.required, config: data.config })
+        .update({
+          label: data.label,
+          type: data.field_type,
+          required: data.required,
+          config: data.config,
+        })
         .eq("key", data.field_key);
       if (error) throw new Error(error.message);
     }
 
     return { ok: true, applied: categoryIds.length };
   });
-
 
 export const deleteFieldCatalogEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -340,7 +406,9 @@ export const deleteFieldCatalogEntry = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSA(context.supabase, context.userId);
     if ((PDF_KEYS.has(data.field_key) || BOOKING_KEYS.has(data.field_key)) && !data.force) {
-      throw new Error("Campo com dependência em PDF de orçamento ou reservas. Confirme a remoção forçada.");
+      throw new Error(
+        "Campo com dependência em PDF de orçamento ou reservas. Confirme a remoção forçada.",
+      );
     }
     const sb = context.supabase as any;
     for (const scope of ["org", "table", "record"] as CatalogScope[]) {

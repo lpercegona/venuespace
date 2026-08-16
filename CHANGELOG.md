@@ -1,3 +1,9 @@
+## 2026-08-16 17:55 (America/Sao_Paulo) — Correção da Iteração 40 — Blocos no catálogo global de campos
+
+- Causa raiz: a edição global do catálogo regravava definições por categoria sem enviar `group_id`, fazendo o upsert limpar a associação de bloco em `category_org_fields`, `category_table_fields` e `organization_category_default_fields`.
+- `src/lib/field-catalog.functions.ts`: `applyFieldCatalogEntry` passa a aceitar `category_group_ids` por categoria e preserva o `group_id` já persistido quando a edição não envia novo valor para aquela categoria.
+- `src/lib/category-field-groups.functions.ts` e `src/components/admin/field-catalog-section.tsx`: o diálogo global carrega os blocos existentes, exige escolha de bloco ou "Sem bloco" ao adicionar categoria e envia o mapa por categoria no salvamento.
+- Validação manual especificada: campo com bloco na categoria A mantém o bloco ao editar rótulo/tipo; ao incluir categoria B, B recebe o bloco escolhido; ao remover e reincluir A, A exige nova escolha explícita e salva o bloco selecionado.
 ## 2026-08-16 17:52 (America/Sao_Paulo) — Correção das Iterações 40/41 — Replicação de campos-base por categoria
 
 - Causa raiz: a replicação de `upsertCategoryCascadeField` recriava campos-base nas demais categorias com `group_id: null`, removendo o vínculo com blocos já configurados por categoria.
