@@ -11,7 +11,7 @@ import { useFormatContext, useLabels } from "@/hooks/use-instance-context";
 import { formatCurrency, formatDateTime } from "@/lib/formatting";
 
 export const Route = createFileRoute("/_authenticated/me/applications")({
-  head: () => ({ meta: [{ title: "Minhas candidaturas — Venuespace" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Interações — Venuespace" }, { name: "robots", content: "noindex" }] }),
   component: MyApplicationsPage,
 });
 
@@ -23,7 +23,7 @@ function MyApplicationsPage() {
 
 
   return (
-    <AppShell title="Minhas candidaturas" subtitle="Tudo o que você enviou por formulários públicos.">
+    <AppShell title="Interações" subtitle="Todas as interações com empresas e pessoas.">
       {q.isLoading ? (
         <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : !q.data || q.data.length === 0 ? (
