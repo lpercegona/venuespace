@@ -1,3 +1,9 @@
+## 2026-08-16 17:08 (America/Sao_Paulo) — Correção das Iterações 40/41 — Campos de sistema na criação de organização
+
+- `src/routes/_authenticated.app.index.tsx`: modal "Nova organização" passa a manter `systemData`, repassar `systemValue`/`onSystemChange` ao `CategoryFieldsForm`, enviar `system_data` no `createOrganization` e limpar os dados de sistema após criação bem-sucedida.
+- Campos de categoria com `config.system_key` (ex.: `quote.cnpj`, `quote.site`, `quote.validity_days`, `quote.payment_terms`) passam a ser persistidos em `organizations.system_data.quote` também na criação inicial da organização.
+- Sem nova rota pública — sitemap inalterado.
+
 ## 2026-08-16 00:05 (America/Sao_Paulo) — Correção das Iterações 41/42 — Ícones de tabela, tabelas padrão e destino pós-login
 
 - Migração: `sync_category_standard_tables` passa a propagar o `icon` da tabela-modelo também para as tabelas de sistema (Contatos/Reservas) das organizações.
