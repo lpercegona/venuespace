@@ -74,6 +74,7 @@ function OrgsPage() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [categoryData, setCategoryData] = useState<Record<string, any>>({});
+  const [systemData, setSystemData] = useState<Record<string, any>>({});
   const [address, setAddress] = useState<AddressValue>({});
   const [saving, setSaving] = useState(false);
 
@@ -101,6 +102,7 @@ function OrgsPage() {
           description: description || undefined,
           category_id: categoryId,
           category_data: categoryData,
+          system_data: systemData,
           address,
         },
       });
@@ -110,6 +112,7 @@ function OrgsPage() {
       setDescription("");
       setCategoryId("");
       setCategoryData({});
+      setSystemData({});
       setAddress({});
       await refetch();
       router.invalidate();
@@ -165,6 +168,7 @@ function OrgsPage() {
                   onValueChange={(v) => {
                     setCategoryId(v);
                     setCategoryData({});
+                    setSystemData({});
                   }}
                 >
                   <SelectTrigger>
@@ -190,6 +194,8 @@ function OrgsPage() {
                 scope="org"
                 value={categoryData}
                 onChange={setCategoryData}
+                systemValue={systemData}
+                onSystemChange={setSystemData}
                 title={`Campos da categoria`}
               />
 
