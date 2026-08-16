@@ -1,3 +1,14 @@
+## 2026-08-16 00:05 (America/Sao_Paulo) — Correção das Iterações 41/42 — Ícones de tabela, tabelas padrão e destino pós-login
+
+- Migração: `sync_category_standard_tables` passa a propagar o `icon` da tabela-modelo também para as tabelas de sistema (Contatos/Reservas) das organizações.
+- Dados: backfill do `icon` nas tabelas das organizações que estavam sem ícone, a partir da tabela-modelo de origem.
+- `src/components/venue/lucide-icon.tsx` (novo): `IconByName`/`resolveLucide` compartilhados, com `fallback`; `src/components/venue/public-card-renderer.tsx` passa a importar do novo módulo (remoção da duplicação).
+- `src/routes/_authenticated.app.$orgSlug.index.tsx`: card da tabela renderiza o ícone salvo (fallback para o ícone genérico); botões de editar/excluir ocultos em tabelas originadas de tabelas-modelo ou de sistema para todos os papéis da organização — apenas super admin mantém acesso.
+- `src/routes/_authenticated.app.$orgSlug.tables.$tableId.index.tsx`: cabeçalho da tabela exibe o ícone dinâmico.
+- `src/components/venue/app-shell.tsx`: `title` aceita `ReactNode`.
+- `src/routes/_authenticated.app.index.tsx`: usuário que não é super admin com exatamente uma organização é redirecionado direto ao painel dela; sem organização mantém o estado vazio com "Nova organização"; com duas ou mais mantém a listagem.
+- Sem nova rota pública — sitemap inalterado.
+
 ## 2026-08-15 23:55 (America/Sao_Paulo) — Correção/extensão das Iterações 40 e 41 — Tabelas ocultas e campos da tabela de contatos
 
 - Migração: `category_standard_tables.is_hidden` e `tables.is_hidden` (padrão `false`); `sync_category_standard_tables` propaga o estado para as tabelas das organizações, incluindo tabelas de sistema (contatos/reservas).
