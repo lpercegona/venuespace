@@ -101,12 +101,29 @@ export const upsertCategoryCascadeField = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Campo base da instância: replica a definição para todas as demais
-    // categorias (sem bloco, que é específico de cada categoria).
+    // categorias preservando o bloco já configurado em cada categoria.
     if (data.is_base) {
-      const { data: cats } = await (context.supabase as any)
-        .from("organization_categories")
-        .select("id")
-        .neq("id", data.category_id);
+      const targetTable = tableFor(data.scope);
+      const [{ data: cats, error: catsErr }, { data: existing, error: existingErr }] = await Promise.all([
+        (context.supabase as any)
+          .from("organization_categories")
+          .select("id")
+          .neq("id", data.category_id),
+        (context.supabase as any)
+          .from(targetTable)
+          .select("category_id, group_id")
+          .eq("field_key", data.field_key)
+          .neq("category_id", data.category_id),
+      ]);
+      if (catsErr) throw new Error(catsErr.message);
+      if (existingErr) throw new Error(existingErr.message);
+
+      const groupByCategory = new Map(
+        ((existing ?? []) as Array<{ category_id: string; group_id: string | null }>).map((field) => [
+          field.category_id,
+          field.group_id,
+        ]),
+      );
       const others = ((cats ?? []) as any[]).map((c) => ({
         category_id: c.id,
         field_key: data.field_key,
@@ -115,12 +132,12 @@ export const upsertCategoryCascadeField = createServerFn({ method: "POST" })
         required: data.required ?? false,
         config: data.config ?? {},
         order_index: data.order_index ?? 0,
-        group_id: null,
+        group_id: groupByCategory.has(c.id) ? groupByCategory.get(c.id) : null,
         is_base: true,
       }));
       if (others.length > 0) {
         const { error: repErr } = await (context.supabase as any)
-          .from(tableFor(data.scope))
+          .from(targetTable)
           .upsert(others, { onConflict: "category_id,field_key" });
         if (repErr) throw new Error(repErr.message);
       }
