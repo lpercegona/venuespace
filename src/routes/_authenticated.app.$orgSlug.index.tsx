@@ -116,7 +116,7 @@ function OrgDashboard() {
         <div className="flex flex-wrap items-center gap-2">
           {isOwner ? (
             <Button variant="outline" size="sm" onClick={() => setOpenEditOrg(true)}>
-              <Pencil className="h-4 w-4" />Editar {organizationLabel}
+              <Pencil className="h-4 w-4" />
             </Button>
           ) : null}
           {canEdit && (org.data as any)?.canCreateTables ? (
