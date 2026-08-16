@@ -3,6 +3,10 @@
 - Causa raiz: `CategoryFieldsForm` substituía valores ausentes por string vazia antes de consultar `config.default`, impedindo defaults explícitos em campos de categoria com e sem `system_key`.
 - `src/components/venue/category-fields-form.tsx`: leitura dos campos passa a preservar valores persistidos definidos (`false`, `0` e `""`) e usa `config.default` apenas quando o valor persistido é `undefined`, incluindo campos de sistema via `readSystem`.
 - Validação direcionada: `quote_validity_days`, criado na migração `20260814193101_3609771b-0d03-4fb4-b577-a3c8d22fc39b.sql` com `default: 15`, passa a iniciar com `15` quando a organização ainda não tem `quote.validity_days` salvo.
+## 2026-08-16 17:08 (America/Sao_Paulo) — Correção das Iterações 40/41 — Campos de sistema na criação de organização
+
+- `src/routes/_authenticated.app.index.tsx`: modal "Nova organização" passa a manter `systemData`, repassar `systemValue`/`onSystemChange` ao `CategoryFieldsForm`, enviar `system_data` no `createOrganization` e limpar os dados de sistema após criação bem-sucedida.
+- Campos de categoria com `config.system_key` (ex.: `quote.cnpj`, `quote.site`, `quote.validity_days`, `quote.payment_terms`) passam a ser persistidos em `organizations.system_data.quote` também na criação inicial da organização.
 - Sem nova rota pública — sitemap inalterado.
 
 ## 2026-08-16 00:05 (America/Sao_Paulo) — Correção das Iterações 41/42 — Ícones de tabela, tabelas padrão e destino pós-login
