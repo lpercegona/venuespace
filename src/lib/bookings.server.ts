@@ -576,42 +576,83 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
     }
   };
 
-  const drawClosing = () => {
-    const msg = tpl(layout.texts.closing ?? "").trim();
-    ensure(ctx, 40);
-    ctx.y -= 10;
-    if (msg) {
-      for (const ln of wrapText(msg, font, 9.5, R - L)) {
-        draw(ctx, ln, L, ctx.y, 9.5, font, SOFT);
-        ctx.y -= 14;
+  /** Campos escolhidos no modelo de PDF da categoria (Iteração 43). */
+  const drawLayoutFields = () => {
+    const defs = [...(input.layoutFields ?? [])].sort((a, b) => a.order_index - b.order_index);
+    if (defs.length === 0) return;
+    const values = new Map((input.fieldValues ?? []).map((v) => [v.key, v]));
+    const contentW = R - L;
+    const gap = 10;
+    let cursorX = L;
+    let used = 0;
+    let rowH = 0;
+
+    const closeRow = () => {
+      if (rowH > 0) ctx.y -= rowH + 8;
+      cursorX = L;
+      used = 0;
+      rowH = 0;
+    };
+
+    for (const def of defs) {
+      const v = values.get(def.field_key);
+      const label = def.label_override?.trim() || v?.label || def.field_key;
+      const text = (v?.value ?? "").trim() || "-";
+
+      if (def.section_title) {
+        closeRow();
+        sectionTitle(ctx, def.section_title, accent);
       }
+      if (used + def.width_percent > 100) closeRow();
+
+      const w = (contentW * def.width_percent) / 100 - (def.width_percent === 100 ? 0 : gap);
+      const lines = wrapText(text, font, def.font_size, w);
+      const h = 12 + lines.length * (def.font_size + 3);
+      ensure(ctx, h + 12);
+      if (used === 0) rowH = 0;
+
+      draw(ctx, label, cursorX, ctx.y, 8.5, bold, SOFT);
+      let ly = ctx.y - 13;
+      for (const ln of lines) {
+        draw(ctx, ln, cursorX, ly, def.font_size, font, INK);
+        ly -= def.font_size + 3;
+      }
+      rowH = Math.max(rowH, h);
+      used += def.width_percent;
+      cursorX += (contentW * def.width_percent) / 100;
+      if (used >= 100) closeRow();
     }
-    ctx.y -= 1;
-    draw(ctx, input.org.name, L, ctx.y, 10, bold, INK);
+    closeRow();
+    ctx.y -= 8;
   };
 
   for (const key of order) {
     if (!enabled.get(key)) continue;
     if (key === "header") await drawHeader(ctx, input.org, logo, accent, layout.logo_size);
     else if (key === "title") drawTitle();
-    else if (key === "client") drawClient();
+    else if (key === "client") { drawClient(); drawLayoutFields(); }
     else if (key === "items") drawItems();
     else if (key === "totals") drawTotals();
     else if (key === "terms") drawTerms();
     else if (key === "notes") drawNotes();
     else if (key === "closing") drawClosing();
   }
+  if (!enabled.get("client")) drawLayoutFields();
 
   if (enabled.get("footer")) {
     const totalPages = ctx.pages.length;
     ctx.pages.forEach((p, i) => {
       const txt = latin1(`Página ${i + 1} de ${totalPages}`);
-      p.drawText(txt, { x: R - font.widthOfTextAtSize(txt, 8), y: 36, size: 8, font, color: SOFT });
+      p.drawText(txt, { x: R - font.widthOfTextAtSize(txt, 8), y: 52, size: 8, font, color: SOFT });
       p.drawText(latin1(`Orçamento #${input.recordId.slice(0, 8).toUpperCase()}`), {
-        x: L, y: 36, size: 8, font, color: SOFT,
+        x: L, y: 52, size: 8, font, color: SOFT,
       });
     });
   }
+
+  drawSignatureFooter(doc, ctx.pages, font);
+
+
 
   const bytes = await doc.save();
   return { bytes, total };
