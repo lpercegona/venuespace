@@ -37,7 +37,6 @@ function AuthPage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
 
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/app" });
@@ -143,7 +142,6 @@ function AuthPage() {
     setForgotSent(true);
   }
 
-
   async function handleGoogle() {
     setLoading(true);
     sessionStorage.setItem(OAUTH_REDIRECT_KEY, "/app");
@@ -157,7 +155,6 @@ function AuthPage() {
     if (result.redirected) return;
     navigate({ to: "/auth/callback" });
   }
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -173,9 +170,6 @@ function AuthPage() {
         </section>
         <section className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
           <div className="w-full max-w-md">
-            <div className="mb-6 flex justify-center">
-              <VenuespaceLogo className="h-7 w-auto text-foreground" />
-            </div>
             <Card>
               <CardHeader>
                 <CardTitle className="font-display text-xl">Acesse sua conta</CardTitle>
@@ -207,8 +201,8 @@ function AuthPage() {
                   forgotSent ? (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">
-                        Se houver uma conta com esse e-mail, enviamos um link para redefinir a senha. Verifique
-                        também a caixa de spam.
+                        Se houver uma conta com esse e-mail, enviamos um link para redefinir a senha. Verifique também a
+                        caixa de spam.
                       </p>
                       <Button
                         variant="ghost"
@@ -245,7 +239,6 @@ function AuthPage() {
                     </form>
                   )
                 ) : pendingEmail ? (
-
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">
                       Enviamos um link de confirmação para <strong className="text-foreground">{pendingEmail}</strong>.
@@ -260,105 +253,103 @@ function AuthPage() {
                   </div>
                 ) : (
                   <>
-                <Button variant="outline" className="w-full h-11" onClick={handleGoogle} disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continuar com Google"}
-                </Button>
+                    <Button variant="outline" className="w-full h-11" onClick={handleGoogle} disabled={loading}>
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continuar com Google"}
+                    </Button>
 
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">ou</span>
+                      </div>
+                    </div>
 
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">ou</span>
-                  </div>
-                </div>
-
-                <Tabs defaultValue="signin">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="signin">Entrar</TabsTrigger>
-                    <TabsTrigger value="signup">Criar conta</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="signin">
-                    <form onSubmit={handleSignIn} className="space-y-4 pt-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="in-email">E-mail</Label>
-                        <Input
-                          id="in-email"
-                          type="email"
-                          required
-                          value={signInEmail}
-                          onChange={(e) => setSignInEmail(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="in-pass">Senha</Label>
-                        <Input
-                          id="in-pass"
-                          type="password"
-                          required
-                          minLength={8}
-                          value={signInPassword}
-                          onChange={(e) => setSignInPassword(e.target.value)}
-                        />
-                      </div>
-                      <Button type="submit" className="w-full h-11" disabled={loading}>
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
-                      </Button>
-                      <button
-                        type="button"
-                        className="mx-auto block text-xs font-medium text-primary hover:underline"
-                        onClick={() => {
-                          setForgotEmail(signInEmail);
-                          setForgot(true);
-                        }}
-                      >
-                        Esqueci minha senha
-                      </button>
-                    </form>
-                  </TabsContent>
-                  <TabsContent value="signup">
-                    <form onSubmit={handleSignUp} className="space-y-4 pt-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="up-name">Nome</Label>
-                        <Input
-                          id="up-name"
-                          required
-                          value={signUpName}
-                          onChange={(e) => setSignUpName(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="up-email">E-mail</Label>
-                        <Input
-                          id="up-email"
-                          type="email"
-                          required
-                          value={signUpEmail}
-                          onChange={(e) => setSignUpEmail(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="up-pass">Senha</Label>
-                        <Input
-                          id="up-pass"
-                          type="password"
-                          required
-                          minLength={8}
-                          value={signUpPassword}
-                          onChange={(e) => setSignUpPassword(e.target.value)}
-                        />
-                      </div>
-                      <Button type="submit" className="w-full h-11" disabled={loading}>
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar conta"}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
+                    <Tabs defaultValue="signin">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="signin">Entrar</TabsTrigger>
+                        <TabsTrigger value="signup">Criar conta</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="signin">
+                        <form onSubmit={handleSignIn} className="space-y-4 pt-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="in-email">E-mail</Label>
+                            <Input
+                              id="in-email"
+                              type="email"
+                              required
+                              value={signInEmail}
+                              onChange={(e) => setSignInEmail(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="in-pass">Senha</Label>
+                            <Input
+                              id="in-pass"
+                              type="password"
+                              required
+                              minLength={8}
+                              value={signInPassword}
+                              onChange={(e) => setSignInPassword(e.target.value)}
+                            />
+                          </div>
+                          <Button type="submit" className="w-full h-11" disabled={loading}>
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
+                          </Button>
+                          <button
+                            type="button"
+                            className="mx-auto block text-xs font-medium text-primary hover:underline"
+                            onClick={() => {
+                              setForgotEmail(signInEmail);
+                              setForgot(true);
+                            }}
+                          >
+                            Esqueci minha senha
+                          </button>
+                        </form>
+                      </TabsContent>
+                      <TabsContent value="signup">
+                        <form onSubmit={handleSignUp} className="space-y-4 pt-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="up-name">Nome</Label>
+                            <Input
+                              id="up-name"
+                              required
+                              value={signUpName}
+                              onChange={(e) => setSignUpName(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="up-email">E-mail</Label>
+                            <Input
+                              id="up-email"
+                              type="email"
+                              required
+                              value={signUpEmail}
+                              onChange={(e) => setSignUpEmail(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="up-pass">Senha</Label>
+                            <Input
+                              id="up-pass"
+                              type="password"
+                              required
+                              minLength={8}
+                              value={signUpPassword}
+                              onChange={(e) => setSignUpPassword(e.target.value)}
+                            />
+                          </div>
+                          <Button type="submit" className="w-full h-11" disabled={loading}>
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar conta"}
+                          </Button>
+                        </form>
+                      </TabsContent>
+                    </Tabs>
                   </>
                 )}
               </CardContent>
-
             </Card>
           </div>
         </section>
