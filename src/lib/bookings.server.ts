@@ -576,6 +576,21 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
     }
   };
 
+  const drawClosing = () => {
+    const msg = tpl(layout.texts.closing ?? "").trim();
+    ensure(ctx, 40);
+    ctx.y -= 10;
+    if (msg) {
+      for (const ln of wrapText(msg, font, 9.5, R - L)) {
+        draw(ctx, ln, L, ctx.y, 9.5, font, SOFT);
+        ctx.y -= 14;
+      }
+    }
+    ctx.y -= 1;
+    draw(ctx, input.org.name, L, ctx.y, 10, bold, INK);
+  };
+
+
   /** Campos escolhidos no modelo de PDF da categoria (Iteração 43). */
   const drawLayoutFields = () => {
     const defs = [...(input.layoutFields ?? [])].sort((a, b) => a.order_index - b.order_index);
