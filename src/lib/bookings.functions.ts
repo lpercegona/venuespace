@@ -564,12 +564,19 @@ export const generateBookingQuote = createServerFn({ method: "POST" })
       .map((s: string) => s.replace(/^[-•*]\s*/, "").trim())
       .filter(Boolean);
 
+    const { loadCategoryPdfLayout, loadOrgCategoryId, buildQuoteFieldValues } =
+      await import("./pdf-layout.server");
+    const { loadOrgLogoBytes } = await import("./bookings.server");
+    const categoryId = await loadOrgCategoryId(context.supabase, rec.organization_id);
+    const pdfLayout = await loadCategoryPdfLayout(context.supabase, categoryId);
+
     const { bytes, total } = await buildQuotePdf({
       org: {
         name: org?.name ?? "Venuespace",
         cnpj: orgSys.cnpj ?? null,
         site: orgSys.site ?? null,
         logoUrl: (org?.logo_url as string | null) ?? null,
+        logoBytes: await loadOrgLogoBytes(context.supabase, (org?.logo_url as string | null) ?? null),
       },
       recordId: rec.id,
       client: contactText,
@@ -584,8 +591,11 @@ export const generateBookingQuote = createServerFn({ method: "POST" })
       paymentTerms,
       notes,
       validityDays: Number(orgSys.validity_days ?? 15) || 15,
-      layout: (await (await import("./modules.server")).loadOrgModule(context.supabase, rec.organization_id, "bookings")).config.pdf,
+      layout: pdfLayout.config,
+      layoutFields: pdfLayout.fields,
+      fieldValues: buildQuoteFieldValues(meta.fields, recData, pdfLayout.fields),
     });
+
 
     const path = `orcamentos/${rec.organization_id}/${rec.id}/${Date.now()}.pdf`;
     const { error: upErr } = await context.supabase.storage
