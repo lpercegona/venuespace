@@ -166,7 +166,7 @@ function AuthPage() {
     bg-cover bg-center
     p-6 lg:min-h-full lg:border-b-0 lg:border-r lg:p-10
     before:absolute before:inset-0 before:z-0
-    before:bg-linear-to-br before:from-surface/20 before:via-muted before:to-primary/20
+    before:bg-linear-to-br before:from-surface before:via-muted before:to-primary/20
   "
           style={{ backgroundImage: "url('/public/Imagem-autenticacao-resize.jpg')" }}
         >
