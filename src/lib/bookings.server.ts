@@ -1,5 +1,5 @@
 // Server-only helpers for the bookings module (Iteração 32 + correção/extensão).
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFName, PDFString, StandardFonts, rgb } from "pdf-lib";
 
 export type BookingField = { id: string; key: string; label: string; type: string; config: any };
 
@@ -362,6 +362,64 @@ function hexColor(hex: string, fallback: any) {
   if (!m) return fallback;
   const n = parseInt(m[1], 16);
   return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+}
+
+// ============ Rodapé de assinatura fixo (Iteração 43) ============
+
+/** Traçados do logotipo Venuespace (viewBox 513.15 x 62.32). */
+const VENUESPACE_LOGO_PATHS = [
+  "M58.9,61.13V1.2h38.52v10.27h-27.22v14.3h24.83v10.27h-24.83v14.81h27.74v10.27h-39.04Z",
+  "M106.33,61.13V1.2h21.49l11.9,52.22h1.54V1.2h11.13v59.93h-21.49l-11.9-52.22h-1.54v52.22h-11.13Z",
+  "M186.8,62.32c-4.91,0-9.12-.9-12.63-2.7-3.51-1.8-6.19-4.37-8.05-7.71-1.86-3.34-2.78-7.29-2.78-11.86V1.2h11.3v39.21c0,3.65,1.04,6.54,3.12,8.65,2.08,2.11,5.09,3.17,9.03,3.17s6.95-1.06,9.03-3.17c2.08-2.11,3.12-4.99,3.12-8.65V1.2h11.3v38.87c0,4.57-.93,8.52-2.78,11.86-1.86,3.34-4.54,5.91-8.05,7.71-3.51,1.8-7.72,2.7-12.63,2.7Z",
+  "M221.21,61.13V1.2h38.52v10.27h-27.22v14.3h24.83v10.27h-24.83v14.81h27.74v10.27h-39.04Z",
+  "M318.13,61.13V1.2h24.66c3.77,0,7.09.76,9.97,2.27,2.88,1.51,5.14,3.64,6.76,6.38,1.63,2.74,2.44,5.99,2.44,9.76v1.2c0,3.71-.84,6.95-2.53,9.72-1.68,2.77-3.97,4.91-6.85,6.42-2.88,1.51-6.15,2.27-9.8,2.27h-13.35v21.92h-11.3ZM329.43,28.94h12.24c2.68,0,4.85-.74,6.51-2.23,1.65-1.48,2.48-3.51,2.48-6.08v-.86c0-2.57-.83-4.59-2.48-6.08-1.66-1.48-3.82-2.23-6.51-2.23h-12.24v17.46Z",
+  "M361.11,61.13l15.75-59.93h19.69l15.75,59.93h-11.64l-3.25-13.18h-21.4l-3.25,13.18h-11.64ZM378.66,37.5h16.09l-7.28-29.19h-1.54l-7.28,29.19Z",
+  "M441.75,62.32c-7.42,0-13.3-2.07-17.64-6.21-4.34-4.14-6.51-10.06-6.51-17.76v-14.38c0-7.71,2.17-13.63,6.51-17.77,4.34-4.14,10.22-6.21,17.64-6.21s13.06,2.01,17.08,6.04c4.02,4.02,6.04,9.55,6.04,16.57v.51h-11.13v-.86c0-3.54-.98-6.45-2.95-8.73-1.97-2.28-4.98-3.42-9.03-3.42s-7.14,1.23-9.42,3.68c-2.28,2.45-3.42,5.79-3.42,10.02v14.72c0,4.17,1.14,7.49,3.42,9.97,2.28,2.48,5.42,3.72,9.42,3.72s7.06-1.16,9.03-3.47c1.97-2.31,2.95-5.21,2.95-8.69v-1.54h11.13v1.2c0,7.02-2.01,12.54-6.04,16.57-4.02,4.02-9.72,6.03-17.08,6.03Z",
+  "M474.11,61.13V1.2h38.52v10.27h-27.22v14.3h24.83v10.27h-24.83v14.81h27.74v10.27h-39.04Z",
+  "M269.16,40.77h35.77s0-1.71,0-1.71l-35.77-8.52V1.2h40.88v10.61s-35.86,7.67-35.86,7.67v1.7l35.86,7.67v32.28h-40.88v-20.36Z",
+  "M25.55,61.13L0,1.2h25.59l13.59,54.9h1.7s-1.42-54.9-1.42-54.9h11.64v59.93h-25.55Z",
+];
+const LOGO_VIEWBOX = { w: 513.15, h: 62.32 };
+const SIGNATURE_URL = "https://venuespace.com.br";
+
+/** Assinatura da plataforma, desenhada no rodapé de todas as páginas. */
+function drawSignatureFooter(doc: PDFDocument, pages: any[], font: any) {
+  const size = 7.5;
+  const baseY = 24;
+  const logoH = 9;
+  const scale = logoH / LOGO_VIEWBOX.h;
+  const logoW = LOGO_VIEWBOX.w * scale;
+  const rightText = "venuespace.com.br";
+  const rightW = font.widthOfTextAtSize(rightText, size);
+
+  for (const p of pages) {
+    p.drawText(latin1("Orçamento gerado através da plataforma venuespace."), {
+      x: L, y: baseY, size, font, color: SOFT,
+    });
+    for (const d of VENUESPACE_LOGO_PATHS) {
+      p.drawSvgPath(d, {
+        x: PW / 2 - logoW / 2,
+        y: baseY + logoH,
+        scale,
+        color: SOFT,
+        borderWidth: 0,
+      });
+    }
+    p.drawText(rightText, { x: R - rightW, y: baseY, size, font, color: SOFT });
+
+    const annot = doc.context.register(
+      doc.context.obj({
+        Type: "Annot",
+        Subtype: "Link",
+        Rect: [R - rightW - 2, baseY - 3, R + 2, baseY + size + 3],
+        Border: [0, 0, 0],
+        A: { Type: "Action", S: "URI", URI: PDFString.of(SIGNATURE_URL) },
+      }),
+    );
+    const existing = p.node.Annots();
+    if (existing) existing.push(annot);
+    else p.node.set(PDFName.of("Annots"), doc.context.obj([annot]));
+  }
 }
 
 export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Array; total: number }> {
