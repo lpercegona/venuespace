@@ -160,8 +160,17 @@ function AuthPage() {
     <div className="min-h-screen bg-background">
       <PublicHeader showAuthActions={false} />
       <main className="grid min-h-[calc(100vh-65px)] grid-cols-1 lg:grid-cols-2">
-        <section className="flex min-h-64 items-end overflow-hidden border-b border-border bg-linear-to-br from-surface via-muted to-primary/20 p-6 lg:min-h-full lg:border-b-0 lg:border-r lg:p-10">
-          <div className="max-w-lg space-y-3 rounded-2xl border border-border bg-card/80 p-5 shadow-elegant backdrop-blur">
+        <section
+          className="
+    relative min-h-64 overflow-hidden border-b border-border
+    bg-cover bg-center
+    p-6 lg:min-h-full lg:border-b-0 lg:border-r lg:p-10
+    before:absolute before:inset-0 before:z-0
+    before:bg-linear-to-br before:from-surface before:via-muted before:to-primary/20
+  "
+          style={{ backgroundImage: "url('/public/imagem-autenticacao-resize.jpg')" }}
+        >
+          <div className="z-1 max-w-lg space-y-3 rounded-2xl border border-border bg-card/80 p-5 shadow-elegant backdrop-blur">
             <p className="text-sm font-medium text-primary">Venuespace</p>
             <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               Organize, publique e negocie a locação de espaços.
