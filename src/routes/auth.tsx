@@ -170,7 +170,7 @@ function AuthPage() {
         </section>
         <section className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
           <div className="w-full max-w-md">
-            <Card>
+            <Card className="hover:shadow-lg hover:shadow-primary/10 transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="font-display text-xl">Acesse sua conta</CardTitle>
                 <CardDescription>Entre ou crie sua conta para começar.</CardDescription>
