@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { VenuespaceLogo } from "@/components/venue/venuespace-logo";
 import { PublicHeader } from "@/components/venue/public-header";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -172,6 +173,9 @@ function AuthPage() {
         </section>
         <section className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
           <div className="w-full max-w-md">
+            <div className="mb-6 flex justify-center">
+              <VenuespaceLogo className="h-7 w-auto text-foreground" />
+            </div>
             <Card>
               <CardHeader>
                 <CardTitle className="font-display text-xl">Acesse sua conta</CardTitle>
