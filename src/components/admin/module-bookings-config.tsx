@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, FileDown, Loader2, Save } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,20 +9,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/venue/empty-state";
+import { PdfLayoutEditor } from "@/components/admin/pdf-layout-editor";
 import {
   listCategoryModules,
   listBookingsModuleFields,
   setCategoryModuleEnabled,
   saveCategoryModuleConfig,
-  previewBookingsQuotePdf,
 } from "@/lib/modules.functions";
 import {
   DEFAULT_BOOKINGS_CONFIG,
-  PDF_BLOCK_LABELS,
-  PDF_VARIABLES,
   type BookingsModuleConfig,
   type ModuleFormFieldConfig,
 } from "@/lib/modules";
@@ -39,7 +36,6 @@ export function ModuleBookingsConfig() {
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState<BookingsModuleConfig>(DEFAULT_BOOKINGS_CONFIG);
   const [saving, setSaving] = useState(false);
-  const [previewing, setPreviewing] = useState(false);
 
   const cats = useQuery({
     queryKey: ["module-categories", "bookings"],
@@ -100,7 +96,7 @@ export function ModuleBookingsConfig() {
     setDraft((d) => ({ ...d, form: ordered.map((f, idx) => ({ ...f, order_index: idx })) }));
   }
 
-  function moveBlock(key: string, dir: -1 | 1) {
+  function unusedMoveBlock(key: string, dir: -1 | 1) {
     setDraft((d) => {
       const blocks = [...d.pdf.blocks];
       const i = blocks.findIndex((b) => b.key === key);
@@ -136,26 +132,6 @@ export function ModuleBookingsConfig() {
       toast.error((e as Error).message);
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function preview() {
-    if (!selected) return;
-    setPreviewing(true);
-    try {
-      const { base64 } = await previewBookingsQuotePdf({
-        data: { category_id: selected, config: draft as any },
-      });
-      const bin = atob(base64);
-      const bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-      window.open(url, "_blank", "noopener");
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setPreviewing(false);
     }
   }
 
@@ -210,10 +186,6 @@ export function ModuleBookingsConfig() {
               Configuração — {current.category_name}
             </CardTitle>
             <div className="flex shrink-0 gap-2">
-              <Button variant="outline" size="sm" onClick={preview} disabled={previewing}>
-                {previewing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
-                Pré-visualizar PDF
-              </Button>
               <Button size="sm" onClick={save} disabled={saving}>
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Salvar
@@ -295,132 +267,8 @@ export function ModuleBookingsConfig() {
                 )}
               </TabsContent>
 
-              <TabsContent value="pdf" className="space-y-5 pt-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Cor de destaque (hex)</Label>
-                    <Input
-                      className="h-10"
-                      placeholder="#6b4fa3"
-                      value={draft.pdf.accent}
-                      onChange={(e) => setDraft((d) => ({ ...d, pdf: { ...d.pdf, accent: e.target.value } }))}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Tamanho da logo (24–90)</Label>
-                    <Input
-                      className="h-10" type="number" min={24} max={90}
-                      value={draft.pdf.logo_size}
-                      onChange={(e) => setDraft((d) => ({ ...d, pdf: { ...d.pdf, logo_size: Number(e.target.value) || 58 } }))}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Blocos do documento</h4>
-                  <ul className="space-y-2">
-                    {draft.pdf.blocks.map((b) => (
-                      <li
-                        key={b.key}
-                        className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border p-3"
-                      >
-                        <span className="min-w-0 truncate text-sm">{PDF_BLOCK_LABELS[b.key]}</span>
-                        <div className="flex shrink-0 items-center gap-1">
-                          <Button variant="ghost" size="icon" aria-label="Mover para cima" onClick={() => moveBlock(b.key, -1)}>
-                            <ArrowUp className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" aria-label="Mover para baixo" onClick={() => moveBlock(b.key, 1)}>
-                            <ArrowDown className="h-4 w-4" />
-                          </Button>
-                          <Switch
-                            checked={b.enabled}
-                            aria-label={`Exibir ${PDF_BLOCK_LABELS[b.key]}`}
-                            onCheckedChange={(v) =>
-                              setDraft((d) => ({
-                                ...d,
-                                pdf: {
-                                  ...d.pdf,
-                                  blocks: d.pdf.blocks.map((x) => (x.key === b.key ? { ...x, enabled: v } : x)),
-                                },
-                              }))
-                            }
-                          />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Colunas da tabela de itens</h4>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {([
-                      ["period", "Período de locação"],
-                      ["daily", "Valor da diária"],
-                      ["note", "Observações do item"],
-                      ["courtesy", "Selo de cortesia"],
-                      ["discount", "Desconto aplicado"],
-                    ] as const).map(([key, label]) => (
-                      <label key={key} className="flex min-h-11 items-center gap-3 text-sm">
-                        <Switch
-                          checked={draft.pdf.item_columns[key]}
-                          onCheckedChange={(v) =>
-                            setDraft((d) => ({
-                              ...d,
-                              pdf: { ...d.pdf, item_columns: { ...d.pdf.item_columns, [key]: v } },
-                            }))
-                          }
-                        />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium">Textos</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Variáveis disponíveis: {PDF_VARIABLES.join(" ")}
-                  </p>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Título do documento</Label>
-                    <Input
-                      className="h-10"
-                      value={draft.pdf.texts.title}
-                      onChange={(e) => setDraft((d) => ({ ...d, pdf: { ...d.pdf, texts: { ...d.pdf.texts, title: e.target.value } } }))}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Texto de abertura</Label>
-                    <Textarea
-                      rows={2}
-                      value={draft.pdf.texts.intro}
-                      onChange={(e) => setDraft((d) => ({ ...d, pdf: { ...d.pdf, texts: { ...d.pdf.texts, intro: e.target.value } } }))}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Condições adicionais (uma por linha)</Label>
-                    <Textarea
-                      rows={3}
-                      value={draft.pdf.texts.terms}
-                      onChange={(e) => setDraft((d) => ({ ...d, pdf: { ...d.pdf, texts: { ...d.pdf.texts, terms: e.target.value } } }))}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Mensagem final</Label>
-                    <Textarea
-                      rows={2}
-                      value={draft.pdf.texts.closing}
-                      onChange={(e) => setDraft((d) => ({ ...d, pdf: { ...d.pdf, texts: { ...d.pdf.texts, closing: e.target.value } } }))}
-                    />
-                  </div>
-                </div>
+              <TabsContent value="pdf" className="pt-4">
+                <PdfLayoutEditor categoryId={current.category_id} availableFields={tableFields} />
               </TabsContent>
             </Tabs>
           </CardContent>
