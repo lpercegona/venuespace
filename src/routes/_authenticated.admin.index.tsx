@@ -131,7 +131,6 @@ import { listPendingReviewsAdmin, moderateReviewAdmin, type ReviewModerationItem
 import { HomeGroupingsSection } from "@/components/admin/home-groupings-section";
 import { HomeBlocksSection } from "@/components/admin/home-blocks-section";
 import { ModulesSection } from "@/components/admin/modules-section";
-import { ModuleBookingsConfig } from "@/components/admin/module-bookings-config";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({ meta: [{ title: "Admin — Venuespace" }, { name: "robots", content: "noindex" }] }),
@@ -201,7 +200,6 @@ const ADMIN_GROUPS: AdminGroup[] = [
     icon: Blocks,
     sections: [
       { value: "modules-overview", label: "Visão geral", render: () => <ModulesSection /> },
-      { value: "module-bookings", label: "Reservas", render: () => <ModuleBookingsConfig /> },
     ],
   },
   {
