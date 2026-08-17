@@ -309,19 +309,53 @@ async function drawHeader(ctx: Ctx, org: QuoteOrg, logo: any, accent: any, logoS
   ctx.y = PH - h - 42;
 }
 
-async function loadLogo(doc: PDFDocument, url: string | null | undefined) {
-  if (!url || !/^https?:\/\//i.test(url)) return null;
+/**
+ * Baixa o logotipo da organização. `logo_url` normalmente é um caminho do
+ * bucket privado `venue-uploads` — nesse caso o download é feito pelo storage,
+ * o que corrige o logotipo ausente no PDF (auditoria da Iteração 43).
+ */
+export async function loadOrgLogoBytes(
+  supabase: any,
+  logoUrl: string | null | undefined,
+): Promise<Uint8Array | null> {
+  const value = String(logoUrl ?? "").trim();
+  if (!value) return null;
   try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.length > 4_000_000) return null;
-    const isPng = buf[0] === 0x89 && buf[1] === 0x50;
-    return isPng ? await doc.embedPng(buf) : await doc.embedJpg(buf);
+    if (/^https?:\/\//i.test(value)) {
+      const res = await fetch(value);
+      if (!res.ok) return null;
+      const buf = new Uint8Array(await res.arrayBuffer());
+      return buf.length > 4_000_000 ? null : buf;
+    }
+    const path = value.replace(/^\/+/, "").replace(/^api\/public\/img\//, "");
+    const { data, error } = await supabase.storage.from("venue-uploads").download(path);
+    if (error || !data) return null;
+    const buf = new Uint8Array(await data.arrayBuffer());
+    return buf.length > 4_000_000 ? null : buf;
   } catch {
     return null;
   }
 }
+
+async function embedLogo(doc: PDFDocument, org: QuoteOrg) {
+  let bytes = org.logoBytes ?? null;
+  if (!bytes && org.logoUrl && /^https?:\/\//i.test(org.logoUrl)) {
+    try {
+      const res = await fetch(org.logoUrl);
+      if (res.ok) bytes = new Uint8Array(await res.arrayBuffer());
+    } catch {
+      bytes = null;
+    }
+  }
+  if (!bytes || bytes.length === 0 || bytes.length > 4_000_000) return null;
+  try {
+    const isPng = bytes[0] === 0x89 && bytes[1] === 0x50;
+    return isPng ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+  } catch {
+    return null;
+  }
+}
+
 
 function hexColor(hex: string, fallback: any) {
   const m = /^#?([0-9a-f]{6})$/i.exec(String(hex ?? "").trim());
