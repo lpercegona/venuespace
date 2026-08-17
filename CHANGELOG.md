@@ -1,3 +1,12 @@
+## 2026-08-17 03:20 (America/Sao_Paulo) — Iteração 43 (frentes A, B e C)
+
+- Banco: novas tabelas `category_pdf_layout` e `category_pdf_layout_fields` (GRANTs, RLS de leitura autenticada e escrita apenas para super admin, triggers de `updated_at`); migração da configuração de PDF que vivia em `category_modules.config.pdf`; backfill dos campos-base de organização (`org_name`, `org_logo`, `org_description`, `org_address`) em `category_org_fields` com `config.column_key`.
+- Backend: `src/lib/pdf-layout.ts`, `src/lib/pdf-layout.server.ts` e `src/lib/category-pdf-layout.functions.ts` (leitura, gravação e `previewBookingQuote` sem persistência, usando registro real de reserva quando existir).
+- PDF: bloco de campos configuráveis (rótulo, largura 25/50/75/100, tamanho de texto, seção, ordem); rodapé de assinatura fixo em todas as páginas com logo Venuespace e link clicável para venuespace.com.br; correção da resolução do logotipo da organização (download do bucket privado), aplicada ao orçamento final e ao preview.
+- Admin: editor "Modelo de Orçamento (PDF)" com preview ao vivo em pdf.js (debounce 600ms) e listagem de módulos em cards que abrem a edição do módulo (aba separada de Reservas removida).
+- Autenticação: logo Venuespace centralizada no topo de `/auth`.
+- Pendente desta iteração: frente D (unificação dos campos-base da organização no formulário e auditoria de cobertura em "Todos os campos") — o backfill de banco já está aplicado.
+
 ## 2026-08-16 17:55 (America/Sao_Paulo) — Correção da Iteração 40 — Blocos no catálogo global de campos
 
 - Causa raiz: a edição global do catálogo regravava definições por categoria sem enviar `group_id`, fazendo o upsert limpar a associação de bloco em `category_org_fields`, `category_table_fields` e `organization_category_default_fields`.
