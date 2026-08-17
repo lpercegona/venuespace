@@ -170,7 +170,7 @@ function AuthPage() {
   "
           style={{ backgroundImage: "url('/public/Imagem-autenticacao-resize.jpg')" }}
         >
-          <div className="absolute bottom-6 left-6 z-1 max-w-lg space-y-3 rounded-2xl border border-border bg-card/80 p-5 shadow-elegant backdrop-blur">
+          <div className="absolute inset-6 z-1 max-w-lg space-y-3 rounded-2xl border border-border bg-card/80 p-5 shadow-elegant backdrop-blur">
             <p className="text-sm font-medium text-primary">Venuespace</p>
             <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               Organize, publique e negocie a locação de espaços.
