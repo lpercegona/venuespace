@@ -183,7 +183,12 @@ export type QuoteOrg = {
   cnpj?: string | null;
   site?: string | null;
   logoUrl?: string | null;
+  /** Bytes do logotipo já resolvidos (inclusive quando vem do storage privado). */
+  logoBytes?: Uint8Array | null;
 };
+
+/** Valor de um campo da reserva selecionado no modelo de PDF da categoria. */
+export type QuoteFieldValue = { key: string; label: string; value: string };
 
 export type QuoteInput = {
   org: QuoteOrg;
@@ -201,7 +206,11 @@ export type QuoteInput = {
   notes: string[];
   validityDays: number;
   layout?: import("@/lib/modules").BookingsPdfConfig;
+  /** Campos do modelo configurável da categoria (Iteração 43). */
+  layoutFields?: import("@/lib/pdf-layout").PdfLayoutField[];
+  fieldValues?: QuoteFieldValue[];
 };
+
 
 const INK = rgb(0.11, 0.12, 0.14);
 const DARK = rgb(0.13, 0.13, 0.15);
