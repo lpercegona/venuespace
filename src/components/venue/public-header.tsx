@@ -86,20 +86,20 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
             </DropdownMenuItem>
           );
         })}
-        {list.length === 0
-          ? cats.isPending
-            ? [0, 1, 2].map((i) => (
-                <DropdownMenuItem key={`sk-${i}`} disabled className="pointer-events-none">
-                  <span className="h-4 w-24 animate-pulse rounded bg-muted" />
-                </DropdownMenuItem>
-              ))
-            : <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem>
-          : null}
+        {list.length === 0 ? (
+          cats.isPending ? (
+            [0, 1, 2].map((i) => (
+              <DropdownMenuItem key={`sk-${i}`} disabled className="pointer-events-none">
+                <span className="h-4 w-24 animate-pulse rounded bg-muted" />
+              </DropdownMenuItem>
+            ))
+          ) : (
+            <DropdownMenuItem disabled>Nenhuma categoria</DropdownMenuItem>
+          )
+        ) : null}
       </DropdownMenuContent>
-
     </DropdownMenu>
   );
-
 
   return (
     <header
@@ -122,7 +122,7 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
 
         {/* Centro: "Cadastrar empresa" no mobile, Explore no desktop. Na /para-empresas mobile mostra logo centralizada. */}
         <div className="min-w-0 justify-self-center">
-          {pathname === "/para-empresas" || pathname === "/auth" ? ? (
+          {pathname === "/para-empresas" || pathname === "/auth" ? (
             <Link to="/" className="flex sm:hidden" aria-label="Venuespace — início">
               <VenuespaceLogo className="h-5 w-auto text-brand" />
             </Link>
@@ -181,11 +181,8 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
               <CircleUserRound className="h-5 w-5" />
             </Button>
           </Link>
-
-
         </div>
       </div>
-
     </header>
   );
 }
