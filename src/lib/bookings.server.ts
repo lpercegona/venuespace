@@ -393,7 +393,7 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
   };
   const tpl = (s: string) => applyTemplate(s, vars);
 
-  const logo = await loadLogo(doc, input.org.logoUrl);
+  const logo = await embedLogo(doc, input.org);
 
   const drawTitle = () => {
     draw(ctx, tpl(layout.texts.title || DEFAULT_PDF_CONFIG.texts.title), L, ctx.y, 21, bold, INK);
