@@ -164,7 +164,7 @@ function AuthPage() {
           className="
     relative min-h-64 overflow-hidden border-b border-border
     bg-cover bg-center
-    p-6 lg:min-h-full lg:border-b-0 lg:border-r lg:p-10
+     lg:min-h-full lg:border-b-0 lg:border-r lg:p-10
     before:absolute before:inset-0 before:z-0
     before:bg-linear-to-tr before:from-primary/95 before:to-primary/90
   "
