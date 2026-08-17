@@ -163,14 +163,14 @@ function AuthPage() {
         <section
           className="
     relative min-h-64 overflow-hidden border-b border-border
-    bg-cover bg-center p-0
+    bg-cover bg-center p-6
      lg:min-h-full lg:border-b-0 lg:border-r lg:p-10
     before:absolute before:inset-0 before:z-0
     before:bg-linear-to-tr before:from-primary/95 before:to-primary/90
   "
           style={{ backgroundImage: "url('/public/Imagem-autenticacao-resize.jpg')" }}
         >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-lg space-y-3  bg-card/0   ">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-lg space-y-3  bg-card/0  p-5 ">
             <p className="text-sm font-medium text-card">Venuespace</p>
             <h1 className="font-display text-3xl font-semibold tracking-tight text-card sm:text-4xl">
               Organize, publique e negocie a locação de espaços.
