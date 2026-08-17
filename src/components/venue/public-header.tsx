@@ -122,7 +122,7 @@ export function PublicHeader({ showAuthActions = true, activeCategorySlug }: Pro
 
         {/* Centro: "Cadastrar empresa" no mobile, Explore no desktop. Na /para-empresas mobile mostra logo centralizada. */}
         <div className="min-w-0 justify-self-center">
-          {pathname === "/para-empresas" ? (
+          {pathname === "/para-empresas" || pathname === "/auth" ? ? (
             <Link to="/" className="flex sm:hidden" aria-label="Venuespace — início">
               <VenuespaceLogo className="h-5 w-auto text-brand" />
             </Link>
