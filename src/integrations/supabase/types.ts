@@ -305,6 +305,85 @@ export type Database = {
           },
         ]
       }
+      category_pdf_layout: {
+        Row: {
+          category_id: string
+          config: Json
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          config?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          config?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_pdf_layout_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: true
+            referencedRelation: "organization_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_pdf_layout_fields: {
+        Row: {
+          created_at: string
+          field_key: string
+          font_size: number
+          id: string
+          label_override: string | null
+          layout_id: string
+          order_index: number
+          section_title: string | null
+          updated_at: string
+          width_percent: number
+        }
+        Insert: {
+          created_at?: string
+          field_key: string
+          font_size?: number
+          id?: string
+          label_override?: string | null
+          layout_id: string
+          order_index?: number
+          section_title?: string | null
+          updated_at?: string
+          width_percent?: number
+        }
+        Update: {
+          created_at?: string
+          field_key?: string
+          font_size?: number
+          id?: string
+          label_override?: string | null
+          layout_id?: string
+          order_index?: number
+          section_title?: string | null
+          updated_at?: string
+          width_percent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_pdf_layout_fields_layout_id_fkey"
+            columns: ["layout_id"]
+            isOneToOne: false
+            referencedRelation: "category_pdf_layout"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_public_layout_fields: {
         Row: {
           config: Json
