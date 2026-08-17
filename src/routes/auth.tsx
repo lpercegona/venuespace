@@ -168,7 +168,7 @@ function AuthPage() {
     before:absolute before:inset-0 before:z-0
     before:bg-linear-to-tr before:from-primary/95 before:to-primary/90
   "
-          style={{ backgroundImage: "url('/public/Imagem-autenticacao-resize.jpg')" }}
+          style={{ backgroundImage: "url('/Imagem-autenticacao-resize.jpg')" }}
         >
           <div className="absolute w-full z-1 max-w-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 space-y-3 px-4 sm:px-6 ">
             <p className="text-sm font-medium text-card">Venuespace</p>
