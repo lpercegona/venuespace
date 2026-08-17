@@ -162,7 +162,7 @@ function AuthPage() {
       <main className="grid min-h-[calc(100vh-65px)] grid-cols-1 lg:grid-cols-2">
         <section
           className="
-    relative min-h-32 overflow-hidden border-b border-border
+    relative min-h-48 overflow-hidden border-b border-border
     bg-cover bg-center p-6
      lg:min-h-full lg:border-b-0 lg:border-r lg:p-10
     before:absolute before:inset-0 before:z-0
