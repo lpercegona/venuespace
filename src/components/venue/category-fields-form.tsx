@@ -39,6 +39,11 @@ type Props = {
   /** Valores de system_data — usados por campos com config.system_key. */
   systemValue?: Record<string, any>;
   onSystemChange?: (v: Record<string, any>) => void;
+  /** Valores das colunas físicas — usados por campos-base com config.column_key. */
+  columnValue?: Record<string, any>;
+  onColumnChange?: (key: string, v: any) => void;
+  /** Usa editor rich text para campos long_text (perfil da organização). */
+  richTextLongText?: boolean;
 };
 
 function readSystem(sys: Record<string, any>, path: string) {
@@ -59,6 +64,7 @@ function writeSystem(sys: Record<string, any>, path: string, v: any): Record<str
 
 export function CategoryFieldsForm({
   categoryId, scope, value, onChange, title, systemValue, onSystemChange,
+  columnValue, onColumnChange, richTextLongText = false,
 }: Props) {
   const [fields, setFields] = useState<CascadeField[]>([]);
   const [groups, setGroups] = useState<FieldGroup[]>([]);
@@ -82,13 +88,21 @@ export function CategoryFieldsForm({
   }, [categoryId, scope]);
 
   function set(f: CascadeField, v: any) {
-    const systemKey = (f.config ?? {}).system_key as string | undefined;
-    if (systemKey && onSystemChange) onSystemChange(writeSystem(systemValue ?? {}, systemKey, v));
+    const cfg = f.config ?? {};
+    const columnKey = cfg.column_key as string | undefined;
+    const systemKey = cfg.system_key as string | undefined;
+    if (columnKey && onColumnChange) onColumnChange(columnKey, v);
+    else if (systemKey && onSystemChange) onSystemChange(writeSystem(systemValue ?? {}, systemKey, v));
     else onChange({ ...value, [f.field_key]: v });
   }
 
   function get(f: CascadeField) {
     const config = f.config ?? {};
+    const columnKey = config.column_key as string | undefined;
+    if (columnKey) {
+      const persisted = (columnValue ?? {})[columnKey];
+      return persisted !== undefined && persisted !== null ? persisted : config.default;
+    }
     const systemKey = config.system_key as string | undefined;
     if (systemKey) {
       const persistedSystemValue = readSystem(systemValue ?? {}, systemKey);
@@ -99,6 +113,13 @@ export function CategoryFieldsForm({
   }
 
   if (!categoryId || !loaded || fields.length === 0) return null;
+
+  /** Campos-base só aparecem onde o container sabe gravar na coluna física. */
+  const usable = fields.filter((f) => {
+    const columnKey = (f.config ?? {}).column_key as string | undefined;
+    return !columnKey || !!onColumnChange;
+  });
+
 
   const visible = fields.filter((f) => f.field_type !== "computed");
   const grouped = groups
