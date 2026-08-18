@@ -157,6 +157,17 @@ export function CategoryFieldsForm({
     const tip = typeof cfg.tooltip === "string" ? cfg.tooltip : null;
     const v = get(f);
 
+    if (f.field_type === "address") {
+      return (
+        <AddressFields
+          key={f.id}
+          value={(v ?? {}) as AddressValue}
+          onChange={(x) => set(f, x)}
+          title={f.label}
+          description={typeof cfg.tooltip === "string" ? cfg.tooltip : null}
+        />
+      );
+    }
     if (f.field_type === "boolean") {
       return (
         <div key={f.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
@@ -169,10 +180,15 @@ export function CategoryFieldsForm({
       return (
         <div key={f.id} className="space-y-2">
           <FieldLabel htmlFor={id} required={f.required} tooltip={tip}>{f.label}</FieldLabel>
-          <Textarea id={id} rows={3} required={f.required} value={v} onChange={(e) => set(f, e.target.value)} />
+          {richTextLongText ? (
+            <RichTextEditor value={typeof v === "string" ? v : ""} onChange={(x) => set(f, x)} />
+          ) : (
+            <Textarea id={id} rows={3} required={f.required} value={v ?? ""} onChange={(e) => set(f, e.target.value)} />
+          )}
         </div>
       );
     }
+
     if (f.field_type === "image" || f.field_type === "file") {
       return (
         <div key={f.id} className="space-y-2">
