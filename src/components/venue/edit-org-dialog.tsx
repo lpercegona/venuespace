@@ -140,20 +140,23 @@ export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = fals
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle className="font-display">Editar {t("organization", "organização").toLowerCase()}</DialogTitle></DialogHeader>
         <form onSubmit={handleSave} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="o-name">Nome</Label>
-            <Input id="o-name" required value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="o-desc">Descrição</Label>
-            <RichTextEditor value={description} onChange={setDescription} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="o-logo">Logo</Label>
-            <UploadField value={logoUrl} kind="image" onChange={setLogoUrl} />
-            <p className="text-xs text-muted-foreground">Envie um arquivo de imagem para exibir como logo pública.</p>
-          </div>
+          {!catalogBase ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="o-name">Nome</Label>
+                <Input id="o-name" required value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="o-desc">Descrição</Label>
+                <RichTextEditor value={description} onChange={setDescription} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="o-logo">Logo</Label>
+                <UploadField value={logoUrl} kind="image" onChange={setLogoUrl} />
+                <p className="text-xs text-muted-foreground">Envie um arquivo de imagem para exibir como logo pública.</p>
+              </div>
+            </>
+          ) : null}
           <div className="flex items-center justify-between rounded-md border border-border p-3">
             <div>
               <Label htmlFor="o-public" className="text-sm">Perfil público</Label>
@@ -185,12 +188,14 @@ export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = fals
           </div>
           <p className="text-xs text-muted-foreground">Deixe fuso e moeda em branco para herdar o padrão da instância.</p>
 
-          <AddressFields
-            value={address}
-            onChange={setAddress}
-            title={addressGroup?.title ?? "Endereço"}
-            description={addressGroup?.description ?? null}
-          />
+          {!catalogBase ? (
+            <AddressFields
+              value={address}
+              onChange={setAddress}
+              title={addressGroup?.title ?? "Endereço"}
+              description={addressGroup?.description ?? null}
+            />
+          ) : null}
 
           <CategoryFieldsForm
             categoryId={categoryId === "__none__" ? null : categoryId}
@@ -199,8 +204,12 @@ export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = fals
             onChange={setCatData}
             systemValue={sysData}
             onSystemChange={setSysData}
+            columnValue={{ name, description, logo_url: logoUrl, address }}
+            onColumnChange={setColumn}
+            richTextLongText
             title="Campos da categoria"
           />
+
 
           {canManageMembers ? <OrgMembersManager organizationId={org.id} /> : null}
 
