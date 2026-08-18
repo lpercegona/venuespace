@@ -1,3 +1,10 @@
+## 2026-08-18 10:20 (America/Sao_Paulo) — Iteração 43 (item D) + Editor visual do Modelo de Orçamento
+
+- Campos-base da organização (nome, logo, descrição, endereço) passam a ser renderizados pelo catálogo (`category_org_fields` com `config.column_key`) em `CategoryFieldsForm`, que agora suporta `column_key`, tipo `address` e rich text em `long_text`; `EditOrgDialog` deixa de duplicar esses campos quando há categoria.
+- `PdfLayoutEditor` substituído por `PdfVisualEditor`: folha A4 editável (títulos, conteúdo, largura, tamanho de texto, seções, arrastar para reordenar), textos do documento editáveis in-loco, painel de variáveis e aba com o PDF real (pdf.js) + abrir documento.
+- Blocos do modelo aceitam conteúdo livre com variáveis (`content`), incluindo blocos de texto sem campo vinculado; `bookings.server.ts` resolve as novas variáveis (organização/CNPJ/site, cliente/empresa/CNPJ/endereço, período, totais, deslocamento, validade, campos da reserva).
+- Novos tokens `--paper`, `--paper-foreground`, `--paper-muted`, `--paper-line` em `src/styles.css` (light + dark + `@theme inline`).
+
 ## 2026-08-17 03:20 (America/Sao_Paulo) — Iteração 43 (frentes A, B e C)
 
 - Banco: novas tabelas `category_pdf_layout` e `category_pdf_layout_fields` (GRANTs, RLS de leitura autenticada e escrita apenas para super admin, triggers de `updated_at`); migração da configuração de PDF que vivia em `category_modules.config.pdf`; backfill dos campos-base de organização (`org_name`, `org_logo`, `org_description`, `org_address`) em `category_org_fields` com `config.column_key`.
