@@ -611,20 +611,32 @@ function ToolsVenuespaceSection() {
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <div className="rounded-2xl border border-[rgba(113,127,191,.28)] bg-gradient-to-br from-[#F8F9FC] to-[#EFF1F6] p-6 sm:p-10">
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-widest text-primary">
-                Ferramentas gratuitas para eventos
-              </p>
-              <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-                Utilitários práticos e fáceis de utilizar para otimizar seu evento.
-              </h2>
-              <p className="mt-1 max-w-lg text-[#202332]/75">
-                Contador regressivo, cronômetro digital e outras funções direto do navegador. Gratuitos e sem cadastro.
-              </p>
+            <div className="flex items-start gap-4">
+              {/* Logo textual com gradiente */}
+              <div className="mt-1 hidden sm:block">
+                <span className="font-display text-xl font-bold tracking-tight">
+                  <span className="bg-gradient-to-r from-[#717FBF] to-[#5F6FB0] bg-clip-text text-transparent">
+                    tools.
+                  </span>
+                  <span className="text-[#202332]">VENUESPACE</span>
+                </span>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-widest text-primary">
+                  Ferramentas gratuitas para eventos
+                </p>
+                <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                  Utilitários práticos e fáceis de utilizar para otimizar seu evento.
+                </h2>
+                <p className="mt-1 max-w-lg text-[#202332]/75">
+                  Contador regressivo, cronômetro digital e outras funções direto do navegador. Gratuitos e sem cadastro.
+                </p>
+              </div>
             </div>
-            <Link
-              to="tools.venuespace.com.br"
-              preload="intent"
+            <a
+              href="https://tools.venuespace.com.br"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-6 py-3 font-display text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Conheça as ferramentas
@@ -643,7 +655,7 @@ function ToolsVenuespaceSection() {
                   strokeLinejoin="round"
                 />
               </svg>
-            </Link>
+            </a>
           </div>
         </div>
       </div>
