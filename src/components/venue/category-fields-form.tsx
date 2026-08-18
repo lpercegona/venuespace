@@ -5,6 +5,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UploadField, GalleryField } from "@/components/venue/dynamic-form";
 import { FieldLabel } from "@/components/venue/field-label";
+import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
+import { RichTextEditor } from "@/components/venue/rich-text-editor";
+
 
 type CascadeField = {
   id: string;
