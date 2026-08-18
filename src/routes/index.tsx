@@ -620,8 +620,6 @@ function ToolsVenuespaceSection() {
                   </span>
                   <span className="text-[#202332]">VENUESPACE</span>
                 </span>
-              </div>
-              <div>
                 <p className="text-xs font-medium uppercase tracking-widest text-primary">
                   Ferramentas gratuitas para eventos
                 </p>
