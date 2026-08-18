@@ -185,6 +185,13 @@
   --foreground: oklch(0.97 0 0);
   --surface: oklch(0.25 0 0);
   --surface-foreground: oklch(0.97 0 0);
+
+  /* A folha permanece clara no dark mode: é a simulação do papel impresso */
+  --paper: oklch(0.98 0 0);
+  --paper-foreground: oklch(0.18 0 0);
+  --paper-muted: oklch(0.5 0 0);
+  --paper-line: oklch(0.85 0 0);
+
   --card: oklch(0.26 0 0);
   --card-foreground: oklch(0.97 0 0);
   --popover: oklch(0.26 0 0);
