@@ -120,8 +120,8 @@ export function CategoryFieldsForm({
     return !columnKey || !!onColumnChange;
   });
 
+  const visible = usable.filter((f) => f.field_type !== "computed");
 
-  const visible = fields.filter((f) => f.field_type !== "computed");
   const grouped = groups
     .map((g) => ({ group: g, items: visible.filter((f) => f.group_id === g.id) }))
     .filter((g) => g.items.length > 0);
