@@ -22,7 +22,7 @@ Mantida a definição de modelos por categoria (tabelas `category_pdf_layout` e 
   - controles de tamanho de texto, seção e remover aparecem ao passar o mouse/focar no bloco.
 - **Biblioteca de variáveis**: painel lateral com todas as variáveis disponíveis, agrupadas por origem — organização, contato/cliente (empresa, CNPJ, endereço, e-mail, telefone), reserva (todos os campos da tabela-modelo de reservas da categoria) e totais (itens, deslocamento, total, validade). Clicar insere a variável no ponto do cursor; a chave segue o padrão atual `{{chave}}`.
 - **Adicionar bloco**: um botão na folha adiciona bloco a partir da biblioteca (campo da tabela) ou como bloco de texto livre.
-- **Pré-visualização real**: o pdf.js sai do fluxo de edição e passa para uma aba/botão "Pré-visualizar PDF", que gera o documento real com os mesmos dados de amostra. Sem debounce a cada tecla.
+- **Pré-visualização**: o pdf.js se mantém na lateral renderizando as alterações em formato dinâmico. Adicionar opção de visualização do documento real, com o layout definido. 
 - Salvar continua explícito, gravando campos e estilo do modelo da categoria.
 
 ## Notas técnicas
