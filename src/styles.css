@@ -117,6 +117,13 @@
   --foreground: oklch(0.21 0 0);
   --surface: oklch(0.94 0 0);
   --surface-foreground: oklch(0.21 0 0);
+
+  /* Folha do editor de PDF — sempre clara, espelhando o documento impresso */
+  --paper: oklch(1 0 0);
+  --paper-foreground: oklch(0.18 0 0);
+  --paper-muted: oklch(0.53 0 0);
+  --paper-line: oklch(0.88 0 0);
+
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.21 0 0);
   --popover: oklch(1 0 0);
