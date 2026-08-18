@@ -609,25 +609,39 @@ function ToolsVenuespaceSection() {
   return (
     <section className="py-12 sm:py-16">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <div className="rounded-2xl border border-[rgba(113,127,191,.28)] bg-[#F8F9FC] p-6 sm:p-10">
+        <div className="rounded-2xl border border-[rgba(113,127,191,.28)] bg-gradient-to-br from-[#F8F9FC] to-[#EFF1F6] p-6 sm:p-10">
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-medium uppercase tracking-widest text-primary">Ferramentas gratuitas</p>
+              <p className="text-xs font-medium uppercase tracking-widest text-primary">
+                Ferramentas gratuitas para eventos
+              </p>
               <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-                Timer e cronômetro para eventos
+                Utilitários práticos e fáceis de utilizar para otimizar seu evento.
               </h2>
               <p className="mt-1 max-w-lg text-[#202332]/75">
-                Use o contador regressivo e o cronômetro digital direto do navegador. Sem cadastro, sem propaganda.
+                Contador regressivo, cronômetro digital e outras funções direto do navegador. Gratuitos e sem cadastro.
               </p>
             </div>
             <Link
-              to="/tools"
+              to="tools.venuespace.com.br"
               preload="intent"
               className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-6 py-3 font-display text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Conheça as ferramentas
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 8H13M10 5L13 8L10 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3 8H13M10 5L13 8L10 11"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </Link>
           </div>
