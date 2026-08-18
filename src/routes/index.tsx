@@ -614,7 +614,7 @@ function ToolsVenuespaceSection() {
             <div className="flex items-start gap-4">
               {/* Logo textual com gradiente */}
               <div className="mt-1 hidden sm:block">
-                <span className="font-display text-xl font-bold tracking-tight">
+                <span className="font-display text-xl font-bold pb-6 sm:pb-10 tracking-tight ">
                   <span className="bg-gradient-to-r from-[#717FBF] to-[#5F6FB0] bg-clip-text text-transparent inline-block">
                     tools.
                   </span>
@@ -623,11 +623,11 @@ function ToolsVenuespaceSection() {
                 <p className="text-xs font-medium uppercase tracking-widest text-primary">
                   Ferramentas gratuitas para eventos
                 </p>
-                <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-                  Utilitários práticos e fáceis de utilizar para otimizar seu evento.
+                <h2 className="font-display text-2xl max-w-lg font-bold tracking-tight sm:text-3xl">
+                  Utilitários práticos e fáceis para otimizar seu evento.
                 </h2>
                 <p className="mt-1 max-w-lg text-[#202332]/75">
-                  Contador regressivo, cronômetro digital e outras funções direto do navegador. Gratuitos e sem cadastro.
+                  Contador regressivo, cronômetro digital e outras funções direto do navegador. Gratuitos e sem cadastro, só acessar e utilizar.
                 </p>
               </div>
             </div>
