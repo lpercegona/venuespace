@@ -12,7 +12,6 @@ import { categorySlug, usePublicCategories } from "@/components/venue/category-t
 import { HomeSearchBar } from "@/components/venue/home-search-bar";
 import { getPublicLocalitiesFn } from "@/lib/public-catalog.functions";
 
-
 import {
   categoryLayoutQuery,
   homeGroupingDataQuery,
@@ -57,8 +56,6 @@ export const Route = createFileRoute("/")({
   }),
   loader: async ({ context }) => {
     const qc = context.queryClient;
-    // Aguarda todas as leituras usadas no primeiro render para evitar divergência
-    // de hidratação (servidor com dados x cliente em loading).
     const [config] = await Promise.all([
       qc.ensureQueryData(homeGroupingsQuery()),
       qc.ensureQueryData(publicCategoriesQuery()),
@@ -170,8 +167,6 @@ function Landing() {
             visibleBlocks.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground">Nenhum bloco configurado para esta aba.</p>
             ) : (
-              // Intercala os blocos dinâmicos com a seção "Como funciona" após o SEGUNDO bloco
-              // e em seguida o título de destaque
               visibleBlocks.flatMap((block, index) => {
                 const elements = [
                   <HomeBlockSection
@@ -195,6 +190,9 @@ function Landing() {
           )}
         </div>
       </main>
+
+      {/* Ferramentas Venuespace */}
+      <ToolsVenuespaceSection />
 
       {/* Dúvidas Frequentes */}
       <FaqSection />
@@ -598,6 +596,41 @@ function LocalidadesSection({
               </div>
             </div>
           )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------
+// SEÇÃO "FERRAMENTAS VENUESPACE"
+// ------------------------------------------------------------
+function ToolsVenuespaceSection() {
+  return (
+    <section className="py-12 sm:py-16">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <div className="rounded-2xl border border-[rgba(113,127,191,.28)] bg-[#F8F9FC] p-6 sm:p-10">
+          <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-widest text-primary">Ferramentas gratuitas</p>
+              <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                Timer e cronômetro para eventos
+              </h2>
+              <p className="mt-1 max-w-lg text-[#202332]/75">
+                Use o contador regressivo e o cronômetro digital direto do navegador. Sem cadastro, sem propaganda.
+              </p>
+            </div>
+            <Link
+              to="/tools"
+              preload="intent"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-6 py-3 font-display text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Conheça as ferramentas
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 8H13M10 5L13 8L10 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+          </div>
         </div>
       </div>
     </section>
