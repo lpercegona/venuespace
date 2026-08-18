@@ -17,7 +17,7 @@ export async function loadCategoryPdfLayout(
   if (!layout) return normalizePdfLayout({});
   const { data: fields } = await supabase
     .from("category_pdf_layout_fields")
-    .select("id, field_key, label_override, width_percent, font_size, order_index, section_title")
+    .select("id, field_key, label_override, width_percent, font_size, order_index, section_title, content")
     .eq("layout_id", (layout as any).id)
     .order("order_index", { ascending: true });
   return normalizePdfLayout({ config: (layout as any).config, fields: fields ?? [] });
@@ -57,6 +57,7 @@ export function buildQuoteFieldValues(
   const byKey = new Map(fields.map((f) => [f.key, f]));
   return layoutFields.map((lf) => {
     const f = byKey.get(lf.field_key);
+    if (!f) return { key: lf.field_key, label: lf.label_override ?? "", value: "" };
     return {
       key: lf.field_key,
       label: f?.label ?? lf.field_key,
