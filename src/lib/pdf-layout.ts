@@ -13,6 +13,8 @@ export type PdfLayoutField = {
   font_size: number;
   order_index: number;
   section_title: string | null;
+  /** Conteúdo livre com variáveis; quando vazio, usa o valor do campo vinculado. */
+  content: string | null;
 };
 
 export type CategoryPdfLayout = {
@@ -21,6 +23,17 @@ export type CategoryPdfLayout = {
 };
 
 export const PDF_WIDTHS: PdfWidth[] = [25, 50, 75, 100];
+
+/** Prefixo reservado para blocos de texto livre (sem campo vinculado). */
+export const TEXT_BLOCK_PREFIX = "texto:";
+
+export function isTextBlock(fieldKey: string): boolean {
+  return fieldKey.startsWith(TEXT_BLOCK_PREFIX);
+}
+
+export function newTextBlockKey(): string {
+  return `${TEXT_BLOCK_PREFIX}${Math.random().toString(36).slice(2, 10)}`;
+}
 
 export function normalizePdfLayoutField(raw: unknown, index = 0): PdfLayoutField {
   const f = (raw ?? {}) as any;
@@ -34,8 +47,10 @@ export function normalizePdfLayoutField(raw: unknown, index = 0): PdfLayoutField
     font_size: Number.isFinite(size) ? Math.min(24, Math.max(8, Math.round(size))) : 10,
     order_index: Number.isFinite(f.order_index) ? Number(f.order_index) : index,
     section_title: f.section_title ? String(f.section_title) : null,
+    content: f.content ? String(f.content) : null,
   };
 }
+
 
 export function normalizePdfLayout(raw: unknown): CategoryPdfLayout {
   const l = (raw ?? {}) as any;
