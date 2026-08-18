@@ -615,7 +615,7 @@ function ToolsVenuespaceSection() {
               {/* Logo textual com gradiente */}
               <div className="mt-1 hidden sm:block">
                 <span className="font-display text-xl font-bold tracking-tight">
-                  <span className="bg-gradient-to-r from-[#717FBF] to-[#5F6FB0] bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-[#717FBF] to-[#5F6FB0] bg-clip-text text-transparent inline-block">
                     tools.
                   </span>
                   <span className="text-[#202332]">VENUESPACE</span>
