@@ -85,6 +85,16 @@ export function EditOrgDialog({ open, onOpenChange, org, canManageMembers = fals
 
   function setSys(k: string, v: any) { setSysData((s) => ({ ...s, [k]: v })); }
 
+  /** Campos-base do catálogo gravam direto nas colunas físicas da organização. */
+  const catalogBase = categoryId !== "__none__";
+  function setColumn(key: string, v: any) {
+    if (key === "name") setName(typeof v === "string" ? v : "");
+    else if (key === "description") setDescription(typeof v === "string" ? v : "");
+    else if (key === "logo_url") setLogoUrl(typeof v === "string" ? v : "");
+    else if (key === "address") setAddress((v ?? {}) as AddressValue);
+  }
+
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (richTextToPlainText(description).length > RICH_TEXT_MAX) {
