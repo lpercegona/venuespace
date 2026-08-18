@@ -1,0 +1,1 @@
+ALTER TABLE public.category_pdf_layout_fields ADD COLUMN IF NOT EXISTS content text;

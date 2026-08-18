@@ -48,6 +48,11 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-foreground: var(--surface-foreground);
+  --color-paper: var(--paper);
+  --color-paper-foreground: var(--paper-foreground);
+  --color-paper-muted: var(--paper-muted);
+  --color-paper-line: var(--paper-line);
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -112,6 +117,13 @@
   --foreground: oklch(0.21 0 0);
   --surface: oklch(0.94 0 0);
   --surface-foreground: oklch(0.21 0 0);
+
+  /* Folha do editor de PDF — sempre clara, espelhando o documento impresso */
+  --paper: oklch(1 0 0);
+  --paper-foreground: oklch(0.18 0 0);
+  --paper-muted: oklch(0.53 0 0);
+  --paper-line: oklch(0.88 0 0);
+
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.21 0 0);
   --popover: oklch(1 0 0);
@@ -173,6 +185,13 @@
   --foreground: oklch(0.97 0 0);
   --surface: oklch(0.25 0 0);
   --surface-foreground: oklch(0.97 0 0);
+
+  /* A folha permanece clara no dark mode: é a simulação do papel impresso */
+  --paper: oklch(0.98 0 0);
+  --paper-foreground: oklch(0.18 0 0);
+  --paper-muted: oklch(0.5 0 0);
+  --paper-line: oklch(0.85 0 0);
+
   --card: oklch(0.26 0 0);
   --card-foreground: oklch(0.97 0 0);
   --popover: oklch(0.26 0 0);

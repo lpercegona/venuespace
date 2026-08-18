@@ -441,11 +441,25 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
   const itemsTotal = quoteTotal(input.items);
   const travelFee = Math.max(0, Number(input.travelFee) || 0);
   const total = itemsTotal + travelFee;
+  const fieldVars: Record<string, string> = {};
+  for (const fv of input.fieldValues ?? []) fieldVars[fv.key] = fv.value ?? "";
   const vars: Record<string, string> = {
+    ...fieldVars,
     organizacao: input.org.name,
+    organizacao_cnpj: input.org.cnpj ?? "-",
+    organizacao_site: input.org.site ?? "-",
     cliente: input.client ?? "-",
+    cliente_empresa: input.clientCompany ?? "-",
+    cliente_cnpj: input.clientCnpj ?? "-",
+    cliente_endereco: input.clientAddress ?? "-",
+    local: input.location ?? "-",
     periodo: period,
+    inicio: input.periodStart ? longDate(input.periodStart) : "-",
+    fim: input.periodEnd ? longDate(input.periodEnd) : "-",
+    itens_total: brl(itemsTotal),
+    deslocamento: brl(travelFee),
     total: brl(total),
+    validade: String(input.validityDays),
     numero: input.recordId.slice(0, 8).toUpperCase(),
     data: longDate(emitted),
   };
@@ -669,8 +683,10 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
 
     for (const def of defs) {
       const v = values.get(def.field_key);
-      const label = def.label_override?.trim() || v?.label || def.field_key;
-      const text = (v?.value ?? "").trim() || "-";
+      const label = def.label_override?.trim() || v?.label || "";
+      const text = def.content?.trim()
+        ? tpl(def.content).trim() || "-"
+        : (v?.value ?? "").trim() || "-";
 
       if (def.section_title) {
         closeRow();
@@ -684,8 +700,8 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
       ensure(ctx, h + 12);
       if (used === 0) rowH = 0;
 
-      draw(ctx, label, cursorX, ctx.y, 8.5, bold, SOFT);
-      let ly = ctx.y - 13;
+      if (label) draw(ctx, label, cursorX, ctx.y, 8.5, bold, SOFT);
+      let ly = ctx.y - (label ? 13 : 2);
       for (const ln of lines) {
         draw(ctx, ln, cursorX, ly, def.font_size, font, INK);
         ly -= def.font_size + 3;

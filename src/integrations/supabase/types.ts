@@ -339,6 +339,7 @@ export type Database = {
       }
       category_pdf_layout_fields: {
         Row: {
+          content: string | null
           created_at: string
           field_key: string
           font_size: number
@@ -351,6 +352,7 @@ export type Database = {
           width_percent: number
         }
         Insert: {
+          content?: string | null
           created_at?: string
           field_key: string
           font_size?: number
@@ -363,6 +365,7 @@ export type Database = {
           width_percent?: number
         }
         Update: {
+          content?: string | null
           created_at?: string
           field_key?: string
           font_size?: number

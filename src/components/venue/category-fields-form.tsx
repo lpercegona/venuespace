@@ -5,6 +5,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UploadField, GalleryField } from "@/components/venue/dynamic-form";
 import { FieldLabel } from "@/components/venue/field-label";
+import { AddressFields, type AddressValue } from "@/components/venue/address-fields";
+import { RichTextEditor } from "@/components/venue/rich-text-editor";
+
 
 type CascadeField = {
   id: string;
@@ -36,6 +39,11 @@ type Props = {
   /** Valores de system_data — usados por campos com config.system_key. */
   systemValue?: Record<string, any>;
   onSystemChange?: (v: Record<string, any>) => void;
+  /** Valores das colunas físicas — usados por campos-base com config.column_key. */
+  columnValue?: Record<string, any>;
+  onColumnChange?: (key: string, v: any) => void;
+  /** Usa editor rich text para campos long_text (perfil da organização). */
+  richTextLongText?: boolean;
 };
 
 function readSystem(sys: Record<string, any>, path: string) {
@@ -56,6 +64,7 @@ function writeSystem(sys: Record<string, any>, path: string, v: any): Record<str
 
 export function CategoryFieldsForm({
   categoryId, scope, value, onChange, title, systemValue, onSystemChange,
+  columnValue, onColumnChange, richTextLongText = false,
 }: Props) {
   const [fields, setFields] = useState<CascadeField[]>([]);
   const [groups, setGroups] = useState<FieldGroup[]>([]);
@@ -79,13 +88,21 @@ export function CategoryFieldsForm({
   }, [categoryId, scope]);
 
   function set(f: CascadeField, v: any) {
-    const systemKey = (f.config ?? {}).system_key as string | undefined;
-    if (systemKey && onSystemChange) onSystemChange(writeSystem(systemValue ?? {}, systemKey, v));
+    const cfg = f.config ?? {};
+    const columnKey = cfg.column_key as string | undefined;
+    const systemKey = cfg.system_key as string | undefined;
+    if (columnKey && onColumnChange) onColumnChange(columnKey, v);
+    else if (systemKey && onSystemChange) onSystemChange(writeSystem(systemValue ?? {}, systemKey, v));
     else onChange({ ...value, [f.field_key]: v });
   }
 
   function get(f: CascadeField) {
     const config = f.config ?? {};
+    const columnKey = config.column_key as string | undefined;
+    if (columnKey) {
+      const persisted = (columnValue ?? {})[columnKey];
+      return persisted !== undefined && persisted !== null ? persisted : config.default;
+    }
     const systemKey = config.system_key as string | undefined;
     if (systemKey) {
       const persistedSystemValue = readSystem(systemValue ?? {}, systemKey);
@@ -97,7 +114,14 @@ export function CategoryFieldsForm({
 
   if (!categoryId || !loaded || fields.length === 0) return null;
 
-  const visible = fields.filter((f) => f.field_type !== "computed");
+  /** Campos-base só aparecem onde o container sabe gravar na coluna física. */
+  const usable = fields.filter((f) => {
+    const columnKey = (f.config ?? {}).column_key as string | undefined;
+    return !columnKey || !!onColumnChange;
+  });
+
+  const visible = usable.filter((f) => f.field_type !== "computed");
+
   const grouped = groups
     .map((g) => ({ group: g, items: visible.filter((f) => f.group_id === g.id) }))
     .filter((g) => g.items.length > 0);
@@ -133,6 +157,17 @@ export function CategoryFieldsForm({
     const tip = typeof cfg.tooltip === "string" ? cfg.tooltip : null;
     const v = get(f);
 
+    if (f.field_type === "address") {
+      return (
+        <AddressFields
+          key={f.id}
+          value={(v ?? {}) as AddressValue}
+          onChange={(x) => set(f, x)}
+          title={f.label}
+          description={typeof cfg.tooltip === "string" ? cfg.tooltip : null}
+        />
+      );
+    }
     if (f.field_type === "boolean") {
       return (
         <div key={f.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
@@ -145,10 +180,15 @@ export function CategoryFieldsForm({
       return (
         <div key={f.id} className="space-y-2">
           <FieldLabel htmlFor={id} required={f.required} tooltip={tip}>{f.label}</FieldLabel>
-          <Textarea id={id} rows={3} required={f.required} value={v} onChange={(e) => set(f, e.target.value)} />
+          {richTextLongText ? (
+            <RichTextEditor value={typeof v === "string" ? v : ""} onChange={(x) => set(f, x)} />
+          ) : (
+            <Textarea id={id} rows={3} required={f.required} value={v ?? ""} onChange={(e) => set(f, e.target.value)} />
+          )}
         </div>
       );
     }
+
     if (f.field_type === "image" || f.field_type === "file") {
       return (
         <div key={f.id} className="space-y-2">

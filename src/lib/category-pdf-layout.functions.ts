@@ -9,6 +9,7 @@ const fieldSchema = z.object({
   font_size: z.number().int().min(8).max(24),
   order_index: z.number().int().min(0),
   section_title: z.string().max(120).nullable().optional(),
+  content: z.string().max(4000).nullable().optional(),
 });
 
 async function requireSA(supabase: any, userId: string) {
@@ -65,6 +66,7 @@ export const saveCategoryPdfLayout = createServerFn({ method: "POST" })
         font_size: f.font_size,
         order_index: i,
         section_title: f.section_title ?? null,
+        content: f.content ?? null,
       }));
       const { error: insErr } = await (context.supabase as any)
         .from("category_pdf_layout_fields")

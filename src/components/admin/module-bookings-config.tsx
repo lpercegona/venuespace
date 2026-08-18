@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/venue/empty-state";
-import { PdfLayoutEditor } from "@/components/admin/pdf-layout-editor";
+import { PdfVisualEditor } from "@/components/admin/pdf-visual-editor";
 import {
   listCategoryModules,
   listBookingsModuleFields,
@@ -267,7 +267,7 @@ export function ModuleBookingsConfig() {
               </TabsContent>
 
               <TabsContent value="pdf" className="pt-4">
-                <PdfLayoutEditor categoryId={current.category_id} availableFields={tableFields} />
+                <PdfVisualEditor categoryId={current.category_id} availableFields={tableFields} />
               </TabsContent>
             </Tabs>
           </CardContent>
