@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth } from "@/lib/require-auth-middleware";
 import { FIELD_TYPES } from "./field-schema";
 
 export type SystemFieldScope = "organization" | "table" | "record";

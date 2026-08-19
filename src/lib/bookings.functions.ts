@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth } from "@/lib/require-auth-middleware";
 
 // ===================== Iteração 32 — Gestão de reservas =====================
 // Estágios: negotiating (negociação) → accepted (fechada) → closed (encerrada).
