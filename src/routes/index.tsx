@@ -570,7 +570,7 @@ function LocalidadesSection({
   return (
     <section className="py-12">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <h2 className="mb-6 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+        <h2 className="mb-6 font-display text-1xl font-bold tracking-tight sm:text-2xl">
           Encontre espaços para eventos por localidade
         </h2>
 
@@ -578,8 +578,8 @@ function LocalidadesSection({
           {/* Bairros */}
           {bairrosSorted.length > 0 && (
             <div>
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Bairros</h3>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bairros</h3>
+              <div className="text-xs grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
                 {bairrosSorted.map((bairro) =>
                   renderLink(`Espaço de eventos no ${bairro}`, "f_address.neighborhood", bairro),
                 )}
@@ -590,8 +590,8 @@ function LocalidadesSection({
           {/* Cidades */}
           {cidadesSorted.length > 0 && (
             <div>
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Cidades</h3>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Cidades</h3>
+              <div className="text-xs grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
                 {cidadesSorted.map((cidade) => renderLink(`Espaço de eventos em ${cidade}`, "f_address.city", cidade))}
               </div>
             </div>
