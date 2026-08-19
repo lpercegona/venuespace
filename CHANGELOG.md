@@ -1,3 +1,9 @@
+## 2026-08-19 11:10 (America/Sao_Paulo) — Correção definitiva de "JWT issued at future" (revisita da Iteração 1)
+
+- Causa raiz: o middleware gerado `@/integrations/supabase/auth-middleware` valida o token com `supabase.auth.getClaims()`, que com chaves assimétricas (ES256) verifica a assinatura localmente via `jose` com tolerância de relógio zero. Qualquer atraso do relógio do runtime em relação ao emissor faz o `iat` parecer futuro e a validação falha.
+- Novo `src/lib/require-auth-middleware.ts` (`requireSupabaseAuth`/`requireAuth`): valida o token contra o servidor de auth (`getUser(token)`), autoridade imune a desvio local; mantém o mesmo contexto (`supabase`, `userId`, `claims`); tolerância de 60s aplicada só a `iat`/`nbf` (o `exp` continua respeitado); cache em memória por token (TTL 30s) para não pagar uma requisição HTTP por chamada; log de diagnóstico com `iat`, hora do runtime e desvio em segundos quando a validação falha.
+- As 22 server functions em `src/lib/*.functions.ts` passaram a importar o middleware do projeto; o arquivo gerado não foi alterado.
+- Cliente: `src/lib/auth-retry-middleware.ts` e `src/hooks/use-auth.ts` reconhecem também "token used before issued", "JWTClaimValidationFailed", "before nbf" e "not yet valid"; a renovação de sessão passa a ser compartilhada entre chamadas simultâneas (uma renovação por ciclo, sem tempestade de refresh).
 ## 2026-08-18 10:20 (America/Sao_Paulo) — Iteração 43 (item D) + Editor visual do Modelo de Orçamento
 
 - Campos-base da organização (nome, logo, descrição, endereço) passam a ser renderizados pelo catálogo (`category_org_fields` com `config.column_key`) em `CategoryFieldsForm`, que agora suporta `column_key`, tipo `address` e rich text em `long_text`; `EditOrgDialog` deixa de duplicar esses campos quando há categoria.
