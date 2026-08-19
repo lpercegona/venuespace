@@ -612,9 +612,8 @@ function ToolsVenuespaceSection() {
         <div className="rounded-2xl border border-[rgba(113,127,191,.28)] bg-gradient-to-br from-[#F8F9FC] to-[#EFF1F6] p-6 sm:p-10">
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">
-              {/* Logo textual com gradiente */}
-              <div className="mt-1 hidden sm:block">
-                <span className="font-display text-xl font-bold pb-6 sm:pb-10 tracking-tight ">
+              <div className="mt-1 hidden sm:block gap-6">
+                <span className="font-display text-xl font-bold mb-3 tracking-tight ">
                   <span className="bg-gradient-to-r from-[#717FBF] to-[#5F6FB0] bg-clip-text text-transparent inline-block">
                     tools.
                   </span>
