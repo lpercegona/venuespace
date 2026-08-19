@@ -622,7 +622,7 @@ function ToolsVenuespaceSection() {
                 <p className="text-xs font-medium uppercase tracking-widest text-primary">
                   Ferramentas gratuitas para eventos
                 </p>
-                <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                <h2 className="font-display max-w-md text-2xl font-bold tracking-tight sm:text-3xl">
                   Utilitários práticos e fáceis de utilizar para otimizar seu evento.
                 </h2>
                 <p className="mt-1 max-w-lg text-[#202332]/75">
