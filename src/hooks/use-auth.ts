@@ -6,11 +6,19 @@ import type { Session, User } from "@supabase/supabase-js";
 export function isTransientAuthError(error: { message?: string; status?: number } | null | undefined): boolean {
   if (!error) return false;
   const msg = (error.message ?? "").toLowerCase();
-  if (msg.includes("issued at future") || msg.includes("clock") || msg.includes("not yet valid")) return true;
+  if (
+    msg.includes("issued at future") ||
+    msg.includes("token used before issued") ||
+    msg.includes("jwtclaimvalidationfailed") ||
+    msg.includes("before nbf") ||
+    msg.includes("clock") ||
+    msg.includes("not yet valid")
+  ) return true;
   if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("timeout")) return true;
   const status = error.status ?? 0;
   return status === 0 || status >= 500;
 }
+
 
 
 export function useAuth() {
