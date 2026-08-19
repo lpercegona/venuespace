@@ -86,7 +86,7 @@ export function PublicFooter() {
         </div>
 
         <div className="mt-12 border-t border-border pt-6 text-center text-sm text-muted-foreground">
-          {new Date().getFullYear()} VENUESPACE feito com <span className="rotate-45">♥</span>.
+          {new Date().getFullYear()} VENUESPACE — feito com <span className="rotate-45">♥</span>.
         </div>
       </div>
     </footer>
