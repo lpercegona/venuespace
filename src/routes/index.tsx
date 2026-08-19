@@ -607,7 +607,7 @@ function LocalidadesSection({
 // ------------------------------------------------------------
 function ToolsVenuespaceSection() {
   return (
-    <section className="py-12 sm:py-16">
+    <section className="py-12 sm:py-12">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <div className="rounded-2xl border border-[rgba(113,127,191,.28)] bg-gradient-to-br from-[#F8F9FC] to-[#EFF1F6] p-6 sm:p-10">
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-start sm:justify-between">
