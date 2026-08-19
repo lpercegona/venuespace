@@ -16,6 +16,24 @@ function looksLikeTokenError(error: unknown): boolean {
   );
 }
 
+/** Evita "tempestade" de refresh: chamadas simultâneas compartilham a renovação. */
+let inFlightRefresh: Promise<string | null> | null = null;
+
+function refreshOnce(): Promise<string | null> {
+  if (!inFlightRefresh) {
+    inFlightRefresh = supabase.auth
+      .refreshSession()
+      .then(({ data, error }) => (error || !data.session ? null : data.session.access_token))
+      .catch(() => null)
+      .finally(() => {
+        // Libera na próxima volta do event loop para agrupar chamadas concorrentes.
+        setTimeout(() => {
+          inFlightRefresh = null;
+        }, 0);
+      });
+  }
+  return inFlightRefresh;
+}
 
 /**
  * Retry único e silencioso: quando uma server function falha por token inválido
@@ -27,8 +45,9 @@ export const retryOnTokenError = createMiddleware({ type: "function" }).client(a
     return await next();
   } catch (error) {
     if (!looksLikeTokenError(error)) throw error;
-    const { data, error: refreshError } = await supabase.auth.refreshSession();
-    if (refreshError || !data.session) throw error;
-    return await next({ headers: { Authorization: `Bearer ${data.session.access_token}` } });
+    const accessToken = await refreshOnce();
+    if (!accessToken) throw error;
+    return await next({ headers: { Authorization: `Bearer ${accessToken}` } });
   }
+
 });
