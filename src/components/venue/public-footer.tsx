@@ -18,7 +18,8 @@ export function PublicFooter() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <span className="shrink-0">
           {new Date().getFullYear()} VENUESPACE — feito com{" "}
-            <span className="inline-block rotate-45">♥</span>
+          <span className="inline-block rotate-45">♥</span>
+        </span>
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {links.map((l) => (
             <Link key={l.to} to={l.to} className="hover:text-foreground">
