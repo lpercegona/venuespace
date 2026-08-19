@@ -6,10 +6,16 @@ function looksLikeTokenError(error: unknown): boolean {
   return (
     msg.includes("unauthorized") ||
     msg.includes("invalid token") ||
+    msg.includes("token expired") ||
     msg.includes("issued at future") ||
+    msg.includes("token used before issued") ||
+    msg.includes("jwtclaimvalidationfailed") ||
+    msg.includes("before nbf") ||
+    msg.includes("not yet valid") ||
     msg.includes("jwt")
   );
 }
+
 
 /**
  * Retry único e silencioso: quando uma server function falha por token inválido
