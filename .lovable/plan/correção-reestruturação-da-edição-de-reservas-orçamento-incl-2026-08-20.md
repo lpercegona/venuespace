@@ -1,6 +1,6 @@
-# Iteração 44 — Reestruturação da edição de Reservas/Orçamento
+# Correção — Reestruturação da edição de Reservas/Orçamento, inclusão de campo quantidade de itens.
 
-Continuação das Iterações 41 e 43. Escopo restrito ao que está descrito abaixo.
+Correção, complementação e reestruturação das Iterações 41 e 43. Escopo restrito ao que está descrito abaixo.
 
 ## 1. Seleção de categoria em dropdown, com opção "Padrão"
 
@@ -25,13 +25,19 @@ Continuação das Iterações 41 e 43. Escopo restrito ao que está descrito aba
 - **Variáveis viram tooltip/popover** de ajuda dentro da edição, listando as chaves exatamente como devem ser escritas (`{{cliente}}`, `{{total}}`, …), agrupadas por origem, com copiar ao clicar. O painel lateral de variáveis é removido.
 - **Novos tipos de bloco** além de texto: **linha (divisória)**, **título** e **tabela** (linhas/colunas editáveis, com variáveis nas células). Todos mantêm a aparência da folha.
 - **Todo o documento é editável em HTML**: títulos, seções, linhas, tabela de itens, totais, condições e mensagem final passam a ser blocos editáveis do mesmo modelo — nada mais fica preso em texto fixo do gerador.
-- **Header**: mantém o layout estático (logo à direita, dados à esquerda), mas o conteúdo é editável — o super admin adiciona/remove variáveis em cada linha e define se cada linha é **texto** ou **título**.
+- **Header**: mantém o layout estático (logo à esquerda, dados à direita), mas o conteúdo é editável — o super admin adiciona/remove variáveis em cada linha e define se cada linha é **texto** ou **título**.
 
 ## 4. Numeração do orçamento
 
-- Formato atual `Orçamento #XXXXXXXX` (8 primeiros caracteres do id) é substituído por **`#DDMMAAAA` + sequência de 2 dígitos**, ex.: `#2008202601`, `#2008202602`.
+- Formato atual `Orçamento #XXXXXXXX` (8 primeiros caracteres do id) é substituído por `**#DDMMAAAA` + sequência de 2 dígitos**, ex.: `#2008202601`, `#2008202602`.
 - Sequência **global da plataforma**, reiniciando a cada dia (fuso America/Sao_Paulo).
 - O número é atribuído no momento da geração do PDF e gravado junto ao orçamento em `records.system_data.quotes`, para que reaberturas mostrem o mesmo número. A variável `{{numero}}` passa a usar esse valor.
+
+# 5. Campo de quantidade para itens de registro
+
+- Na edição de campos Administração → Estrutura → Campos e Tabelas , adicionar um novo tipo de campo: quantidade (campo numérico inteiro, valor mínimo 1, valor padrão 1, sem casas decimais).
+- O módulo de reservas faz controle de disponibilidade por período (ex.: estoque de equipamentos), o sistema deve verificar se a quantidade solicitada não excede a quantidade disponível para cada período selecionado.
+- Todas outras instâncias da plataforma devem receber e interpretar a informação de quantidade.
 
 ## Notas técnicas
 
