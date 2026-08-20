@@ -307,21 +307,21 @@ export type Database = {
       }
       category_pdf_layout: {
         Row: {
-          category_id: string
+          category_id: string | null
           config: Json
           created_at: string
           id: string
           updated_at: string
         }
         Insert: {
-          category_id: string
+          category_id?: string | null
           config?: Json
           created_at?: string
           id?: string
           updated_at?: string
         }
         Update: {
-          category_id?: string
+          category_id?: string | null
           config?: Json
           created_at?: string
           id?: string
@@ -339,6 +339,7 @@ export type Database = {
       }
       category_pdf_layout_fields: {
         Row: {
+          block_type: string
           content: string | null
           created_at: string
           field_key: string
@@ -348,10 +349,12 @@ export type Database = {
           layout_id: string
           order_index: number
           section_title: string | null
+          style: Json
           updated_at: string
           width_percent: number
         }
         Insert: {
+          block_type?: string
           content?: string | null
           created_at?: string
           field_key: string
@@ -361,10 +364,12 @@ export type Database = {
           layout_id: string
           order_index?: number
           section_title?: string | null
+          style?: Json
           updated_at?: string
           width_percent?: number
         }
         Update: {
+          block_type?: string
           content?: string | null
           created_at?: string
           field_key?: string
@@ -374,6 +379,7 @@ export type Database = {
           layout_id?: string
           order_index?: number
           section_title?: string | null
+          style?: Json
           updated_at?: string
           width_percent?: number
         }
@@ -1498,6 +1504,27 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_counters: {
+        Row: {
+          created_at: string
+          day: string
+          seq: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          seq?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          seq?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       record_fields: {
         Row: {
           config: Json
@@ -1846,6 +1873,7 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin_email: { Args: { _email: string }; Returns: boolean }
+      next_quote_number: { Args: never; Returns: string }
       reconcile_org_category_fields: {
         Args: { _org_id: string }
         Returns: {
@@ -1907,6 +1935,7 @@ export type Database = {
         | "relation"
         | "computed"
         | "gallery"
+        | "quantity"
       public_layout_scope:
         | "organization_card"
         | "record_card"
@@ -2068,6 +2097,7 @@ export const Constants = {
         "relation",
         "computed",
         "gallery",
+        "quantity",
       ],
       public_layout_scope: [
         "organization_card",
