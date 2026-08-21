@@ -2,15 +2,32 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/lib/require-auth-middleware";
 
+const styleSchema = z
+  .object({
+    color: z.string().nullable().optional(),
+    background: z.string().nullable().optional(),
+    align: z.enum(["left", "center", "right"]).optional(),
+    bold: z.boolean().optional(),
+    italic: z.boolean().optional(),
+    uppercase: z.boolean().optional(),
+    border: z.boolean().optional(),
+  })
+  .optional();
+
 const fieldSchema = z.object({
   field_key: z.string().min(1),
-  label_override: z.string().max(120).nullable().optional(),
+  block_type: z.enum(["field", "text", "heading", "divider", "table"]).optional(),
+  label_override: z.string().max(200).nullable().optional(),
   width_percent: z.union([z.literal(25), z.literal(50), z.literal(75), z.literal(100)]),
   font_size: z.number().int().min(8).max(24),
   order_index: z.number().int().min(0),
   section_title: z.string().max(120).nullable().optional(),
   content: z.string().max(4000).nullable().optional(),
+  style: styleSchema,
 });
+
+/** `null` representa o modelo Padrão global da plataforma. */
+const categorySchema = z.string().uuid().nullable();
 
 async function requireSA(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("is_super_admin", { _user_id: userId });
@@ -18,10 +35,10 @@ async function requireSA(supabase: any, userId: string) {
   if (!data) throw new Error("Apenas super admin.");
 }
 
-/** Modelo de PDF salvo para a categoria. */
+/** Modelo de PDF da categoria (ou o Padrão global quando `category_id` é nulo). */
 export const getCategoryPdfLayout = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ category_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ category_id: categorySchema }).parse(d))
   .handler(async ({ data, context }) => {
     const { loadCategoryPdfLayout } = await import("./pdf-layout.server");
     return loadCategoryPdfLayout(context.supabase, data.category_id);
@@ -32,26 +49,44 @@ export const saveCategoryPdfLayout = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
       .object({
-        category_id: z.string().uuid(),
+        category_id: categorySchema,
         config: z.record(z.string(), z.unknown()),
-        fields: z.array(fieldSchema).max(80),
+        fields: z.array(fieldSchema).max(120),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
     await requireSA(context.supabase, context.userId);
     const { normalizeBookingsConfig } = await import("@/lib/modules");
+    const { normalizeBlockStyle } = await import("@/lib/pdf-layout");
     const config = normalizeBookingsConfig({ pdf: data.config }).pdf;
+    const db = context.supabase as any;
 
-    const { data: layout, error } = await (context.supabase as any)
-      .from("category_pdf_layout")
-      .upsert({ category_id: data.category_id, config: config as any }, { onConflict: "category_id" })
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
+    // Upsert manual: `category_id` nulo não casa com ON CONFLICT.
+    let layoutId: string | null = null;
+    const existing = data.category_id
+      ? await db.from("category_pdf_layout").select("id").eq("category_id", data.category_id).maybeSingle()
+      : await db.from("category_pdf_layout").select("id").is("category_id", null).maybeSingle();
+    if (existing.error) throw new Error(existing.error.message);
 
-    const layoutId = (layout as any).id as string;
-    const { error: delErr } = await (context.supabase as any)
+    if (existing.data?.id) {
+      layoutId = existing.data.id as string;
+      const { error } = await db
+        .from("category_pdf_layout")
+        .update({ config: config as any })
+        .eq("id", layoutId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data: created, error } = await db
+        .from("category_pdf_layout")
+        .insert({ category_id: data.category_id, config: config as any })
+        .select("id")
+        .single();
+      if (error) throw new Error(error.message);
+      layoutId = created.id as string;
+    }
+
+    const { error: delErr } = await db
       .from("category_pdf_layout_fields")
       .delete()
       .eq("layout_id", layoutId);
@@ -61,16 +96,16 @@ export const saveCategoryPdfLayout = createServerFn({ method: "POST" })
       const rows = data.fields.map((f, i) => ({
         layout_id: layoutId,
         field_key: f.field_key,
+        block_type: f.block_type ?? "field",
         label_override: f.label_override ?? null,
         width_percent: f.width_percent,
         font_size: f.font_size,
         order_index: i,
         section_title: f.section_title ?? null,
         content: f.content ?? null,
+        style: normalizeBlockStyle(f.style) as any,
       }));
-      const { error: insErr } = await (context.supabase as any)
-        .from("category_pdf_layout_fields")
-        .insert(rows);
+      const { error: insErr } = await db.from("category_pdf_layout_fields").insert(rows);
       if (insErr) throw new Error(insErr.message);
     }
     return { ok: true };
@@ -82,9 +117,9 @@ export const previewBookingQuote = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
       .object({
-        category_id: z.string().uuid(),
+        category_id: categorySchema,
         config: z.record(z.string(), z.unknown()),
-        fields: z.array(fieldSchema).max(80),
+        fields: z.array(fieldSchema).max(120),
       })
       .parse(d),
   )
@@ -98,13 +133,13 @@ export const previewBookingQuote = createServerFn({ method: "POST" })
     const config = normalizeBookingsConfig({ pdf: data.config }).pdf;
     const layoutFields = normalizePdfLayout({ config: data.config, fields: data.fields }).fields;
 
-    const { data: org } = await context.supabase
+    let orgQuery = context.supabase
       .from("organizations")
       .select("id, name, logo_url, system_data")
-      .eq("category_id", data.category_id)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+    if (data.category_id) orgQuery = orgQuery.eq("category_id", data.category_id);
+    const { data: org } = await orgQuery.maybeSingle();
     const orgSys = (((org as any)?.system_data ?? {}) as any).quote ?? {};
 
     // Registro real de reserva quando existir; senão, dados fictícios por tipo.
@@ -158,6 +193,7 @@ export const previewBookingQuote = createServerFn({ method: "POST" })
         logoBytes: await loadOrgLogoBytes(context.supabase, (org as any)?.logo_url ?? null),
       },
       recordId: "00000000-0000-0000-0000-000000000000",
+      quoteNumber: `${today.slice(8, 10)}${today.slice(5, 7)}${today.slice(0, 4)}01`,
       client: "Cliente de exemplo — cliente@exemplo.com",
       clientCompany: "Empresa Exemplo LTDA",
       clientCnpj: "00.000.000/0000-00",
@@ -171,6 +207,7 @@ export const previewBookingQuote = createServerFn({ method: "POST" })
           label: "Item de exemplo A",
           daily_value: 1000,
           days: 2,
+          quantity: 1,
           discount: 10,
           discount_type: "percent",
           note: "Montagem inclusa.",
@@ -181,6 +218,7 @@ export const previewBookingQuote = createServerFn({ method: "POST" })
           label: "Item de exemplo B",
           daily_value: 500,
           days: 2,
+          quantity: 2,
           discount: 0,
           discount_type: "amount",
           note: null,

@@ -2,25 +2,50 @@
 import type { CategoryPdfLayout, PdfLayoutField } from "@/lib/pdf-layout";
 import type { QuoteFieldValue } from "@/lib/bookings.server";
 
-/** Lê o modelo salvo da categoria. Sem registro, devolve o padrão. */
+const LAYOUT_FIELD_COLUMNS =
+  "id, field_key, block_type, label_override, width_percent, font_size, order_index, section_title, content, style";
+
+async function readLayout(supabase: any, layoutId: string, inherited: boolean) {
+  const { normalizePdfLayout } = await import("@/lib/pdf-layout");
+  const { data: layout } = await supabase
+    .from("category_pdf_layout")
+    .select("id, config")
+    .eq("id", layoutId)
+    .maybeSingle();
+  const { data: fields } = await supabase
+    .from("category_pdf_layout_fields")
+    .select(LAYOUT_FIELD_COLUMNS)
+    .eq("layout_id", layoutId)
+    .order("order_index", { ascending: true });
+  return normalizePdfLayout({ config: (layout as any)?.config, fields: fields ?? [], inherited });
+}
+
+/**
+ * Modelo da categoria; sem registro próprio, herda o modelo "Padrão" global
+ * (`category_id` nulo) e, na falta dele, o padrão embutido.
+ */
 export async function loadCategoryPdfLayout(
   supabase: any,
   categoryId: string | null | undefined,
 ): Promise<CategoryPdfLayout> {
   const { normalizePdfLayout } = await import("@/lib/pdf-layout");
-  if (!categoryId) return normalizePdfLayout({});
-  const { data: layout } = await supabase
+
+  if (categoryId) {
+    const { data: own } = await supabase
+      .from("category_pdf_layout")
+      .select("id")
+      .eq("category_id", categoryId)
+      .maybeSingle();
+    if (own?.id) return readLayout(supabase, own.id as string, false);
+  }
+
+  const { data: fallback } = await supabase
     .from("category_pdf_layout")
-    .select("id, config")
-    .eq("category_id", categoryId)
+    .select("id")
+    .is("category_id", null)
     .maybeSingle();
-  if (!layout) return normalizePdfLayout({});
-  const { data: fields } = await supabase
-    .from("category_pdf_layout_fields")
-    .select("id, field_key, label_override, width_percent, font_size, order_index, section_title, content")
-    .eq("layout_id", (layout as any).id)
-    .order("order_index", { ascending: true });
-  return normalizePdfLayout({ config: (layout as any).config, fields: fields ?? [] });
+  if (fallback?.id) return readLayout(supabase, fallback.id as string, !!categoryId);
+  return normalizePdfLayout({});
 }
 
 /** Categoria da organização. */
