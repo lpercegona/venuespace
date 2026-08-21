@@ -742,7 +742,7 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
     ctx.pages.forEach((p, i) => {
       const txt = latin1(`Página ${i + 1} de ${totalPages}`);
       p.drawText(txt, { x: R - font.widthOfTextAtSize(txt, 8), y: 52, size: 8, font, color: SOFT });
-      p.drawText(latin1(`Orçamento #${input.recordId.slice(0, 8).toUpperCase()}`), {
+      p.drawText(latin1(`Orçamento #${input.quoteNumber ?? input.recordId.slice(0, 8).toUpperCase()}`), {
         x: L, y: 52, size: 8, font, color: SOFT,
       });
     });
