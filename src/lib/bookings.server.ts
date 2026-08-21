@@ -469,7 +469,7 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
     deslocamento: brl(travelFee),
     total: brl(total),
     validade: String(input.validityDays),
-    numero: input.recordId.slice(0, 8).toUpperCase(),
+    numero: input.quoteNumber ?? input.recordId.slice(0, 8).toUpperCase(),
     data: longDate(emitted),
   };
   const tpl = (s: string) => applyTemplate(s, vars);
