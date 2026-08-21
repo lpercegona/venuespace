@@ -102,6 +102,8 @@ export type QuoteItem = {
   label: string;
   daily_value: number;
   days: number;
+  /** Quantidade reservada do item (mínimo 1). */
+  quantity?: number;
   discount: number;
   discount_type: "amount" | "percent";
   note?: string | null;
@@ -117,8 +119,13 @@ export function daysBetween(start: string | null, end: string | null): number {
   return Math.max(1, Math.round((b - a) / 86400000) + 1);
 }
 
-export function itemSubtotal(i: Pick<QuoteItem, "daily_value" | "days">) {
-  return (Number(i.daily_value) || 0) * Math.max(1, Number(i.days) || 1);
+/** Quantidade normalizada de um item (inteiro, mínimo 1). */
+export function itemQuantity(i: Pick<QuoteItem, "quantity">) {
+  return Math.max(1, Math.round(Number(i.quantity ?? 1) || 1));
+}
+
+export function itemSubtotal(i: Pick<QuoteItem, "daily_value" | "days" | "quantity">) {
+  return (Number(i.daily_value) || 0) * Math.max(1, Number(i.days) || 1) * itemQuantity(i);
 }
 
 export function itemDiscountValue(i: QuoteItem) {
