@@ -673,7 +673,7 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
   };
 
 
-  /** Campos escolhidos no modelo de PDF da categoria (Iteração 43). */
+  /** Blocos do modelo de PDF da categoria (Iteração 43 + tipos/estilo da 44). */
   const drawLayoutFields = () => {
     const defs = [...(input.layoutFields ?? [])].sort((a, b) => a.order_index - b.order_index);
     if (defs.length === 0) return;
@@ -692,29 +692,99 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
     };
 
     for (const def of defs) {
-      const v = values.get(def.field_key);
-      const label = def.label_override?.trim() || v?.label || "";
-      const text = def.content?.trim()
-        ? tpl(def.content).trim() || "-"
-        : (v?.value ?? "").trim() || "-";
+      const style = (def as any).style ?? {};
+      const type = (def as any).block_type ?? "field";
+      const textColor = style.color ? hexColor(style.color, INK) : INK;
+      const boxColor = style.background ? hexColor(style.background, PAPER) : null;
+      const useBold = style.bold === true;
+      const align = style.align === "center" || style.align === "right" ? style.align : "left";
 
       if (def.section_title) {
         closeRow();
         sectionTitle(ctx, def.section_title, accent);
       }
+
+      if (type === "divider") {
+        closeRow();
+        ensure(ctx, 16);
+        ctx.page.drawLine({
+          start: { x: L, y: ctx.y + 4 },
+          end: { x: R, y: ctx.y + 4 },
+          thickness: 0.8,
+          color: style.color ? textColor : LINE,
+        });
+        ctx.y -= 14;
+        continue;
+      }
+
+      if (type === "table") {
+        closeRow();
+        const rows = String(def.content ?? "")
+          .split("\n")
+          .map((line) => line.split("|").map((c) => tpl(c.trim())))
+          .filter((cells) => cells.some((c) => c.length > 0));
+        if (rows.length === 0) continue;
+        const colCount = Math.max(...rows.map((r) => r.length));
+        const colW = contentW / colCount;
+        rows.forEach((cells, ri) => {
+          const h = def.font_size + 10;
+          ensure(ctx, h + 6);
+          if (ri === 0) {
+            ctx.page.drawRectangle({ x: L, y: ctx.y - 4, width: contentW, height: h, color: boxColor ?? PAPER });
+          }
+          for (let ci = 0; ci < colCount; ci++) {
+            draw(ctx, cells[ci] ?? "", L + ci * colW + 6, ctx.y, def.font_size, ri === 0 || useBold ? bold : font, textColor);
+          }
+          ctx.y -= h;
+          ctx.page.drawLine({
+            start: { x: L, y: ctx.y + 4 }, end: { x: R, y: ctx.y + 4 },
+            thickness: 0.5, color: LINE,
+          });
+        });
+        ctx.y -= 10;
+        continue;
+      }
+
+      const v = values.get(def.field_key);
+      const rawLabel = def.label_override?.trim() || v?.label || "";
+      const label = type === "heading" ? "" : rawLabel;
+      const rawText =
+        type === "heading"
+          ? tpl(def.content?.trim() || rawLabel)
+          : def.content?.trim()
+            ? tpl(def.content).trim() || "-"
+            : (v?.value ?? "").trim() || "-";
+      const text = style.uppercase ? rawText.toUpperCase() : rawText;
+
       if (used + def.width_percent > 100) closeRow();
 
       const w = (contentW * def.width_percent) / 100 - (def.width_percent === 100 ? 0 : gap);
-      const lines = wrapText(text, font, def.font_size, w);
-      const h = 12 + lines.length * (def.font_size + 3);
+      const size = type === "heading" ? Math.max(def.font_size, 13) : def.font_size;
+      const bodyFont = type === "heading" || useBold ? bold : font;
+      const lines = wrapText(text, bodyFont, size, w);
+      const h = 12 + lines.length * (size + 3);
       ensure(ctx, h + 12);
       if (used === 0) rowH = 0;
+
+      if (boxColor) {
+        ctx.page.drawRectangle({ x: cursorX - 4, y: ctx.y - h + 12, width: w + 8, height: h, color: boxColor });
+      }
+      if (style.border === true) {
+        ctx.page.drawRectangle({
+          x: cursorX - 4, y: ctx.y - h + 12, width: w + 8, height: h,
+          borderColor: LINE, borderWidth: 0.7,
+        });
+      }
 
       if (label) draw(ctx, label, cursorX, ctx.y, 8.5, bold, SOFT);
       let ly = ctx.y - (label ? 13 : 2);
       for (const ln of lines) {
-        draw(ctx, ln, cursorX, ly, def.font_size, font, INK);
-        ly -= def.font_size + 3;
+        if (align === "right") drawRight(ctx, ln, cursorX + w, ly, size, bodyFont, textColor);
+        else if (align === "center") {
+          const tw = bodyFont.widthOfTextAtSize(latin1(ln), size);
+          draw(ctx, ln, cursorX + (w - tw) / 2, ly, size, bodyFont, textColor);
+        } else draw(ctx, ln, cursorX, ly, size, bodyFont, textColor);
+        ly -= size + 3;
       }
       rowH = Math.max(rowH, h);
       used += def.width_percent;
