@@ -200,6 +200,8 @@ export type QuoteFieldValue = { key: string; label: string; value: string };
 export type QuoteInput = {
   org: QuoteOrg;
   recordId: string;
+  /** Número sequencial global do orçamento (#DDMMAAAAXX). */
+  quoteNumber?: string | null;
   client: string | null;
   clientCompany?: string | null;
   clientCnpj?: string | null;
