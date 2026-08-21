@@ -543,7 +543,8 @@ export async function buildQuotePdf(input: QuoteInput): Promise<{ bytes: Uint8Ar
 
     for (const item of input.items) {
       const descW = colPeriod - L - 20;
-      const titleLines = wrapText(item.label, bold, 10, descW);
+      const qty = itemQuantity(item);
+      const titleLines = wrapText(qty > 1 ? `${qty}x ${item.label}` : item.label, bold, 10, descW);
       const noteLines = cols.note && item.note ? wrapText(item.note, font, 8.5, descW) : [];
       const periodLines = cols.period
         ? wrapText(`${period} (${item.days} diária${item.days === 1 ? "" : "s"})`, font, 9, colDaily - colPeriod - 10)
