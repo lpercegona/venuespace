@@ -20,8 +20,11 @@ import { PdfPreview } from "@/components/admin/pdf-preview";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { DEFAULT_PDF_CONFIG, PDF_BLOCK_LABELS, type BookingsPdfConfig } from "@/lib/modules";
 import {
-  PDF_WIDTHS, isTextBlock, newTextBlockKey, type PdfLayoutField, type PdfWidth,
+  DEFAULT_BLOCK_STYLE, PDF_BLOCK_TYPE_LABELS, PDF_WIDTHS, isTextBlock, newTextBlockKey,
+  parseTableContent, type PdfBlockStyle, type PdfBlockType, type PdfLayoutField, type PdfWidth,
 } from "@/lib/pdf-layout";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { buildVariableGroups, variableToken } from "@/lib/pdf-variables";
 import {
   getCategoryPdfLayout,
