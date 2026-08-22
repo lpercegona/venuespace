@@ -499,6 +499,10 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
                             >
                               {f.section_title ? "Sem seção" : "Seção"}
                             </Button>
+                            <BlockStylePopover
+                              style={f.style}
+                              onChange={(style) => patch(f.field_key, { style })}
+                            />
                             <Button
                               variant="ghost" size="icon" className="h-8 w-8" aria-label="Remover bloco"
                               onClick={() => remove(f.field_key)}
