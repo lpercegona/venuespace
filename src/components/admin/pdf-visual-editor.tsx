@@ -596,26 +596,33 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
                 Clique no conteúdo de um bloco e depois em uma variável para inseri-la.
               </p>
               <ScrollArea className="h-[28rem] rounded-lg border border-border p-3">
-                <div className="space-y-4">
-                  {variableGroups.map((g) => (
-                    <div key={g.title} className="space-y-2">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{g.title}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {g.items.map((v) => (
-                          <button
-                            key={v.key}
-                            type="button"
-                            onClick={() => insertVariable(v.key)}
-                            title={v.label}
-                            className="min-h-8 rounded-full border border-input bg-background px-2.5 py-1 text-xs transition hover:bg-accent"
-                          >
-                            {v.label}
-                          </button>
-                        ))}
+                <TooltipProvider delayDuration={200}>
+                  <div className="space-y-4">
+                    {variableGroups.map((g) => (
+                      <div key={g.title} className="space-y-2">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{g.title}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {g.items.map((v) => (
+                            <Tooltip key={v.key}>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => insertVariable(v.key)}
+                                  className="min-h-8 rounded-full border border-input bg-background px-2.5 py-1 text-xs transition hover:bg-accent"
+                                >
+                                  {v.label}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <span className="font-mono text-xs">{variableToken(v.key)}</span>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </TooltipProvider>
               </ScrollArea>
             </TabsContent>
 
