@@ -35,8 +35,13 @@ import {
 type AvailableField = { field_key: string; label: string; field_type: string };
 
 type Props = {
-  categoryId: string;
+  /** `null` edita o modelo "Padrão" global. */
+  categoryId: string | null;
   availableFields: AvailableField[];
+  /** Recebe a função de salvar para o botão único do topo. */
+  saveRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  /** Esconde o botão interno de salvar. */
+  hideSave?: boolean;
 };
 
 const SAMPLE = {
