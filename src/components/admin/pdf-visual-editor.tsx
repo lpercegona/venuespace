@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ArrowDown, ArrowUp, ChevronDown, GripVertical, Loader2, Minus, Plus, Save, Trash2, Type,
+  ArrowDown, ArrowUp, ChevronDown, GripVertical, Loader2, Minus, Palette, Plus, Save, Trash2, Type,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,8 +20,11 @@ import { PdfPreview } from "@/components/admin/pdf-preview";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { DEFAULT_PDF_CONFIG, PDF_BLOCK_LABELS, type BookingsPdfConfig } from "@/lib/modules";
 import {
-  PDF_WIDTHS, isTextBlock, newTextBlockKey, type PdfLayoutField, type PdfWidth,
+  DEFAULT_BLOCK_STYLE, PDF_BLOCK_TYPE_LABELS, PDF_WIDTHS, isTextBlock, newTextBlockKey,
+  parseTableContent, type PdfBlockStyle, type PdfBlockType, type PdfLayoutField, type PdfWidth,
 } from "@/lib/pdf-layout";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { buildVariableGroups, variableToken } from "@/lib/pdf-variables";
 import {
   getCategoryPdfLayout,
@@ -32,8 +35,13 @@ import {
 type AvailableField = { field_key: string; label: string; field_type: string };
 
 type Props = {
-  categoryId: string;
+  /** `null` edita o modelo "Padrão" global. */
+  categoryId: string | null;
   availableFields: AvailableField[];
+  /** Recebe a função de salvar para o botão único do topo. */
+  saveRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  /** Esconde o botão interno de salvar. */
+  hideSave?: boolean;
 };
 
 const SAMPLE = {
@@ -56,7 +64,7 @@ const SAMPLE = {
 } as Record<string, string>;
 
 /** Editor visual do Modelo de Orçamento: folha A4 editável + variáveis + PDF real. */
-export function PdfVisualEditor({ categoryId, availableFields }: Props) {
+export function PdfVisualEditor({ categoryId, availableFields, saveRef, hideSave }: Props) {
   const [config, setConfig] = useState<BookingsPdfConfig>(DEFAULT_PDF_CONFIG);
   const [fields, setFields] = useState<PdfLayoutField[]>([]);
   const [dragKey, setDragKey] = useState<string | null>(null);
@@ -82,12 +90,14 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
     () =>
       fields.map((f, i) => ({
         field_key: f.field_key,
+        block_type: f.block_type,
         label_override: f.label_override,
         width_percent: f.width_percent,
         font_size: f.font_size,
         order_index: i,
         section_title: f.section_title,
         content: f.content,
+        style: f.style,
       })),
     [fields],
   );
@@ -151,20 +161,32 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
     setFields((list) => [
       ...list,
       {
-        field_key: src.field_key, label_override: null, width_percent: 100,
+        field_key: src.field_key, block_type: "field", label_override: null, width_percent: 100,
         font_size: 10, order_index: list.length, section_title: null, content: null,
+        style: { ...DEFAULT_BLOCK_STYLE },
       },
     ]);
     setActiveKey(src.field_key);
   }
-  function addTextBlock() {
+  /** Blocos sem campo vinculado: texto livre, título, linha e tabela. */
+  function addBlock(type: Exclude<PdfBlockType, "field">) {
     const key = newTextBlockKey();
+    const content =
+      type === "text"
+        ? "Escreva aqui o texto do bloco. Use variáveis como {{cliente}}."
+        : type === "heading"
+          ? "Novo título"
+          : type === "table"
+            ? "Descrição | Quantidade | Valor\nItem de exemplo | 1 | {{total}}"
+            : null;
     setFields((list) => [
       ...list,
       {
-        field_key: key, label_override: "Novo bloco", width_percent: 100,
-        font_size: 10, order_index: list.length, section_title: null,
-        content: "Escreva aqui o texto do bloco. Use variáveis como {{cliente}}.",
+        field_key: key, block_type: type,
+        label_override: type === "heading" ? "Novo título" : type === "text" ? "Novo bloco" : null,
+        width_percent: 100, font_size: type === "heading" ? 14 : 10,
+        order_index: list.length, section_title: null, content,
+        style: { ...DEFAULT_BLOCK_STYLE },
       },
     ]);
     setActiveKey(key);
@@ -197,14 +219,18 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
       await saveCategoryPdfLayout({
         data: { category_id: categoryId, config: config as any, fields: payloadFields },
       });
-      toast.success("Modelo de orçamento salvo.");
       layoutQuery.refetch();
-    } catch (e) {
-      toast.error((e as Error).message);
     } finally {
       setSaving(false);
     }
   }
+
+  // Expõe o salvamento para o botão único do topo da tela de módulos.
+  useEffect(() => {
+    if (!saveRef) return;
+    saveRef.current = save;
+    return () => { saveRef.current = null; };
+  });
 
   function openRealPdf() {
     if (!preview) return;
@@ -241,13 +267,22 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
         <div className="min-w-0">
           <h4 className="truncate text-sm font-medium">Modelo de Orçamento (PDF)</h4>
           <p className="truncate text-xs text-muted-foreground">
-            Edite direto na folha: clique em um título ou conteúdo para alterar.
+            {layoutQuery.data?.inherited
+              ? "Esta categoria ainda usa o modelo Padrão. Salve para criar um modelo próprio."
+              : "Edite direto na folha: clique em um título ou conteúdo para alterar."}
           </p>
         </div>
-        <Button size="sm" onClick={save} disabled={saving} className="h-11 shrink-0 sm:h-9">
-          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Salvar
-        </Button>
+        {hideSave ? null : (
+          <Button
+            size="sm"
+            onClick={() => save().then(() => toast.success("Modelo salvo.")).catch((e) => toast.error((e as Error).message))}
+            disabled={saving}
+            className="h-11 shrink-0 sm:h-9"
+          >
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            Salvar
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
@@ -266,9 +301,18 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" className="h-10" onClick={addTextBlock}>
-              <Type className="mr-2 h-4 w-4" />Bloco de texto
-            </Button>
+            <Select value="" onValueChange={(v) => addBlock(v as Exclude<PdfBlockType, "field">)}>
+              <SelectTrigger className="h-10 w-full sm:w-56">
+                <span className="flex items-center gap-2 text-sm">
+                  <Type className="h-4 w-4" />Adicionar bloco
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {(["text", "heading", "divider", "table"] as const).map((t) => (
+                  <SelectItem key={t} value={t}>{PDF_BLOCK_TYPE_LABELS[t]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <ScrollArea className="w-full">
@@ -342,9 +386,14 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
                         role="group"
                         aria-label={`Bloco ${src?.label ?? f.label_override ?? f.field_key}`}
                         onClick={() => setActiveKey(f.field_key)}
+                        style={{
+                          backgroundColor: f.style.background ?? undefined,
+                          color: f.style.color ?? undefined,
+                          textAlign: f.style.align,
+                        }}
                         className={`h-full rounded-md border p-2 transition ${
-                          active ? "border-primary bg-primary/5" : "border-transparent hover:border-paper-line"
-                        }`}
+                          f.style.border ? "border-paper-line" : ""
+                        } ${active ? "border-primary bg-primary/5" : "border-transparent hover:border-paper-line"}`}
                       >
                         {f.section_title ? (
                           <SheetInput
@@ -356,33 +405,71 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
                           />
                         ) : null}
 
-                        <SheetInput
-                          value={f.label_override ?? src?.label ?? ""}
-                          onChange={(v) => patch(f.field_key, { label_override: v || null })}
-                          placeholder="Título do bloco"
-                          className="w-full text-[10px] font-semibold uppercase tracking-wide text-paper-muted"
-                          ariaLabel="Título do bloco"
-                        />
-
-                        {isText || f.content ? (
-                          <SheetTextarea
-                            value={f.content ?? ""}
-                            onChange={(v) => patch(f.field_key, { content: v || null })}
-                            onFocusEl={(el) => { lastFocused.current = { key: f.field_key, el }; }}
-                            placeholder="Conteúdo do bloco (texto e variáveis)"
-                            className="w-full"
-                            style={{ fontSize: f.font_size }}
-                            ariaLabel="Conteúdo do bloco"
+                        {f.block_type === "divider" ? (
+                          <div
+                            className="my-2 h-px w-full"
+                            style={{ backgroundColor: f.style.color ?? config.accent }}
+                            aria-hidden
                           />
+                        ) : f.block_type === "table" ? (
+                          <>
+                            <table className="w-full border-collapse" style={{ fontSize: f.font_size }}>
+                              <tbody>
+                                {parseTableContent(f.content).map((row, ri) => (
+                                  <tr key={ri} className="border-b border-paper-line">
+                                    {row.map((cell, ci) => (
+                                      <td key={ci} className={`px-1.5 py-1 ${ri === 0 ? "font-semibold" : ""}`}>
+                                        {sample(cell, "")}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            <SheetTextarea
+                              value={f.content ?? ""}
+                              onChange={(v) => patch(f.field_key, { content: v || null })}
+                              onFocusEl={(el) => { lastFocused.current = { key: f.field_key, el }; }}
+                              placeholder="Uma linha por registro, colunas separadas por |"
+                              className="mt-1 text-[10px] text-paper-muted"
+                              ariaLabel="Conteúdo da tabela"
+                            />
+                          </>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => patch(f.field_key, { content: variableToken(f.field_key) })}
-                            className="mt-0.5 block w-full text-left"
-                            style={{ fontSize: f.font_size }}
-                          >
-                            {`[${src?.label ?? f.field_key}]`}
-                          </button>
+                          <>
+                            {f.block_type === "heading" ? null : (
+                              <SheetInput
+                                value={f.label_override ?? src?.label ?? ""}
+                                onChange={(v) => patch(f.field_key, { label_override: v || null })}
+                                placeholder="Título do bloco"
+                                className="w-full text-[10px] font-semibold uppercase tracking-wide text-paper-muted"
+                                ariaLabel="Título do bloco"
+                              />
+                            )}
+
+                            {isText || f.block_type === "heading" || f.content ? (
+                              <SheetTextarea
+                                value={f.content ?? ""}
+                                onChange={(v) => patch(f.field_key, { content: v || null })}
+                                onFocusEl={(el) => { lastFocused.current = { key: f.field_key, el }; }}
+                                placeholder="Conteúdo do bloco (texto e variáveis)"
+                                className={`w-full ${f.block_type === "heading" ? "font-semibold" : ""} ${
+                                  f.style.bold ? "font-semibold" : ""
+                                } ${f.style.italic ? "italic" : ""} ${f.style.uppercase ? "uppercase" : ""}`}
+                                style={{ fontSize: f.font_size }}
+                                ariaLabel="Conteúdo do bloco"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => patch(f.field_key, { content: variableToken(f.field_key) })}
+                                className="mt-0.5 block w-full text-left"
+                                style={{ fontSize: f.font_size }}
+                              >
+                                {`[${src?.label ?? f.field_key}]`}
+                              </button>
+                            )}
+                          </>
                         )}
 
                         {active ? (
@@ -430,6 +517,10 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
                             >
                               {f.section_title ? "Sem seção" : "Seção"}
                             </Button>
+                            <BlockStylePopover
+                              style={f.style}
+                              onChange={(style) => patch(f.field_key, { style })}
+                            />
                             <Button
                               variant="ghost" size="icon" className="h-8 w-8" aria-label="Remover bloco"
                               onClick={() => remove(f.field_key)}
@@ -523,26 +614,33 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
                 Clique no conteúdo de um bloco e depois em uma variável para inseri-la.
               </p>
               <ScrollArea className="h-[28rem] rounded-lg border border-border p-3">
-                <div className="space-y-4">
-                  {variableGroups.map((g) => (
-                    <div key={g.title} className="space-y-2">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{g.title}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {g.items.map((v) => (
-                          <button
-                            key={v.key}
-                            type="button"
-                            onClick={() => insertVariable(v.key)}
-                            title={v.label}
-                            className="min-h-8 rounded-full border border-input bg-background px-2.5 py-1 text-xs transition hover:bg-accent"
-                          >
-                            {v.label}
-                          </button>
-                        ))}
+                <TooltipProvider delayDuration={200}>
+                  <div className="space-y-4">
+                    {variableGroups.map((g) => (
+                      <div key={g.title} className="space-y-2">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{g.title}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {g.items.map((v) => (
+                            <Tooltip key={v.key}>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => insertVariable(v.key)}
+                                  className="min-h-8 rounded-full border border-input bg-background px-2.5 py-1 text-xs transition hover:bg-accent"
+                                >
+                                  {v.label}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <span className="font-mono text-xs">{variableToken(v.key)}</span>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </TooltipProvider>
               </ScrollArea>
             </TabsContent>
 
@@ -696,5 +794,68 @@ function SheetTextarea({
       onChange={(e) => onChange(e.target.value)}
       className={`w-full resize-none rounded-sm border border-transparent bg-transparent outline-hidden transition placeholder:text-paper-muted hover:border-paper-line focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring ${className}`}
     />
+  );
+}
+
+/** Estilo do bloco em popover: cor, fundo, alinhamento, peso e borda. */
+function BlockStylePopover({
+  style, onChange,
+}: {
+  style: PdfBlockStyle;
+  onChange: (s: PdfBlockStyle) => void;
+}) {
+  const set = (part: Partial<PdfBlockStyle>) => onChange({ ...style, ...part });
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Estilo do bloco">
+          <Palette className="h-3.5 w-3.5" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 space-y-3" align="start">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Cor do texto</Label>
+            <Input
+              className="h-9" placeholder="#111827" value={style.color ?? ""}
+              onChange={(e) => set({ color: e.target.value || null })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Fundo</Label>
+            <Input
+              className="h-9" placeholder="#f3f4f6" value={style.background ?? ""}
+              onChange={(e) => set({ background: e.target.value || null })}
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Alinhamento</Label>
+          <Select value={style.align} onValueChange={(v) => set({ align: v as PdfBlockStyle["align"] })}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="left">Esquerda</SelectItem>
+              <SelectItem value="center">Centro</SelectItem>
+              <SelectItem value="right">Direita</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {([
+          ["bold", "Negrito"],
+          ["italic", "Itálico"],
+          ["uppercase", "Maiúsculas"],
+          ["border", "Borda"],
+        ] as const).map(([key, label]) => (
+          <div key={key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+            <Label className="min-w-0 truncate text-xs">{label}</Label>
+            <Switch
+              checked={style[key] === true}
+              aria-label={label}
+              onCheckedChange={(v) => set({ [key]: v } as Partial<PdfBlockStyle>)}
+            />
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
   );
 }

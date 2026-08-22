@@ -53,8 +53,32 @@ export const listCategoryModules = createServerFn({ method: "GET" })
 /** Campos da tabela-modelo de reservas da categoria (fonte do formulário). */
 export const listBookingsModuleFields = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ category_id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ category_id: z.string().uuid().nullable().default(null) }).parse(d),
+  )
   .handler(async ({ data, context }) => {
+    // Modelo "Padrão" (sem categoria): união dos campos das tabelas de reservas.
+    if (!data.category_id) {
+      const { data: models } = await context.supabase
+        .from("category_standard_tables")
+        .select("id")
+        .eq("kind", "bookings");
+      const ids = (models ?? []).map((m: any) => m.id);
+      if (ids.length === 0) return { table: null, fields: [] as any[] };
+      const { data: all, error } = await context.supabase
+        .from("category_standard_table_fields")
+        .select("field_key, label, field_type, required, order_index")
+        .in("standard_table_id", ids)
+        .order("order_index", { ascending: true });
+      if (error) throw new Error(error.message);
+      const seen = new Set<string>();
+      const fields = (all ?? []).filter((f: any) => {
+        if (seen.has(f.field_key)) return false;
+        seen.add(f.field_key);
+        return true;
+      });
+      return { table: null, fields: fields as any[] };
+    }
     const { data: model } = await context.supabase
       .from("category_standard_tables")
       .select("id, name")
