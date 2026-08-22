@@ -219,14 +219,18 @@ export function PdfVisualEditor({ categoryId, availableFields, saveRef, hideSave
       await saveCategoryPdfLayout({
         data: { category_id: categoryId, config: config as any, fields: payloadFields },
       });
-      toast.success("Modelo de orçamento salvo.");
       layoutQuery.refetch();
-    } catch (e) {
-      toast.error((e as Error).message);
     } finally {
       setSaving(false);
     }
   }
+
+  // Expõe o salvamento para o botão único do topo da tela de módulos.
+  useEffect(() => {
+    if (!saveRef) return;
+    saveRef.current = save;
+    return () => { saveRef.current = null; };
+  });
 
   function openRealPdf() {
     if (!preview) return;
