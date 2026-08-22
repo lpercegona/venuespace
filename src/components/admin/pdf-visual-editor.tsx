@@ -151,20 +151,32 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
     setFields((list) => [
       ...list,
       {
-        field_key: src.field_key, label_override: null, width_percent: 100,
+        field_key: src.field_key, block_type: "field", label_override: null, width_percent: 100,
         font_size: 10, order_index: list.length, section_title: null, content: null,
+        style: { ...DEFAULT_BLOCK_STYLE },
       },
     ]);
     setActiveKey(src.field_key);
   }
-  function addTextBlock() {
+  /** Blocos sem campo vinculado: texto livre, título, linha e tabela. */
+  function addBlock(type: Exclude<PdfBlockType, "field">) {
     const key = newTextBlockKey();
+    const content =
+      type === "text"
+        ? "Escreva aqui o texto do bloco. Use variáveis como {{cliente}}."
+        : type === "heading"
+          ? "Novo título"
+          : type === "table"
+            ? "Descrição | Quantidade | Valor\nItem de exemplo | 1 | {{total}}"
+            : null;
     setFields((list) => [
       ...list,
       {
-        field_key: key, label_override: "Novo bloco", width_percent: 100,
-        font_size: 10, order_index: list.length, section_title: null,
-        content: "Escreva aqui o texto do bloco. Use variáveis como {{cliente}}.",
+        field_key: key, block_type: type,
+        label_override: type === "heading" ? "Novo título" : type === "text" ? "Novo bloco" : null,
+        width_percent: 100, font_size: type === "heading" ? 14 : 10,
+        order_index: list.length, section_title: null, content,
+        style: { ...DEFAULT_BLOCK_STYLE },
       },
     ]);
     setActiveKey(key);
