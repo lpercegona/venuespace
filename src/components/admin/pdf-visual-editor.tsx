@@ -64,7 +64,7 @@ const SAMPLE = {
 } as Record<string, string>;
 
 /** Editor visual do Modelo de Orçamento: folha A4 editável + variáveis + PDF real. */
-export function PdfVisualEditor({ categoryId, availableFields }: Props) {
+export function PdfVisualEditor({ categoryId, availableFields, saveRef, hideSave }: Props) {
   const [config, setConfig] = useState<BookingsPdfConfig>(DEFAULT_PDF_CONFIG);
   const [fields, setFields] = useState<PdfLayoutField[]>([]);
   const [dragKey, setDragKey] = useState<string | null>(null);
