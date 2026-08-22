@@ -85,12 +85,14 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
     () =>
       fields.map((f, i) => ({
         field_key: f.field_key,
+        block_type: f.block_type,
         label_override: f.label_override,
         width_percent: f.width_percent,
         font_size: f.font_size,
         order_index: i,
         section_title: f.section_title,
         content: f.content,
+        style: f.style,
       })),
     [fields],
   );
