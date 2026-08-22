@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ArrowDown, ArrowUp, ChevronDown, GripVertical, Loader2, Minus, Plus, Save, Trash2, Type,
+  ArrowDown, ArrowUp, ChevronDown, GripVertical, Loader2, Minus, Palette, Plus, Save, Trash2, Type,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
