@@ -283,9 +283,18 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" className="h-10" onClick={addTextBlock}>
-              <Type className="mr-2 h-4 w-4" />Bloco de texto
-            </Button>
+            <Select value="" onValueChange={(v) => addBlock(v as Exclude<PdfBlockType, "field">)}>
+              <SelectTrigger className="h-10 w-full sm:w-56">
+                <span className="flex items-center gap-2 text-sm">
+                  <Type className="h-4 w-4" />Adicionar bloco
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {(["text", "heading", "divider", "table"] as const).map((t) => (
+                  <SelectItem key={t} value={t}>{PDF_BLOCK_TYPE_LABELS[t]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <ScrollArea className="w-full">
