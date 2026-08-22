@@ -771,3 +771,66 @@ function SheetTextarea({
     />
   );
 }
+
+/** Estilo do bloco em popover: cor, fundo, alinhamento, peso e borda. */
+function BlockStylePopover({
+  style, onChange,
+}: {
+  style: PdfBlockStyle;
+  onChange: (s: PdfBlockStyle) => void;
+}) {
+  const set = (part: Partial<PdfBlockStyle>) => onChange({ ...style, ...part });
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Estilo do bloco">
+          <Palette className="h-3.5 w-3.5" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 space-y-3" align="start">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Cor do texto</Label>
+            <Input
+              className="h-9" placeholder="#111827" value={style.color ?? ""}
+              onChange={(e) => set({ color: e.target.value || null })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Fundo</Label>
+            <Input
+              className="h-9" placeholder="#f3f4f6" value={style.background ?? ""}
+              onChange={(e) => set({ background: e.target.value || null })}
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Alinhamento</Label>
+          <Select value={style.align} onValueChange={(v) => set({ align: v as PdfBlockStyle["align"] })}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="left">Esquerda</SelectItem>
+              <SelectItem value="center">Centro</SelectItem>
+              <SelectItem value="right">Direita</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {([
+          ["bold", "Negrito"],
+          ["italic", "Itálico"],
+          ["uppercase", "Maiúsculas"],
+          ["border", "Borda"],
+        ] as const).map(([key, label]) => (
+          <div key={key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+            <Label className="min-w-0 truncate text-xs">{label}</Label>
+            <Switch
+              checked={style[key] === true}
+              aria-label={label}
+              onCheckedChange={(v) => set({ [key]: v } as Partial<PdfBlockStyle>)}
+            />
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
