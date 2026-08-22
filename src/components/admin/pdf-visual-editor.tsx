@@ -267,13 +267,22 @@ export function PdfVisualEditor({ categoryId, availableFields, saveRef, hideSave
         <div className="min-w-0">
           <h4 className="truncate text-sm font-medium">Modelo de Orçamento (PDF)</h4>
           <p className="truncate text-xs text-muted-foreground">
-            Edite direto na folha: clique em um título ou conteúdo para alterar.
+            {layoutQuery.data?.inherited
+              ? "Esta categoria ainda usa o modelo Padrão. Salve para criar um modelo próprio."
+              : "Edite direto na folha: clique em um título ou conteúdo para alterar."}
           </p>
         </div>
-        <Button size="sm" onClick={save} disabled={saving} className="h-11 shrink-0 sm:h-9">
-          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Salvar
-        </Button>
+        {hideSave ? null : (
+          <Button
+            size="sm"
+            onClick={() => save().then(() => toast.success("Modelo salvo.")).catch((e) => toast.error((e as Error).message))}
+            disabled={saving}
+            className="h-11 shrink-0 sm:h-9"
+          >
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            Salvar
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
