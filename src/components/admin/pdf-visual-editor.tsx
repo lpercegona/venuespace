@@ -368,9 +368,14 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
                         role="group"
                         aria-label={`Bloco ${src?.label ?? f.label_override ?? f.field_key}`}
                         onClick={() => setActiveKey(f.field_key)}
+                        style={{
+                          backgroundColor: f.style.background ?? undefined,
+                          color: f.style.color ?? undefined,
+                          textAlign: f.style.align,
+                        }}
                         className={`h-full rounded-md border p-2 transition ${
-                          active ? "border-primary bg-primary/5" : "border-transparent hover:border-paper-line"
-                        }`}
+                          f.style.border ? "border-paper-line" : ""
+                        } ${active ? "border-primary bg-primary/5" : "border-transparent hover:border-paper-line"}`}
                       >
                         {f.section_title ? (
                           <SheetInput
@@ -382,33 +387,71 @@ export function PdfVisualEditor({ categoryId, availableFields }: Props) {
                           />
                         ) : null}
 
-                        <SheetInput
-                          value={f.label_override ?? src?.label ?? ""}
-                          onChange={(v) => patch(f.field_key, { label_override: v || null })}
-                          placeholder="Título do bloco"
-                          className="w-full text-[10px] font-semibold uppercase tracking-wide text-paper-muted"
-                          ariaLabel="Título do bloco"
-                        />
-
-                        {isText || f.content ? (
-                          <SheetTextarea
-                            value={f.content ?? ""}
-                            onChange={(v) => patch(f.field_key, { content: v || null })}
-                            onFocusEl={(el) => { lastFocused.current = { key: f.field_key, el }; }}
-                            placeholder="Conteúdo do bloco (texto e variáveis)"
-                            className="w-full"
-                            style={{ fontSize: f.font_size }}
-                            ariaLabel="Conteúdo do bloco"
+                        {f.block_type === "divider" ? (
+                          <div
+                            className="my-2 h-px w-full"
+                            style={{ backgroundColor: f.style.color ?? config.accent }}
+                            aria-hidden
                           />
+                        ) : f.block_type === "table" ? (
+                          <>
+                            <table className="w-full border-collapse" style={{ fontSize: f.font_size }}>
+                              <tbody>
+                                {parseTableContent(f.content).map((row, ri) => (
+                                  <tr key={ri} className="border-b border-paper-line">
+                                    {row.map((cell, ci) => (
+                                      <td key={ci} className={`px-1.5 py-1 ${ri === 0 ? "font-semibold" : ""}`}>
+                                        {sample(cell, "")}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            <SheetTextarea
+                              value={f.content ?? ""}
+                              onChange={(v) => patch(f.field_key, { content: v || null })}
+                              onFocusEl={(el) => { lastFocused.current = { key: f.field_key, el }; }}
+                              placeholder="Uma linha por registro, colunas separadas por |"
+                              className="mt-1 text-[10px] text-paper-muted"
+                              ariaLabel="Conteúdo da tabela"
+                            />
+                          </>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => patch(f.field_key, { content: variableToken(f.field_key) })}
-                            className="mt-0.5 block w-full text-left"
-                            style={{ fontSize: f.font_size }}
-                          >
-                            {`[${src?.label ?? f.field_key}]`}
-                          </button>
+                          <>
+                            {f.block_type === "heading" ? null : (
+                              <SheetInput
+                                value={f.label_override ?? src?.label ?? ""}
+                                onChange={(v) => patch(f.field_key, { label_override: v || null })}
+                                placeholder="Título do bloco"
+                                className="w-full text-[10px] font-semibold uppercase tracking-wide text-paper-muted"
+                                ariaLabel="Título do bloco"
+                              />
+                            )}
+
+                            {isText || f.block_type === "heading" || f.content ? (
+                              <SheetTextarea
+                                value={f.content ?? ""}
+                                onChange={(v) => patch(f.field_key, { content: v || null })}
+                                onFocusEl={(el) => { lastFocused.current = { key: f.field_key, el }; }}
+                                placeholder="Conteúdo do bloco (texto e variáveis)"
+                                className={`w-full ${f.block_type === "heading" ? "font-semibold" : ""} ${
+                                  f.style.bold ? "font-semibold" : ""
+                                } ${f.style.italic ? "italic" : ""} ${f.style.uppercase ? "uppercase" : ""}`}
+                                style={{ fontSize: f.font_size }}
+                                ariaLabel="Conteúdo do bloco"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => patch(f.field_key, { content: variableToken(f.field_key) })}
+                                className="mt-0.5 block w-full text-left"
+                                style={{ fontSize: f.font_size }}
+                              >
+                                {`[${src?.label ?? f.field_key}]`}
+                              </button>
+                            )}
+                          </>
                         )}
 
                         {active ? (
